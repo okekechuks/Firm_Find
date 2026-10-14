@@ -12,7 +12,7 @@ The user selected **project setup + desktop shell** on 14 October 2026. OBTAINER
 - Least privilege, local assets, no arbitrary process execution.
 - Frontend lint, tests, build; native formatting, lint, tests and Windows installer verification.
 
-Acceptance is **pending native validation** until a Windows desktop build and launch have actually passed. A frontend build does not prove desktop completion.
+Foundation automated acceptance **passed on the local Windows host**: native builds, startup, actual IPC, restart persistence, navigation, unit/component checks, and unsigned installer generation. See [verification evidence](VERIFICATION.md). Clean-machine installer validation, signing, updates, and hardware workflows remain later work.
 
 ## Later milestones
 
