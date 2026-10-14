@@ -1,0 +1,12 @@
+node_modules/
+dist/
+target/
+.tools/
+src-tauri/gen/
+*.log
+*.tsbuildinfo
+*.db
+*.db-shm
+*.db-wal
+.env*
+!.env.example

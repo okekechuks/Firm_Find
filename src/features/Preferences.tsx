@@ -1,0 +1,15 @@
+import { useEffect, useState } from 'react';
+import { Monitor, Sun, Moon, Database, ShieldCheck } from 'lucide-react';
+import type { Settings, Snapshot } from '../types/contracts';
+
+export function Preferences({ snapshot, saving, onSave, previewTheme, onPreviewTheme }: { snapshot: Snapshot | null; saving: boolean; onSave: (settings: Settings) => Promise<boolean>; previewTheme: Settings['theme']; onPreviewTheme: (theme: Settings['theme']) => void }) {
+  const [theme, setTheme] = useState<Settings['theme']>(snapshot?.settings.theme ?? previewTheme);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { if (snapshot) setTheme(snapshot.settings.theme); }, [snapshot]);
+  const choices = [{ value: 'light', label: 'Light', icon: Sun }, { value: 'dark', label: 'Dark', icon: Moon }, { value: 'system', label: 'System', icon: Monitor }] as const;
+  return <>
+    <section className="panel preference-panel"><div className="panel-heading"><div><h2>Appearance</h2><p>Choose how OBTAINER looks on your desktop.</p></div><Sun size={21} /></div><fieldset className="theme-options"><legend className="sr-only">Theme</legend>{choices.map(({ value, label, icon: Icon }) => <label key={value} className={theme === value ? 'theme-choice selected' : 'theme-choice'}><input type="radio" name="theme" value={value} checked={theme === value} onChange={() => { setTheme(value); setSaved(false); if (!snapshot) onPreviewTheme(value); }} /><Icon size={25} /><strong>{label}</strong><span className="muted small">{value === 'system' ? 'Follow Windows' : `${label} workspace`}</span></label>)}</fieldset><div className="preference-actions"><span className="muted small" role="status">{saved ? 'Preferences saved to SQLite.' : snapshot ? 'Settings are stored on this computer.' : 'Browser preview only. Saving requires the desktop app.'}</span><button className="primary-button" disabled={!snapshot || saving || theme === snapshot.settings.theme} onClick={async () => { setSaved(await onSave({ theme })); }}>{saving ? 'Saving…' : 'Save preferences'}</button></div></section>
+    <section className="panel preference-panel"><div className="panel-heading"><div><h2>Local storage</h2><p>Your workspace data stays on this computer.</p></div><Database size={21} /></div><dl className="details"><div><dt>Data directory</dt><dd className="mono">{snapshot?.dataDirectory ?? 'Available when the desktop backend is connected'}</dd></div><div><dt>Database schema</dt><dd>{snapshot ? `Version ${snapshot.databaseVersion}` : 'Not connected'}</dd></div><div><dt>Advanced Linux tools</dt><dd>Optional · not required for the desktop foundation</dd></div></dl></section>
+    <section className="panel preference-panel"><div className="panel-heading"><div><h2>Operation boundaries</h2><p>Foundation build permissions.</p></div><ShieldCheck size={21} /></div><dl className="details"><div><dt>Available commands</dt><dd>Read workspace state · Save appearance</dd></div><div><dt>Device operations</dt><dd>Not implemented</dd></div><div><dt>Telemetry</dt><dd>None</dd></div></dl></section>
+  </>;
+}
