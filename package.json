@@ -9,6 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
+    "test:native": "node scripts/native-smoke.mjs",
     "tauri": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1"
   },
   "dependencies": {

@@ -4,7 +4,12 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  server: { host: "127.0.0.1", port: 1420, strictPort: true },
+  server: {
+    host: "127.0.0.1",
+    port: 1420,
+    strictPort: true,
+    watch: { ignored: ["**/.tools/**", "**/target/**", "**/src-tauri/**"] },
+  },
   clearScreen: false,
   test: {
     include: ["src/test/**/*.test.{ts,tsx}"],

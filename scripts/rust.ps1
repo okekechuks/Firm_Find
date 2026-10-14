@@ -1,4 +1,4 @@
-param([Parameter(ValueFromRemainingArguments = $true)][string[]]$CargoArguments)
+$CargoArguments = $args
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $localCargo = Join-Path $projectRoot '.tools\cargo'

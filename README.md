@@ -10,6 +10,7 @@ Windows desktop workspace for device identification, firmware preservation, and 
 - Narrow `get_snapshot` and `save_settings` commands, runtime response validation, main-window permissions, and CSP.
 - Light, dark, and system themes. Desktop settings persist across restarts.
 - Windows CI for lint, tests, native compilation, and unsigned installer generation.
+- Native Windows smoke test for actual IPC, settings validation, and persistence across application restarts.
 
 ## Windows prerequisites
 
@@ -56,6 +57,16 @@ Unsigned installer output, when native prerequisites are installed:
 - `target/release/bundle/msi/`
 
 NSIS is configured for the current user. Signing and verified updates are release engineering work; this foundation must not be represented as a signed production release.
+
+Optional native UI check, once `tauri-driver.exe` is installed in `.tools/cargo/bin` and the matching Microsoft Edge driver is in `.tools/webdriver`:
+
+```powershell
+npm run test:native
+# Or test a bundled debug build:
+npm run test:native -- target/debug/obtainer.exe
+```
+
+The test launches the actual Windows app, traverses workspaces, saves appearance through IPC, checks backend validation, restarts to verify persistence, and restores the original appearance. It records a local screenshot in `docs/images/desktop-smoke.png`. See the official [native Tauri WebDriver setup](https://v2.tauri.app/develop/tests/webdriver/manual-setup/) for driver prerequisites. These helpers do not control the Codex in-app browser.
 
 ## Data and permissions
 
