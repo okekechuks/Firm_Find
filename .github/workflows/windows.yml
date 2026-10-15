@@ -1,4 +1,4 @@
-name: Windows foundation
+name: Windows verification
 on:
   push:
   pull_request:

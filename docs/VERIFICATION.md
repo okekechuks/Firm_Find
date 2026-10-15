@@ -1,6 +1,20 @@
 # OBTAINER foundation verification — 14 October 2026
 
-This is historical execution evidence. The [revised phase tracker](PHASE_STATUS.md) maps existing implementation to the new guideline. No application tests or builds were rerun during the planning-only revision on 15 October 2026.
+This file preserves earlier foundation and discovery evidence. Latest results after the phase 0 workspace migration appear below and in the [phase tracker](PHASE_STATUS.md).
+
+## Phase 0: workspace migration — 15 October 2026
+
+**Result: structure migration and build checks passed.** The desktop app now lives in `apps/desktop/`; root npm commands, the shared dependency lockfile, Cargo membership, and desktop wrapper resolve the moved app. Generated outputs and temporary smoke files were cleaned after validation.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Clean dependency install | Passed | Offline `npm ci --ignore-scripts`; 297 packages installed, zero reported vulnerabilities |
+| Root frontend checks | Passed | ESLint; 3 files and 10 tests; production build of 1,601 modules |
+| Rust checks | Passed | Format, Clippy with warnings denied, and 11 tests |
+| Relocated Windows desktop build | Passed | Tauri produced `target/debug/obtainer.exe` through the root wrapper |
+| Native UI smoke | Blocked by WebView2 | App failed before IPC: HRESULT `0x800700AA`, “The requested resource is in use”; WebDriver session closed. Phase 1 tracks this startup blocker. |
+
+`git diff --check`, workspace dependency listing, and local Markdown links passed. These checks confirm project layout and build readiness; native window launch remains unverified.
 
 ## Phase 2: passive Windows discovery — 15 October 2026
 
@@ -104,4 +118,4 @@ The native test temporarily changes appearance, records audit events, then resto
 
 ## Next milestone
 
-Under the revised plan, finish phase 0 structure migration and baseline verification, close foundation/discovery gaps, then implement phase 3 device profiles and capability decisions. Firmware import is now phase 4; authenticated OpenWrt reads are phase 7. The earlier acquisition-first ordering is superseded. Existing implementation limitations above remain unchanged by planning documents.
+Under the revised plan, phase 0 structure migration and baseline checks are complete. Next, close phase 1 desktop launch and phase 2 discovery gaps, then implement phase 3 device profiles and capability decisions. The WebView2 launch failure is recorded under phase 1. Firmware import is now phase 4; authenticated OpenWrt reads are phase 7. The earlier acquisition-first ordering is superseded. Existing implementation limitations above remain unchanged by planning documents.

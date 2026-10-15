@@ -7,10 +7,7 @@
     "dev": "vite --configLoader runner --host 127.0.0.1",
     "build": "tsc -b && vite build --configLoader runner",
     "preview": "vite preview --configLoader runner --host 127.0.0.1",
-    "lint": "eslint . --max-warnings 0",
-    "test": "vitest run --configLoader runner",
-    "test:native": "node scripts/native-smoke.mjs",
-    "tauri": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1"
+    "test": "vitest run --configLoader runner"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",
