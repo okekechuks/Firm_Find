@@ -2,8 +2,8 @@ mod service;
 #[cfg(windows)]
 mod windows;
 
-pub use service::DiscoveryService;
 use serde::{Deserialize, Serialize};
+pub use service::DiscoveryService;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -63,6 +63,46 @@ pub enum Capability {
     Supported,
     Unsupported,
     Unknown,
+    RequiresAuth,
+    RequiresTool,
+    Experimental,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FeatureCapability {
+    pub state: Capability,
+    pub control_plane: Option<String>,
+    pub can_read: bool,
+    pub can_write: bool,
+    pub can_verify: bool,
+    pub can_rollback: bool,
+    pub confidence: u8,
+    pub evidence: Vec<String>,
+}
+
+impl Default for FeatureCapability {
+    fn default() -> Self {
+        Self {
+            state: Capability::Unknown,
+            control_plane: None,
+            can_read: false,
+            can_write: false,
+            can_verify: false,
+            can_rollback: false,
+            confidence: 0,
+            evidence: vec![],
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FeatureCapabilities {
+    pub apn: FeatureCapability,
+    pub wifi_user_limit: FeatureCapability,
+    pub custom_dns: FeatureCapability,
+    pub ussd: FeatureCapability,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -71,6 +111,7 @@ pub struct Capabilities {
     pub inventory: Capability,
     pub backup: Capability,
     pub flash: Capability,
+    pub features: FeatureCapabilities,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -126,7 +167,9 @@ fn usb_ids(value: &str) -> (Option<String>, Option<String>) {
     let read = |prefix: &str| {
         value.find(prefix).and_then(|index| {
             let id = value.get(index + prefix.len()..index + prefix.len() + 4)?;
-            id.bytes().all(|byte| byte.is_ascii_hexdigit()).then(|| id.to_owned())
+            id.bytes()
+                .all(|byte| byte.is_ascii_hexdigit())
+                .then(|| id.to_owned())
         })
     };
     (read("VID_"), read("PID_"))
@@ -140,14 +183,20 @@ fn usb_root<'a>(node: &'a RawNode, nodes: &BTreeMap<String, &'a RawNode>) -> Opt
     let mut visited = BTreeSet::new();
     for _ in 0..32 {
         let instance = canonical(&current.instance_id);
-        if !visited.insert(instance.clone()) { break; }
+        if !visited.insert(instance.clone()) {
+            break;
+        }
         if instance.starts_with("USB\\") {
             fallback = Some(current);
             if instance.starts_with("USB\\VID_") && !instance.contains("&MI_") {
                 return Some(current);
             }
         }
-        match current.parent_instance_id.as_ref().and_then(|id| nodes.get(&canonical(id))) {
+        match current
+            .parent_instance_id
+            .as_ref()
+            .and_then(|id| nodes.get(&canonical(id)))
+        {
             Some(parent) => current = parent,
             None => break,
         }
@@ -162,47 +211,84 @@ fn physical_key(node: &RawNode, root: Option<&RawNode>) -> String {
         !id.is_empty() && id != "00000000-0000-0000-0000-000000000000"
     }) {
         // Container IDs for internal non-USB hardware can identify the whole PC.
-        if root.is_some() { return format!("usb-container:{}", canonical(container)); }
+        if root.is_some() {
+            return format!("usb-container:{}", canonical(container));
+        }
     }
     format!("pnp:{}", canonical(&anchor.instance_id))
 }
 
 fn new_device(key: &str, name: &str, now: u64) -> Device {
     Device {
-        id: identity(key), display_name: name.to_owned(), connected: true,
-        transports: vec![], vendor_id: None, product_id: None, container_id: None,
-        interfaces: vec![], networks: vec![], assessment: "Unknown device".into(), confidence: 0,
-        evidence: vec![], capabilities: Capabilities {
-            inventory: Capability::Supported, backup: Capability::Unknown, flash: Capability::Unsupported,
-        }, last_seen_at: now,
+        id: identity(key),
+        display_name: name.to_owned(),
+        connected: true,
+        transports: vec![],
+        vendor_id: None,
+        product_id: None,
+        container_id: None,
+        interfaces: vec![],
+        networks: vec![],
+        assessment: "Unknown device".into(),
+        confidence: 0,
+        evidence: vec![],
+        capabilities: Capabilities {
+            inventory: Capability::Supported,
+            backup: Capability::Unknown,
+            flash: Capability::Unsupported,
+            features: FeatureCapabilities::default(),
+        },
+        last_seen_at: now,
     }
 }
 
 pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
-    let nodes: BTreeMap<_, _> = inventory.nodes.iter()
-        .map(|node| (canonical(&node.instance_id), node)).collect();
-    let adapters: BTreeMap<_, _> = inventory.adapters.into_iter()
-        .map(|adapter| (canonical(&adapter.id), adapter)).collect();
+    let nodes: BTreeMap<_, _> = inventory
+        .nodes
+        .iter()
+        .map(|node| (canonical(&node.instance_id), node))
+        .collect();
+    let adapters: BTreeMap<_, _> = inventory
+        .adapters
+        .into_iter()
+        .map(|adapter| (canonical(&adapter.id), adapter))
+        .collect();
     let mut claimed_adapters = BTreeSet::new();
     let mut devices: BTreeMap<String, Device> = BTreeMap::new();
     for node in nodes.values() {
         let root = usb_root(node, &nodes);
-        let serial = node.port_name.as_ref().is_some_and(|port| port.to_ascii_uppercase().starts_with("COM"));
-        let adapter = node.adapter_id.as_ref().and_then(|id| adapters.get(&canonical(id)));
-        if root.is_none() && !serial && adapter.is_none() { continue; }
+        let serial = node
+            .port_name
+            .as_ref()
+            .is_some_and(|port| port.to_ascii_uppercase().starts_with("COM"));
+        let adapter = node
+            .adapter_id
+            .as_ref()
+            .and_then(|id| adapters.get(&canonical(id)));
+        if root.is_none() && !serial && adapter.is_none() {
+            continue;
+        }
         let key = physical_key(node, root);
         let anchor = root.unwrap_or(node);
-        let device = devices.entry(key.clone()).or_insert_with(|| new_device(&key, &anchor.display_name, now));
+        let device = devices
+            .entry(key.clone())
+            .or_insert_with(|| new_device(&key, &anchor.display_name, now));
         if root.is_some() {
             device.transports.push("usb".into());
             (device.vendor_id, device.product_id) = usb_ids(&anchor.instance_id);
             device.container_id = anchor.container_id.clone();
         }
-        if serial { device.transports.push("serial".into()); }
+        if serial {
+            device.transports.push("serial".into());
+        }
         device.interfaces.push(DeviceInterface {
-            instance_id: node.instance_id.clone(), parent_instance_id: node.parent_instance_id.clone(),
-            class_name: node.class_name.clone(), class_guid: node.class_guid.clone(),
-            interface_classes: node.interface_classes.clone(), port_name: node.port_name.clone(), present: true,
+            instance_id: node.instance_id.clone(),
+            parent_instance_id: node.parent_instance_id.clone(),
+            class_name: node.class_name.clone(),
+            class_guid: node.class_guid.clone(),
+            interface_classes: node.interface_classes.clone(),
+            port_name: node.port_name.clone(),
+            present: true,
             hardware_ids: node.hardware_ids.clone(),
         });
         if let Some(adapter) = adapter {
@@ -213,7 +299,9 @@ pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
         }
     }
     for (id, adapter) in adapters {
-        if claimed_adapters.contains(&id) { continue; }
+        if claimed_adapters.contains(&id) {
+            continue;
+        }
         let key = format!("adapter:{id}");
         let mut device = new_device(&key, &adapter.display_name, now);
         device.transports.push("network".into());
@@ -221,45 +309,91 @@ pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
         devices.insert(key, device);
     }
     for device in devices.values_mut() {
-        device.transports.sort(); device.transports.dedup();
-        device.interfaces.sort_by(|a,b| a.instance_id.cmp(&b.instance_id));
-        device.networks.sort_by(|a,b| a.id.cmp(&b.id));
+        device.transports.sort();
+        device.transports.dedup();
+        device
+            .interfaces
+            .sort_by(|a, b| a.instance_id.cmp(&b.instance_id));
+        device.networks.sort_by(|a, b| a.id.cmp(&b.id));
         let usb = device.transports.iter().any(|value| value == "usb");
         let serial = device.transports.iter().any(|value| value == "serial");
         if usb && !device.networks.is_empty() {
             device.confidence = if serial { 70 } else { 45 };
-            device.assessment = if serial { "Possible router or MiFi" } else { "USB networking device" }.into();
-            device.evidence.push("Network adapter matched to its Windows device record".into());
-            if serial { device.evidence.push("Serial and network functions share a USB identity".into()); }
+            device.assessment = if serial {
+                "Possible router or MiFi"
+            } else {
+                "USB networking device"
+            }
+            .into();
+            device
+                .evidence
+                .push("Network adapter matched to its Windows device record".into());
+            if serial {
+                device
+                    .evidence
+                    .push("Serial and network functions share a USB identity".into());
+            }
         } else if !device.networks.is_empty() {
             device.assessment = "Network adapter · router identity unknown".into();
         }
-        if device.networks.iter().any(|network| !network.gateways.is_empty()) {
-            device.evidence.push("Windows reports a gateway; its identity and ownership are unverified".into());
+        if device
+            .networks
+            .iter()
+            .any(|network| !network.gateways.is_empty())
+        {
+            device.evidence.push(
+                "Windows reports a gateway; its identity and ownership are unverified".into(),
+            );
         }
-        if device.evidence.is_empty() { device.evidence.push("Windows inventory only; no verified device profile".into()); }
+        if device.evidence.is_empty() {
+            device
+                .evidence
+                .push("Windows inventory only; no verified device profile".into());
+        }
     }
     devices.into_values().collect()
 }
 
 impl DiscoverySnapshot {
     pub fn reconcile(&mut self, inventory: Inventory, now: u64) {
-        let mut next: BTreeMap<_,_> = assemble(inventory, now).into_iter().map(|device| (device.id.clone(), device)).collect();
+        let mut next: BTreeMap<_, _> = assemble(inventory, now)
+            .into_iter()
+            .map(|device| (device.id.clone(), device))
+            .collect();
         for mut old in self.devices.drain(..) {
-            if next.contains_key(&old.id) { continue; }
+            if next.contains_key(&old.id) {
+                continue;
+            }
             old.connected = false;
-            for interface in &mut old.interfaces { interface.present = false; }
-            for network in &mut old.networks { network.link_up = false; }
+            for interface in &mut old.interfaces {
+                interface.present = false;
+            }
+            for network in &mut old.networks {
+                network.link_up = false;
+            }
             next.insert(old.id.clone(), old);
         }
         self.devices = next.into_values().collect();
         // Keep at most 512 disconnected records per session; present devices are never pruned.
-        self.devices.sort_by(|a,b| b.connected.cmp(&a.connected).then(b.last_seen_at.cmp(&a.last_seen_at)).then(a.id.cmp(&b.id)));
-        let connected = self.devices.iter().filter(|device| device.connected).count();
+        self.devices.sort_by(|a, b| {
+            b.connected
+                .cmp(&a.connected)
+                .then(b.last_seen_at.cmp(&a.last_seen_at))
+                .then(a.id.cmp(&b.id))
+        });
+        let connected = self
+            .devices
+            .iter()
+            .filter(|device| device.connected)
+            .count();
         self.devices.truncate(connected + 512);
         self.revision += 1;
         self.scanned_at = Some(now);
-        self.status = if self.warnings.is_empty() { DiscoveryStatus::Ready } else { DiscoveryStatus::Degraded };
+        self.status = if self.warnings.is_empty() {
+            DiscoveryStatus::Ready
+        } else {
+            DiscoveryStatus::Degraded
+        };
     }
 }
 
@@ -275,10 +409,14 @@ pub struct ReplayFrame {
 pub fn replay_fixture(json: &str) -> Result<Vec<DiscoverySnapshot>, serde_json::Error> {
     let frames: Vec<ReplayFrame> = serde_json::from_str(json)?;
     let mut snapshot = DiscoverySnapshot::default();
-    Ok(frames.into_iter().enumerate().map(|(index, frame)| {
-        snapshot.reconcile(frame.inventory, index as u64 + 1);
-        snapshot.clone()
-    }).collect())
+    Ok(frames
+        .into_iter()
+        .enumerate()
+        .map(|(index, frame)| {
+            snapshot.reconcile(frame.inventory, index as u64 + 1);
+            snapshot.clone()
+        })
+        .collect())
 }
 
 #[cfg(test)]

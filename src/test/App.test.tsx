@@ -2,8 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../app/App";
-import { getSnapshot, hasDesktopBackend, saveSettings } from "../lib/backend";
-import type { Snapshot } from "../types/contracts";
+import { getSnapshot, hasDesktopBackend, onDiscoveryChanged, getDiscovery, refreshDiscovery, saveSettings } from "../lib/backend";
+import type { DiscoverySnapshot, Snapshot } from "../types/contracts";
 
 vi.mock("../lib/backend", async (importOriginal) => {
   const original = await importOriginal<typeof import("../lib/backend")>();
@@ -12,6 +12,9 @@ vi.mock("../lib/backend", async (importOriginal) => {
     getSnapshot: vi.fn(),
     hasDesktopBackend: vi.fn(),
     saveSettings: vi.fn(),
+    getDiscovery: vi.fn(),
+    refreshDiscovery: vi.fn(),
+    onDiscoveryChanged: vi.fn(),
   };
 });
 
@@ -30,11 +33,17 @@ const snapshot: Snapshot = {
     },
   ],
 };
+const inventory: DiscoverySnapshot = {
+  revision: 1, scannedAt: 1_792_000_000_000, status: "ready", watching: true, warnings: [], devices: [],
+};
 
 beforeEach(() => {
   vi.mocked(hasDesktopBackend).mockReturnValue(true);
   vi.mocked(getSnapshot).mockResolvedValue(snapshot);
   vi.mocked(saveSettings).mockResolvedValue({ theme: "dark" });
+  vi.mocked(getDiscovery).mockResolvedValue(inventory);
+  vi.mocked(refreshDiscovery).mockResolvedValue(inventory);
+  vi.mocked(onDiscoveryChanged).mockResolvedValue(vi.fn());
 });
 
 describe("desktop foundation", () => {
@@ -46,7 +55,7 @@ describe("desktop foundation", () => {
       screen.getByText("Desktop workspace initialized"),
     ).toBeInTheDocument();
     const pages = [
-      ["Connected devices", "Start with a known device"],
+      ["Connected devices", "No devices to show"],
       ["Firmware library", "An intact original. Every time."],
       ["Analysis", "Understand what’s inside"],
       ["Backup manager", "Only supported, authorized backups"],

@@ -1,5 +1,5 @@
-use crate::domain::{AuditEvent, Counts, Settings, Snapshot};
 use crate::discovery::DiscoverySnapshot;
+use crate::domain::{AuditEvent, Counts, Settings, Snapshot};
 use rusqlite::{params, Connection};
 use std::path::Path;
 
@@ -48,21 +48,50 @@ impl Repository {
 
     pub fn save_discovery(&mut self, inventory: &DiscoverySnapshot) -> Result<(), StorageError> {
         use std::collections::BTreeMap;
-        let before: BTreeMap<String, (String, bool)> = self.connection.prepare("SELECT id, display_name, connected FROM devices")?
+        let before: BTreeMap<String, (String, bool)> = self
+            .connection
+            .prepare("SELECT id, display_name, connected FROM devices")?
             .query_map([], |row| Ok((row.get(0)?, (row.get(1)?, row.get(2)?))))?
             .collect::<Result<_, _>>()?;
-        let after: BTreeMap<_,_> = inventory.devices.iter().map(|device| (device.id.clone(), (device.display_name.clone(), device.connected))).collect();
-        if before == after { return Ok(()); }
-        let arrived = after.iter().filter(|(id, (_,connected))| *connected && !before.get(*id).is_some_and(|(_, connected)| *connected)).count();
-        let removed = before.iter().filter(|(id, (_,connected))| *connected && !after.get(*id).is_some_and(|(_, connected)| *connected)).count();
+        let after: BTreeMap<_, _> = inventory
+            .devices
+            .iter()
+            .map(|device| {
+                (
+                    device.id.clone(),
+                    (device.display_name.clone(), device.connected),
+                )
+            })
+            .collect();
+        if before == after {
+            return Ok(());
+        }
+        let arrived = after
+            .iter()
+            .filter(|(id, (_, connected))| {
+                *connected && !before.get(*id).is_some_and(|(_, connected)| *connected)
+            })
+            .count();
+        let removed = before
+            .iter()
+            .filter(|(id, (_, connected))| {
+                *connected && !after.get(*id).is_some_and(|(_, connected)| *connected)
+            })
+            .count();
         let transaction = self.connection.transaction()?;
         transaction.execute("DELETE FROM devices", [])?;
         for device in &inventory.devices {
-            transaction.execute("INSERT INTO devices (id, display_name, connected) VALUES (?1, ?2, ?3)",
-                params![device.id, device.display_name, device.connected])?;
+            transaction.execute(
+                "INSERT INTO devices (id, display_name, connected) VALUES (?1, ?2, ?3)",
+                params![device.id, device.display_name, device.connected],
+            )?;
         }
-        transaction.execute("INSERT INTO audit_events (kind, message) VALUES ('device_inventory_changed', ?1)",
-            params![format!("Passive inventory updated: {arrived} added, {removed} removed")])?;
+        transaction.execute(
+            "INSERT INTO audit_events (kind, message) VALUES ('device_inventory_changed', ?1)",
+            params![format!(
+                "Passive inventory updated: {arrived} added, {removed} removed"
+            )],
+        )?;
         transaction.commit()?;
         Ok(())
     }

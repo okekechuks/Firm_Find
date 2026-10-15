@@ -1,5 +1,24 @@
 # OBTAINER foundation verification — 14 October 2026
 
+This is historical execution evidence. The [revised phase tracker](PHASE_STATUS.md) maps existing implementation to the new guideline. No application tests or builds were rerun during the planning-only revision on 15 October 2026.
+
+## Phase 2: passive Windows discovery — 15 October 2026
+
+**Result: implemented and verified in host tests; native Windows debug build succeeds.** Device Explorer reads Windows USB, serial, and network-adapter inventory, shows correlation evidence and confidence, and supports a refresh. It performs no router sessions, firmware reads, configuration writes, network probes, or flashing. The native WebView smoke test could not start because Windows returned `0x800700AA` (“The requested resource is in use”) while creating WebView2.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Rust format and Clippy | Passed | `fmt --all --check`; all targets, warnings denied |
+| Rust tests | Passed | 11 tests, including passive Windows inventory, fixtures, identity correlation, safe unknown capabilities, and storage |
+| Rust workspace check | Passed | Offline, locked dependencies |
+| Frontend lint and TypeScript | Passed | ESLint with zero warnings; project typecheck |
+| Frontend component tests | Passed | 3 files, 10 tests, including discovery UI, filtering, error handling, and browser-preview safety |
+| Frontend production build | Passed | Vite 6.4.4; 1,601 modules |
+| Native Windows debug build | Passed | Tauri produced `target/debug/obtainer.exe` |
+| Native Windows UI and inventory flow | Blocked by host | WebView2 failed before app startup with `0x800700AA`; existing WebView2 processes were active. The smoke test did not reach Rust IPC or the UI. |
+
+The Windows host inventory and fixture replay tests pass. Native window behavior remains unverified in this session due to the WebView2 resource lock. Physical router hot-plug and any device-specific firmware access have not been validated. Step 5 feature controls remain future work and require a verified device profile and safe control plane.
+
 **Result: desktop foundation verified on this Windows host.** Device discovery, firmware import, analysis, acquisition, and image generation remain later milestones.
 
 User story: open OBTAINER, navigate eight workspaces, read Rust-owned SQLite state, change appearance, and preserve preferences across desktop restarts.
@@ -85,4 +104,4 @@ The native test temporarily changes appearance, records audit events, then resto
 
 ## Next milestone
 
-Windows device discovery using SetupAPI / Configuration Manager, serial enumeration, IP Helper network inventory, interface correlation, and arrival/removal fixture tests. There are currently **no real or simulated device discovery providers**, firmware imports, backups or flashing operations. No later milestone was started.
+Under the revised plan, finish phase 0 structure migration and baseline verification, close foundation/discovery gaps, then implement phase 3 device profiles and capability decisions. Firmware import is now phase 4; authenticated OpenWrt reads are phase 7. The earlier acquisition-first ordering is superseded. Existing implementation limitations above remain unchanged by planning documents.

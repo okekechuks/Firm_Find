@@ -1,25 +1,31 @@
 # OBTAINER
 
-OBTAINER is a Windows app being built to help people identify devices, keep copies of their firmware, and understand what is inside those files. It is intended to make firmware work easier to follow and safer to manage.
+OBTAINER is a Windows app for giving unsupported routers and MiFi devices a second life. Its new development plan focuses on four improvements: custom DNS, Wi-Fi user limits, automatic or manual APN settings, and a USSD page hosted on the router. Each feature depends on what the exact device and its software support. Firmware files, inspection, and supported OpenWrt builds are additional tools planned for later.
 
 ## Current status
 
-**Early foundation — the desktop app is running, while its main device and firmware features are still being built.**
+**Rework planned — existing desktop foundation and passive discovery will be reused.**
 
-The app currently opens as a Windows desktop workspace. You can navigate its eight sections, use the overview and activity areas, and change the app's light or dark appearance. Your appearance choice is saved when you close the app. The other workspaces are placeholders for features still being built.
+Device Explorer is built to list USB devices, serial ports, and network adapters that Windows reports. It groups related interfaces when Windows provides matching identity information, updates its inventory as devices change, and lets users refresh it. The app also includes its original eight workspaces and saves light or dark appearance settings between sessions. Frontend and Rust checks pass, and the Windows debug build succeeds. Full desktop launch verification is pending because Windows reported that its embedded browser was already in use.
 
-OBTAINER does not yet find or connect to devices, import or inspect firmware, create backups, or build firmware images. Those capabilities are planned. The current app does not change device settings or install firmware. Preserving original firmware remains a core project goal; the app cannot yet make or store firmware backups.
+Device Explorer only reports what Windows can see. It cannot by itself identify a router's chipset or installed firmware, read its firmware, or prove that a device can be modified. OBTAINER does not yet extract firmware, analyze or customize images, create backups, or install firmware. These steps require verified methods for each device and hardware revision. The current app makes no changes to connected devices.
+
+The [new master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) follow the guideline supplied on 15 October 2026. Discovery is partial against the revised requirements. The new folder structure and customization workflows are planned; source files have not been relocated.
 
 ## What OBTAINER is for
 
-The project aims to bring these tasks together in one place:
+OBTAINER aims to bring these steps together in one place:
 
-- Recognize supported routers and other devices.
-- Keep original firmware files organized and preserved.
-- Inspect firmware and present findings clearly.
-- Manage backups and prepare firmware builds for supported devices.
+- Discover candidate devices and explain the evidence for their identity and compatibility.
+- Read settings through supported, authenticated management interfaces.
+- Configure router DNS and DNS offered to connected clients separately.
+- Change Wi-Fi user limits within verified device constraints.
+- Suggest an APN from available operator information, with a manual option.
+- Offer an authenticated router-local USSD page that can work while the desktop app is closed.
+- Preview changes, preserve the previous configuration, verify results, and restore settings where supported.
+- Keep firmware files and their history; later inspect proprietary images or build for explicitly supported OpenWrt targets.
 
-These are project goals; most are not available in the current version.
+These are project goals; they are not available in the current version.
 
 ## Project structure
 
@@ -32,3 +38,5 @@ These are project goals; most are not available in the current version.
 | `public/` | App artwork and other visible assets. |
 | `scripts/` | Helpers for working on the project. |
 | `.github/` | Automated project checks. |
+
+This table describes the current files. The proposed `apps/desktop/` layout is documented in the master plan and will be introduced during Phase 0.

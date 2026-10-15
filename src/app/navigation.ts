@@ -40,7 +40,7 @@ export const destinations: Destination[] = [
     label: "Connected devices",
     icon: Router,
     eyebrow: "DEVICE EXPLORER",
-    description: "Understand connected hardware and supported capabilities.",
+    description: "Review USB, serial, and network hardware Windows can see.",
     phase: 2,
   },
   {

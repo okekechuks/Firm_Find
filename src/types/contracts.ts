@@ -25,7 +25,19 @@ export const snapshotSchema = z.object({
 });
 export type Snapshot = z.infer<typeof snapshotSchema>;
 
-const capabilitySchema = z.enum(["SUPPORTED", "UNSUPPORTED", "UNKNOWN"]);
+const capabilitySchema = z.enum([
+  "SUPPORTED", "UNSUPPORTED", "UNKNOWN", "REQUIRES_AUTH", "REQUIRES_TOOL", "EXPERIMENTAL",
+]);
+const featureCapabilitySchema = z.object({
+  state: capabilitySchema,
+  controlPlane: z.string().nullable(),
+  canRead: z.boolean(),
+  canWrite: z.boolean(),
+  canVerify: z.boolean(),
+  canRollback: z.boolean(),
+  confidence: z.number().int().min(0).max(100),
+  evidence: z.array(z.string()),
+});
 export const discoverySchema = z.object({
   revision: z.number().int().nonnegative(),
   scannedAt: z.number().int().nonnegative().nullable(),
@@ -52,7 +64,13 @@ export const discoverySchema = z.object({
       linkUp: z.boolean(), addresses: z.array(z.string()), gateways: z.array(z.string()),
     })),
     assessment: z.string(), confidence: z.number().int().min(0).max(100), evidence: z.array(z.string()),
-    capabilities: z.object({inventory: capabilitySchema, backup: capabilitySchema, flash: capabilitySchema}),
+    capabilities: z.object({
+      inventory: capabilitySchema, backup: capabilitySchema, flash: capabilitySchema,
+      features: z.object({
+        apn: featureCapabilitySchema, wifiUserLimit: featureCapabilitySchema,
+        customDns: featureCapabilitySchema, ussd: featureCapabilitySchema,
+      }),
+    }),
     lastSeenAt: z.number().int().nonnegative(),
   })),
 });

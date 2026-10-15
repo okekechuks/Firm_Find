@@ -51,6 +51,19 @@ async function script(source, args = []) {
   return request('POST', `/session/${session}/execute/sync`, { script: source, args });
 }
 
+async function asyncScript(source, args = []) {
+  return request('POST', `/session/${session}/execute/async`, { script: source, args });
+}
+
+async function invoke(command) {
+  const result = await asyncScript(
+    "const done = arguments[arguments.length - 1]; window.__TAURI_INTERNALS__.invoke(arguments[0]).then(done, error => done({__error: String(error)}));",
+    [command],
+  );
+  assert(!result?.__error, `${command} failed: ${result?.__error}`);
+  return result;
+}
+
 async function click(selector) {
   const element = await request('POST', `/session/${session}/element`, { using: 'css selector', value: selector });
   const id = element['element-6066-11e4-a52e-4f735466cecf'];
@@ -100,6 +113,18 @@ try {
     await until(() => script('return document.querySelector("h1")?.textContent === arguments[0]', [heading]), `Navigation failed: ${screen}`);
   }
   console.log('PASS: native navigation through planned workspaces and activity');
+
+  await click('a[href="#devices"]');
+  await until(() => script("return [...document.querySelectorAll('h2')].some(node => node.textContent === 'What Windows can see')"), 'Device Explorer did not render');
+  const discovery = await invoke('get_discovery');
+  assert(['ready', 'degraded'].includes(discovery.status), `Unexpected discovery status: ${discovery.status}`);
+  for (const device of discovery.devices) {
+    assert.equal(device.capabilities.flash, 'UNSUPPORTED');
+    for (const feature of Object.values(device.capabilities.features)) assert.equal(feature.state, 'UNKNOWN');
+  }
+  await click('.device-toolbar button');
+  await until(async () => (await invoke('get_discovery')).revision > discovery.revision, 'Device inventory refresh did not complete');
+  console.log(`PASS: native Windows inventory and refresh (${discovery.devices.length} records; feature support remains unverified)`);
 
   await preferences();
   originalTheme = await script('return document.querySelector("input[name=theme]:checked").value');

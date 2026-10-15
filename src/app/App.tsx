@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   ChevronRight,
@@ -19,6 +19,8 @@ import { Dashboard } from "../features/Dashboard";
 import { Planned } from "../features/Planned";
 import { Preferences } from "../features/Preferences";
 import { Activity } from "../components/Activity";
+import { Devices } from "../features/Devices";
+import { useDeviceInventory } from "../lib/useDeviceInventory";
 
 export function App() {
   const [page, setPage] = useState<Page>(pageFromHash);
@@ -27,7 +29,9 @@ export function App() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewTheme, setPreviewTheme] = useState<Settings["theme"]>("system");
+  const lastDiscoveryRevision = useRef(0);
   const desktop = hasDesktopBackend();
+  const inventory = useDeviceInventory(desktop);
   const destination =
     destinations.find((item) => item.id === page) ?? destinations[0];
 
@@ -51,6 +55,19 @@ export function App() {
     window.addEventListener("hashchange", changed);
     return () => window.removeEventListener("hashchange", changed);
   }, []);
+  useEffect(() => {
+    if (!desktop || !inventory.inventory?.revision) return;
+    // Initial workspace load already fetched the audit snapshot in parallel.
+    if (lastDiscoveryRevision.current === 0) {
+      lastDiscoveryRevision.current = inventory.inventory.revision;
+      return;
+    }
+    if (inventory.inventory.revision <= lastDiscoveryRevision.current) return;
+    lastDiscoveryRevision.current = inventory.inventory.revision;
+    let active = true;
+    void getSnapshot().then((next) => { if (active) setSnapshot(next); }).catch(() => {});
+    return () => { active = false; };
+  }, [desktop, inventory.inventory?.revision]);
   useEffect(() => {
     const theme = snapshot?.settings.theme ?? previewTheme;
     const query = window.matchMedia("(prefers-color-scheme: dark)");
@@ -237,6 +254,9 @@ export function App() {
           ) : null}
           {page === "dashboard" ? (
             <Dashboard snapshot={snapshot} navigate={navigate} />
+          ) : page === "devices" ? (
+            <Devices inventory={inventory.inventory} desktop={desktop} error={inventory.error}
+              refreshing={inventory.refreshing} onRefresh={inventory.refresh} />
           ) : page === "settings" ? (
             <Preferences
               snapshot={snapshot}

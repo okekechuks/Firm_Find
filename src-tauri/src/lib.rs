@@ -1,6 +1,6 @@
 mod commands;
-pub mod domain;
 pub mod discovery;
+pub mod domain;
 pub mod storage;
 
 use commands::AppState;
@@ -26,7 +26,8 @@ pub fn run() -> tauri::Result<()> {
             let mut repository = storage::Repository::open(&directory.join("obtainer.db"))?;
             repository.record_startup()?;
             let repository = Arc::new(Mutex::new(repository));
-            let discovery = discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
+            let discovery =
+                discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
             app.manage(discovery);
             app.manage(AppState {
                 repository,

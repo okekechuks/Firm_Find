@@ -3,6 +3,12 @@ import { Cable, Network, Search, ShieldCheck, Usb, RefreshCw } from "lucide-reac
 import type { Device, DiscoverySnapshot } from "../types/contracts";
 
 const labels = {usb: "USB", serial: "Serial", network: "Network"};
+const featureLabels = [
+  ["apn", "APN mode"],
+  ["wifiUserLimit", "Wi-Fi user limit"],
+  ["customDns", "Custom DNS"],
+  ["ussd", "USSD"],
+] as const;
 export function Devices({ inventory, desktop, error, refreshing, onRefresh }: {
   inventory: DiscoverySnapshot | null;
   desktop: boolean;
@@ -72,6 +78,12 @@ function DeviceDetails({device}: {device: Device}) {
     <div className="device-detail-grid">
       <div><h3>Identification</h3><p>{device.assessment}</p><p>{device.confidence}% confidence in the device-type hint. This is not verified model support.</p><ul>{device.evidence.map((item) => <li key={item}>{item}</li>)}</ul>
         <dl className="capability-list"><div><dt>Inventory</dt><dd>{device.capabilities.inventory}</dd></div><div><dt>Firmware backup</dt><dd>{device.capabilities.backup}</dd></div><div><dt>Firmware installation</dt><dd>{device.capabilities.flash}</dd></div></dl>
+        <h3>Step 5 feature support</h3>
+        <dl className="capability-list">{featureLabels.map(([key, label]) => {
+          const feature = device.capabilities.features[key];
+          return <div key={key}><dt>{label}</dt><dd>{feature.state}{feature.controlPlane ? ` · ${feature.controlPlane}` : ""}</dd></div>;
+        })}</dl>
+        <p>Support stays unknown until a verified device profile and method provide evidence.</p>
       </div>
       <div><h3>Interfaces</h3>{device.interfaces.length === 0 ? <p>No matching Windows device record.</p> : device.interfaces.map((item) => <details key={item.instanceId} className="interface-detail">
         <summary>{item.className || "Device"}{item.portName ? ` · ${item.portName}` : ""} · {item.present ? "Present" : "Disconnected"}</summary>
