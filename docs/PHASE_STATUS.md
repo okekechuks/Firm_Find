@@ -2,27 +2,52 @@
 
 Audited: 15 October 2026. Phase numbers refer to the [revised roadmap](IMPLEMENTATION_ROADMAP.md), based on the newly supplied guideline. The earlier phase 3 meant firmware acquisition; revised phase 3 means profiles and capability detection.
 
-Phase 0 is complete. The existing app source is under `apps/desktop/`; root npm commands, the Cargo workspace, and the shared npm lockfile were updated. A fresh offline npm install, root frontend checks, Rust checks/tests, and the relocated Windows debug build passed. Existing fixtures, screenshots, project notes, tools, and application data were retained.
+**Phase 0: COMPLETE. Phase 1 readiness: READY.** The [corrective technical audit](PHASE_0_AUDIT.md) records current source, environment, commands, native execution, data protection, naming, and migration evidence. The existing `apps/desktop/` structure is retained. This audit implements no Phase 1 or future customization features.
 
 ## Baseline evidence
 
-- Code inspected: React navigation/screens/contracts, Rust discovery/application/domain/storage modules, SQLite migration, Tauri configuration/permissions, scripts, and Windows CI definition.
-- Fresh tool-version checks: Node `v22.17.0`, npm `10.9.2`, Cargo `1.99.0`.
-- Current verification: offline `npm ci` (scripts disabled) passed with 297 packages and no reported vulnerabilities; root lint, 10 frontend tests, and production build passed; Cargo format, Clippy, and all 11 Rust tests passed; Tauri Windows debug build passed after the clean install.
-- Native UI smoke after migration still fails before IPC: WebView2 reports HRESULT `0x800700AA` (“The requested resource is in use”), and the native WebDriver session closes. The app panic confirms the same WebView2 startup error recorded before migration; tracked as a Phase 1 blocker.
-- This turn confirmed the local Rust toolchain and MSVC/Windows SDK by building the app. WebView2 is present but fails to create a new view. WSL2 and compatible router/modem availability remain unverified.
-- Source is now under `apps/desktop/`; the root keeps the shared lockfile, Cargo workspace, scripts, docs, and tools.
-- Planning validation passed: phases 0–19 each appear once in the roadmap and tracker; all 20 local documentation links resolve; the archived guideline's SHA-256 matches the supplied file; documentation `git diff --check` is clean.
+- Initial Git state was clean at `643ce9f2f12db6533f13b33542511b9eec01ef89`, branch `main`. The source relocation already existed in `2c07c61`; no new migration or cleanup occurred.
+- Actual versions: Windows build `26200.9457`/25H2, Node `22.17.0`, npm `10.9.2`, Rust/Cargo `1.99.0`, MSVC Build Tools/Windows SDK, WebView2 and matching EdgeDriver. Optional WSL2/Ubuntu is available. Details are in the audit.
+- Dependency validation used `npm ci --dry-run --ignore-scripts --offline` and `npm ls`, not a new install. TypeScript, root lint, all 10 frontend tests, production frontend build, Rust format/Clippy, all 11 Rust tests, and fresh native debug and optimized release builds pass.
+- Normal-session debug and final release audits pass: React rendering, eight destinations, real `get_snapshot`/`get_discovery`/`refresh_discovery`, native inventory refresh, and existing settings across restart. The Windows token was non-administrator. Screenshots and logs are preserved.
+- Restricted execution reproduces WebView2 `0x800700AA` before IPC; normal-session counterchecks succeed. This is not an unresolved host-runtime blocker and did not require a profile reset or owner waiver.
+- Existing SQLite integrity is `ok`, schema 1, with no foreign-key violations. Saved preferences remain unchanged. Normal app startup/inventory auditing increased stored events/device rows; no user data migration or destructive cleanup occurred.
+- Physical router qualification, native preference overwrites, installer execution/signing, and a remote CI run were not performed. Future-feature placeholders and missing modules are identified individually in the audit.
+
+## Phase 0 acceptance checklist
+
+Each checked item has current evidence in the linked audit. A recorded failed attempt establishes audit evidence, not application health; passing native normal-session counterchecks establish the launch result here.
+
+- [x] Existing repository inspected — audit D.
+- [x] Source inventory created — audit D, exact paths and scoped classifications.
+- [x] Existing implemented features identified — audit D/G.
+- [x] Existing placeholder features identified — audit D/G.
+- [x] Windows development environment checked — audit E/F.
+- [x] Git status inspected — initial clean `main` worktree, audit A/F.
+- [x] User changes protected — no reset, cleanup, source move, profile reset, or data migration; audit B/I/J.
+- [x] Existing test commands attempted — 10 frontend and 11 Rust tests pass, audit F.
+- [x] Existing build commands attempted — frontend, native debug and optimized release pass, audit F.
+- [x] Native Tauri launch attempted — restricted and normal sessions, audit H.
+- [x] Desktop launch outcome recorded — normal debug/release pass; restricted failure retained, audit H.
+- [x] Frontend-to-Rust IPC verified or blocker documented — real reads and refresh pass, audit F/H; native preference writes intentionally not attempted.
+- [x] SQLite and persistent data locations identified — read-only integrity and settings comparisons, audit I.
+- [x] Device discovery implementation inspected — Windows APIs, correlation and service files, audit D/G.
+- [x] Device discovery test evidence recorded — native capture, fixture tests and runtime aggregate results, audit F/H.
+- [x] Migration necessity evaluated — KEEP EXISTING STRUCTURE, audit J.
+- [x] Product naming inconsistency evaluated — OBTAINER metadata retained; RFS is the reference name, audit G.
+- [x] `docs/PHASE_0_AUDIT.md` completed — sections A–L.
+- [x] `docs/PHASE_STATUS.md` updated accurately — current gate and evidence recorded here.
+- [x] Phase 1 readiness determined — READY, audit L; no Phase 1 implementation claimed.
 
 ## Phase assessment
 
-`Partial` means useful existing implementation covers some requirements; it is not completion. `Not started` means no connected implementation for the phase's main workflow. Blockers are recorded alongside the phase they affect rather than hiding progress elsewhere.
+`Complete` requires the phase's current acceptance gate and evidence. `Partial` means useful existing implementation covers some requirements; it is not completion. `Not started` means no connected implementation for the phase's main workflow. Blockers are recorded with the affected phase.
 
 | Phase | Status | Reusable work | Remaining acceptance work |
 | --- | --- | --- | --- |
-| 0: Audit and structure | Complete | Audit and baseline; app relocated, root npm workspace/Cargo membership/wrappers updated; clean install and frontend, Rust, and Windows build checks passed. | None. Native WebView2 launch failure is isolated and tracked under Phase 1. |
-| 1: Desktop foundation | Partial | Tauri/React navigation, themes, real IPC, SQLite, typed boundaries; historical launch/installers. | Revalidate launch after migration and latest changes; close current WebView2 runtime blocker and error-handling gaps. |
-| 2: Discovery | Partial | Native USB/serial/network inventory, correlation, notifications, refresh, evidence, UI, fixtures. | Manual management-address entry, richer candidate identity/diagnostics, native UI and physical hot-plug evidence. |
+| 0: Repository/environment audit | Complete | Exact inventory/environment/commands/data/naming/migration report; checks and fresh debug/release builds pass; native normal-user launch, IPC and restart persistence verified. | None at the Phase 0 gate. Scoped unverified work remains recorded in the audit. |
+| 1: Desktop foundation | Partial | Existing shell, themes, typed IPC and SQLite; current bundled native navigation, reads/refresh and existing-settings restart verification. | Verify development-mode launch; review and close demonstrated loading/error/reconnect gaps; evolve navigation as real features arrive. |
+| 2: Discovery | Partial | Native USB/serial/network inventory, correlation, notifications, refresh, evidence, UI and fixtures; real native read/refresh verified in normal-session audits. | Manual management-address entry, richer candidate identity/diagnostics, and physical hot-plug/reconnect evidence. |
 | 3: Profiles/capabilities | Partial | Four unknown feature fields and primitive evidence/confidence display. | Versioned profiles, exact matching, seven new reasoned statuses, evaluator, constraints, conflict tests, support UI. |
 | 4: Storage/jobs/library | Partial | SQLite migration, settings, hashed device IDs, aggregate audit, reserved jobs/artifact tables. | Real jobs/history, controlled file import, immutable vault, hashing/dedup/integrity, manifests, library UI and restart/cancellation tests. |
 | 5: Adapters | Not started | Discovery provider is reusable infrastructure, not a router adapter framework. | Contracts, registry, authentication, typed errors, protected credentials, mock adapter and contract tests. |
@@ -43,7 +68,7 @@ Phase 0 is complete. The existing app source is under `apps/desktop/`; root npm 
 
 ## Next execution order
 
-1. Start phase 1 by resolving or containing the WebView2 startup failure and verifying a native launch.
+1. Begin Phase 1 with development-mode launch verification and a bounded shell loading/error/reconnect review.
 2. Close phase 1 launch verification and phase 2 discovery gaps.
 3. Implement phase 3 profiles and capability decisions before device-management writes.
 4. Build phases 4–6 into a durable library, adapter layer, and real simulator.

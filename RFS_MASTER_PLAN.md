@@ -2,7 +2,7 @@
 
 Planning revision: 15 October 2026. Product name remains **OBTAINER**; RFS is the reference architecture name used in the supplied guideline.
 
-This plan adopts the new configuration-first direction. It supersedes the phase ordering in the earlier product requirements. The current request covers reading, auditing, and planning. Repository relocation and feature implementation have not begun under this revision.
+This plan adopts the configuration-first direction and supersedes the phase ordering in the earlier product requirements. The desktop relocation was already committed before the corrective Phase 0 audit. The [technical audit](docs/PHASE_0_AUDIT.md) records the current implementation and environment; the existing structure is being retained. Planned modules below do not establish implemented functionality.
 
 ## Product scope
 
@@ -22,7 +22,7 @@ The firmware library starts with local imports. Full firmware acquisition remain
 
 ## Planning documents
 
-- [Source guideline](docs/reference/RFS_DEVELOPMENT_GUIDELINE.md): the supplied reference, preserved unchanged. Its embedded agent prompts do not expand the user's planning-only request.
+- [Source guideline](docs/reference/RFS_DEVELOPMENT_GUIDELINE.md): the supplied reference, preserved unchanged. Embedded prompts remain reference material; live user requests define execution scope.
 - [Implementation roadmap](docs/IMPLEMENTATION_ROADMAP.md): phases 0–19, dependencies, deliverables, and exit gates.
 - [Phase status](docs/PHASE_STATUS.md): actual implementation state and remaining work against the revised requirements.
 - [Architecture](docs/ARCHITECTURE.md): current implementation, to be updated during implementation.
@@ -35,7 +35,7 @@ Use one desktop application, one Cargo application package, and a single root np
 ```text
 OBTAINER/
   README.md
-  AGENTS.md                       # repository workflow guidance, added in phase 0
+  AGENTS.md                       # optional future repository workflow guidance
   RFS_MASTER_PLAN.md
   package.json                    # npm workspace and root command entry points
   package-lock.json
@@ -105,6 +105,8 @@ Keep existing flat documentation paths working during the migration. Add the gui
 | `docs/USER_GUIDE.md`, release notes | Working features from 9 onward; release qualification in 19 |
 
 ## Migration strategy
+
+The mechanical relocation below already exists in commit `2c07c61`. It is retained as history, not an instruction to move the source again. Any further move requires a demonstrated need and a data-preserving verification/rollback procedure. Phase 0 evaluates migration necessity; it does not require another relocation.
 
 1. Inventory tracked and untracked work. Preserve the existing dirty worktree and the current application-data location. Record a baseline before moving source files.
 2. Move `src/`, `src-tauri/`, `public/`, `index.html`, Vite configuration, and application TypeScript configuration under `apps/desktop/`. Keep root lockfiles, toolchain, `.tools/`, scripts, and CI entry points. Split root and desktop package responsibilities without adding another lockfile.

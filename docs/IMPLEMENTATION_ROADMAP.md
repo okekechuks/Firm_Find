@@ -4,11 +4,11 @@ Revision: 15 October 2026. This roadmap uses the new guideline's phase numbers. 
 
 Planning deliverables do not implement the features below. Each phase closes only after its relevant frontend, Rust backend, persistence, tests, and runtime evidence are connected.
 
-## Phase 0 — Audit and structure migration
+## Phase 0 — Repository and environment audit
 
-**Deliver:** Gap analysis, preserved baseline, root npm workspace, `apps/desktop/` relocation, updated Cargo membership, wrappers, CI, and documentation links. Apply the migration sequence in the master plan before behavioral refactors.
+**Deliver:** Evidence-backed source inventory, Windows environment versions, Git/user-change protection, executed checks, native launch/IPC/persistence evidence, data-location inventory, naming assessment, migration recommendation, and `PHASE_0_AUDIT.md`. Retain the existing root npm/Cargo workspaces and `apps/desktop/` layout unless a verified need justifies a further move.
 
-**Exit gate:** Existing work and application data survive. Root commands resolve the moved application. Lint, tests, Rust checks, and desktop build pass. Record the current WebView2 launch failure and resolve or precisely isolate it; a successful build alone does not prove a working launch.
+**Exit gate:** Existing work and application data survive. Root commands, lint, tests, Rust checks, and desktop build pass. Native launch, React rendering, IPC, SQLite integrity, and settings across restart are verified, or the project owner explicitly accepts an environmental verification limitation. Merely isolating a launch failure does not close Phase 0. Do not advance to Phase 1 before this gate is satisfied. Use the acceptance checklist in `PHASE_STATUS.md`.
 
 ## Phase 1 — Desktop foundation closeout
 

@@ -4,11 +4,11 @@ OBTAINER is a Windows app intended to help owners keep unsupported routers and M
 
 ## Current status
 
-**Phase 0 is complete:** the existing desktop app is in the new project layout, root commands work, and the app has passed frontend, Rust, and Windows build checks. A clean dependency install from the shared lockfile also passed.
+**Phase 0 audit is complete; Phase 1 is ready to begin.** The current project structure is retained. Frontend and Rust checks, Windows debug and release builds, and desktop launch checks pass. The [technical audit](docs/PHASE_0_AUDIT.md) records what was tested and what remains unfinished.
 
 The app can list USB devices, serial ports, and network adapters that Windows reports. It groups related interfaces when Windows provides matching identity information, updates the inventory as devices change, and lets users refresh it. It also has eight workspaces and remembers light or dark appearance settings. This discovery is passive: it does not identify every router's chipset or firmware, change router settings, extract firmware, or install anything.
 
-**Phase 1 is still in progress:** the native app window closes during startup because WebView2 reports `0x800700AA` (“The requested resource is in use”). The failure happens before the app connects to its Rust backend. This is recorded for Phase 1; a successful build alone does not verify a working window.
+The Windows app was verified in a normal user session: navigation works, device inventory refreshes, and existing appearance settings survive restart. Restricted automation still cannot start its embedded browser, but the same application works in the normal Windows session.
 
 The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) follow the supplied development guideline. Discovery remains partial against its requirements.
 
@@ -32,10 +32,12 @@ These are project goals, not features available in the current version. Changes 
 | `apps/desktop/` | Windows application, screens, assets, and Tauri backend. |
 | `device-profiles/` | Planned versioned device and capability profiles. |
 | `router-packages/` | Planned optional software hosted on supported routers. |
-| `workers/` | Firmware analysis and build helpers. |
+| `workers/` | Notes for planned firmware analysis and build helpers. |
 | `tests/` | Planned shared fixtures, simulators, and integration tests. |
 | `scripts/` | Project development and validation helpers. |
 | `docs/` | Product plan, roadmap, status, safety, and verification notes. |
 | `.github/` | Automated project checks. |
 
 Existing fixtures, project notes, scripts, tools, and build evidence are retained for reuse. Future folders will be added when their implementation phases begin.
+
+Setup and project commands are in the [Windows development guide](docs/DEVELOPMENT.md).

@@ -49,7 +49,7 @@ export const destinations: Destination[] = [
     icon: Files,
     eyebrow: "ARTIFACT VAULT",
     description: "Preserve original images and their provenance.",
-    phase: 3,
+    phase: 4,
   },
   {
     id: "analysis",
@@ -57,7 +57,7 @@ export const destinations: Destination[] = [
     icon: ScanLine,
     eyebrow: "ANALYSIS WORKSPACE",
     description: "Inspect firmware structure without changing the original.",
-    phase: 4,
+    phase: 16,
   },
   {
     id: "backups",
@@ -65,7 +65,7 @@ export const destinations: Destination[] = [
     icon: Archive,
     eyebrow: "AUTHORIZED ACQUISITION",
     description: "Read-only backups for verified, supported device profiles.",
-    phase: 6,
+    phase: 8,
   },
   {
     id: "builder",
@@ -73,7 +73,7 @@ export const destinations: Destination[] = [
     icon: Blocks,
     eyebrow: "OPENWRT BUILDER",
     description: "Create separate images for supported OpenWrt targets.",
-    phase: 8,
+    phase: 15,
   },
   {
     id: "jobs",

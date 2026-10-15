@@ -8,7 +8,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const binary = path.resolve(root, process.argv[2] ?? 'target/release/obtainer.exe');
+const arguments_ = process.argv.slice(2);
+const auditOnly = arguments_.includes('--audit');
+const binary = path.resolve(root, arguments_.find((argument) => argument !== '--audit') ?? 'target/release/obtainer.exe');
+const auditDirectory = path.join(root, '.tools/native-audit', new Date().toISOString().replaceAll(':', '-'));
 const driver = path.join(root, '.tools/cargo/bin/tauri-driver.exe');
 const nativeDriver = path.join(root, '.tools/webdriver/msedgedriver.exe');
 for (const file of [binary, driver, nativeDriver]) {
@@ -24,7 +27,9 @@ server.stderr.on('data', (data) => { driverOutput += data.toString(); });
 let session;
 let originalTheme;
 let savedTheme;
+let originalSettings;
 const endpoint = 'http://127.0.0.1:4445';
+if (auditOnly) console.log(`Audit mode: saved preferences stay unchanged; evidence: ${auditDirectory}`);
 
 async function request(method, url, body) {
   const response = await fetch(`${endpoint}${url}`, {
@@ -125,45 +130,77 @@ try {
   await click('.device-toolbar button');
   await until(async () => (await invoke('get_discovery')).revision > discovery.revision, 'Device inventory refresh did not complete');
   console.log(`PASS: native Windows inventory and refresh (${discovery.devices.length} records; feature support remains unverified)`);
+  if (auditOnly) {
+    console.log(`AUDIT discovery: ${JSON.stringify({
+      status: discovery.status,
+      watching: discovery.watching,
+      warnings: discovery.warnings,
+      records: discovery.devices.length,
+      transports: Object.fromEntries(['usb', 'serial', 'network'].map((transport) =>
+        [transport, discovery.devices.filter((device) => device.transports.includes(transport)).length])),
+    })}`);
+  }
 
   await preferences();
   originalTheme = await script('return document.querySelector("input[name=theme]:checked").value');
-  savedTheme = originalTheme === 'dark' ? 'light' : 'dark';
-  await applyTheme(savedTheme);
-  assert.equal(await script('return document.documentElement.dataset.theme'), savedTheme);
-  console.log('PASS: appearance saved through real IPC');
+  if (auditOnly) {
+    const snapshot = await invoke('get_snapshot');
+    originalSettings = snapshot.settings;
+    assert.equal(originalSettings.theme, originalTheme);
+    savedTheme = originalTheme;
+    console.log(`AUDIT workspace: ${JSON.stringify({
+      version: snapshot.version,
+      databaseVersion: snapshot.databaseVersion,
+      dataDirectory: snapshot.dataDirectory,
+      counts: snapshot.counts,
+    })}`);
+    console.log('PASS: existing preferences read through real IPC without changing settings');
+  } else {
+    savedTheme = originalTheme === 'dark' ? 'light' : 'dark';
+    await applyTheme(savedTheme);
+    assert.equal(await script('return document.documentElement.dataset.theme'), savedTheme);
+    console.log('PASS: appearance saved through real IPC');
 
-  const rejected = await request('POST', `/session/${session}/execute/async`, {
-    script: "const done = arguments[arguments.length - 1]; window.__TAURI_INTERNALS__.invoke('save_settings', {settings: {theme: 'invalid'}}).then(() => done(false), () => done(true));",
-    args: [],
-  });
-  assert.equal(rejected, true, 'Rust accepted an invalid preference');
-  console.log('PASS: Rust rejects malformed settings');
+    const rejected = await request('POST', `/session/${session}/execute/async`, {
+      script: "const done = arguments[arguments.length - 1]; window.__TAURI_INTERNALS__.invoke('save_settings', {settings: {theme: 'invalid'}}).then(() => done(false), () => done(true));",
+      args: [],
+    });
+    assert.equal(rejected, true, 'Rust accepted an invalid preference');
+    console.log('PASS: Rust rejects malformed settings');
+  }
 
   await click('a[href="#dashboard"]');
   await until(() => script("return document.querySelector('h1')?.textContent === 'Overview'"), 'Overview did not render');
   const image = await request('GET', `/session/${session}/screenshot`);
-  await mkdir(path.join(root, 'docs/images'), { recursive: true });
-  await writeFile(path.join(root, 'docs/images/desktop-smoke.png'), Buffer.from(image, 'base64'));
+  const screenshotDirectory = auditOnly ? auditDirectory : path.join(root, 'docs/images');
+  await mkdir(screenshotDirectory, { recursive: true });
+  await writeFile(path.join(screenshotDirectory, 'desktop-smoke.png'), Buffer.from(image, 'base64'));
 
   await close();
   await launch();
   await preferences();
   assert.equal(await script('return document.querySelector("input[name=theme]:checked").value'), savedTheme);
-  assert.equal(await script('return document.documentElement.dataset.theme'), savedTheme);
+  if (auditOnly) {
+    assert.deepEqual((await invoke('get_snapshot')).settings, originalSettings);
+  } else {
+    assert.equal(await script('return document.documentElement.dataset.theme'), savedTheme);
+  }
   console.log('PASS: appearance persists after closing and relaunching native app');
 
-  await applyTheme(originalTheme);
-  console.log('PASS: original appearance restored');
+  if (!auditOnly) {
+    await applyTheme(originalTheme);
+    console.log('PASS: original appearance restored');
+  }
   await close();
 } finally {
   if (session) {
     try {
-      if (originalTheme) { await preferences(); await applyTheme(originalTheme); }
+      if (originalTheme && !auditOnly) { await preferences(); await applyTheme(originalTheme); }
       await close();
     } catch (error) { console.error('Native test cleanup:', error.message); }
   }
   if (server.pid) spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
-  await mkdir(path.join(root, '.tools'), { recursive: true });
-  await writeFile(path.join(root, '.tools/native-driver.log'), driverOutput);
+  const logDirectory = auditOnly ? auditDirectory : path.join(root, '.tools');
+  await mkdir(logDirectory, { recursive: true });
+  await writeFile(path.join(logDirectory, 'native-driver.log'), driverOutput);
 }

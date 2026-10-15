@@ -24,13 +24,13 @@ export function Dashboard({
       label: "Connected devices",
       value: snapshot?.counts.devices,
       icon: Router,
-      detail: "Discovery planned · Phase 2",
+      detail: "Windows-reported interfaces",
     },
     {
       label: "Firmware artifacts",
       value: snapshot?.counts.artifacts,
       icon: Files,
-      detail: "Import planned · Phase 3",
+      detail: "Local import not available yet",
     },
     {
       label: "Running jobs",
