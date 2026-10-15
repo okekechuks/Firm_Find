@@ -1,8 +1,10 @@
 node_modules/
+**/node_modules/
 dist/
+**/dist/
 target/
 .tools/
-src-tauri/gen/
+**/src-tauri/gen/
 *.log
 *.tsbuildinfo
 *.db

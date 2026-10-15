@@ -1,18 +1,18 @@
-# OBTAINER phase status
+﻿# OBTAINER phase status
 
 Audited: 15 October 2026. Phase numbers refer to the [revised roadmap](IMPLEMENTATION_ROADMAP.md), based on the newly supplied guideline. The earlier phase 3 meant firmware acquisition; revised phase 3 means profiles and capability detection.
 
-This turn produced planning documents only. Application sources, package layout, device operations, and stored user data were not changed. Existing uncommitted work was retained. No root `AGENTS.md` or prior master-plan file was found during the repository audit.
+Phase 0 is in progress. The existing app source was moved into `apps/desktop/`; root npm commands and the Cargo workspace were updated, and the npm lockfile was regenerated offline. Existing uncommitted work, fixtures, screenshots, tools, and application data were retained. No root `AGENTS.md` or prior master-plan file was found during the repository audit.
 
 ## Baseline evidence
 
 - Code inspected: React navigation/screens/contracts, Rust discovery/application/domain/storage modules, SQLite migration, Tauri configuration/permissions, scripts, and Windows CI definition.
 - Fresh tool-version checks: Node `v22.17.0`, npm `10.9.2`, Cargo `1.99.0`.
-- Previous verification record: frontend lint/build and 10 tests; Rust format, Clippy, workspace check and 11 tests; native Windows debug build passed. These commands were not rerun for this documentation-only planning turn.
-- Latest native UI verification remains blocked: WebView2 creation returned `0x800700AA` before the smoke test reached IPC. Previous foundation startup evidence predates the latest discovery work.
+- Previous verification record: frontend lint/build and 10 tests; Rust format, Clippy, workspace check and 11 tests; native Windows debug build passed. Those results predate the workspace migration; current checks are pending.
+- Latest native UI verification before this migration was blocked: WebView2 creation returned `0x800700AA` before the smoke test reached IPC. Previous foundation startup evidence predates the latest discovery work.
 - Prior records confirm MSVC/Windows SDK, local Rust tools, WebView2, and development installers. Their full installation/runtime state was not revalidated during this turn. WSL2 and compatible router/modem availability remain unverified.
-- Source layout remains root `src/` and `src-tauri/`. The `apps/desktop/` tree is planned, not migrated.
-- Planning validation passed: phases 0–19 each appear once in the roadmap and tracker; all 21 local documentation links resolve; the archived guideline's SHA-256 matches the supplied file; documentation `git diff --check` is clean.
+- Source is now under `apps/desktop/`; the root keeps the shared lockfile, Cargo workspace, scripts, docs, and tools.
+- Planning validation passed: phases 0â€“19 each appear once in the roadmap and tracker; all 21 local documentation links resolve; the archived guideline's SHA-256 matches the supplied file; documentation `git diff --check` is clean.
 
 ## Phase assessment
 
@@ -20,7 +20,7 @@ This turn produced planning documents only. Application sources, package layout,
 
 | Phase | Status | Reusable work | Remaining acceptance work |
 | --- | --- | --- | --- |
-| 0: Audit and structure | Partial | Source/config/document audit, tool versions, target layout, roadmap and tracker. | Preserve baseline, perform structure migration, repair paths/CI, revalidate environment and commands. |
+| 0: Audit and structure | Partial | Source/config/document audit, baseline, roadmap and tracker; app relocated, npm workspace/Cargo membership and root wrappers updated. | Verify root commands, CI/native paths, Rust and frontend checks, and desktop launch after migration; remove confirmed stale outputs. |
 | 1: Desktop foundation | Partial | Tauri/React navigation, themes, real IPC, SQLite, typed boundaries; historical launch/installers. | Revalidate launch after migration and latest changes; close current WebView2 runtime blocker and error-handling gaps. |
 | 2: Discovery | Partial | Native USB/serial/network inventory, correlation, notifications, refresh, evidence, UI, fixtures. | Manual management-address entry, richer candidate identity/diagnostics, native UI and physical hot-plug evidence. |
 | 3: Profiles/capabilities | Partial | Four unknown feature fields and primitive evidence/confidence display. | Versioned profiles, exact matching, seven new reasoned statuses, evaluator, constraints, conflict tests, support UI. |
@@ -46,7 +46,8 @@ This turn produced planning documents only. Application sources, package layout,
 1. Finish phase 0 migration as a mechanical change with preserved root commands and application data.
 2. Close phase 1 launch verification and phase 2 discovery gaps.
 3. Implement phase 3 profiles and capability decisions before device-management writes.
-4. Build phases 4–6 into a durable library, adapter layer, and real simulator.
+4. Build phases 4â€“6 into a durable library, adapter layer, and real simulator.
 5. Implement phase 8 simulator DNS transactions; phase 7 may proceed with suitable hardware and must pass before real DNS changes in phase 9.
 
 The first implementation checkpoint is a migrated, runnable desktop application with honest device/capability reporting. The first customization checkpoint is a complete simulator DNS workflow, including failure and rollback, not four disconnected forms.
+
