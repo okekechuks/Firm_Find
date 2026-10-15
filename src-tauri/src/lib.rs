@@ -1,5 +1,6 @@
 mod commands;
 pub mod domain;
+pub mod discovery;
 pub mod storage;
 
 use commands::AppState;
@@ -22,10 +23,13 @@ pub fn run() -> tauri::Result<()> {
                 .try_init()
                 .map_err(|error| std::io::Error::other(error.to_string()))?;
             app.manage(guard);
-            let repository = storage::Repository::open(&directory.join("obtainer.db"))?;
+            let mut repository = storage::Repository::open(&directory.join("obtainer.db"))?;
             repository.record_startup()?;
+            let repository = Arc::new(Mutex::new(repository));
+            let discovery = discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
+            app.manage(discovery);
             app.manage(AppState {
-                repository: Arc::new(Mutex::new(repository)),
+                repository,
                 directory,
             });
             tracing::info!(version = env!("CARGO_PKG_VERSION"), "OBTAINER initialized");
@@ -33,7 +37,15 @@ pub fn run() -> tauri::Result<()> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_snapshot,
-            commands::save_settings
+            commands::save_settings,
+            commands::get_discovery,
+            commands::refresh_discovery
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())?
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<discovery::DiscoveryService>().shutdown();
+            }
+        });
+    Ok(())
 }

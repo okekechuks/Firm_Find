@@ -1,0 +1,24 @@
+[
+  {"name":"empty", "inventory":{"nodes":[], "adapters":[]}},
+  {"name":"composite USB arrives with duplicate event", "inventory":{
+    "nodes":[
+      {"instanceId":"USB\\VID_12D1&PID_14DC\\FIXTURE", "parentInstanceId":null, "containerId":"11111111-1111-1111-1111-111111111111", "displayName":"Fixture composite device", "className":"USB", "classGuid":"USB-SETUP-CLASS", "portName":null, "adapterId":null},
+      {"instanceId":"USB\\VID_12D1&PID_14DC&MI_00\\FIXTURE", "parentInstanceId":"USB\\VID_12D1&PID_14DC\\FIXTURE", "containerId":"11111111-1111-1111-1111-111111111111", "displayName":"Fixture network function", "className":"Net", "classGuid":"NET-SETUP-CLASS", "portName":null, "adapterId":"{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}"},
+      {"instanceId":"USB\\VID_12D1&PID_14DC&MI_01\\FIXTURE", "parentInstanceId":"USB\\VID_12D1&PID_14DC\\FIXTURE", "containerId":"11111111-1111-1111-1111-111111111111", "displayName":"Fixture serial function", "className":"Ports", "classGuid":"PORT-SETUP-CLASS", "portName":"COM7", "adapterId":null},
+      {"instanceId":"USB\\VID_12D1&PID_14DC&MI_01\\FIXTURE", "parentInstanceId":"USB\\VID_12D1&PID_14DC\\FIXTURE", "containerId":"11111111-1111-1111-1111-111111111111", "displayName":"Fixture serial function", "className":"Ports", "classGuid":"PORT-SETUP-CLASS", "portName":"COM7", "adapterId":null}
+    ],
+    "adapters":[{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "displayName":"Fixture Ethernet", "description":"Fixture USB network", "interfaceIndex":7, "interfaceType":6, "linkUp":true, "addresses":["192.0.2.10"], "gateways":["192.0.2.1"]}]
+  }},
+  {"name":"serial function removed but USB network remains", "inventory":{
+    "nodes":[
+      {"instanceId":"USB\\VID_12D1&PID_14DC\\FIXTURE", "parentInstanceId":null, "containerId":"11111111-1111-1111-1111-111111111111", "displayName":"Fixture composite device", "className":"USB", "classGuid":"USB-SETUP-CLASS", "portName":null, "adapterId":null},
+      {"instanceId":"USB\\VID_12D1&PID_14DC&MI_00\\FIXTURE", "parentInstanceId":"USB\\VID_12D1&PID_14DC\\FIXTURE", "containerId":"11111111-1111-1111-1111-111111111111", "displayName":"Fixture network function", "className":"Net", "classGuid":"NET-SETUP-CLASS", "portName":null, "adapterId":"{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}"}
+    ],
+    "adapters":[{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "displayName":"Fixture Ethernet", "description":"Fixture USB network", "interfaceIndex":7, "interfaceType":6, "linkUp":false, "addresses":[], "gateways":[]}]
+  }},
+  {"name":"USB removed", "inventory":{"nodes":[], "adapters":[]}},
+  {"name":"same device reconnects", "inventory":{
+    "nodes":[{"instanceId":"usb\\vid_12d1&pid_14dc\\fixture", "parentInstanceId":null, "containerId":"{11111111-1111-1111-1111-111111111111}", "displayName":"Fixture composite device", "className":"USB", "classGuid":"USB-SETUP-CLASS", "portName":null, "adapterId":null}],
+    "adapters":[]
+  }}
+]

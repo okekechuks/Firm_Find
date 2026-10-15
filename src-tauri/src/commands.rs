@@ -1,6 +1,7 @@
 use crate::{
     domain::{Settings, Snapshot},
     storage::Repository,
+    discovery::{DiscoveryService, DiscoverySnapshot},
 };
 use serde::Serialize;
 use std::{
@@ -55,4 +56,22 @@ pub async fn save_settings(
     })
     .await
     .map_err(database_error)?
+}
+
+fn discovery_error(message: &'static str) -> CommandError {
+    CommandError { code: "DISCOVERY_UNAVAILABLE", message }
+}
+
+#[tauri::command]
+pub fn get_discovery(state: tauri::State<'_, DiscoveryService>) -> Result<DiscoverySnapshot, CommandError> {
+    state.snapshot().map_err(discovery_error)
+}
+
+#[tauri::command]
+pub async fn refresh_discovery(state: tauri::State<'_, DiscoveryService>) -> Result<DiscoverySnapshot, CommandError> {
+    let reply = state.refresh_request().map_err(discovery_error)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        reply.recv_timeout(std::time::Duration::from_secs(20))
+            .map_err(|_| discovery_error("Inventory refresh timed out. Wait a moment and try again."))
+    }).await.map_err(|_| discovery_error("Discovery worker is unavailable. Restart OBTAINER."))?
 }
