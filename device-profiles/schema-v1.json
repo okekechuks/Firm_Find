@@ -56,6 +56,13 @@
     "firmwareVersionConstraints": {
       "type": "object",
       "properties": {
+        "scheme": {
+          "type": "string",
+          "enum": [
+            "numeric_triplet",
+            "opaque_exact"
+          ]
+        },
         "exact": {
           "type": "array",
           "maxItems": 64,
@@ -837,5 +844,5 @@
   "additionalProperties": false,
   "$id": "urn:obtainer:device-profile:1",
   "title": "OBTAINER device profile schema 1",
-  "description": "Structural schema. Rust validation also enforces 64 KiB, depth 16, collection 64, strings 1024 bytes, unique keys, exact sub-capability keys, referenced evidence, calendar dates, bounded numeric releases and application-owned adapter state. Validation never grants trust."
+  "description": "Structural schema. Rust validation also enforces 64 KiB, depth 16, collection 64, strings 1024 bytes, unique keys, exact sub-capability keys, referenced evidence, calendar dates, explicit firmware schemes and application-owned adapter state. Firmware scheme defaults to legacy numeric_triplet; opaque_exact permits only literal exact versions without ranges. Validation never grants trust."
 }

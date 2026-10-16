@@ -3,6 +3,8 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getSnapshot, saveSettings, getManualRouters, probeManagementEndpoint, getDeviceCompatibility, getProfileRegistry, validateDeviceProfile } from "../lib/backend";
 import { report } from "./profileFixtures";
 import type { Settings } from "../types/contracts";
+import observedProfile from "../../../../device-profiles/observed-comfi-mg11.json";
+import { profileSchema } from "../types/profiles";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: vi.fn() }));
 beforeEach(() => {
@@ -45,4 +47,22 @@ it("rejects malformed compatibility responses and backend claims of writable ada
 });
 it("rejects oversized profile documents before IPC", async () => {
   await expect(validateDeviceProfile("x".repeat(65537))).rejects.toThrow("64 KiB");expect(invoke).not.toHaveBeenCalled();
+});
+
+it("accepts legacy numeric and explicit opaque scheme profiles without granting trust", async () => {
+  const legacy = profileSchema.parse(observedProfile);
+  expect(legacy.firmwareVersionConstraints.scheme).toBeUndefined();
+  const opaque = {...legacy,firmwareVersionConstraints:{scheme:"opaque_exact" as const,exact:["MF69_AM802L_ZX_DD_N_241106_EU"],minInclusive:null,maxExclusive:null}};
+  const entry = {profile:opaque,origin:"local_unverified",authoritative:false,contentHash:"fixture"};
+  vi.mocked(invoke).mockResolvedValue(entry);
+  const document=JSON.stringify(opaque);
+  const result=await validateDeviceProfile(document);
+  expect(result.profile.firmwareVersionConstraints.scheme).toBe("opaque_exact");
+  expect(result.authoritative).toBe(false);
+  expect(invoke).toHaveBeenCalledWith("validate_device_profile",{document});
+});
+it("rejects unknown firmware scheme values in native profile responses", async () => {
+  const malformed={...observedProfile,firmwareVersionConstraints:{...observedProfile.firmwareVersionConstraints,scheme:"guess_dates"}};
+  vi.mocked(invoke).mockResolvedValue({profile:malformed,origin:"local_unverified",authoritative:false,contentHash:"fixture"});
+  await expect(validateDeviceProfile("{}" )).rejects.toThrow();
 });

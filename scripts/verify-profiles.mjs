@@ -16,7 +16,16 @@ export async function verifyProfiles(client, {label, evidence, record}) {
   const registry=await invoke('get_profile_registry');assert.equal(registry.profiles.length,2);assert.deepEqual(registry.diagnostics,[]);
   const observation=registry.profiles.find((p) => p.profile.profileId === 'observed.comfi-mg11');assert.equal(observation.authoritative,false);
   const valid=await invoke('validate_device_profile',{document:JSON.stringify(registry.profiles[1].profile)});assert.equal(valid.authoritative,false);assert.equal(valid.origin,'local_unverified');
-  for (const document of ['{',JSON.stringify({...valid.profile,schemaVersion:99}),JSON.stringify({...valid.profile,script:'untrusted.exe'})]) {
+  assert.equal(valid.profile.firmwareVersionConstraints.scheme,undefined,'Legacy numeric profile serialization changed');
+  const opaque={...valid.profile,profileId:'fixture.opaque-preview',firmwareVersionConstraints:{scheme:'opaque_exact',exact:['MF69_AM802L_ZX_DD_N_241106_EU'],minInclusive:null,maxExclusive:null}};
+  const preview=await invoke('validate_device_profile',{document:JSON.stringify(opaque)});
+  assert.equal(preview.authoritative,false);assert.equal(preview.profile.schemaVersion,1);assert.equal(preview.profile.firmwareVersionConstraints.scheme,'opaque_exact');
+  for (const document of ['{',JSON.stringify({...valid.profile,schemaVersion:99}),JSON.stringify({...valid.profile,script:'untrusted.exe'}),
+    JSON.stringify({...opaque,firmwareVersionConstraints:{...opaque.firmwareVersionConstraints,minInclusive:'1.0.0',maxExclusive:'2.0.0'}}),
+    JSON.stringify({...opaque,firmwareVersionConstraints:{...opaque.firmwareVersionConstraints,scheme:'guess_dates'}}),
+    JSON.stringify({...opaque,firmwareVersionConstraints:{...opaque.firmwareVersionConstraints,exact:[]}}),
+    JSON.stringify({...opaque,firmwareVersionConstraints:{...opaque.firmwareVersionConstraints,scheme:'numeric_triplet'}}),
+  ]) {
     const result=await evaluate(`(async()=>{try{await window.__TAURI_INTERNALS__.invoke('validate_device_profile',{document:${JSON.stringify(document)}});return null;}catch(e){return e;}})()`);
     assert.equal(result.code,'INVALID_PROFILE');
   }
@@ -28,6 +37,12 @@ export async function verifyProfiles(client, {label, evidence, record}) {
   assert(device,'Connected owner-reported MG11 USB candidate missing; physical qualification remains pending');
   await evaluate("document.querySelector('a[href=\"#compatibility\"]').click()");
   await until(() => evaluate("Boolean(document.querySelector('.compatibility-selector select'))"),'Compatibility screen missing');
+  await evaluate("[...document.querySelectorAll('summary')].find(s=>s.textContent==='Validate a local profile document').parentElement.open=true");
+  await evaluate(`(()=>{const i=document.querySelector('.compatibility-panel textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(i,${JSON.stringify(JSON.stringify(opaque))});i.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent==='Validate profile').click()");
+  await until(() => evaluate("document.body.innerText.includes('Valid schema: fixture.opaque-preview')"),'React/Rust opaque profile validation failed');
+  assert.equal((await invoke('get_profile_registry')).digest,registry.digest);
+  record(label+': schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged');
   await evaluate(`(()=>{const s=document.querySelector('.compatibility-selector select');s.value=${JSON.stringify(device.id)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   await until(() => evaluate("Boolean(document.querySelector('.support-table tbody tr'))"),'Real compatibility matrix did not render');
   const before=await invoke('get_device_compatibility',{deviceId:device.id});assert.equal(before.selectedProfile,null);
@@ -42,6 +57,7 @@ export async function verifyProfiles(client, {label, evidence, record}) {
     await until(() => evaluate("document.querySelector('.reported-evidence input')?.value==='' && !document.querySelector('.reported-evidence button').disabled"),'Reported evidence save/evaluation did not finish');
   }
   const report=await invoke('get_device_compatibility',{deviceId:device.id});
+  assert.equal(report.engineVersion,'1.0.1','Native build must use hardened engine');
   assert.equal(report.confidence,'CANDIDATE');assert.equal(report.selectedProfile,null);assert.equal(report.features.wifiUserLimit.verifiedRange,null);
   for (const f of Object.values(report.features)) {assert.equal(f.assessment,'UNKNOWN');assert.equal(f.canApply,false);assert.equal(f.adapterImplemented,false);assert(f.readiness.includes('NOT_IMPLEMENTED'));}
   const reported=report.evidence.filter((e) => ['LT800/','MF69_AM802L_ZX_DD_N_241106_EU'].includes(e.value));assert.equal(reported.length,2);

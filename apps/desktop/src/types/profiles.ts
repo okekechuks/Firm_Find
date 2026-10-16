@@ -13,7 +13,7 @@ const featureSpecSchema = z.object({assessment: assessmentSchema, reason: z.stri
 export const profileSchema = z.object({
   schemaVersion: z.literal(1), profileId: z.string(), profileVersion: z.string(), manufacturer: z.string(), model: z.string(), modelAliases: strings, deviceCategory: strings,
   hardwareRevisions: strings, firmwareFamilies: strings,
-  firmwareVersionConstraints: z.object({exact: strings, minInclusive: z.string().nullable(), maxExclusive: z.string().nullable()}).strict(),
+  firmwareVersionConstraints: z.object({scheme: z.enum(["numeric_triplet", "opaque_exact"]).optional(), exact: strings, minInclusive: z.string().nullable(), maxExclusive: z.string().nullable()}).strict(),
   matchRules: z.array(z.object({attribute: attributeSchema, values: strings, purpose: z.enum(["identity", "corroboration", "candidate_hint"]), explanation: z.string()}).strict()),
   managementInterfaces: z.array(z.object({protocol: protocolSchema, authenticationRequired: z.boolean(), firmwareFamilies: strings, operations: strings, security: z.string(), limitations: z.string(), evidenceSources: strings}).strict()),
   modemInformation: z.object({integratedModem: z.boolean().nullable(), manufacturers: strings, models: strings, interfaces: z.array(protocolSchema), notes: z.string()}).strict(),

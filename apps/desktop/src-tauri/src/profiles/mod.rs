@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const MAX_PROFILE_BYTES: usize = 65536;
-pub const ENGINE_VERSION: &str = "1.0.0";
+pub const ENGINE_VERSION: &str = "1.0.1";
 pub const EVIDENCE_TTL_MS: u64 = 300_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -99,9 +99,24 @@ pub struct MatchRule {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VersionConstraint {
+    // Omitted in legacy schema-1 profiles. Do not change their canonical content hashes.
+    #[serde(default, skip_serializing_if = "FirmwareVersionScheme::is_legacy")]
+    pub scheme: FirmwareVersionScheme,
     pub exact: Vec<String>,
     pub min_inclusive: Option<String>,
     pub max_exclusive: Option<String>,
+}
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FirmwareVersionScheme {
+    #[default]
+    NumericTriplet,
+    OpaqueExact,
+}
+impl FirmwareVersionScheme {
+    fn is_legacy(&self) -> bool {
+        *self == Self::NumericTriplet
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -288,6 +303,14 @@ pub fn version(value: &str) -> Option<[u32; 3]> {
     ])
 }
 pub fn version_allowed(value: &str, c: &VersionConstraint) -> Option<bool> {
+    validate_firmware_constraint(c).ok()?;
+    if c.scheme == FirmwareVersionScheme::OpaqueExact {
+        // Opaque identifiers are case-sensitive literals, even if they look numeric or dated.
+        if !valid_opaque_version(value) {
+            return None;
+        }
+        return Some(c.exact.iter().any(|expected| expected == value));
+    }
     let v = version(value)?;
     if !c.exact.is_empty() {
         return Some(c.exact.iter().filter_map(|v| version(v)).any(|x| x == v));
@@ -296,6 +319,47 @@ pub fn version_allowed(value: &str, c: &VersionConstraint) -> Option<bool> {
         (Some(a), Some(b)) => Some(v >= version(a)? && v < version(b)?),
         _ => None,
     }
+}
+fn valid_opaque_version(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 1024
+        && value.trim() == value
+        && !value.chars().any(char::is_control)
+}
+fn validate_firmware_constraint(c: &VersionConstraint) -> Result<(), ProfileError> {
+    if c.exact.len() > 64 {
+        return Err(invalid("Too many exact firmware versions."));
+    }
+    if c.scheme == FirmwareVersionScheme::OpaqueExact {
+        if c.exact.is_empty()
+            || c.exact.iter().any(|v| !valid_opaque_version(v))
+            || c.min_inclusive.is_some()
+            || c.max_exclusive.is_some()
+        {
+            return Err(invalid(
+                "opaque_exact requires nonempty literal versions and forbids range bounds.",
+            ));
+        }
+        return Ok(());
+    }
+    if (!c.exact.is_empty() && (c.min_inclusive.is_some() || c.max_exclusive.is_some()))
+        || c.exact.iter().any(|v| version(v).is_none())
+        || c.min_inclusive
+            .as_ref()
+            .is_some_and(|v| version(v).is_none())
+        || c.max_exclusive
+            .as_ref()
+            .is_some_and(|v| version(v).is_none())
+        || c.min_inclusive.is_some() != c.max_exclusive.is_some()
+    {
+        return Err(invalid("numeric_triplet requires exact three-part numeric releases or a bounded numeric range."));
+    }
+    if let (Some(a), Some(b)) = (&c.min_inclusive, &c.max_exclusive) {
+        if version(a) >= version(b) {
+            return Err(invalid("Firmware range is reversed or empty."));
+        }
+    }
+    Ok(())
 }
 fn bounded(value: &serde_json::Value, depth: usize, nodes: &mut usize) -> bool {
     *nodes += 1;
@@ -396,26 +460,7 @@ pub fn validate(document: &str) -> Result<Profile, ProfileError> {
     if year < 2000 || day == 0 || day > days {
         return Err(invalid("lastReviewed must be a valid calendar date."));
     }
-    let c = &p.firmware_version_constraints;
-    if (!c.exact.is_empty() && (c.min_inclusive.is_some() || c.max_exclusive.is_some()))
-        || c.exact.iter().any(|v| version(v).is_none())
-        || c.min_inclusive
-            .as_ref()
-            .is_some_and(|v| version(v).is_none())
-        || c.max_exclusive
-            .as_ref()
-            .is_some_and(|v| version(v).is_none())
-        || c.min_inclusive.is_some() != c.max_exclusive.is_some()
-    {
-        return Err(invalid(
-            "Firmware constraints require exact numeric releases or a bounded numeric range.",
-        ));
-    }
-    if let (Some(a), Some(b)) = (&c.min_inclusive, &c.max_exclusive) {
-        if version(a) >= version(b) {
-            return Err(invalid("Firmware range is reversed or empty."));
-        }
-    }
+    validate_firmware_constraint(&p.firmware_version_constraints)?;
     let mut source_ids = BTreeSet::new();
     for source in &p.evidence_sources {
         if source.id.is_empty() || !source_ids.insert(source.id.clone()) {

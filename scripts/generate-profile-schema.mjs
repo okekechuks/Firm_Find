@@ -22,10 +22,11 @@ function convert(type) {
     case 'ZodEnum': return {type:'string',enum:d.values};
     case 'ZodArray': return {type:'array',maxItems:64,items:convert(d.type)};
     case 'ZodNullable': return {anyOf:[convert(d.innerType),{type:'null'}]};
+    case 'ZodOptional': return convert(d.innerType);
     case 'ZodRecord': return {type:'object',maxProperties:64,additionalProperties:convert(d.valueType)};
     case 'ZodObject': {
       const fields=d.shape();
-      return {type:'object',properties:Object.fromEntries(Object.entries(fields).map(([key,value]) => [key,convert(value)])),required:Object.keys(fields),additionalProperties:false};
+      return {type:'object',properties:Object.fromEntries(Object.entries(fields).map(([key,value]) => [key,convert(value)])),required:Object.keys(fields).filter((key) => !fields[key].isOptional()),additionalProperties:false};
     }
     default: throw new Error(`Unsupported contract kind: ${d.typeName}`);
   }
@@ -33,6 +34,6 @@ function convert(type) {
 const schema = {$schema:'https://json-schema.org/draft/2020-12/schema',...convert(profileSchema)};
 schema.$id = 'urn:obtainer:device-profile:1';
 schema.title = 'OBTAINER device profile schema 1';
-schema.description = 'Structural schema. Rust validation also enforces 64 KiB, depth 16, collection 64, strings 1024 bytes, unique keys, exact sub-capability keys, referenced evidence, calendar dates, bounded numeric releases and application-owned adapter state. Validation never grants trust.';
+schema.description = 'Structural schema. Rust validation also enforces 64 KiB, depth 16, collection 64, strings 1024 bytes, unique keys, exact sub-capability keys, referenced evidence, calendar dates, explicit firmware schemes and application-owned adapter state. Firmware scheme defaults to legacy numeric_triplet; opaque_exact permits only literal exact versions without ranges. Validation never grants trust.';
 await writeFile(new URL('../device-profiles/schema-v1.json', import.meta.url), JSON.stringify(schema, null, 2) + '\n');
 console.log('Generated device-profiles/schema-v1.json');

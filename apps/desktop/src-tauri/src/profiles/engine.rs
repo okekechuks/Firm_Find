@@ -165,6 +165,9 @@ pub struct CompatibilityReport {
     pub change: Option<DecisionChange>,
 }
 fn norm(attribute: Attribute, value: &str) -> String {
+    if attribute == Attribute::FirmwareVersion {
+        return value.into();
+    }
     let v = value.split_whitespace().collect::<Vec<_>>().join(" ");
     if matches!(attribute, Attribute::UsbVid | Attribute::UsbPid) {
         v.trim_start_matches("0x").to_ascii_uppercase()
@@ -382,7 +385,11 @@ fn match_profile(
             } else if purpose == Purpose::Identity {
                 missing.insert(attribute);
             }
-            strong_all = false;
+            if purpose == Purpose::Identity {
+                strong_all = false;
+            } else {
+                reasons.push(format!("Optional {purpose:?} rule for {attribute:?} did not match; verified identity takes precedence over hints."));
+            }
         } else {
             matched.insert(attribute);
             if purpose == Purpose::Identity {
@@ -402,11 +409,18 @@ fn match_profile(
         .iter()
         .filter(|e| !e.stale && e.attribute == Attribute::FirmwareVersion)
         .collect();
-    if firmware.is_empty() {
+    let verified_firmware: Vec<_> = firmware.iter().copied().filter(|e| e.strong()).collect();
+    // Retain weak reports in evidence, but do not let them displace fresh verified firmware.
+    let applicable_firmware = if verified_firmware.is_empty() {
+        &firmware
+    } else {
+        &verified_firmware
+    };
+    if applicable_firmware.is_empty() {
         missing.insert(Attribute::FirmwareVersion);
         strong_all = false;
     }
-    for e in firmware {
+    for e in applicable_firmware {
         match version_allowed(&e.value, &p.firmware_version_constraints) {
             Some(true) => {
                 matched.insert(Attribute::FirmwareVersion);
@@ -554,11 +568,18 @@ pub fn evaluate(
             ![MatchConfidence::NoMatch, MatchConfidence::Conflicting].contains(&c.confidence)
         })
         .collect();
+    let verified: Vec<_> = viable
+        .iter()
+        .copied()
+        .filter(|c| c.authoritative && c.confidence == MatchConfidence::Verified)
+        .collect();
     let confidence = if invalid {
         MatchConfidence::NoMatch
     } else if !conflicts.is_empty() {
         MatchConfidence::Conflicting
-    } else if viable.len() > 1 {
+    } else if verified.len() == 1 {
+        MatchConfidence::Verified
+    } else if verified.len() > 1 || viable.len() > 1 {
         MatchConfidence::Ambiguous
     } else {
         viable
@@ -566,7 +587,7 @@ pub fn evaluate(
             .map_or(MatchConfidence::NoMatch, |c| c.confidence)
     };
     let selected = if confidence == MatchConfidence::Verified {
-        viable
+        verified
             .first()
             .and_then(|c| registry.by_id(&c.profile_id, Some(&c.profile_version)))
     } else {

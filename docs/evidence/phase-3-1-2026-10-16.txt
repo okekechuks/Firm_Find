@@ -1,0 +1,249 @@
+OBTAINER Phase 3.1 actual hardening verification
+Date: 2026-10-16 (Africa/Lagos)
+Baseline: clean 87fd844
+Result: PASS; Phase 4 READY, not started.
+Exact changed files and test commands: docs/PHASE_3_VERIFICATION.md, Phase 3.1 section.
+
+Command results:
+node scripts/generate-profile-schema.mjs -> 0
+node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit -> 0
+npm.cmd run lint -> 0
+DEBUG_PRINT_LIMIT=1200; npm.cmd test -> 0; 44 tests / 7 files
+scripts/rust.ps1 fmt --all --check -> 0
+CARGO_INCREMENTAL=0; scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings -> 0
+CARGO_INCREMENTAL=0; scripts/rust.ps1 test --workspace --locked --offline -> first 1 (47 passed / 2 failed selection-list tests); corrected, final 0 (51 passed)
+npm.cmd run build -> 0
+CARGO_INCREMENTAL=0; npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline -> 0; final release compilation 1m30s
+npm.cmd run test:foundation -- --phase3 -> first 1 (MG11 absent); owner reconnected; final 0 (38 PASS records)
+Failed native evidence: .tools/foundation/2026-10-16T16-35-05.429Z/
+Final native evidence: .tools/foundation/2026-10-16T16-43-07.226Z
+
+Final actual native records:
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: dev-reopen: native window, React and real SQLite IPC {"url": "http://127.0.0.1:1420/", "pid": 24416, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER", "theme": "system"}
+PASS: dev-reopen: all nine navigation destinations {}
+PASS: dev-reopen: discovery, three refreshes, unique IDs, unknown feature support {"records": 83, "watching": true, "warnings": []}
+PASS: dev-reopen: real registry IPC, strict rejection, local preview never activated {}
+PASS: dev-reopen: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged {}
+PASS: dev-reopen: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified {"deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f", "confidence": "CANDIDATE", "reported": [{"attribute": "reported_identifier", "value": "LT800/", "verification": "user_reported"}, {"attribute": "firmware_version", "value": "MF69_AM802L_ZX_DD_N_241106_EU", "verification": "user_reported"}]}
+PASS: dev-reopen: reported evidence survives same-value saves and restarts {"observationIds": ["5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af", "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"]}
+PASS: dev-reopen: connected-device details use the real compatibility engine {}
+PASS: dev-reopen: same-value settings write/read preserved original preferences {}
+PASS: dev-reopen: injected read error and real IPC retry recovery {}
+PASS: dev-reopen: loading state retains cached data {}
+PASS: dev-reopen: React hot reload with unchanged app/Vite PIDs {}
+PASS: dev-reopen: temporary HMR edit restored {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: interrupted owned development launch and released resources {"backendRenderedBeforeInterrupt": false}
+PASS: dev-recovery: native window, React and real SQLite IPC {"url": "http://127.0.0.1:1420/", "pid": 25184, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER", "theme": "system"}
+PASS: dev-recovery: all nine navigation destinations {}
+PASS: dev-recovery: discovery, three refreshes, unique IDs, unknown feature support {"records": 83, "watching": true, "warnings": []}
+PASS: dev-recovery: real registry IPC, strict rejection, local preview never activated {}
+PASS: dev-recovery: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged {}
+PASS: dev-recovery: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified {"deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f", "confidence": "CANDIDATE", "reported": [{"attribute": "reported_identifier", "value": "LT800/", "verification": "user_reported"}, {"attribute": "firmware_version", "value": "MF69_AM802L_ZX_DD_N_241106_EU", "verification": "user_reported"}]}
+PASS: dev-recovery: reported evidence survives same-value saves and restarts {"observationIds": ["5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af", "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"]}
+PASS: dev-recovery: connected-device details use the real compatibility engine {}
+PASS: dev-recovery: same-value settings write/read preserved original preferences {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: production: native window, React and real SQLite IPC {"url": "http://tauri.localhost/", "pid": 21776, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER", "theme": "system"}
+PASS: production: all nine navigation destinations {}
+PASS: production: discovery, three refreshes, unique IDs, unknown feature support {"records": 83, "watching": true, "warnings": []}
+PASS: production: real registry IPC, strict rejection, local preview never activated {}
+PASS: production: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged {}
+PASS: production: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified {"deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f", "confidence": "CANDIDATE", "reported": [{"attribute": "reported_identifier", "value": "LT800/", "verification": "user_reported"}, {"attribute": "firmware_version", "value": "MF69_AM802L_ZX_DD_N_241106_EU", "verification": "user_reported"}]}
+PASS: production: reported evidence survives same-value saves and restarts {"observationIds": ["5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af", "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"]}
+PASS: production: connected-device details use the real compatibility engine {}
+PASS: production: same-value settings write/read preserved original preferences {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+
+Native subprocess commands/exits (middle launch deliberately interrupted):
+[
+  {
+    "command": "npm.cmd run tauri -- dev -- --locked --offline",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": "npm.cmd run tauri -- dev -- --locked --offline",
+    "kind": "dev",
+    "exitCode": 1
+  },
+  {
+    "command": "npm.cmd run tauri -- dev -- --locked --offline",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": ".\\target\\release\\obtainer.exe",
+    "kind": "release",
+    "exitCode": 0
+  }
+]
+
+Console issues:
+[]
+
+Read-only data baseline:
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 3131232,
+      "sha256": "0ba561df2511349bedc7af1a6439cf7e403b60bd362f5a5e8aa9e40bc73ca341"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 3,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 92,
+    "compatibility_evaluations": 1,
+    "device_identity_observations": 2,
+    "devices": 79,
+    "discovery_metadata": 79,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 3131232,
+      "sha256": "0ba561df2511349bedc7af1a6439cf7e403b60bd362f5a5e8aa9e40bc73ca341"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+Read-only data after native checks:
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 3666832,
+      "sha256": "1718a3096d00a77176f902905bfe1cc078b0059d85cd26cf6445d769203901ad"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 3,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 103,
+    "compatibility_evaluations": 1,
+    "device_identity_observations": 2,
+    "devices": 83,
+    "discovery_metadata": 83,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 3666832,
+      "sha256": "1718a3096d00a77176f902905bfe1cc078b0059d85cd26cf6445d769203901ad"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+WAL-aware baseline comparison:
+{
+  "settings_unchanged": true,
+  "manual_routers_unchanged": true,
+  "firmware_artifacts_unchanged": true,
+  "jobs_unchanged": true,
+  "profile_versions_unchanged": true,
+  "device_identity_observations_unchanged": true,
+  "devices_original_ids_retained": true,
+  "audit_events_original_ids_retained": true,
+  "discovery_metadata_original_ids_retained": true,
+  "integrity_check": "ok",
+  "schema": 3,
+  "foreign_keys": [],
+  "counts": {
+    "settings": 1,
+    "audit_events": 103,
+    "devices": 83,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "manual_routers": 1,
+    "discovery_metadata": 83,
+    "profile_versions": 2,
+    "compatibility_evaluations": 1,
+    "device_identity_observations": 2
+  }
+}
+
+Visually inspected native screenshots:
+.tools/foundation/2026-10-16T16-43-07.226Z/dev-reopen-compatibility.png
+.tools/foundation/2026-10-16T16-43-07.226Z/production-compatibility.png
+
+Final checks confirm engine 1.0.1 in every native report, four UNKNOWN MG11 features, no adapter/Apply permission, and unchanged user-reported firmware verification status.
+No bundled device profile, database migration, desktop component or Windows discovery implementation changed. No router configuration was modified. Temporary native-verifier source instrumentation restored.

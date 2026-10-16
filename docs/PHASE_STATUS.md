@@ -2,7 +2,15 @@
 
 Audited: **16 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 4 readiness: READY; not started.** The [Phase 3 verification](PHASE_3_VERIFICATION.md), [command/evidence transcript](evidence/phase-3-2026-10-16.txt), [device profiles](DEVICE_PROFILES.md), and [capability engine](CAPABILITY_ENGINE.md) document the current implementation.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4 readiness: READY; not started.** The [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), [hardening transcript](evidence/phase-3-1-2026-10-16.txt), [original evidence](evidence/phase-3-2026-10-16.txt), [device profiles](DEVICE_PROFILES.md), and [capability engine](CAPABILITY_ENGINE.md) document the implementation.
+
+## Phase 3.1 targeted hardening evidence
+
+- Schema 1 retains legacy numeric behavior and adds explicit `opaque_exact` literal firmware matching. Unknown/malformed schemes and opaque ranges reject safely. Canonical bundled-profile hashes and stored profile rows remain unchanged; no database migration or registry/UI/discovery rebuild.
+- Unique authoritative VERIFIED match now wins over weaker entries regardless of ordering; multiple VERIFIED profiles remain AMBIGUOUS and conflicting verified identity still blocks selection. Weak hints/reports remain visible and cannot grant authority or displace fresh verified evidence.
+- **51 Rust tests, 44 frontend tests, 38 native checks pass.** TypeScript, lint, formatting, Clippy, frontend production and final native builds pass. All nine destinations, real React/Zod/Rust opaque-preview IPC, HMR, restart/recovery, settings persistence and empty console issue capture pass; native dev/production screenshots inspected.
+- Initial native attempt stopped because MG11 was disconnected. Full suite passed after the owner reconnected USB. Same logical device and observation IDs retained; all four MG11 features stay UNKNOWN, software stays user-reported, adapters/Apply stay unavailable. No router settings changed.
+- Read-only backup comparison preserves exact profile-version/observation/settings/saved-router/firmware/job rows and all original device/audit/metadata IDs. Schema remains 3, integrity `ok`, no FK violations, original preference hash unchanged. Original OpenWrt matching remains covered and passing.
 
 ## Phase 3 completion evidence
 

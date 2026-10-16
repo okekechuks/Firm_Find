@@ -308,6 +308,7 @@ fn multiple_matches_are_ambiguous_and_imported_data_never_authoritative() {
 #[test]
 fn version_ranges_are_numeric_bounded_and_opaque_is_unknown() {
     let c = VersionConstraint {
+        scheme: FirmwareVersionScheme::NumericTriplet,
         exact: vec![],
         min_inclusive: Some("23.5.0".into()),
         max_exclusive: Some("24.0.0".into()),
@@ -403,4 +404,344 @@ fn user_reports_are_bounded_never_verified_and_deduplicate() {
         EvidenceRecord::user_reported("device".into(), Attribute::Model, "x".repeat(257), NOW)
             .is_err()
     );
+}
+
+const OPAQUE: &str = "MF69_AM802L_ZX_DD_N_241106_EU";
+fn opaque_profile() -> String {
+    // Synthetic compatibility fixture; never bundled or attributed to physical hardware.
+    mutate(CURATED, |p| {
+        p["profileId"] = "fixture.proprietary".into();
+        p["firmwareFamilies"] = serde_json::json!(["FixtureVendorFirmware"]);
+        p["firmwareVersionConstraints"] = serde_json::json!({"scheme":"opaque_exact","exact":[OPAQUE],"minInclusive":null,"maxExclusive":null});
+    })
+}
+fn opaque_evidence(d: &Device) -> Vec<EvidenceRecord> {
+    let mut evidence = strong(d);
+    for e in &mut evidence {
+        if e.attribute == Attribute::FirmwareFamily {
+            e.value = "FixtureVendorFirmware".into();
+        }
+        if e.attribute == Attribute::FirmwareVersion {
+            e.value = OPAQUE.into();
+        }
+    }
+    evidence
+}
+
+#[test]
+fn legacy_schema_one_versions_and_canonical_profile_content_stay_compatible() {
+    let legacy = validate(CURATED).unwrap();
+    assert_eq!(
+        legacy.firmware_version_constraints.scheme,
+        FirmwareVersionScheme::NumericTriplet
+    );
+    let canonical = serde_json::to_value(&legacy).unwrap();
+    assert_eq!(
+        canonical,
+        serde_json::from_str::<serde_json::Value>(CURATED).unwrap()
+    );
+    assert!(canonical["firmwareVersionConstraints"]
+        .get("scheme")
+        .is_none());
+    let explicit = mutate(CURATED, |p| {
+        p["firmwareVersionConstraints"]["scheme"] = "numeric_triplet".into()
+    });
+    assert_eq!(
+        serde_json::to_value(validate(&explicit).unwrap()).unwrap(),
+        canonical
+    );
+    let c = &legacy.firmware_version_constraints;
+    assert_eq!(version_allowed("23.05.5", c), Some(true));
+    assert_eq!(version_allowed("23.5.5", c), Some(true));
+    assert_eq!(version_allowed("23.05.6", c), Some(false));
+    assert_eq!(version_allowed("", c), None);
+    assert_eq!(version_allowed(OPAQUE, c), None);
+}
+#[test]
+fn opaque_identifiers_use_literal_case_sensitive_equality_without_numeric_or_date_inference() {
+    let p = validate(&opaque_profile()).unwrap();
+    let c = &p.firmware_version_constraints;
+    assert_eq!(p.schema_version, 1);
+    assert_eq!(c.scheme, FirmwareVersionScheme::OpaqueExact);
+    assert_eq!(version_allowed(OPAQUE, c), Some(true));
+    for value in [
+        "MF69_AM802L_ZX_DD_N_241106_US",
+        "mf69_am802l_zx_dd_n_241106_eu",
+        "2024-11-06",
+    ] {
+        assert_eq!(version_allowed(value, c), Some(false));
+    }
+    for value in ["", " ", " MF69_AM802L_ZX_DD_N_241106_EU", "version\n"] {
+        assert_eq!(version_allowed(value, c), None);
+    }
+    let numeric_looking = VersionConstraint {
+        scheme: FirmwareVersionScheme::OpaqueExact,
+        exact: vec!["23.05.5".into(), "241106".into()],
+        min_inclusive: None,
+        max_exclusive: None,
+    };
+    assert_eq!(version_allowed("23.05.5", &numeric_looking), Some(true));
+    assert_eq!(version_allowed("23.5.5", &numeric_looking), Some(false));
+    assert_eq!(version_allowed("241106", &numeric_looking), Some(true));
+    assert_eq!(version_allowed("2024-11-06", &numeric_looking), Some(false));
+}
+#[test]
+fn malformed_version_schemes_constraints_and_opaque_ranges_are_rejected() {
+    for constraints in [
+        serde_json::json!({"scheme":"unknown","exact":[OPAQUE],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"scheme":null,"exact":[OPAQUE],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"scheme":"opaque_exact","exact":[],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"scheme":"opaque_exact","exact":[""],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"scheme":"opaque_exact","exact":[" version"],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"scheme":"opaque_exact","exact":["version\n"],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"scheme":"opaque_exact","exact":["x".repeat(1025)],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"scheme":"opaque_exact","exact":[OPAQUE],"minInclusive":"1.0.0","maxExclusive":"2.0.0"}),
+        serde_json::json!({"scheme":"opaque_exact","exact":[OPAQUE],"minInclusive":OPAQUE,"maxExclusive":null}),
+        serde_json::json!({"scheme":"numeric_triplet","exact":[OPAQUE],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"exact":[OPAQUE],"minInclusive":null,"maxExclusive":null}),
+        serde_json::json!({"exact":["23.05.5"],"minInclusive":"23.0.0","maxExclusive":"24.0.0"}),
+        serde_json::json!({"exact":[],"minInclusive":"23.0.0","maxExclusive":null}),
+        serde_json::json!({"exact":[],"minInclusive":"24.0.0","maxExclusive":"23.0.0"}),
+    ] {
+        let document = mutate(CURATED, |p| p["firmwareVersionConstraints"] = constraints);
+        assert!(validate(&document).is_err());
+        // Malformed known-scheme constraints are also safe if constructed directly in Rust.
+        if let Ok(p) = serde_json::from_str::<Profile>(&document) {
+            assert_eq!(
+                version_allowed(OPAQUE, &p.firmware_version_constraints),
+                None
+            );
+        }
+    }
+}
+#[test]
+fn exact_proprietary_match_needs_independently_verified_firmware_evidence() {
+    let text = opaque_profile();
+    let registry = Registry::load(vec![(&text, "bundled", true)]);
+    let d = device();
+    let e = opaque_evidence(&d);
+    let r = evaluate(&registry, &d, e.clone(), NOW, 1);
+    assert_eq!(r.confidence, MatchConfidence::Verified);
+    assert_eq!(r.selected_profile.as_deref(), Some("fixture.proprietary"));
+    assert_eq!(r.features["dns"].assessment, Assessment::Supported);
+    assert!(r
+        .features
+        .values()
+        .all(|f| !f.can_apply && !f.adapter_implemented));
+    for (source, verification, reliability) in [
+        (
+            EvidenceOrigin::UserSupplied,
+            Verification::UserReported,
+            Reliability::Hint,
+        ),
+        (
+            EvidenceOrigin::AuthenticatedManagement,
+            Verification::Observed,
+            Reliability::Observed,
+        ),
+    ] {
+        let mut unverified = e.clone();
+        let version = unverified
+            .iter_mut()
+            .find(|e| e.attribute == Attribute::FirmwareVersion)
+            .unwrap();
+        version.source = source;
+        version.verification = verification;
+        version.reliability = reliability;
+        unknown(&evaluate(&registry, &d, unverified, NOW, 1));
+    }
+    let mut missing = e.clone();
+    missing.retain(|e| e.attribute != Attribute::FirmwareVersion);
+    unknown(&evaluate(&registry, &d, missing, NOW, 1));
+    for value in ["MF69_AM802L_ZX_DD_N_241106_US", "", "23.05.5"] {
+        let mut wrong = e.clone();
+        wrong
+            .iter_mut()
+            .find(|e| e.attribute == Attribute::FirmwareVersion)
+            .unwrap()
+            .value = value.into();
+        unknown(&evaluate(&registry, &d, wrong, NOW, 1));
+    }
+    unknown(&evaluate(&registry, &d, e, NOW + EVIDENCE_TTL_MS + 1, 1));
+}
+#[test]
+fn conflicting_opaque_versions_preserve_case_and_block_authority() {
+    let text = opaque_profile();
+    let registry = Registry::load(vec![(&text, "bundled", true)]);
+    let d = device();
+    let mut e = opaque_evidence(&d);
+    let mut other = e
+        .iter()
+        .find(|e| e.attribute == Attribute::FirmwareVersion)
+        .unwrap()
+        .clone();
+    other.id = "conflicting-opaque-case".into();
+    other.value = OPAQUE.to_lowercase();
+    e.push(other);
+    let r = evaluate(&registry, &d, e, NOW, 1);
+    unknown(&r);
+    assert_eq!(r.confidence, MatchConfidence::Conflicting);
+    assert!(r.conflicts.contains(&Attribute::FirmwareVersion));
+    assert_eq!(
+        r.evidence
+            .iter()
+            .filter(|e| e.attribute == Attribute::FirmwareVersion && !e.conflicts.is_empty())
+            .count(),
+        2
+    );
+}
+#[test]
+fn unique_verified_match_beats_weaker_profiles_even_when_they_sort_first() {
+    let d = device();
+    let e = strong(&d);
+    // One probable profile lacks revision applicability; the other is a complete untrusted preview.
+    for authoritative in [false, true] {
+        let weak = mutate(CURATED, |p| {
+            p["profileId"] = "a.fixture.weak".into();
+            if authoritative {
+                p["hardwareRevisions"] = serde_json::json!([]);
+            }
+        });
+        let origin = if authoritative {
+            "bundled"
+        } else {
+            "local_unverified"
+        };
+        let forward = Registry::load(vec![
+            (&weak, origin, authoritative),
+            (CURATED, "bundled", true),
+        ]);
+        let reverse = Registry::load(vec![
+            (CURATED, "bundled", true),
+            (&weak, origin, authoritative),
+        ]);
+        for registry in [forward, reverse] {
+            let r = evaluate(&registry, &d, e.clone(), NOW, 1);
+            assert_eq!(r.candidates[0].profile_id, "a.fixture.weak");
+            assert_eq!(r.candidates[0].confidence, MatchConfidence::Probable);
+            assert_eq!(r.confidence, MatchConfidence::Verified);
+            assert_eq!(
+                r.selected_profile.as_deref(),
+                Some("tplink.archer-c7-v5.openwrt-23-05-5")
+            );
+            assert_eq!(r.features["dns"].assessment, Assessment::Supported);
+            assert!(r.features.values().all(|f| !f.can_apply));
+        }
+    }
+}
+#[test]
+fn usb_hints_remain_visible_but_cannot_override_verified_identity() {
+    let mut d = device();
+    d.vendor_id = Some("1286".into());
+    d.product_id = Some("4E31".into());
+    let mut e = strong(&d);
+    e.extend(gather_evidence(&d, &[]));
+    let r = evaluate(&Registry::bundled(), &d, e, NOW, 1);
+    assert_eq!(r.confidence, MatchConfidence::Verified);
+    let hint = r
+        .candidates
+        .iter()
+        .find(|p| p.profile_id == "observed.comfi-mg11")
+        .unwrap();
+    assert!(hint.matched_fields.contains(&Attribute::UsbVid));
+    assert!(hint.matched_fields.contains(&Attribute::UsbPid));
+    assert_eq!(hint.confidence, MatchConfidence::NoMatch);
+    assert!(!hint.authoritative);
+}
+#[test]
+fn two_verified_profiles_with_conflicting_capabilities_stay_ambiguous() {
+    let second = mutate(CURATED, |p| {
+        p["profileId"] = "a.fixture.conflicting".into();
+        p["capabilities"]["dns"]["assessment"] = "UNSUPPORTED".into();
+    });
+    let d = device();
+    let registry = Registry::load(vec![(&second, "bundled", true), (CURATED, "bundled", true)]);
+    let r = evaluate(&registry, &d, strong(&d), NOW, 1);
+    unknown(&r);
+    assert_eq!(r.confidence, MatchConfidence::Ambiguous);
+    assert_eq!(
+        r.candidates
+            .iter()
+            .filter(|c| c.confidence == MatchConfidence::Verified && c.authoritative)
+            .count(),
+        2
+    );
+}
+#[test]
+fn no_verified_match_retains_conservative_probable_candidate_and_ambiguous_behavior() {
+    let d = device();
+    let weak = mutate(CURATED, |p| p["hardwareRevisions"] = serde_json::json!([]));
+    let registry = Registry::load(vec![(&weak, "bundled", true)]);
+    let r = evaluate(&registry, &d, strong(&d), NOW, 1);
+    assert_eq!(r.confidence, MatchConfidence::Probable);
+    unknown(&r);
+    let mut d = d;
+    d.vendor_id = Some("1286".into());
+    d.product_id = Some("4E31".into());
+    let mut e = gather_evidence(&d, &[]);
+    e.push(
+        EvidenceRecord::user_reported(d.id.clone(), Attribute::Model, "MG11".into(), NOW).unwrap(),
+    );
+    let r = evaluate(&Registry::bundled(), &d, e.clone(), NOW, 1);
+    unknown(&r);
+    assert_eq!(r.confidence, MatchConfidence::Candidate);
+    let second = mutate(OBSERVED, |p| p["profileId"] = "fixture.second-hint".into());
+    let registry = Registry::load(vec![
+        (OBSERVED, "bundled_observation", false),
+        (&second, "bundled_observation", false),
+    ]);
+    let r = evaluate(&registry, &d, e, NOW, 1);
+    unknown(&r);
+    assert_eq!(r.confidence, MatchConfidence::Ambiguous);
+}
+
+#[test]
+fn unmatched_optional_usb_hint_cannot_demote_a_fully_verified_profile() {
+    let profile = mutate(CURATED, |p| {
+        p["matchRules"].as_array_mut().unwrap().push(serde_json::json!({"attribute":"usb_vid","values":["FFFF"],"purpose":"candidate_hint","explanation":"Optional USB product-family hint; never identity proof."}))
+    });
+    let registry = Registry::load(vec![(&profile, "bundled", true)]);
+    let d = device();
+    let mut evidence = strong(&d);
+    evidence.extend(gather_evidence(&d, &[]));
+    let r = evaluate(&registry, &d, evidence, NOW, 1);
+    assert_eq!(r.confidence, MatchConfidence::Verified);
+    assert!(r.selected_profile.is_some());
+    assert!(r.candidates[0]
+        .reasons
+        .iter()
+        .any(|reason| reason.contains("Optional CandidateHint")));
+    assert!(r.features.values().all(|f| !f.can_apply));
+}
+#[test]
+fn weak_firmware_reports_remain_visible_without_overriding_verified_firmware() {
+    let profile = opaque_profile();
+    let registry = Registry::load(vec![(&profile, "bundled", true)]);
+    let d = device();
+    let mut evidence = opaque_evidence(&d);
+    for value in [OPAQUE, "unverified-other-release"] {
+        evidence.push(
+            EvidenceRecord::user_reported(
+                d.id.clone(),
+                Attribute::FirmwareVersion,
+                value.into(),
+                NOW,
+            )
+            .unwrap(),
+        );
+    }
+    let r = evaluate(&registry, &d, evidence.clone(), NOW, 1);
+    assert_eq!(r.confidence, MatchConfidence::Verified);
+    assert_eq!(
+        r.evidence
+            .iter()
+            .filter(|e| e.verification == Verification::UserReported)
+            .count(),
+        2
+    );
+    assert!(r.features.values().all(|f| !f.can_apply));
+    evidence.retain(|e| {
+        e.attribute != Attribute::FirmwareVersion || e.verification == Verification::UserReported
+    });
+    unknown(&evaluate(&registry, &d, evidence, NOW, 1));
 }
