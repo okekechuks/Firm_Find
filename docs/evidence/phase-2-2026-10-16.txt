@@ -1,0 +1,818 @@
+OBTAINER Phase 2 — executed verification summary, 16 October 2026
+Workspace: C:\Users\chuka\OneDrive\Documents\Firm_Find
+Initial Git HEAD: 26feded57c08837ba93b3e74a6ab97a8d4db258f; clean working tree.
+
+Rust builds used CARGO_INCREMENTAL=0. Frontend tests used DEBUG_PRINT_LIMIT=1200.
+This is a recorded command/result summary. Native launch logs and structured observations follow.
+Earlier failures and corrections are enumerated in docs/PHASE_2_VERIFICATION.md.
+
+COMMAND: node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit
+EXIT: 0
+RESULT: TypeScript passes.
+
+COMMAND: npm.cmd run lint
+EXIT: 0
+RESULT: ESLint --max-warnings 0 passes.
+
+COMMAND: npm.cmd test
+EXIT: 0
+RESULT: 6 test files passed; 32 frontend tests passed.
+
+COMMAND: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check
+EXIT: 0
+RESULT: Formatting passes.
+
+COMMAND: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings
+EXIT: 0
+RESULT: Clippy passes.
+
+COMMAND: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline
+EXIT: 0
+RESULT: 22 Rust tests passed; main/doc targets pass.
+
+COMMAND: npm.cmd run build
+EXIT: 0
+RESULT: Production frontend passes; also executed by final Tauri beforeBuildCommand.
+
+COMMAND: npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline
+EXIT: 0
+RESULT: Fresh optimized target/release/obtainer.exe; final native compilation 1m19s. Final JS 335.18 kB / gzip 98.09 kB.
+
+COMMAND: npm.cmd run test:foundation -- --phase2 --router http://192.168.100.1/
+EXIT: 0
+RESULT: Final complete suite: 38 checks, dev/recovery/release. Evidence .tools/foundation/2026-10-16T14-09-28.811Z.
+
+COMMAND: npm.cmd run test:foundation -- --watch-usb
+EXIT: 0
+RESULT: Physical remove/reconnect verified, same logical ID. Four checks; .tools/foundation/2026-10-16T14-12-32.741Z.
+
+COMMAND: py .tools/phase-0-audit/probe-data.py .tools/phase-0-audit/phase-2-final.json
+EXIT: 0
+RESULT: Schema 2; integrity ok; original preference hash preserved.
+
+COMMAND: git diff --check
+EXIT: 0
+RESULT: No whitespace errors; Windows line-ending notices only.
+
+NATIVE EVIDENCE: .tools\foundation\2026-10-16T14-09-28.811Z
+
+results.json
+{
+  "results": [
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "dev-reopen: native window, React and real SQLite IPC",
+      "url": "http://127.0.0.1:1420/",
+      "pid": 6620,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+      "theme": "system"
+    },
+    {
+      "name": "dev-reopen: all eight navigation destinations"
+    },
+    {
+      "name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 74,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "dev-reopen: topology, categorical identity and virtual-interface filtering",
+      "candidates": 2,
+      "records": 74,
+      "enumerationMs": 993
+    },
+    {
+      "name": "dev-reopen: native WinHTTP rejected untrusted local certificate"
+    },
+    {
+      "name": "dev-reopen: native manual persistence, consent, HTTP states, deadline and cancellation",
+      "requests": 7,
+      "timeoutMs": 3016
+    },
+    {
+      "name": "dev-reopen: queued discovery cancellation and successful retry"
+    },
+    {
+      "name": "MG11 real read-only result; identity remains unverified",
+      "preexisting": true,
+      "code": "identity_unknown",
+      "message": "HTTP endpoint responded. Router identity, model and firmware remain unverified.",
+      "state": "reachable",
+      "status": 200,
+      "server": null,
+      "checkedAt": 1792159791354,
+      "elapsedMs": 84,
+      "resolvedAddress": "192.168.100.1",
+      "tls": "not_used"
+    },
+    {
+      "name": "dev-reopen: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "dev-reopen: injected read error and real IPC retry recovery"
+    },
+    {
+      "name": "dev-reopen: loading state retains cached data"
+    },
+    {
+      "name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"
+    },
+    {
+      "name": "dev-reopen: temporary HMR edit restored"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "interrupted owned development launch and released resources",
+      "backendRenderedBeforeInterrupt": false
+    },
+    {
+      "name": "dev-recovery: native window, React and real SQLite IPC",
+      "url": "http://127.0.0.1:1420/",
+      "pid": 24680,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+      "theme": "system"
+    },
+    {
+      "name": "dev-recovery: all eight navigation destinations"
+    },
+    {
+      "name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 74,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "dev-recovery: topology, categorical identity and virtual-interface filtering",
+      "candidates": 2,
+      "records": 74,
+      "enumerationMs": 975
+    },
+    {
+      "name": "dev-recovery: native WinHTTP rejected untrusted local certificate"
+    },
+    {
+      "name": "dev-recovery: native manual persistence, consent, HTTP states, deadline and cancellation",
+      "requests": 7,
+      "timeoutMs": 3004
+    },
+    {
+      "name": "dev-recovery: queued discovery cancellation and successful retry"
+    },
+    {
+      "name": "dev-recovery: MG11 user entry and endpoint observation survived restart",
+      "state": "discovered"
+    },
+    {
+      "name": "dev-recovery: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "production: native window, React and real SQLite IPC",
+      "url": "http://tauri.localhost/",
+      "pid": 22344,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+      "theme": "system"
+    },
+    {
+      "name": "production: all eight navigation destinations"
+    },
+    {
+      "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 74,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "production: topology, categorical identity and virtual-interface filtering",
+      "candidates": 2,
+      "records": 74,
+      "enumerationMs": 620
+    },
+    {
+      "name": "production: native WinHTTP rejected untrusted local certificate"
+    },
+    {
+      "name": "production: native manual persistence, consent, HTTP states, deadline and cancellation",
+      "requests": 7,
+      "timeoutMs": 3014
+    },
+    {
+      "name": "production: queued discovery cancellation and successful retry"
+    },
+    {
+      "name": "production: MG11 user entry and endpoint observation survived restart",
+      "state": "discovered"
+    },
+    {
+      "name": "production: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "no captured native console warnings or unhandled exceptions"
+    }
+  ],
+  "commands": [
+    {
+      "command": "npm.cmd run tauri -- dev -- --locked --offline",
+      "kind": "dev",
+      "exitCode": 0
+    },
+    {
+      "command": "npm.cmd run tauri -- dev -- --locked --offline",
+      "kind": "dev",
+      "exitCode": 1
+    },
+    {
+      "command": "npm.cmd run tauri -- dev -- --locked --offline",
+      "kind": "dev",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer.exe",
+      "kind": "release",
+      "exitCode": 0
+    }
+  ]
+}
+
+console-issues.json
+[]
+
+launch-0-dev.txt
+
+> obtainer-workspace@0.1.0 tauri
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1 dev -- --locked --offline
+
+     Running BeforeDevCommand (`npm run dev`)
+
+> @obtainer/desktop@0.1.0 dev
+> vite --configLoader runner --host 127.0.0.1
+
+
+  VITE v6.4.4  ready in 865 ms
+
+  ➜  Local:   http://127.0.0.1:1420/
+     Running DevCommand (`cargo  run --locked --offline --no-default-features --color always --`)
+        Info Watching C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src-tauri for changes...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.21s
+     Running `C:\Users\chuka\OneDrive\Documents\Firm_Find\target\debug\obtainer.exe`
+3:09:51 PM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css, /@fs/C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src\features\ManualRouters.tsx
+3:09:51 PM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css, /@fs/C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src\features\ManualRouters.tsx
+3:09:53 PM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css, /@fs/C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src\features\ManualRouters.tsx
+3:09:53 PM [vite] (client) hmr update /src/features/Preferences.tsx, /src/styles.css
+3:09:54 PM [vite] (client) hmr update /src/features/Preferences.tsx, /src/styles.css
+
+
+launch-1-dev.txt
+
+> obtainer-workspace@0.1.0 tauri
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1 dev -- --locked --offline
+
+     Running BeforeDevCommand (`npm run dev`)
+
+> @obtainer/desktop@0.1.0 dev
+> vite --configLoader runner --host 127.0.0.1
+
+
+  VITE v6.4.4  ready in 825 ms
+
+  ➜  Local:   http://127.0.0.1:1420/
+
+
+launch-2-dev.txt
+
+> obtainer-workspace@0.1.0 tauri
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1 dev -- --locked --offline
+
+     Running BeforeDevCommand (`npm run dev`)
+
+> @obtainer/desktop@0.1.0 dev
+> vite --configLoader runner --host 127.0.0.1
+
+
+  VITE v6.4.4  ready in 813 ms
+
+  ➜  Local:   http://127.0.0.1:1420/
+     Running DevCommand (`cargo  run --locked --offline --no-default-features --color always --`)
+        Info Watching C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src-tauri for changes...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.03s
+     Running `C:\Users\chuka\OneDrive\Documents\Firm_Find\target\debug\obtainer.exe`
+npm error Lifecycle script `dev` failed with error:
+npm error code 4294967295
+npm error path C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop
+npm error workspace @obtainer/desktop@0.1.0
+npm error location C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vite --configLoader runner --host 127.0.0.1
+
+
+launch-3-release.txt
+
+
+SANITIZED CANDIDATES AND ENDPOINT RESULTS
+{
+  "records": 74,
+  "candidates": [
+    {
+      "id": "60a4b031ade38b9f5586ace2fa09197f05bf7a11a973c2d460616efb4a3a6b88",
+      "name": "MediaTek MT7921 Wi-Fi 6 802.11ax PCIe Adapter",
+      "category": "network_gateway_candidate",
+      "identity": "candidate",
+      "vid": null,
+      "pid": null,
+      "interfaceClasses": [
+        "Net"
+      ],
+      "manufacturers": [
+        "MediaTek, Inc."
+      ],
+      "networkIndexes": [
+        16
+      ]
+    },
+    {
+      "id": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+      "name": "USB Composite Device",
+      "category": "router_mifi_candidate",
+      "identity": "candidate",
+      "vid": "1286",
+      "pid": "4E31",
+      "interfaceClasses": [
+        "Net",
+        "",
+        "",
+        "",
+        "USB"
+      ],
+      "manufacturers": [
+        "Microsoft",
+        "(Standard USB Host Controller)"
+      ],
+      "networkIndexes": [
+        49
+      ]
+    }
+  ],
+  "scanAndCommitMs": 993,
+  "results": [
+    {
+      "fixture": true,
+      "code": "authentication_required",
+      "message": "Endpoint requires or denies access. No credentials were sent; detailed authentication belongs to Phase 5.",
+      "state": "authentication_required",
+      "status": 401,
+      "server": "OBTAINER local fixture",
+      "checkedAt": 1792159784884,
+      "elapsedMs": 28,
+      "resolvedAddress": "192.168.1.172",
+      "tls": "not_used"
+    },
+    {
+      "fixture": true,
+      "code": "identity_unknown",
+      "message": "HTTP endpoint responded. Router identity, model and firmware remain unverified.",
+      "state": "reachable",
+      "status": 200,
+      "server": "OBTAINER local fixture",
+      "checkedAt": 1792159784897,
+      "elapsedMs": 4,
+      "resolvedAddress": "192.168.1.172",
+      "tls": "not_used"
+    },
+    {
+      "fixture": true,
+      "code": "redirect_blocked",
+      "message": "Endpoint returned a redirect. It was not followed. Enter the intended local destination explicitly if authorized.",
+      "state": "reachable",
+      "status": 302,
+      "server": "OBTAINER local fixture",
+      "checkedAt": 1792159784912,
+      "elapsedMs": 5,
+      "resolvedAddress": "192.168.1.172",
+      "tls": "not_used"
+    },
+    {
+      "fixture": true,
+      "code": "unsupported_management",
+      "message": "HTTP endpoint responded but this read-only HEAD check cannot identify its management interface.",
+      "state": "identity_unknown",
+      "status": 405,
+      "server": "OBTAINER local fixture",
+      "checkedAt": 1792159784926,
+      "elapsedMs": 4,
+      "resolvedAddress": "192.168.1.172",
+      "tls": "not_used"
+    },
+    {
+      "fixture": true,
+      "code": "timeout",
+      "message": "Management check reached its three-second HTTP deadline. Retry after checking the connection.",
+      "state": "unreachable",
+      "status": null,
+      "server": null,
+      "checkedAt": 1792159787951,
+      "elapsedMs": 3016,
+      "resolvedAddress": null,
+      "tls": "not_checked"
+    },
+    {
+      "fixture": true,
+      "code": "tls_trust_failure",
+      "message": "HTTPS certificate validation failed. Verify the router certificate and hostname through its owner before deliberately trusting its issuing certificate in Windows. No validation bypass is applied.",
+      "state": "error",
+      "status": null,
+      "server": null,
+      "checkedAt": 1792159788554,
+      "elapsedMs": 69,
+      "resolvedAddress": null,
+      "tls": "untrusted"
+    },
+    {
+      "fixture": false,
+      "userReportedModel": "comFi MG11 Portable 4G Wi-Fi 6 MIFI",
+      "code": "identity_unknown",
+      "message": "HTTP endpoint responded. Router identity, model and firmware remain unverified.",
+      "state": "reachable",
+      "status": 200,
+      "server": null,
+      "checkedAt": 1792159791354,
+      "elapsedMs": 84,
+      "resolvedAddress": "192.168.100.1",
+      "tls": "not_used"
+    }
+  ],
+  "fixtureRequests": [
+    {
+      "method": "HEAD",
+      "path": "/",
+      "authorization": false,
+      "cookie": false
+    },
+    {
+      "method": "HEAD",
+      "path": "/",
+      "authorization": false,
+      "cookie": false
+    },
+    {
+      "method": "HEAD",
+      "path": "/",
+      "authorization": false,
+      "cookie": false
+    },
+    {
+      "method": "HEAD",
+      "path": "/",
+      "authorization": false,
+      "cookie": false
+    },
+    {
+      "method": "HEAD",
+      "path": "/",
+      "authorization": false,
+      "cookie": false
+    },
+    {
+      "method": "HEAD",
+      "path": "/",
+      "authorization": false,
+      "cookie": false
+    },
+    {
+      "method": "HEAD",
+      "path": "/",
+      "authorization": false,
+      "cookie": false
+    }
+  ]
+}
+
+NATIVE EVIDENCE: .tools\foundation\2026-10-16T14-12-32.741Z
+
+results.json
+{
+  "results": [
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "MG11 physical removal and reconnection verified with same logical ID",
+      "verified": true,
+      "removed": true,
+      "returned": true,
+      "trace": [
+        {
+          "at": "2026-10-16T14:12:42.340Z",
+          "revision": 1,
+          "device": {
+            "id": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+            "connected": true,
+            "lifecycle": "identity_unknown",
+            "interfaces": 5,
+            "networks": [
+              {
+                "id": "{7F7C5ABA-3722-40E6-A506-E36DF47013EF}",
+                "index": 49,
+                "up": true
+              }
+            ]
+          }
+        },
+        {
+          "at": "2026-10-16T14:15:14.548Z",
+          "revision": 13,
+          "device": {
+            "id": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+            "connected": false,
+            "lifecycle": "disconnected",
+            "interfaces": 0,
+            "networks": [
+              {
+                "id": "{7F7C5ABA-3722-40E6-A506-E36DF47013EF}",
+                "index": 49,
+                "up": false
+              }
+            ]
+          }
+        },
+        {
+          "at": "2026-10-16T14:15:29.762Z",
+          "revision": 14,
+          "device": {
+            "id": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+            "connected": true,
+            "lifecycle": "identity_unknown",
+            "interfaces": 5,
+            "networks": [
+              {
+                "id": "{7F7C5ABA-3722-40E6-A506-E36DF47013EF}",
+                "index": 49,
+                "up": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "no captured native console warnings or unhandled exceptions"
+    }
+  ],
+  "commands": [
+    {
+      "command": "npm.cmd run tauri -- dev -- --locked --offline",
+      "kind": "dev",
+      "exitCode": 0
+    }
+  ]
+}
+
+console-issues.json
+[]
+
+hotplug-result.json
+{
+  "verified": true,
+  "removed": true,
+  "returned": true,
+  "trace": [
+    {
+      "at": "2026-10-16T14:12:42.340Z",
+      "revision": 1,
+      "device": {
+        "id": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+        "connected": true,
+        "lifecycle": "identity_unknown",
+        "interfaces": 5,
+        "networks": [
+          {
+            "id": "{7F7C5ABA-3722-40E6-A506-E36DF47013EF}",
+            "index": 49,
+            "up": true
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-16T14:15:14.548Z",
+      "revision": 13,
+      "device": {
+        "id": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+        "connected": false,
+        "lifecycle": "disconnected",
+        "interfaces": 0,
+        "networks": [
+          {
+            "id": "{7F7C5ABA-3722-40E6-A506-E36DF47013EF}",
+            "index": 49,
+            "up": false
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-16T14:15:29.762Z",
+      "revision": 14,
+      "device": {
+        "id": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+        "connected": true,
+        "lifecycle": "identity_unknown",
+        "interfaces": 5,
+        "networks": [
+          {
+            "id": "{7F7C5ABA-3722-40E6-A506-E36DF47013EF}",
+            "index": 49,
+            "up": true
+          }
+        ]
+      }
+    }
+  ]
+}
+
+launch-0-dev.txt
+
+> obtainer-workspace@0.1.0 tauri
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1 dev -- --locked --offline
+
+     Running BeforeDevCommand (`npm run dev`)
+
+> @obtainer/desktop@0.1.0 dev
+> vite --configLoader runner --host 127.0.0.1
+
+
+  VITE v6.4.4  ready in 901 ms
+
+  ➜  Local:   http://127.0.0.1:1420/
+     Running DevCommand (`cargo  run --locked --offline --no-default-features --color always --`)
+        Info Watching C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src-tauri for changes...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.07s
+     Running `C:\Users\chuka\OneDrive\Documents\Firm_Find\target\debug\obtainer.exe`
+npm error Lifecycle script `dev` failed with error:
+
+
+SQLITE EVIDENCE phase-2-before.json
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 943512,
+      "sha256": "894e6b51696f35f0acff35a43e11e40354056706ab9739a68a1679bbaf1e6c63"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 1,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 52,
+    "devices": 48,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 943512,
+      "sha256": "894e6b51696f35f0acff35a43e11e40354056706ab9739a68a1679bbaf1e6c63"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+
+SQLITE EVIDENCE phase-2-final.json
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 2591512,
+      "sha256": "cdc1cc49666fe7ed68427df0bb8aee597c0db38566cdaafe32c0fd68db538ec7"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 2,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 83,
+    "devices": 79,
+    "discovery_metadata": 79,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "manual_routers": 1,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 2591512,
+      "sha256": "cdc1cc49666fe7ed68427df0bb8aee597c0db38566cdaafe32c0fd68db538ec7"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+
+SQLITE EVIDENCE phase-2-preservation.json
+{
+  "devices": {
+    "before": 48,
+    "after": 79,
+    "missing_preexisting_ids": 0
+  },
+  "audit_events": {
+    "before": 52,
+    "after": 83,
+    "missing_preexisting_ids": 0
+  },
+  "settings": {
+    "before": 1,
+    "after": 1,
+    "missing_preexisting_ids": 0
+  },
+  "firmware_artifacts": {
+    "before": 0,
+    "after": 0,
+    "missing_preexisting_ids": 0
+  },
+  "jobs": {
+    "before": 0,
+    "after": 0,
+    "missing_preexisting_ids": 0
+  }
+}

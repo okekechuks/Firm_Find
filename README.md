@@ -4,13 +4,13 @@ OBTAINER is a Windows app intended to help owners keep unsupported routers and M
 
 ## Current status
 
-**Phase 1 desktop foundation is complete.** Development and production launches, navigation, device refresh, saved appearance, hot reload and restart recovery are verified. The current project structure is retained. The [Phase 1 report](docs/PHASE_1_VERIFICATION.md) records the checks and remaining limits.
+**Phase 2 discovery and connection foundation is complete.** The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can add a router address, save it, and explicitly check whether its management page responds. Checks are read-only; the app does not try passwords or change router settings.
 
-The app can list USB devices, serial ports, and network adapters that Windows reports. It groups related interfaces when Windows provides matching identity information, updates the inventory as devices change, and lets users refresh it. It also has eight workspaces and remembers light or dark appearance settings. This discovery is passive: it does not identify every router's chipset or firmware, change router settings, extract firmware, or install anything.
+A USB-connected comFi MG11 was tested: its management address responded, unplug/reconnect restored the same device record, and saved details survived app restarts. Its model name remains user-supplied; a responding webpage does not prove model, chipset or firmware identity. See the [Phase 2 verification report](docs/PHASE_2_VERIFICATION.md).
 
-The Windows app was verified in a normal user session: navigation works, device inventory refreshes, and existing appearance settings survive restart. Restricted automation still cannot start its embedded browser, but the same application works in the normal Windows session.
+The Windows desktop foundation, eight workspaces, device refresh, saved appearance, hot reload and restart recovery remain working. Device profiles and supported-feature decisions come next in Phase 3. Firmware extraction, customization and installation remain future work.
 
-The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) follow the supplied development guideline. Discovery remains partial against its requirements.
+The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) retain the supplied development sequence and existing project structure.
 
 ## What OBTAINER aims to do
 

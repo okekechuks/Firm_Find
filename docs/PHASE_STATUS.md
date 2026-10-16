@@ -2,9 +2,20 @@
 
 Audited: **16 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE.** Current [Phase 1 verification](PHASE_1_VERIFICATION.md), [command transcript](evidence/phase-1-2026-10-16.txt), and [native development screenshot](images/phase-1-development-2026-10-16.png) record the completed desktop foundation. Phase 2 remains Partial and no later feature implementation began.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3 readiness: READY.** The [Phase 2 verification](PHASE_2_VERIFICATION.md), [command/evidence transcript](evidence/phase-2-2026-10-16.txt), [discovery behavior](DEVICE_DISCOVERY.md), and [identity decisions](DEVICE_IDENTITY.md) record the current implementation. Phase 3 feature work has not begun.
 
-## Phase 1 completion evidence
+## Phase 2 completion evidence
+
+- Existing Windows discovery/correlation/notifications retained and extended with observed interface paths, manufacturer/compatible IDs, prefixes, DNS, LUIDs and default routes. Two relevant candidates remain distinct from generic/software/Bluetooth records.
+- Real manual address save, ownership confirmation, bounded read-only HTTP/HTTPS checks, detailed results, cancellation, retry/remove and historical state are connected through validated React/Rust IPC. Late reads and superseded operations cannot overwrite newer UI/probe results.
+- User-reported comFi MG11 at `192.168.100.1`: USB VID `1286`, PID `4E31`, five correlated functions and RNDIS index 49. A fresh HEAD returned HTTP 200 in 84 ms; model/firmware identity remains unverified.
+- Direct physical USB trace captured removal at 14:15:14 UTC and reconnection at 14:15:29 UTC, with the same logical ID and five functions restored. The initial missed watch is documented; the later recorded trace is the qualification evidence.
+- Final native suite passes 38 checks across development, interrupted-launch recovery and production. A separate physical watch passes four checks. Console warning/error/exception captures are empty; screenshots were inspected.
+- TypeScript, lint, formatting, Clippy, **32 frontend tests**, **22 Rust tests**, frontend production build and fresh native release build pass.
+- Additive SQLite schema 2 preserves all original settings/inventory/audit IDs and the existing storage directory. Integrity is `ok`; original preference hash is unchanged. One user-supplied MG11 entry remains; fixture entries were removed through the app API.
+- No router configuration/firmware writes, vendor authentication, capability profiles or customization features were implemented. Additional phone/VPN/vendor/IPv6 hardware qualification remains scoped, not universal support.
+
+## Accepted Phase 1 evidence (historical)
 
 - Existing Tauri development command, initial React/Rust connection, reload and all eight destinations pass in the native Windows app. Production uses the fresh optimized executable.
 - Fixed failed/stale workspace state, initial-inventory metadata refresh, unsaved-theme loss, confirmed-save reporting, subscription/read error handling, initial discovery retry, and view error containment. Existing Rust/discovery/storage modules retained.
@@ -65,7 +76,7 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 | --- | --- | --- | --- |
 | 0: Repository/environment audit | Complete (PASS) | Current inventory/environment/commands/data/migration evidence; checks and fresh release build pass; native render/navigation/IPC/discovery/restart verified on 16 October. | None at the Phase 0 gate; scoped unverified work is recorded in the audit. |
 | 1: Desktop foundation | Complete | Native development/production render, navigation, IPC, cross-mode UI settings, HMR, lifecycle recovery, clean console, 24 frontend/11 Rust tests; report linked above. | No critical foundation blocker; future feature navigation evolves in its own phases. |
-| 2: Discovery | Partial | Native USB/serial/network inventory, correlation, notifications, refresh, evidence, UI and fixtures; real native read/refresh verified in normal-session audits. | Manual management-address entry, richer candidate identity/diagnostics, and physical hot-plug/reconnect evidence. |
+| 2: Discovery | Complete (PASS) | Native topology/evidence, correlation, classification, saved manual targets, bounded checks, cancellation, restart persistence; real MG11 HTTP and physical USB reconnect; 32 frontend/22 Rust tests and native suites pass. | No critical blocker. Broader phone/VPN/vendor/IPv6 hardware qualification is explicitly unverified. |
 | 3: Profiles/capabilities | Partial | Four unknown feature fields and primitive evidence/confidence display. | Versioned profiles, exact matching, seven new reasoned statuses, evaluator, constraints, conflict tests, support UI. |
 | 4: Storage/jobs/library | Partial | SQLite migration, settings, hashed device IDs, aggregate audit, reserved jobs/artifact tables. | Real jobs/history, controlled file import, immutable vault, hashing/dedup/integrity, manifests, library UI and restart/cancellation tests. |
 | 5: Adapters | Not started | Discovery provider is reusable infrastructure, not a router adapter framework. | Contracts, registry, authentication, typed errors, protected credentials, mock adapter and contract tests. |
@@ -86,10 +97,10 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 
 ## Next execution order
 
-1. Phase 1 is complete; next work is Phase 2 discovery/candidate identity when requested.
-2. Close the remaining Phase 2 manual management-address, diagnostic/identity and physical hot-plug/reconnect acceptance gaps.
-3. Implement phase 3 profiles and capability decisions before device-management writes.
-4. Build phases 4–6 into a durable library, adapter layer, and real simulator.
-5. Implement phase 8 simulator DNS transactions; phase 7 may proceed with suitable hardware and must pass before real DNS changes in phase 9.
+1. Phase 2 is complete; Phase 3 profiles and capability evaluation are ready to begin when requested.
+2. Keep unknown support until exact device/version/profile evidence supports a decision. Current MG11 model is user-supplied.
+3. Continue broader hardware qualification as suitable devices become available.
+4. Build phases 4-6 into the durable library, adapter layer and real simulator after their dependencies.
+5. Implement simulator transactions before authorized hardware configuration changes in later phases.
 
-The desktop foundation passes Phase 1. Future execution order above remains a tracker; this run implements no Phase 2 or customization features.
+This tracker records completed Phase 2 work. No Phase 3 or customization implementation began in this run.

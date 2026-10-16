@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-manual-routers"
+description = "Enables the get_manual_routers command without any pre-configured scope."
+commands.allow = ["get_manual_routers"]
+
+[[permission]]
+identifier = "deny-get-manual-routers"
+description = "Denies the get_manual_routers command without any pre-configured scope."
+commands.deny = ["get_manual_routers"]

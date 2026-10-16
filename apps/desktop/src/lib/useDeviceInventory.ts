@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { errorMessage, getDiscovery, onDiscoveryChanged, refreshDiscovery } from "./backend";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { cancelDiscovery, errorMessage, getDiscovery, onDiscoveryChanged, refreshDiscovery } from "./backend";
 import type { DiscoverySnapshot } from "../types/contracts";
 
 export function useDeviceInventory(desktop: boolean) {
+  const generation = useRef(0);
   const [inventory, setInventory] = useState<DiscoverySnapshot | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
@@ -37,11 +38,17 @@ export function useDeviceInventory(desktop: boolean) {
 
   const refresh = useCallback(async () => {
     if (!desktop) return;
+    const epoch = ++generation.current;
     setRefreshing(true);
     setReadError(null);
-    try { accept(await refreshDiscovery()); }
-    catch (failure) { setReadError(errorMessage(failure)); }
-    finally { setRefreshing(false); }
+    try { const next = await refreshDiscovery(); if (epoch === generation.current) accept(next); }
+    catch (failure) { if (epoch === generation.current) setReadError(errorMessage(failure)); }
+    finally { if (epoch === generation.current) setRefreshing(false); }
   }, [desktop, accept]);
-  return { inventory, error: readError ?? subscriptionError, refreshing, refresh };
+  const cancel = useCallback(async () => {
+    generation.current++;
+    try { await cancelDiscovery(); setRefreshing(false); setReadError("Discovery cancelled. Last successful inventory retained."); }
+    catch (failure) { setReadError(errorMessage(failure)); }
+  }, []);
+  return { cancel, inventory, error: readError ?? subscriptionError, refreshing, refresh };
 }

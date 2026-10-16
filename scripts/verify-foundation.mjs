@@ -1,5 +1,6 @@
 // Exercises the actual Windows Tauri dev command and release executable through native WebView2.
 import assert from 'node:assert/strict';
+import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -142,7 +143,7 @@ async function verify(label, extended = false) {
   originalSettings ??= before.settings;
   assert.deepEqual(before.settings, originalSettings);
   assert.equal(path.normalize(before.dataDirectory).toLowerCase(), path.join(env.LOCALAPPDATA, 'OBTAINER').toLowerCase());
-  assert.equal(before.databaseVersion, 1);
+  assert.equal(before.databaseVersion, 2);
   const state = processes();
   assert.equal(state.apps.length, 1); assert.notEqual(state.apps[0].window, 0, 'Native window missing');
   assert.equal(state.vite.length, isDev ? 1 : 0);
@@ -176,6 +177,10 @@ async function verify(label, extended = false) {
     assert.notEqual(next.status, 'failed');
   }
   record(label + ': discovery, three refreshes, unique IDs, unknown feature support', { records: discovery.devices.length, watching: discovery.watching, warnings: discovery.warnings });
+  if (process.argv.includes('--phase2')) {
+    const index = process.argv.indexOf('--router');
+    await verifyDiscovery(client, {label, evidence, record, routerAddress: index >= 0 ? process.argv[index + 1] : undefined, hotplug: process.argv.includes('--hotplug')});
+  }
   // Exercise real save IPC with the existing value, without changing user preferences.
   assert.deepEqual(await invoke('save_settings', { settings: originalSettings }), originalSettings);
   assert.deepEqual((await invoke('get_snapshot')).settings, originalSettings);
@@ -252,7 +257,12 @@ async function chooseAppearance(theme) {
   assert.equal((await invoke('get_snapshot')).settings.theme, theme);
 }
 try {
-  if (settingsRoundtrip) {
+  if (process.argv.includes('--watch-usb')) {
+    await clean(); start('dev'); await connect(); await connected();
+    await screen('devices', 'Connected devices');
+    await watchUsb(client, {evidence, record});
+    await closeWindow();
+  } else if (settingsRoundtrip) {
     await clean();
     start('release'); await connect(); await connected();
     const baseline = await invoke('get_snapshot'); originalSettings = baseline.settings;

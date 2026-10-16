@@ -20,7 +20,12 @@ fn composite_correlation_deduplication_and_capabilities() {
     );
     assert_eq!(device.vendor_id.as_deref(), Some("12D1"));
     assert_eq!(device.product_id.as_deref(), Some("14DC"));
-    assert_eq!(device.confidence, 70);
+    assert_eq!(device.confidence, 0);
+    assert_eq!(device.identity.confidence, "candidate");
+    assert_eq!(
+        device.category,
+        super::identity::Category::RouterMifiCandidate
+    );
     assert_eq!(device.capabilities.backup, Capability::Unknown);
     assert_eq!(device.capabilities.flash, Capability::Unsupported);
     assert_eq!(device.capabilities.features.apn.state, Capability::Unknown);
@@ -29,7 +34,7 @@ fn composite_correlation_deduplication_and_capabilities() {
     assert!(!device.capabilities.features.apn.can_rollback);
     assert_eq!(device.capabilities.features.ussd.confidence, 0);
     assert_eq!(snapshots[2].devices[0].interfaces.len(), 2);
-    assert_eq!(snapshots[2].devices[0].confidence, 45);
+    assert_eq!(snapshots[2].devices[0].identity.confidence, "candidate");
 }
 
 #[test]
@@ -144,6 +149,91 @@ fn cyclic_parent_records_are_bounded_and_invalid_fixture_is_rejected() {
         r#"[{"name":"bad","inventory":{"nodes":[],"adapters":[],"shell":"cmd"}}]"#
     )
     .is_err());
+}
+
+#[test]
+fn identical_usb_vendor_ids_do_not_merge_and_missing_ids_remain_unknown() {
+    let nodes = [
+        "USB\\VID_1234&PID_5678\\ONE",
+        "USB\\VID_1234&PID_5678\\TWO",
+        "USB\\MISSING\\THREE",
+    ]
+    .into_iter()
+    .map(|id| RawNode {
+        instance_id: id.into(),
+        ..Default::default()
+    })
+    .collect();
+    let devices = assemble(
+        Inventory {
+            nodes,
+            adapters: vec![],
+        },
+        1,
+    );
+    assert_eq!(devices.len(), 3);
+    assert_eq!(devices.iter().filter(|d| d.vendor_id.is_none()).count(), 1);
+    assert_eq!(usb_ids("USB\\VID_ZZZZ&PID_123"), (None, None));
+}
+
+#[test]
+fn bluetooth_usb_serial_and_pan_functions_are_not_router_candidates() {
+    let nodes = vec![RawNode {
+        instance_id: "USB\\VID_1234&PID_5678\\BT".into(),
+        class_name: "Bluetooth".into(),
+        adapter_id: Some("pan".into()),
+        port_name: Some("COM7".into()),
+        ..Default::default()
+    }];
+    let adapters = vec![NetworkAdapter {
+        id: "pan".into(),
+        virtual_interface: true,
+        ..Default::default()
+    }];
+    let devices = assemble(Inventory { nodes, adapters }, 1);
+    assert_eq!(devices.len(), 1);
+    assert_eq!(devices[0].category, identity::Category::UnrelatedDevice);
+    assert_eq!(devices[0].identity.confidence, "unknown");
+}
+
+#[test]
+fn virtual_gateway_phone_hint_and_multiple_physical_gateways_stay_unverified() {
+    let nodes = vec![RawNode {
+        instance_id: "USB\\VID_1234&PID_5678\\PHONE".into(),
+        adapter_id: Some("phone".into()),
+        compatible_ids: vec!["android".into()],
+        ..Default::default()
+    }];
+    let adapters = ["phone", "vpn", "wifi", "ethernet"]
+        .into_iter()
+        .map(|id| NetworkAdapter {
+            id: id.into(),
+            link_up: true,
+            virtual_interface: id == "vpn",
+            gateways: vec!["192.168.1.1".into()],
+            ..Default::default()
+        })
+        .collect();
+    let devices = assemble(Inventory { nodes, adapters }, 1);
+    assert_eq!(devices.len(), 4);
+    assert!(devices
+        .iter()
+        .all(|d| d.identity.confidence != "verified" && d.identity.model.is_none()));
+    assert!(devices
+        .iter()
+        .filter(|d| d.networks[0].id == "vpn")
+        .all(|d| d.category == identity::Category::GenericNetworkInterface));
+    assert!(devices
+        .iter()
+        .filter(|d| d.networks[0].id == "phone")
+        .all(|d| d.category != identity::Category::RouterMifiCandidate));
+    assert_eq!(
+        devices
+            .iter()
+            .filter(|d| d.category == identity::Category::NetworkGatewayCandidate)
+            .count(),
+        3
+    );
 }
 
 #[cfg(windows)]

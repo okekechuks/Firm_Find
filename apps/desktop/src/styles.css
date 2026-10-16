@@ -1232,6 +1232,21 @@ h1 {
 .device-container { margin-top: 12px; }
 .network-detail { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 4px; }
 .network-detail dl { max-width: 720px; }
+.device-group-heading { font-size: 13px; margin: 22px 0 12px; }
+.other-interfaces { margin-top: 18px; }
+.other-interfaces > summary { cursor: pointer; color: var(--muted); padding: 12px 0; font-size: 12px; }
+.manual-routers { padding: 22px; margin-top: 22px; }
+.manual-routers > p { margin: 10px 0; line-height: 1.6; }
+.saved-router { padding: 18px 0; border-top: 1px solid var(--line); margin-top: 18px; }
+.saved-router p { margin: 8px 0; overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
+.router-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+.target-consent { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; font-size: 11px; line-height: 1.6; }
+.router-form { padding: 20px; background: var(--soft); border: 1px solid var(--line); border-radius: 10px; margin: 18px 0; }
+.router-form form { display: grid; gap: 13px; }
+.router-form label { display: grid; gap: 7px; font-size: 12px; }
+.router-form input, .router-form select { padding: 10px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; width: 100%; }
+.endpoint-observation { padding: 10px; border-left: 2px solid var(--accent); }
+.manual-routers details li { line-height: 1.6; margin: 8px 0; }
 @media (max-width: 850px) {
   .device-toolbar { flex-wrap: wrap; }
   .device-search { flex-basis: 55%; }

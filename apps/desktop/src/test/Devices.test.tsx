@@ -20,14 +20,14 @@ const inventory: DiscoverySnapshot = {
     }],
     networks: [{ id: "fixture-adapter", displayName: "Test network", description: "USB network",
       interfaceIndex: 4, interfaceType: 6, linkUp: true, addresses: ["192.0.2.10"], gateways: ["192.0.2.1"] }],
-    assessment: "Possible router or MiFi", confidence: 70, evidence: ["USB identity match"],
+    category: "router_mifi_candidate", assessment: "Possible router or MiFi", confidence: 70, evidence: ["USB identity match"],
     capabilities: { inventory: "SUPPORTED", backup: "UNKNOWN", flash: "UNSUPPORTED", features: {
       apn: unverifiedFeature, wifiUserLimit: unverifiedFeature, customDns: unverifiedFeature, ussd: unverifiedFeature,
     } }, lastSeenAt: 1_792_000_000_000,
   }, {
     id: "b".repeat(64), displayName: "Disconnected reader", connected: false, transports: ["usb"],
     vendorId: null, productId: null, containerId: null, interfaces: [], networks: [],
-    assessment: "Unknown device", confidence: 0, evidence: ["Windows inventory only"],
+    category: "unrelated_device", assessment: "Unknown device", confidence: 0, evidence: ["Windows inventory only"],
     capabilities: { inventory: "SUPPORTED", backup: "UNKNOWN", flash: "UNSUPPORTED", features: {
       apn: unverifiedFeature, wifiUserLimit: unverifiedFeature, customDns: unverifiedFeature, ussd: unverifiedFeature,
     } }, lastSeenAt: 1_792_000_000_000,
@@ -45,7 +45,7 @@ it("shows real device evidence, unknown backup support and unverified gateway", 
   await user.click(deviceCard);
   const details = screen.getByRole("region", { name: "Device details" });
   expect(within(details).getAllByText("UNKNOWN")).toHaveLength(5);
-  expect(within(details).getByText("Step 5 feature support")).toBeInTheDocument();
+  expect(within(details).getByText(/Feature support.*pending Phase 3/)).toBeInTheDocument();
   expect(within(details).getByText("Wi-Fi user limit")).toBeInTheDocument();
   expect(within(details).getByText("UNSUPPORTED")).toBeInTheDocument();
   expect(within(details).getByText("192.0.2.1")).toBeInTheDocument();
@@ -55,6 +55,7 @@ it("filters disconnected devices and connection types", async () => {
   const user = userEvent.setup();
   render(<Devices {...props} />);
   const search = screen.getByRole("textbox", { name: "Search devices" });
+  await user.click(screen.getByRole("checkbox", {name: /Show advanced Windows/}));
   await user.type(search, "reader");
   expect(screen.getByRole("heading", { name: "Disconnected reader" })).toBeInTheDocument();
   await user.click(screen.getByRole("checkbox", { name: "Show disconnected" }));

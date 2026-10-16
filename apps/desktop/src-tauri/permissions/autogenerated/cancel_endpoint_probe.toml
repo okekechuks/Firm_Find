@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cancel-endpoint-probe"
+description = "Enables the cancel_endpoint_probe command without any pre-configured scope."
+commands.allow = ["cancel_endpoint_probe"]
+
+[[permission]]
+identifier = "deny-cancel-endpoint-probe"
+description = "Denies the cancel_endpoint_probe command without any pre-configured scope."
+commands.deny = ["cancel_endpoint_probe"]

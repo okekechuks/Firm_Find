@@ -255,7 +255,7 @@ export function App() {
             <Dashboard snapshot={snapshot} navigate={navigate} />
           ) : page === "devices" ? (
             <Devices inventory={inventory.inventory} desktop={desktop} error={inventory.error}
-              refreshing={inventory.refreshing} onRefresh={inventory.refresh} />
+              refreshing={inventory.refreshing} onRefresh={inventory.refresh} onCancel={inventory.cancel} />
           ) : page === "settings" ? (
             <Preferences
               snapshot={snapshot}

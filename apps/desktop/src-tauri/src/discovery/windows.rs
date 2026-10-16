@@ -1,5 +1,5 @@
 //! Read-only Windows inventory. No device handles, sockets, driver changes or elevation.
-use super::{service::Signal, Inventory, NetworkAdapter, RawNode};
+use super::{service::Signal, AddressPrefix, DefaultRoute, Inventory, NetworkAdapter, RawNode};
 use std::{
     collections::BTreeMap,
     ffi::c_void,
@@ -21,7 +21,7 @@ use windows_sys::{
         },
         NetworkManagement::{IpHelper::*, Ndis::IfOperStatusUp},
         Networking::WinSock::{
-            AF_INET, AF_INET6, AF_UNSPEC, SOCKADDR_IN, SOCKADDR_IN6, SOCKET_ADDRESS,
+            AF_INET, AF_INET6, AF_UNSPEC, SOCKADDR_IN, SOCKADDR_IN6, SOCKADDR_INET, SOCKET_ADDRESS,
         },
         System::Registry::{
             RegCloseKey, RegQueryValueExW, HKEY, KEY_QUERY_VALUE, REG_MULTI_SZ, REG_SZ,
@@ -259,6 +259,9 @@ fn nodes() -> Result<Vec<RawNode>, String> {
             class_name: class_name.clone(),
             class_guid: guid(&info.ClassGuid),
             hardware_ids: property(set.0, &info, SPDRP_HARDWAREID),
+            compatible_ids: property(set.0, &info, SPDRP_COMPATIBLEIDS),
+            manufacturer: property(set.0, &info, SPDRP_MFG).into_iter().next(),
+            interface_paths: vec![],
             port_name: if class_name.eq_ignore_ascii_case("Ports") {
                 registry_string(set.0, &info, DIREG_DEV, "PortName")
             } else {
@@ -353,6 +356,8 @@ fn add_interfaces(class: &GUID, nodes: &mut BTreeMap<String, RawNode>) -> Result
         if let Some(id) = instance_id(set.0, &info) {
             if let Some(node) = nodes.get_mut(&id.to_ascii_uppercase()) {
                 node.interface_classes.push(guid(class));
+                node.interface_paths
+                    .push(unsafe { wide_ptr((*detail).DevicePath.as_ptr()) });
             }
         }
     }
@@ -390,8 +395,7 @@ fn adapters() -> Result<Vec<NetworkAdapter>, String> {
     let flags = GAA_FLAG_INCLUDE_GATEWAYS
         | GAA_FLAG_INCLUDE_ALL_INTERFACES
         | GAA_FLAG_SKIP_ANYCAST
-        | GAA_FLAG_SKIP_MULTICAST
-        | GAA_FLAG_SKIP_DNS_SERVER;
+        | GAA_FLAG_SKIP_MULTICAST;
     let mut required = 15000u32;
     for _ in 0..4 {
         if required as usize > MAX_BUFFER {
@@ -428,9 +432,14 @@ fn adapters() -> Result<Vec<NetworkAdapter>, String> {
                             .into_owned()
                     };
                     let mut addresses = vec![];
+                    let mut prefixes = vec![];
                     let mut unicast = adapter.FirstUnicastAddress;
                     while !unicast.is_null() {
                         if let Some(address) = socket_address(&(*unicast).Address) {
+                            prefixes.push(AddressPrefix {
+                                address: address.clone(),
+                                length: (*unicast).OnLinkPrefixLength,
+                            });
                             addresses.push(address);
                         }
                         unicast = (*unicast).Next;
@@ -443,6 +452,20 @@ fn adapters() -> Result<Vec<NetworkAdapter>, String> {
                         }
                         gateway = (*gateway).Next;
                     }
+                    let mut dns_servers = vec![];
+                    let mut dns = adapter.FirstDnsServerAddress;
+                    while !dns.is_null() {
+                        if let Some(address) = socket_address(&(*dns).Address) {
+                            dns_servers.push(address);
+                        }
+                        dns = (*dns).Next;
+                    }
+                    let mut row = MIB_IF_ROW2 {
+                        InterfaceLuid: adapter.Luid,
+                        ..Default::default()
+                    };
+                    let virtual_interface = GetIfEntry2(&mut row) == ERROR_SUCCESS
+                        && row.InterfaceAndOperStatusFlags._bitfield & 1 == 0;
                     addresses.sort();
                     addresses.dedup();
                     gateways.sort();
@@ -456,14 +479,78 @@ fn adapters() -> Result<Vec<NetworkAdapter>, String> {
                         link_up: adapter.OperStatus == IfOperStatusUp,
                         addresses,
                         gateways,
+                        prefixes,
+                        dns_servers,
+                        virtual_interface,
+                        luid: adapter.Luid.Value.to_string(),
+                        ipv6_index: adapter.Ipv6IfIndex,
+                        default_routes: vec![],
                     });
                 }
                 current = adapter.Next;
             }
         }
+        add_routes(&mut adapters)?;
         return Ok(adapters);
     }
     Err("Network inventory changed repeatedly; refresh to try again".into())
+}
+
+// Route metrics are Windows route offsets, not interface+route preference scores.
+fn add_routes(adapters: &mut [NetworkAdapter]) -> Result<(), String> {
+    let mut table = ptr::null_mut();
+    let result = unsafe { GetIpForwardTable2(AF_UNSPEC, &mut table) };
+    if result != ERROR_SUCCESS {
+        return Err(format!(
+            "GetIpForwardTable2 failed (Windows error {result})"
+        ));
+    }
+    struct Table(*mut MIB_IPFORWARD_TABLE2);
+    impl Drop for Table {
+        fn drop(&mut self) {
+            unsafe {
+                FreeMibTable(self.0.cast());
+            }
+        }
+    }
+    let table = Table(table);
+    if table.0.is_null() {
+        return Ok(());
+    }
+    unsafe {
+        let count = (*table.0).NumEntries as usize;
+        if count > 65536 {
+            return Err("Routing table exceeded its safety limit".into());
+        }
+        for row in std::slice::from_raw_parts((*table.0).Table.as_ptr(), count) {
+            if row.DestinationPrefix.PrefixLength != 0 {
+                continue;
+            }
+            let Some(adapter) = adapters
+                .iter_mut()
+                .find(|a| a.luid == row.InterfaceLuid.Value.to_string())
+            else {
+                continue;
+            };
+            let family = row.NextHop.si_family;
+            let socket = SOCKET_ADDRESS {
+                lpSockaddr: (&row.NextHop as *const SOCKADDR_INET).cast_mut().cast(),
+                iSockaddrLength: if family == AF_INET {
+                    size_of::<SOCKADDR_IN>()
+                } else {
+                    size_of::<SOCKADDR_IN6>()
+                } as i32,
+            };
+            if let Some(gateway) = socket_address(&socket) {
+                adapter.default_routes.push(DefaultRoute {
+                    gateway,
+                    metric: row.Metric,
+                    family: if family == AF_INET { "ipv4" } else { "ipv6" }.into(),
+                });
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn capture() -> Result<Inventory, String> {

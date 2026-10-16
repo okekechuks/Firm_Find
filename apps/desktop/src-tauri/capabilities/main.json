@@ -2,7 +2,24 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
   "description": "Local main window may read workspace state, save preferences and request passive device inventory.",
-  "windows": ["main"],
-  "platforms": ["windows"],
-  "permissions": ["allow-get-snapshot", "allow-save-settings", "allow-get-discovery", "allow-refresh-discovery", "core:event:allow-listen", "core:event:allow-unlisten"]
+  "windows": [
+    "main"
+  ],
+  "platforms": [
+    "windows"
+  ],
+  "permissions": [
+    "allow-get-snapshot",
+    "allow-save-settings",
+    "allow-get-discovery",
+    "allow-refresh-discovery",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-get-manual-routers",
+    "allow-add-manual-router",
+    "allow-remove-manual-router",
+    "allow-probe-management-endpoint",
+    "allow-cancel-endpoint-probe",
+    "allow-cancel-discovery"
+  ]
 }

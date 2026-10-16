@@ -1,3 +1,4 @@
+pub mod identity;
 mod service;
 #[cfg(windows)]
 mod windows;
@@ -22,6 +23,12 @@ pub struct RawNode {
     pub adapter_id: Option<String>,
     #[serde(default)]
     pub interface_classes: Vec<String>,
+    #[serde(default)]
+    pub manufacturer: Option<String>,
+    #[serde(default)]
+    pub compatible_ids: Vec<String>,
+    #[serde(default)]
+    pub interface_paths: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -35,6 +42,33 @@ pub struct NetworkAdapter {
     pub link_up: bool,
     pub addresses: Vec<String>,
     pub gateways: Vec<String>,
+    #[serde(default)]
+    pub prefixes: Vec<AddressPrefix>,
+    #[serde(default)]
+    pub dns_servers: Vec<String>,
+    #[serde(default)]
+    pub luid: String,
+    #[serde(default)]
+    pub ipv6_index: u32,
+    #[serde(default)]
+    pub virtual_interface: bool,
+    #[serde(default)]
+    pub default_routes: Vec<DefaultRoute>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AddressPrefix {
+    pub address: String,
+    pub length: u8,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DefaultRoute {
+    pub gateway: String,
+    pub metric: u32,
+    pub family: String,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -55,6 +89,9 @@ pub struct DeviceInterface {
     pub hardware_ids: Vec<String>,
     pub port_name: Option<String>,
     pub present: bool,
+    pub manufacturer: Option<String>,
+    pub compatible_ids: Vec<String>,
+    pub interface_paths: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -131,6 +168,9 @@ pub struct Device {
     pub evidence: Vec<String>,
     pub capabilities: Capabilities,
     pub last_seen_at: u64,
+    pub identity: identity::Identity,
+    pub category: identity::Category,
+    pub lifecycle: String,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -152,6 +192,8 @@ pub struct DiscoverySnapshot {
     pub watching: bool,
     pub warnings: Vec<String>,
     pub devices: Vec<Device>,
+    pub cancelled: bool,
+    pub duration_ms: u64,
 }
 
 fn canonical(value: &str) -> String {
@@ -239,7 +281,26 @@ fn new_device(key: &str, name: &str, now: u64) -> Device {
             features: FeatureCapabilities::default(),
         },
         last_seen_at: now,
+        identity: identity::Identity::default(),
+        category: identity::Category::Unknown,
+        lifecycle: "discovered".into(),
     }
+}
+
+pub(crate) fn history_device(
+    id: String,
+    name: String,
+    last_seen_at: u64,
+    category: identity::Category,
+) -> Device {
+    let mut device = new_device("history", &name, last_seen_at);
+    device.id = id;
+    device.connected = false;
+    device.lifecycle = "disconnected".into();
+    device.category = category;
+    device.evidence =
+        vec!["Persisted summary only. Refresh required to observe current interfaces.".into()];
+    device
 }
 
 pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
@@ -290,6 +351,9 @@ pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
             port_name: node.port_name.clone(),
             present: true,
             hardware_ids: node.hardware_ids.clone(),
+            manufacturer: node.manufacturer.clone(),
+            compatible_ids: node.compatible_ids.clone(),
+            interface_paths: node.interface_paths.clone(),
         });
         if let Some(adapter) = adapter {
             if claimed_adapters.insert(canonical(&adapter.id)) {
@@ -318,7 +382,8 @@ pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
         let usb = device.transports.iter().any(|value| value == "usb");
         let serial = device.transports.iter().any(|value| value == "serial");
         if usb && !device.networks.is_empty() {
-            device.confidence = if serial { 70 } else { 45 };
+            // Legacy wire field retained for existing consumers; no unvalidated score.
+            device.confidence = 0;
             device.assessment = if serial {
                 "Possible router or MiFi"
             } else {
@@ -350,6 +415,7 @@ pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
                 .evidence
                 .push("Windows inventory only; no verified device profile".into());
         }
+        identity::resolve(device, now);
     }
     devices.into_values().collect()
 }
@@ -365,6 +431,7 @@ impl DiscoverySnapshot {
                 continue;
             }
             old.connected = false;
+            old.lifecycle = "disconnected".into();
             for interface in &mut old.interfaces {
                 interface.present = false;
             }

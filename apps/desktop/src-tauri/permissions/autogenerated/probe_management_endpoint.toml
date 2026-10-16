@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-probe-management-endpoint"
+description = "Enables the probe_management_endpoint command without any pre-configured scope."
+commands.allow = ["probe_management_endpoint"]
+
+[[permission]]
+identifier = "deny-probe-management-endpoint"
+description = "Denies the probe_management_endpoint command without any pre-configured scope."
+commands.deny = ["probe_management_endpoint"]

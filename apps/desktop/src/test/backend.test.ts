@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { getSnapshot, saveSettings } from "../lib/backend";
+import { getSnapshot, saveSettings, getManualRouters, probeManagementEndpoint } from "../lib/backend";
 import type { Settings } from "../types/contracts";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: vi.fn() }));
@@ -27,4 +27,12 @@ it("never calls IPC from browser preview", async () => {
   vi.mocked(isTauri).mockReturnValue(false);
   await expect(getSnapshot()).rejects.toThrow("Desktop backend unavailable");
   expect(invoke).not.toHaveBeenCalled();
+});
+
+it("rejects malformed saved targets and endpoint responses", async () => {
+  vi.mocked(invoke).mockResolvedValue([{id: "bad", address: "http://192.168.1.1/"}]);
+  await expect(getManualRouters()).rejects.toThrow();
+  vi.mocked(invoke).mockResolvedValue({code: "identity_unknown", status: "200"});
+  await expect(probeManagementEndpoint("a".repeat(64), true)).rejects.toThrow();
+  expect(invoke).toHaveBeenLastCalledWith("probe_management_endpoint", {id: "a".repeat(64), authorized: true});
 });

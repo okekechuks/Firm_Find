@@ -2,6 +2,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
   settingsSchema,
+  endpointResultSchema, savedRouterSchema, type ManualRouterInput,
   discoverySchema,
   snapshotSchema,
   type Settings,
@@ -57,3 +58,19 @@ export async function onDiscoveryChanged(changed: () => void) {
     if (Number.isSafeInteger(event.payload) && event.payload >= 0) changed();
   });
 }
+
+function requireDesktop() { if (!hasDesktopBackend()) throw new Error("Saved router checks require the Windows app."); }
+export async function getManualRouters() {
+  requireDesktop(); return savedRouterSchema.array().parse(await invoke("get_manual_routers"));
+}
+export async function addManualRouter(input: ManualRouterInput) {
+  requireDesktop(); return savedRouterSchema.array().parse(await invoke("add_manual_router", {input}));
+}
+export async function removeManualRouter(id: string) {
+  requireDesktop(); return savedRouterSchema.array().parse(await invoke("remove_manual_router", {id}));
+}
+export async function probeManagementEndpoint(id: string, authorized: boolean) {
+  requireDesktop(); return endpointResultSchema.parse(await invoke("probe_management_endpoint", {id, authorized}));
+}
+export async function cancelEndpointProbe(id: string) { requireDesktop(); await invoke("cancel_endpoint_probe", {id}); }
+export async function cancelDiscovery() { requireDesktop(); await invoke("cancel_discovery"); }

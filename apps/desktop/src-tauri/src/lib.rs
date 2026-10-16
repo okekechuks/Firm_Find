@@ -1,4 +1,5 @@
 mod commands;
+pub mod connection;
 pub mod discovery;
 pub mod domain;
 pub mod storage;
@@ -29,6 +30,7 @@ pub fn run() -> tauri::Result<()> {
             let discovery =
                 discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
             app.manage(discovery);
+            app.manage(connection::ConnectionService::default());
             app.manage(AppState {
                 repository,
                 directory,
@@ -40,7 +42,13 @@ pub fn run() -> tauri::Result<()> {
             commands::get_snapshot,
             commands::save_settings,
             commands::get_discovery,
-            commands::refresh_discovery
+            commands::refresh_discovery,
+            commands::get_manual_routers,
+            commands::add_manual_router,
+            commands::remove_manual_router,
+            commands::probe_management_endpoint,
+            commands::cancel_endpoint_probe,
+            commands::cancel_discovery
         ])
         .build(tauri::generate_context!())?
         .run(|app, event| {

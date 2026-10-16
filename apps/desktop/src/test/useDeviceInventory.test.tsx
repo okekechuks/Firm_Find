@@ -1,13 +1,13 @@
 import { StrictMode, type ReactNode } from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, expect, it, vi, type Mock } from "vitest";
-import { getDiscovery, onDiscoveryChanged, refreshDiscovery } from "../lib/backend";
+import { cancelDiscovery, getDiscovery, onDiscoveryChanged, refreshDiscovery } from "../lib/backend";
 import { useDeviceInventory } from "../lib/useDeviceInventory";
 import type { DiscoverySnapshot } from "../types/contracts";
 
 vi.mock("../lib/backend", () => ({
   errorMessage: (error: unknown) => (error as Error).message,
-  getDiscovery: vi.fn(), onDiscoveryChanged: vi.fn(), refreshDiscovery: vi.fn(),
+  cancelDiscovery: vi.fn(), getDiscovery: vi.fn(), onDiscoveryChanged: vi.fn(), refreshDiscovery: vi.fn(),
 }));
 const snapshot: DiscoverySnapshot = {
   revision: 1, scannedAt: 1, status: "ready", watching: true, warnings: [], devices: [],
@@ -72,4 +72,20 @@ it("cleans up a subscription that resolves after unmount without reading invento
   await act(async () => { resolveSubscription(stop); });
   expect(stop).toHaveBeenCalledOnce();
   expect(getDiscovery).not.toHaveBeenCalled();
+});
+
+it("cancel prevents a pending refresh from publishing a late result", async () => {
+  vi.mocked(cancelDiscovery).mockResolvedValue();
+  let finish!: (value: DiscoverySnapshot) => void;
+  vi.mocked(refreshDiscovery).mockReturnValue(new Promise((resolve) => {finish = resolve;}));
+  const {result} = renderHook(() => useDeviceInventory(true));
+  await waitFor(() => expect(result.current.inventory?.revision).toBe(1));
+  let pending!: Promise<void>;
+  act(() => {pending = result.current.refresh();});
+  expect(result.current.refreshing).toBe(true);
+  await act(async () => {await result.current.cancel();});
+  await act(async () => {finish({...snapshot, revision: 99}); await pending;});
+  expect(result.current.inventory?.revision).toBe(1);
+  expect(result.current.error).toContain("cancelled");
+  expect(result.current.refreshing).toBe(false);
 });
