@@ -21,6 +21,7 @@ import { Preferences } from "../features/Preferences";
 import { Activity } from "../components/Activity";
 import { ViewBoundary } from "../components/ViewBoundary";
 import { Devices } from "../features/Devices";
+import { Compatibility } from "../features/Compatibility";
 import { useDeviceInventory } from "../lib/useDeviceInventory";
 
 export function App() {
@@ -256,6 +257,8 @@ export function App() {
           ) : page === "devices" ? (
             <Devices inventory={inventory.inventory} desktop={desktop} error={inventory.error}
               refreshing={inventory.refreshing} onRefresh={inventory.refresh} onCancel={inventory.cancel} />
+          ) : page === "compatibility" ? (
+            <Compatibility devices={inventory.inventory?.devices ?? []} revision={inventory.inventory?.revision ?? 0} desktop={desktop}/>
           ) : page === "settings" ? (
             <Preferences
               snapshot={snapshot}

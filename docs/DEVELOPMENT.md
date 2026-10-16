@@ -66,3 +66,17 @@ The verifier temporarily instruments the frontend module for explicitly labelled
 ## Persistent data
 
 Application state is under `%LOCALAPPDATA%/OBTAINER/`; WebView2 uses `%LOCALAPPDATA%/com.obtainer.desktop/EBWebView/`. Source moves do not change these paths. SQLite uses WAL, so copying `obtainer.db` alone while the application is active is not a valid backup. Keep the app closed before any owner-authorized migration or use a SQLite-aware backup procedure. Phase 0 performs no data migration, cleanup, profile reset, or physical router changes.
+
+## Phase 3 verification
+
+Build the current release first, close other OBTAINER sessions, and keep the owner-reported MG11 connected by USB:
+
+```powershell
+node scripts/generate-profile-schema.mjs
+npm run tauri -- build --no-bundle --ci -- --locked --offline
+npm run test:foundation -- --phase3
+```
+
+The optional `--phase3` suite verifies both the Compatibility workspace and connected-device details through real native WebView2 and IPC. It validates/rejects profile documents, saves the exact owner-provided identifier/software text as unverified local evidence, confirms four unknown MG11 feature assessments and checks persistence across dev/recovery/production launches. Repeated reports deduplicate. It makes no new router request and changes no router settings. The shared foundation suite now checks nine destinations and database schema 3. The interruption case deliberately terminates only its own launch; exit 1 for that subprocess is expected.
+
+For manual inspection, run `npm run tauri -- dev -- --locked --offline`, open **Compatibility**, select the USB device candidate and expand feature evidence, candidate exclusions and identity evidence. Confirm unknown features stay unknown when there is no exact verified identity. Add a reported field and reopen the app to inspect persistence. The local profile validator previews schema validity only; it does not install a trusted profile. Native automation evidence and limits are in [Phase 3 verification](PHASE_3_VERIFICATION.md).

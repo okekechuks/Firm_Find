@@ -1,6 +1,7 @@
 // Exercises the actual Windows Tauri dev command and release executable through native WebView2.
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
+import { verifyProfiles } from './verify-profiles.mjs';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -143,7 +144,7 @@ async function verify(label, extended = false) {
   originalSettings ??= before.settings;
   assert.deepEqual(before.settings, originalSettings);
   assert.equal(path.normalize(before.dataDirectory).toLowerCase(), path.join(env.LOCALAPPDATA, 'OBTAINER').toLowerCase());
-  assert.equal(before.databaseVersion, 2);
+  assert.equal(before.databaseVersion, 3);
   const state = processes();
   assert.equal(state.apps.length, 1); assert.notEqual(state.apps[0].window, 0, 'Native window missing');
   assert.equal(state.vite.length, isDev ? 1 : 0);
@@ -151,9 +152,9 @@ async function verify(label, extended = false) {
   for (const [page, heading] of [
     ['dashboard', 'Overview'], ['devices', 'Connected devices'], ['firmware', 'Firmware library'],
     ['analysis', 'Analysis'], ['backups', 'Backup manager'], ['builder', 'Firmware builder'],
-    ['jobs', 'Jobs & activity'], ['settings', 'Settings'],
+    ['jobs', 'Jobs & activity'], ['settings', 'Settings'], ['compatibility', 'Compatibility'],
   ]) await screen(page, heading);
-  record(label + ': all eight navigation destinations');
+  record(label + ': all nine navigation destinations');
 
   await screen('devices', 'Connected devices');
   let discovery;
@@ -181,6 +182,7 @@ async function verify(label, extended = false) {
     const index = process.argv.indexOf('--router');
     await verifyDiscovery(client, {label, evidence, record, routerAddress: index >= 0 ? process.argv[index + 1] : undefined, hotplug: process.argv.includes('--hotplug')});
   }
+  if (process.argv.includes('--phase3')) await verifyProfiles(client, {label,evidence,record});
   // Exercise real save IPC with the existing value, without changing user preferences.
   assert.deepEqual(await invoke('save_settings', { settings: originalSettings }), originalSettings);
   assert.deepEqual((await invoke('get_snapshot')).settings, originalSettings);

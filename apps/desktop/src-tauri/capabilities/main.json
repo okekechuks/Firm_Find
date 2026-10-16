@@ -20,6 +20,10 @@
     "allow-remove-manual-router",
     "allow-probe-management-endpoint",
     "allow-cancel-endpoint-probe",
-    "allow-cancel-discovery"
+    "allow-cancel-discovery",
+    "allow-get-profile-registry",
+    "allow-get-device-compatibility",
+    "allow-validate-device-profile",
+    "allow-record-device-observation"
   ]
 }

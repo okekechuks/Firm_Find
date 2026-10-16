@@ -1,5 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { compatibilitySchema, registryEntrySchema, registrySchema } from "../types/profiles";
 import {
   settingsSchema,
   endpointResultSchema, savedRouterSchema, type ManualRouterInput,
@@ -74,3 +75,11 @@ export async function probeManagementEndpoint(id: string, authorized: boolean) {
 }
 export async function cancelEndpointProbe(id: string) { requireDesktop(); await invoke("cancel_endpoint_probe", {id}); }
 export async function cancelDiscovery() { requireDesktop(); await invoke("cancel_discovery"); }
+export async function getProfileRegistry() { requireDesktop(); return registrySchema.parse(await invoke("get_profile_registry")); }
+export async function getDeviceCompatibility(deviceId: string) { requireDesktop(); return compatibilitySchema.parse(await invoke("get_device_compatibility", {deviceId})); }
+export async function recordDeviceObservation(deviceId: string, attribute: string, value: string) { requireDesktop(); await invoke("record_device_observation", {deviceId, attribute, value}); }
+export async function validateDeviceProfile(document: string) {
+  requireDesktop();
+  if (new TextEncoder().encode(document).length > 65536) throw new Error("Profile exceeds 64 KiB.");
+  return registryEntrySchema.parse(await invoke("validate_device_profile", {document}));
+}

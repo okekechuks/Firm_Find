@@ -44,9 +44,8 @@ it("shows real device evidence, unknown backup support and unverified gateway", 
   expect(within(deviceCard).getByText("COM7")).toBeInTheDocument();
   await user.click(deviceCard);
   const details = screen.getByRole("region", { name: "Device details" });
-  expect(within(details).getAllByText("UNKNOWN")).toHaveLength(5);
-  expect(within(details).getByText(/Feature support.*pending Phase 3/)).toBeInTheDocument();
-  expect(within(details).getByText("Wi-Fi user limit")).toBeInTheDocument();
+  expect(within(details).getAllByText("UNKNOWN")).toHaveLength(1);
+  expect(screen.getByRole("region", {name:"Device compatibility"})).toBeInTheDocument();
   expect(within(details).getByText("UNSUPPORTED")).toBeInTheDocument();
   expect(within(details).getByText("192.0.2.1")).toBeInTheDocument();
 });

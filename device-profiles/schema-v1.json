@@ -1,0 +1,841 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "profileId": {
+      "type": "string",
+      "maxLength": 1024
+    },
+    "profileVersion": {
+      "type": "string",
+      "maxLength": 1024
+    },
+    "manufacturer": {
+      "type": "string",
+      "maxLength": 1024
+    },
+    "model": {
+      "type": "string",
+      "maxLength": 1024
+    },
+    "modelAliases": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "maxLength": 1024
+      }
+    },
+    "deviceCategory": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "maxLength": 1024
+      }
+    },
+    "hardwareRevisions": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "maxLength": 1024
+      }
+    },
+    "firmwareFamilies": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "maxLength": 1024
+      }
+    },
+    "firmwareVersionConstraints": {
+      "type": "object",
+      "properties": {
+        "exact": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        },
+        "minInclusive": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1024
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maxExclusive": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1024
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "exact",
+        "minInclusive",
+        "maxExclusive"
+      ],
+      "additionalProperties": false
+    },
+    "matchRules": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "properties": {
+          "attribute": {
+            "type": "string",
+            "enum": [
+              "manufacturer",
+              "model",
+              "hardware_revision",
+              "firmware_family",
+              "firmware_version",
+              "usb_vid",
+              "usb_pid",
+              "usb_product",
+              "physical_identity",
+              "management_identity",
+              "modem_manufacturer",
+              "modem_model",
+              "windows_manufacturer",
+              "gateway",
+              "user_label",
+              "http_status",
+              "wireless_driver",
+              "reported_identifier"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "identity",
+              "corroboration",
+              "candidate_hint"
+            ]
+          },
+          "explanation": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "attribute",
+          "values",
+          "purpose",
+          "explanation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "managementInterfaces": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "properties": {
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "http",
+              "https",
+              "ssh",
+              "ubus",
+              "modem_manager",
+              "documented_modem"
+            ]
+          },
+          "authenticationRequired": {
+            "type": "boolean"
+          },
+          "firmwareFamilies": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          },
+          "operations": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          },
+          "security": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "limitations": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "evidenceSources": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          }
+        },
+        "required": [
+          "protocol",
+          "authenticationRequired",
+          "firmwareFamilies",
+          "operations",
+          "security",
+          "limitations",
+          "evidenceSources"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "modemInformation": {
+      "type": "object",
+      "properties": {
+        "integratedModem": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manufacturers": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        },
+        "models": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        },
+        "interfaces": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "enum": [
+              "http",
+              "https",
+              "ssh",
+              "ubus",
+              "modem_manager",
+              "documented_modem"
+            ]
+          }
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "integratedModem",
+        "manufacturers",
+        "models",
+        "interfaces",
+        "notes"
+      ],
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "dns": {
+          "type": "object",
+          "properties": {
+            "assessment": {
+              "type": "string",
+              "enum": [
+                "SUPPORTED",
+                "UNSUPPORTED",
+                "UNKNOWN"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "requirements": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "READY_FOR_FUTURE_ADAPTER",
+                  "REQUIRES_AUTHENTICATION",
+                  "REQUIRES_PACKAGE",
+                  "REQUIRES_FIRMWARE_BUILD",
+                  "REQUIRES_MANUAL_VERIFICATION",
+                  "NOT_IMPLEMENTED",
+                  "UNAVAILABLE",
+                  "EXPERIMENTAL"
+                ]
+              }
+            },
+            "evidenceSources": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "maxLength": 1024
+              }
+            },
+            "subCapabilities": {
+              "type": "object",
+              "maxProperties": 64,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "assessment": {
+                    "type": "string",
+                    "enum": [
+                      "SUPPORTED",
+                      "UNSUPPORTED",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "evidenceSources": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 1024
+                    }
+                  }
+                },
+                "required": [
+                  "assessment",
+                  "reason",
+                  "evidenceSources"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "verifiedRange": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "assessment",
+            "reason",
+            "requirements",
+            "evidenceSources",
+            "subCapabilities",
+            "verifiedRange"
+          ],
+          "additionalProperties": false
+        },
+        "wifiUserLimit": {
+          "type": "object",
+          "properties": {
+            "assessment": {
+              "type": "string",
+              "enum": [
+                "SUPPORTED",
+                "UNSUPPORTED",
+                "UNKNOWN"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "requirements": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "READY_FOR_FUTURE_ADAPTER",
+                  "REQUIRES_AUTHENTICATION",
+                  "REQUIRES_PACKAGE",
+                  "REQUIRES_FIRMWARE_BUILD",
+                  "REQUIRES_MANUAL_VERIFICATION",
+                  "NOT_IMPLEMENTED",
+                  "UNAVAILABLE",
+                  "EXPERIMENTAL"
+                ]
+              }
+            },
+            "evidenceSources": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "maxLength": 1024
+              }
+            },
+            "subCapabilities": {
+              "type": "object",
+              "maxProperties": 64,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "assessment": {
+                    "type": "string",
+                    "enum": [
+                      "SUPPORTED",
+                      "UNSUPPORTED",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "evidenceSources": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 1024
+                    }
+                  }
+                },
+                "required": [
+                  "assessment",
+                  "reason",
+                  "evidenceSources"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "verifiedRange": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "assessment",
+            "reason",
+            "requirements",
+            "evidenceSources",
+            "subCapabilities",
+            "verifiedRange"
+          ],
+          "additionalProperties": false
+        },
+        "apn": {
+          "type": "object",
+          "properties": {
+            "assessment": {
+              "type": "string",
+              "enum": [
+                "SUPPORTED",
+                "UNSUPPORTED",
+                "UNKNOWN"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "requirements": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "READY_FOR_FUTURE_ADAPTER",
+                  "REQUIRES_AUTHENTICATION",
+                  "REQUIRES_PACKAGE",
+                  "REQUIRES_FIRMWARE_BUILD",
+                  "REQUIRES_MANUAL_VERIFICATION",
+                  "NOT_IMPLEMENTED",
+                  "UNAVAILABLE",
+                  "EXPERIMENTAL"
+                ]
+              }
+            },
+            "evidenceSources": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "maxLength": 1024
+              }
+            },
+            "subCapabilities": {
+              "type": "object",
+              "maxProperties": 64,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "assessment": {
+                    "type": "string",
+                    "enum": [
+                      "SUPPORTED",
+                      "UNSUPPORTED",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "evidenceSources": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 1024
+                    }
+                  }
+                },
+                "required": [
+                  "assessment",
+                  "reason",
+                  "evidenceSources"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "verifiedRange": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "assessment",
+            "reason",
+            "requirements",
+            "evidenceSources",
+            "subCapabilities",
+            "verifiedRange"
+          ],
+          "additionalProperties": false
+        },
+        "ussd": {
+          "type": "object",
+          "properties": {
+            "assessment": {
+              "type": "string",
+              "enum": [
+                "SUPPORTED",
+                "UNSUPPORTED",
+                "UNKNOWN"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "requirements": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "READY_FOR_FUTURE_ADAPTER",
+                  "REQUIRES_AUTHENTICATION",
+                  "REQUIRES_PACKAGE",
+                  "REQUIRES_FIRMWARE_BUILD",
+                  "REQUIRES_MANUAL_VERIFICATION",
+                  "NOT_IMPLEMENTED",
+                  "UNAVAILABLE",
+                  "EXPERIMENTAL"
+                ]
+              }
+            },
+            "evidenceSources": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "maxLength": 1024
+              }
+            },
+            "subCapabilities": {
+              "type": "object",
+              "maxProperties": 64,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "assessment": {
+                    "type": "string",
+                    "enum": [
+                      "SUPPORTED",
+                      "UNSUPPORTED",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "evidenceSources": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 1024
+                    }
+                  }
+                },
+                "required": [
+                  "assessment",
+                  "reason",
+                  "evidenceSources"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "verifiedRange": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "assessment",
+            "reason",
+            "requirements",
+            "evidenceSources",
+            "subCapabilities",
+            "verifiedRange"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "dns",
+        "wifiUserLimit",
+        "apn",
+        "ussd"
+      ],
+      "additionalProperties": false
+    },
+    "knownLimitations": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "maxLength": 1024
+      }
+    },
+    "evidenceSources": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "manufacturer_documentation",
+              "upstream_documentation",
+              "hardware_observation",
+              "hardware_tested",
+              "experimental",
+              "local_unverified"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "reference",
+          "summary"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "lastReviewed": {
+      "type": "string",
+      "maxLength": 1024
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "author": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "manufacturer_documentation",
+            "upstream_documentation",
+            "hardware_observation",
+            "hardware_tested",
+            "experimental",
+            "local_unverified"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "author",
+        "category",
+        "notes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "profileId",
+    "profileVersion",
+    "manufacturer",
+    "model",
+    "modelAliases",
+    "deviceCategory",
+    "hardwareRevisions",
+    "firmwareFamilies",
+    "firmwareVersionConstraints",
+    "matchRules",
+    "managementInterfaces",
+    "modemInformation",
+    "capabilities",
+    "knownLimitations",
+    "evidenceSources",
+    "lastReviewed",
+    "provenance"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:obtainer:device-profile:1",
+  "title": "OBTAINER device profile schema 1",
+  "description": "Structural schema. Rust validation also enforces 64 KiB, depth 16, collection 64, strings 1024 bytes, unique keys, exact sub-capability keys, referenced evidence, calendar dates, bounded numeric releases and application-owned adapter state. Validation never grants trust."
+}

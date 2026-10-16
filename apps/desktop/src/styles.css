@@ -1,5 +1,23 @@
 @import "tailwindcss" source("./");
 
+.compatibility-panel { padding: 24px; margin-top: 18px; min-width: 0; }
+.compatibility-panel p { margin: 10px 0; line-height: 1.55; }
+.compatibility-panel article { padding: 12px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.support-table-wrap { overflow-x: auto; margin: 20px 0; }
+.support-table { border-collapse: collapse; width: 100%; text-align: left; font-size: 13px; }
+.support-table caption { text-align: left; font-weight: 600; margin-bottom: 12px; }
+.support-table th, .support-table td { padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.assessment { font-size: 11px; font-weight: 700; color: var(--ink); background: var(--soft); padding: 4px 7px; border-radius: 5px; }
+.assessment.supported { color: #126b40; background: #e5f6ed; }
+.feature-explanation { padding: 16px 0; border-top: 1px solid var(--line); }
+.feature-explanation summary { cursor: pointer; font-weight: 600; }
+.feature-explanation a { color: var(--accent); text-decoration: underline; overflow-wrap: anywhere; }
+.compatibility-selector, .reported-evidence label { display: grid; gap: 8px; margin: 12px 0; }
+.compatibility-panel select, .compatibility-panel input, .compatibility-panel textarea { width: 100%; max-width: 100%; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font: inherit; }
+.compatibility-panel textarea { display: block; margin: 12px 0; font-family: Consolas, monospace; resize: vertical; }
+.compatibility-panel select:focus-visible, .compatibility-panel textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.reported-evidence { max-width: 560px; }
+
 :root {
   font-family: "Segoe UI", Arial, sans-serif;
   color: #24283b;

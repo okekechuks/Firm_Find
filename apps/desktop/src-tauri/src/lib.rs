@@ -2,6 +2,7 @@ mod commands;
 pub mod connection;
 pub mod discovery;
 pub mod domain;
+pub mod profiles;
 pub mod storage;
 
 use commands::AppState;
@@ -26,6 +27,9 @@ pub fn run() -> tauri::Result<()> {
             app.manage(guard);
             let mut repository = storage::Repository::open(&directory.join("obtainer.db"))?;
             repository.record_startup()?;
+            let mut profiles = profiles::Registry::bundled();
+            repository.install_registry(&mut profiles)?;
+            app.manage(profiles);
             let repository = Arc::new(Mutex::new(repository));
             let discovery =
                 discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
@@ -48,7 +52,11 @@ pub fn run() -> tauri::Result<()> {
             commands::remove_manual_router,
             commands::probe_management_endpoint,
             commands::cancel_endpoint_probe,
-            commands::cancel_discovery
+            commands::cancel_discovery,
+            commands::get_profile_registry,
+            commands::record_device_observation,
+            commands::get_device_compatibility,
+            commands::validate_device_profile
         ])
         .build(tauri::generate_context!())?
         .run(|app, event| {

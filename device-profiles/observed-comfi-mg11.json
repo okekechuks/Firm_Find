@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "profileId": "observed.comfi-mg11",
+  "profileVersion": "1.0.0",
+  "manufacturer": "comFi",
+  "model": "MG11",
+  "modelAliases": [],
+  "deviceCategory": [
+    "cellular_mifi"
+  ],
+  "hardwareRevisions": [],
+  "firmwareFamilies": [],
+  "firmwareVersionConstraints": {
+    "exact": [],
+    "minInclusive": null,
+    "maxExclusive": null
+  },
+  "matchRules": [
+    {
+      "attribute": "usb_vid",
+      "values": [
+        "1286"
+      ],
+      "purpose": "candidate_hint",
+      "explanation": "Observed Windows interface vendor ID; not a retail product identity."
+    },
+    {
+      "attribute": "usb_pid",
+      "values": [
+        "4E31"
+      ],
+      "purpose": "candidate_hint",
+      "explanation": "Observed USB function product ID; shared firmware/chipsets may reuse it."
+    }
+  ],
+  "managementInterfaces": [
+    {
+      "protocol": "http",
+      "authenticationRequired": false,
+      "firmwareFamilies": [],
+      "operations": [
+        "read"
+      ],
+      "security": "Unauthenticated HEAD only. HTTP success does not identify a configuration API.",
+      "limitations": "No authentication or vendor management reader is implemented.",
+      "evidenceSources": [
+        "local-observation"
+      ]
+    }
+  ],
+  "modemInformation": {
+    "integratedModem": null,
+    "manufacturers": [],
+    "models": [],
+    "interfaces": [],
+    "notes": "No supported modem identification response has been collected."
+  },
+  "capabilities": {
+    "dns": {
+      "assessment": "UNKNOWN",
+      "reason": "No verified feature-specific hardware and firmware evidence is available.",
+      "requirements": [
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [],
+      "subCapabilities": {
+        "upstream": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "lanIpv4": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "lanIpv6": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "forwarding": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "persistence": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    },
+    "wifiUserLimit": {
+      "assessment": "UNKNOWN",
+      "reason": "No verified feature-specific hardware and firmware evidence is available.",
+      "requirements": [
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [],
+      "subCapabilities": {
+        "accessPoint": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "managedBss": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "clientLimit": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "validRange": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "persistence": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "reload": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "managementRisk": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    },
+    "apn": {
+      "assessment": "UNKNOWN",
+      "reason": "No verified feature-specific hardware and firmware evidence is available.",
+      "requirements": [
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [],
+      "subCapabilities": {
+        "modemPresent": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "managementInterface": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "readCurrent": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "manual": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "automatic": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "operatorIdentity": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "reconnect": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    },
+    "ussd": {
+      "assessment": "UNKNOWN",
+      "reason": "No verified feature-specific hardware and firmware evidence is available.",
+      "requirements": [
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [],
+      "subCapabilities": {
+        "modemPresent": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "modemIdentity": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "interface": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "oneShot": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "interactive": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "responseHandling": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "cancellation": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "routerService": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "routerWebUi": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    }
+  },
+  "knownLimitations": [
+    "Retail model is user-reported. USB IDs and HTTP 200 do not verify model, revision, firmware or feature support.",
+    "No DNS, Wi-Fi-limit, APN or USSD capability is established."
+  ],
+  "evidenceSources": [
+    {
+      "id": "local-observation",
+      "category": "hardware_observation",
+      "reference": "local:docs/PHASE_2_VERIFICATION.md",
+      "summary": "Local Phase 2 report: USB 1286:4E31, five functions and HTTP 200. Model supplied by owner; no capability or external-source verification is claimed."
+    }
+  ],
+  "lastReviewed": "2026-10-16",
+  "provenance": {
+    "author": "OBTAINER local hardware observations",
+    "category": "hardware_observation",
+    "notes": "Source of truth: docs/PHASE_2_VERIFICATION.md and local native evidence. Model supplied by owner; capability support unknown."
+  }
+}

@@ -2,7 +2,17 @@
 
 Audited: **16 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3 readiness: READY.** The [Phase 2 verification](PHASE_2_VERIFICATION.md), [command/evidence transcript](evidence/phase-2-2026-10-16.txt), [discovery behavior](DEVICE_DISCOVERY.md), and [identity decisions](DEVICE_IDENTITY.md) record the current implementation. Phase 3 feature work has not begun.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 4 readiness: READY; not started.** The [Phase 3 verification](PHASE_3_VERIFICATION.md), [command/evidence transcript](evidence/phase-3-2026-10-16.txt), [device profiles](DEVICE_PROFILES.md), and [capability engine](CAPABILITY_ENGINE.md) document the current implementation.
+
+## Phase 3 completion evidence
+
+- Strict, versioned JSON profiles, sorted lookup, deterministic matching and source/evidence provenance are connected to real React/Rust IPC. Malformed/future schemas, duplicate keys/IDs, unsafe fields, invalid bounds and unresolved sources fail safely. Local validation remains an unverified preview.
+- All four capabilities have independent assessment, readiness, reasons, sub-capabilities, prerequisites and evidence. Ambiguous, conflicting, missing or stale identity cannot select an authoritative profile. All device configuration adapters remain unavailable; no Apply control or hardware writes were added.
+- Compatibility is the ninth navigation destination; device details use the same engine. Frontend loading/error/expiry and late-response guards are covered by regression tests.
+- **42 frontend tests, 40 Rust tests, 35 native acceptance checks pass.** TypeScript, lint, Rust formatting/Clippy, frontend production build and fresh optimized Tauri build pass. Native development, interrupted-launch recovery, production, actual IPC, HMR and all nine destinations pass; captured console issues are empty. Development and production matrix screenshots were inspected.
+- USB `1286:4E31` remains the same MG11 candidate logical ID. `LT800/` and `MF69_AM802L_ZX_DD_N_241106_EU` are saved through the actual React form as user-reported evidence and survive development/production restarts without duplicates. Hardware revision, chipset/modem and four feature capabilities remain unknown; no false retail identity or support claim is made.
+- Additive SQLite schema 3 retains settings, saved router, firmware/jobs and all original device/audit/metadata IDs in the same data directory. Integrity is `ok`, foreign-key violations are empty, original preference hash is unchanged. Two profile versions, two reported observations and one evaluation are persisted. A WAL-aware pre-change backup remains locally available.
+- Physical feature enforcement, authenticated identity adapters, runtime package checks, router-hosted USSD and firmware work remain later-phase qualification. The curated Archer C7 reference was checked against primary documentation, not physical hardware.
 
 ## Phase 2 completion evidence
 

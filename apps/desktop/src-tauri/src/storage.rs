@@ -25,7 +25,7 @@ impl Repository {
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         connection.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
         let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 2 {
+        if version > 3 {
             return Err(StorageError::NewerSchema);
         }
         if version == 0 {
@@ -38,6 +38,12 @@ impl Repository {
             let transaction = connection.transaction()?;
             transaction.execute_batch(include_str!("../migrations/002_discovery.sql"))?;
             transaction.pragma_update(None, "user_version", 2)?;
+            transaction.commit()?;
+        }
+        if version < 3 {
+            let transaction = connection.transaction()?;
+            transaction.execute_batch(include_str!("../migrations/003_profiles.sql"))?;
+            transaction.pragma_update(None, "user_version", 3)?;
             transaction.commit()?;
         }
         Ok(Self { connection })
@@ -199,6 +205,98 @@ impl Repository {
         )? == 1)
     }
 
+    pub fn install_registry(
+        &mut self,
+        registry: &mut crate::profiles::Registry,
+    ) -> Result<(), StorageError> {
+        let tx = self.connection.transaction()?;
+        let mut accepted = vec![];
+        for entry in registry.profiles.drain(..) {
+            let existing: Option<String> = tx.query_row("SELECT content_hash FROM profile_versions WHERE profile_id=?1 AND profile_version=?2", params![entry.profile.profile_id,entry.profile.profile_version], |r| r.get(0)).optional()?;
+            if existing
+                .as_ref()
+                .is_some_and(|hash| hash != &entry.content_hash)
+            {
+                registry.diagnostics.push(format!(
+                    "{} {} changed without a content-version increment; profile quarantined.",
+                    entry.profile.profile_id, entry.profile.profile_version
+                ));
+                continue;
+            }
+            tx.execute(
+                "INSERT OR IGNORE INTO profile_versions VALUES(?1,?2,?3,?4,?5,?6)",
+                params![
+                    entry.profile.profile_id,
+                    entry.profile.profile_version,
+                    entry.origin,
+                    entry.content_hash,
+                    serde_json::to_string(&entry.profile)?,
+                    crate::connection::now()
+                ],
+            )?;
+            accepted.push(entry);
+        }
+        tx.commit()?;
+        registry.profiles = accepted;
+        registry.digest = crate::profiles::digest(&serde_json::to_vec(&registry.profiles)?);
+        Ok(())
+    }
+    pub fn prior_compatibility(
+        &self,
+        id: &str,
+    ) -> Result<Option<crate::profiles::CompatibilityReport>, StorageError> {
+        let value: Option<String> = self
+            .connection
+            .query_row(
+                "SELECT report FROM compatibility_evaluations WHERE device_id=?1",
+                [id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        value
+            .map(|v| serde_json::from_str(&v).map_err(StorageError::from))
+            .transpose()
+    }
+    pub fn save_compatibility(
+        &mut self,
+        report: &crate::profiles::CompatibilityReport,
+    ) -> Result<(), StorageError> {
+        self.connection.execute("INSERT INTO compatibility_evaluations(device_id,input_digest,report) VALUES(?1,?2,?3) ON CONFLICT(device_id) DO UPDATE SET prior_report=CASE WHEN input_digest<>excluded.input_digest THEN report ELSE prior_report END,input_digest=excluded.input_digest,report=excluded.report WHERE input_digest<>excluded.input_digest", params![report.device_id,report.input_digest,serde_json::to_string(report)?])?;
+        Ok(())
+    }
+
+    pub fn identity_observations(
+        &self,
+        device_id: &str,
+    ) -> Result<Vec<crate::profiles::EvidenceRecord>, StorageError> {
+        let mut statement = self.connection.prepare("SELECT record FROM device_identity_observations WHERE device_id=?1 ORDER BY id LIMIT 32")?;
+        let rows = statement.query_map([device_id], |r| r.get::<_, String>(0))?;
+        rows.map(|r| Ok(serde_json::from_str(&r?)?)).collect()
+    }
+    pub fn save_identity_observation(
+        &mut self,
+        record: &crate::profiles::EvidenceRecord,
+    ) -> Result<bool, StorageError> {
+        // Keep bounded, append-only user evidence; duplicates retain the original observation time.
+        let count: i64 = self.connection.query_row(
+            "SELECT COUNT(*) FROM device_identity_observations WHERE device_id=?1",
+            [&record.subject_id],
+            |r| r.get(0),
+        )?;
+        if count >= 32 {
+            return Ok(self.connection.query_row(
+                "SELECT EXISTS(SELECT 1 FROM device_identity_observations WHERE id=?1)",
+                [&record.id],
+                |r| r.get(0),
+            )?);
+        }
+        self.connection.execute(
+            "INSERT OR IGNORE INTO device_identity_observations VALUES(?1,?2,?3)",
+            params![record.id, record.subject_id, serde_json::to_string(record)?],
+        )?;
+        Ok(true)
+    }
+
     pub fn settings(&self) -> Result<Settings, StorageError> {
         let json: String = self.connection.query_row(
             "SELECT value FROM settings WHERE key = 'preferences'",
@@ -259,6 +357,96 @@ mod tests {
     use crate::domain::Theme;
 
     #[test]
+    fn schema_two_upgrade_preserves_data_and_phase_three_history_across_restarts(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("phase2.db");
+        let connection = Connection::open(&path)?;
+        connection.execute_batch(include_str!("../migrations/001_foundation.sql"))?;
+        connection.execute_batch(include_str!("../migrations/002_discovery.sql"))?;
+        connection.execute_batch("PRAGMA user_version=2; UPDATE settings SET value='{\"theme\":\"dark\"}'; INSERT INTO devices VALUES('preserved-device','Existing MiFi',1); INSERT INTO manual_routers VALUES('preserved-router','http://192.168.100.1/','Owner label',NULL,'preserved-device',1,NULL);")?;
+        drop(connection);
+        let mut repo = Repository::open(&path)?;
+        let settings = repo.settings()?;
+        let routers = repo.routers()?;
+        let mut registry = crate::profiles::Registry::bundled();
+        repo.install_registry(&mut registry)?;
+        let observation = crate::profiles::EvidenceRecord::user_reported(
+            "preserved-device".into(),
+            crate::profiles::Attribute::ReportedIdentifier,
+            "LT800/".into(),
+            123,
+        )
+        .unwrap();
+        assert!(repo.save_identity_observation(&observation)?);
+        assert!(repo.save_identity_observation(&observation)?);
+        assert_eq!(repo.identity_observations("preserved-device")?.len(), 1);
+        let d =
+            crate::discovery::replay_fixture(include_str!("../fixtures/discovery-lifecycle.json"))
+                .unwrap()[1]
+                .devices[0]
+                .clone();
+        let report = crate::profiles::evaluate(
+            &registry,
+            &d,
+            crate::profiles::gather_evidence(&d, &[]),
+            123,
+            1,
+        );
+        repo.save_compatibility(&report)?;
+        let mut changed = report.clone();
+        changed.input_digest = "changed".into();
+        crate::profiles::record_change(&mut changed, &report);
+        repo.save_compatibility(&changed)?;
+        // Same inputs do not rewrite stored history on every render.
+        repo.save_compatibility(&changed)?;
+        drop(repo);
+        let mut repo = Repository::open(&path)?;
+        assert_eq!(
+            serde_json::to_string(&repo.settings()?)?,
+            serde_json::to_string(&settings)?
+        );
+        assert_eq!(
+            serde_json::to_string(&repo.routers()?)?,
+            serde_json::to_string(&routers)?
+        );
+        assert_eq!(
+            repo.identity_observations("preserved-device")?[0],
+            observation
+        );
+        assert!(repo.prior_compatibility(&d.id)?.unwrap().change.is_some());
+        let previous: String = repo.connection.query_row(
+            "SELECT prior_report FROM compatibility_evaluations WHERE device_id=?1",
+            [&d.id],
+            |r| r.get(0),
+        )?;
+        assert_eq!(
+            serde_json::from_str::<crate::profiles::CompatibilityReport>(&previous)?.input_digest,
+            report.input_digest
+        );
+        let mut changed_registry = registry.clone();
+        changed_registry.profiles[0].content_hash = "changed-without-version".into();
+        repo.install_registry(&mut changed_registry)?;
+        assert_eq!(changed_registry.profiles.len(), 1);
+        assert!(changed_registry
+            .diagnostics
+            .iter()
+            .any(|d| d.contains("quarantined")));
+        assert_eq!(
+            repo.connection
+                .query_row("SELECT COUNT(*) FROM profile_versions", [], |r| r
+                    .get::<_, i64>(0))?,
+            2
+        );
+        assert_eq!(
+            repo.connection
+                .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))?,
+            "ok"
+        );
+        Ok(())
+    }
+
+    #[test]
     fn additive_migration_preserves_existing_nonempty_tables(
     ) -> Result<(), Box<dyn std::error::Error>> {
         let temporary = tempfile::tempdir()?;
@@ -276,7 +464,7 @@ mod tests {
         repository.record_startup()?;
         repository.save_discovery(&DiscoverySnapshot::default())?;
         let snapshot = repository.snapshot(temporary.path())?;
-        assert_eq!(snapshot.database_version, 2);
+        assert_eq!(snapshot.database_version, 3);
         assert_eq!(snapshot.counts.artifacts, 1);
         assert!(snapshot.recent_events.iter().any(|e| e.kind == "existing"));
         assert_eq!(
@@ -307,7 +495,7 @@ mod tests {
         }
         let repository = Repository::open(&path)?;
         let snapshot = repository.snapshot(temporary.path())?;
-        assert_eq!(snapshot.database_version, 2);
+        assert_eq!(snapshot.database_version, 3);
         assert_eq!(snapshot.settings.theme, Theme::Dark);
         assert_eq!(snapshot.recent_events.len(), 2);
         assert_eq!(snapshot.counts.devices, 0);

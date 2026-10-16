@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "profileId": "tplink.archer-c7-v5.openwrt-23-05-5",
+  "profileVersion": "1.0.0",
+  "manufacturer": "TP-Link",
+  "model": "Archer C7",
+  "modelAliases": [
+    "TP-Link Archer C7 v5"
+  ],
+  "deviceCategory": [
+    "ethernet_router",
+    "wifi_router",
+    "openwrt_router"
+  ],
+  "hardwareRevisions": [
+    "v5"
+  ],
+  "firmwareFamilies": [
+    "OpenWrt"
+  ],
+  "firmwareVersionConstraints": {
+    "exact": [
+      "23.05.5"
+    ],
+    "minInclusive": null,
+    "maxExclusive": null
+  },
+  "matchRules": [
+    {
+      "attribute": "management_identity",
+      "values": [
+        "tplink,archer-c7-v5"
+      ],
+      "purpose": "identity",
+      "explanation": "Requires trusted board identity plus exact model, hardware revision, firmware family and constrained release."
+    }
+  ],
+  "managementInterfaces": [
+    {
+      "protocol": "ssh",
+      "authenticationRequired": true,
+      "firmwareFamilies": [
+        "OpenWrt"
+      ],
+      "operations": [
+        "identity",
+        "read",
+        "dns"
+      ],
+      "security": "Requires an explicitly trusted host identity and owner authentication through a future adapter.",
+      "limitations": "No SSH command, authentication or configuration implementation is supplied by this profile.",
+      "evidenceSources": [
+        "release",
+        "dns"
+      ]
+    }
+  ],
+  "modemInformation": {
+    "integratedModem": false,
+    "manufacturers": [],
+    "models": [],
+    "interfaces": [],
+    "notes": "No integrated modem documented. Optional external USB modems require their own identification; cellular features stay unknown."
+  },
+  "capabilities": {
+    "dns": {
+      "assessment": "SUPPORTED",
+      "reason": "Upstream documentation describes DNS configuration on this exact reference firmware; current packages and service state still require read-only verification.",
+      "requirements": [
+        "REQUIRES_AUTHENTICATION",
+        "REQUIRES_PACKAGE",
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [
+        "release",
+        "dns",
+        "resolver"
+      ],
+      "subCapabilities": {
+        "upstream": {
+          "assessment": "SUPPORTED",
+          "reason": "Documented configuration mechanism; live service/package availability and safe adapter remain prerequisites.",
+          "evidenceSources": [
+            "dns",
+            "release"
+          ]
+        },
+        "lanIpv4": {
+          "assessment": "SUPPORTED",
+          "reason": "Documented configuration mechanism; live service/package availability and safe adapter remain prerequisites.",
+          "evidenceSources": [
+            "dns",
+            "release"
+          ]
+        },
+        "lanIpv6": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "forwarding": {
+          "assessment": "SUPPORTED",
+          "reason": "Documented configuration mechanism; live service/package availability and safe adapter remain prerequisites.",
+          "evidenceSources": [
+            "resolver",
+            "release"
+          ]
+        },
+        "persistence": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    },
+    "wifiUserLimit": {
+      "assessment": "UNKNOWN",
+      "reason": "No verified feature-specific hardware and firmware evidence is available.",
+      "requirements": [
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [],
+      "subCapabilities": {
+        "accessPoint": {
+          "assessment": "SUPPORTED",
+          "reason": "Wireless access-point hardware is documented; active radios and BSS state have not been inspected.",
+          "evidenceSources": [
+            "board"
+          ]
+        },
+        "managedBss": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "clientLimit": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "validRange": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "persistence": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "reload": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "managementRisk": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    },
+    "apn": {
+      "assessment": "UNKNOWN",
+      "reason": "No verified feature-specific hardware and firmware evidence is available.",
+      "requirements": [
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [],
+      "subCapabilities": {
+        "modemPresent": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "managementInterface": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "readCurrent": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "manual": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "automatic": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "operatorIdentity": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "reconnect": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    },
+    "ussd": {
+      "assessment": "UNKNOWN",
+      "reason": "No verified feature-specific hardware and firmware evidence is available.",
+      "requirements": [
+        "REQUIRES_MANUAL_VERIFICATION"
+      ],
+      "evidenceSources": [],
+      "subCapabilities": {
+        "modemPresent": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "modemIdentity": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "interface": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "oneShot": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "interactive": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "responseHandling": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "cancellation": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "routerService": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        },
+        "routerWebUi": {
+          "assessment": "UNKNOWN",
+          "reason": "Requires documented or tested evidence for this exact configuration.",
+          "evidenceSources": []
+        }
+      },
+      "verifiedRange": null
+    }
+  },
+  "knownLimitations": [
+    "Only hardware v5 and exact release 23.05.5 are covered. Different stock firmware, releases and revisions are not equivalent.",
+    "Historical release reference only; profile does not recommend installing firmware.",
+    "Live DNS packages, IPv6 LAN behavior, driver client-limit enforcement, persistence and all cellular/USSD pathways require further verification."
+  ],
+  "evidenceSources": [
+    {
+      "id": "board",
+      "category": "upstream_documentation",
+      "reference": "https://openwrt.org/toh/hwdata/tp-link/tp-link_archer_c7_v5",
+      "summary": "Exact v5 target, wireless hardware and no integrated modem are documented."
+    },
+    {
+      "id": "release",
+      "category": "upstream_documentation",
+      "reference": "https://firmware-selector.openwrt.org/?id=tplink_archer-c7-v5&target=ath79%2Fgeneric&version=23.05.5",
+      "summary": "Exact OpenWrt 23.05.5 target. Historical compatibility reference, not an installation or upgrade recommendation."
+    },
+    {
+      "id": "dns",
+      "category": "upstream_documentation",
+      "reference": "https://openwrt.org/docs/guide-user/base-system/dhcp_configuration",
+      "summary": "Documents separate upstream DNS settings and IPv4 LAN DHCP DNS advertisement."
+    },
+    {
+      "id": "resolver",
+      "category": "upstream_documentation",
+      "reference": "https://openwrt.org/docs/guide-user/base-system/dhcp",
+      "summary": "Documents dnsmasq and odhcpd roles; installed packages and active services must still be verified."
+    }
+  ],
+  "lastReviewed": "2026-10-16",
+  "provenance": {
+    "author": "OBTAINER curated upstream documentation",
+    "category": "upstream_documentation",
+    "notes": "Narrow documentation-backed reference for v5 and release 23.05.5. Not hardware-tested by this project. No adapter exists."
+  }
+}

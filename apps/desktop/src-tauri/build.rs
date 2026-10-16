@@ -1,6 +1,10 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "get_profile_registry",
+            "get_device_compatibility",
+            "validate_device_profile",
+            "record_device_observation",
             "get_snapshot",
             "save_settings",
             "get_discovery",

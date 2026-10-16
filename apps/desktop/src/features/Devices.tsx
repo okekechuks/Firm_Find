@@ -1,15 +1,10 @@
 import { useState } from "react";
 import { Cable, Network, Search, ShieldCheck, Usb, RefreshCw } from "lucide-react";
 import { ManualRouters, type RouterDraft } from "./ManualRouters";
+import { CompatibilityPanel } from "./Compatibility";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
 
 const labels = {usb: "USB", serial: "Serial", network: "Network"};
-const featureLabels = [
-  ["apn", "APN mode"],
-  ["wifiUserLimit", "Wi-Fi user limit"],
-  ["customDns", "Custom DNS"],
-  ["ussd", "USSD"],
-] as const;
 export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCancel }: {
   inventory: DiscoverySnapshot | null;
   desktop: boolean;
@@ -69,6 +64,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
           <>{candidateDevices.length > 0 ? <section aria-label="Router and MiFi candidates"><h2 className="device-group-heading">Router / MiFi candidates | identity unverified</h2><div className="device-grid">{candidateDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)}/>)}</div></section> : <p className="muted">No router candidates identified. Generic interfaces do not establish router identity. Add a management address manually.</p>}
           {otherDevices.length > 0 ? <details className="other-interfaces" open={advanced}><summary>Other Windows interfaces{advanced ? " and diagnostics" : ""} ({otherDevices.length})</summary><div className="device-grid">{otherDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)}/>)}</div></details> : null}</>}
         {selected ? <DeviceDetails device={selected} onGateway={(address, interfaceId) => setDraft({address, interfaceId})}/> : null}
+        {selected ? <CompatibilityPanel key={selected.id} deviceId={selected.id} revision={inventory?.revision ?? 0} desktop={desktop}/> : null}
         <ManualRouters devices={devices} draft={draft} onClose={() => setDraft(null)}/>
       </>}
       <div className="safety-note"><ShieldCheck size={17}/><span>Detection does not establish firmware access. Network checks require your action and ownership confirmation. Gateway identity and ownership remain unverified.</span></div>
@@ -94,12 +90,7 @@ function DeviceDetails({device, onGateway}: {device: Device; onGateway: (address
         <p>Verified manufacturer: {device.identity?.manufacturer ?? "Unknown"} | Model: {device.identity?.model ?? "Unknown"} | Firmware: {device.identity?.firmware ?? "Unknown"}</p>
         <ul>{device.identity?.observations.map((item, index) => <li key={index}>{item.kind.replaceAll("_", " ")}: {item.value} | {item.source} | {item.reliability}</li>)}</ul><ul>{device.evidence.map((item) => <li key={item}>{item}</li>)}</ul>
         <dl className="capability-list"><div><dt>Inventory</dt><dd>{device.capabilities.inventory}</dd></div><div><dt>Firmware backup</dt><dd>{device.capabilities.backup}</dd></div><div><dt>Firmware installation</dt><dd>{device.capabilities.flash}</dd></div></dl>
-        <h3>Feature support | pending Phase 3</h3>
-        <dl className="capability-list">{featureLabels.map(([key, label]) => {
-          const feature = device.capabilities.features[key];
-          return <div key={key}><dt>{label}</dt><dd>{feature.state}{feature.controlPlane ? ` · ${feature.controlPlane}` : ""}</dd></div>;
-        })}</dl>
-        <p>Support stays unknown until a verified device profile and method provide evidence.</p>
+        <p>Feature support is evaluated below from current evidence and exact device profiles.</p>
       </div>
       <div><h3>Interfaces</h3>{device.interfaces.length === 0 ? <p>No matching Windows device record.</p> : device.interfaces.map((item) => <details key={item.instanceId} className="interface-detail">
         <summary>{item.className || "Device"}{item.portName ? ` · ${item.portName}` : ""} · {item.present ? "Present" : "Disconnected"}</summary>

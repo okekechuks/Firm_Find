@@ -4,11 +4,13 @@ OBTAINER is a Windows app intended to help owners keep unsupported routers and M
 
 ## Current status
 
-**Phase 2 discovery and connection foundation is complete.** The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can add a router address, save it, and explicitly check whether its management page responds. Checks are read-only; the app does not try passwords or change router settings.
+**Phase 3 device profiles and compatibility review are complete.** The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can save a router address, check whether its management page responds, and review a separate support assessment for DNS, Wi-Fi user limits, APN and USSD.
 
-A USB-connected comFi MG11 was tested: its management address responded, unplug/reconnect restored the same device record, and saved details survived app restarts. Its model name remains user-supplied; a responding webpage does not prove model, chipset or firmware identity. See the [Phase 2 verification report](docs/PHASE_2_VERIFICATION.md).
+A new Compatibility workspace explains each feature's evidence, missing information and prerequisites. Saved label or software details stay clearly marked as user-reported. Profiles distinguish exact hardware revisions and firmware versions; an uncertain match keeps feature support unknown. The app does not change router settings.
 
-The Windows desktop foundation, eight workspaces, device refresh, saved appearance, hot reload and restart recovery remain working. Device profiles and supported-feature decisions come next in Phase 3. Firmware extraction, customization and installation remain future work.
+A USB-connected comFi MG11 was checked through the real desktop app. Its discovery record and saved details survive restarts, but its exact hardware identity and four feature capabilities remain unverified. The supplied `LT800/` identifier and software version are preserved as reports, not proof of support. See the [Phase 3 verification report](docs/PHASE_3_VERIFICATION.md).
+
+The desktop foundation, nine destinations, device refresh, saved appearance, hot reload and restart recovery work. Firmware storage/import workflows come next in Phase 4. Firmware extraction, customization and installation remain future work.
 
 The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) retain the supplied development sequence and existing project structure.
 
@@ -23,14 +25,14 @@ The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROAD
 - Preview changes, save the previous configuration, verify results, and restore settings where supported.
 - Keep firmware files and their history; later inspect proprietary files or build for explicitly supported OpenWrt devices.
 
-These are project goals, not features available in the current version. Changes to connected devices will require verified device support and a safe recovery path.
+Discovery and compatibility review are available now. Reading and changing device settings, firmware extraction and installation remain future goals. Device changes will require verified support and a safe recovery path.
 
 ## Project structure
 
 | Folder | Purpose |
 | --- | --- |
 | `apps/desktop/` | Windows application, screens, assets, and Tauri backend. |
-| `device-profiles/` | Planned versioned device and capability profiles. |
+| `device-profiles/` | Versioned compatibility profiles, schema and evidence references. |
 | `router-packages/` | Planned optional software hosted on supported routers. |
 | `workers/` | Notes for planned firmware analysis and build helpers. |
 | `tests/` | Planned shared fixtures, simulators, and integration tests. |

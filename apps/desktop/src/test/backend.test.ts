@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { getSnapshot, saveSettings, getManualRouters, probeManagementEndpoint } from "../lib/backend";
+import { getSnapshot, saveSettings, getManualRouters, probeManagementEndpoint, getDeviceCompatibility, getProfileRegistry, validateDeviceProfile } from "../lib/backend";
+import { report } from "./profileFixtures";
 import type { Settings } from "../types/contracts";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: vi.fn() }));
@@ -35,4 +36,13 @@ it("rejects malformed saved targets and endpoint responses", async () => {
   vi.mocked(invoke).mockResolvedValue({code: "identity_unknown", status: "200"});
   await expect(probeManagementEndpoint("a".repeat(64), true)).rejects.toThrow();
   expect(invoke).toHaveBeenLastCalledWith("probe_management_endpoint", {id: "a".repeat(64), authorized: true});
+});
+
+it("rejects malformed compatibility responses and backend claims of writable adapters", async () => {
+  vi.mocked(invoke).mockResolvedValue({...report(),features:{...report().features,dns:{...report().features.dns,canApply:true}}});
+  await expect(getDeviceCompatibility("fixture")).rejects.toThrow();
+  vi.mocked(invoke).mockResolvedValue({profiles:[{profile:{schemaVersion:99}}],digest:"bad",diagnostics:[]});await expect(getProfileRegistry()).rejects.toThrow();
+});
+it("rejects oversized profile documents before IPC", async () => {
+  await expect(validateDeviceProfile("x".repeat(65537))).rejects.toThrow("64 KiB");expect(invoke).not.toHaveBeenCalled();
 });

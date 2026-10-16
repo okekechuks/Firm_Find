@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-record-device-observation"
+description = "Enables the record_device_observation command without any pre-configured scope."
+commands.allow = ["record_device_observation"]
+
+[[permission]]
+identifier = "deny-record-device-observation"
+description = "Denies the record_device_observation command without any pre-configured scope."
+commands.deny = ["record_device_observation"]

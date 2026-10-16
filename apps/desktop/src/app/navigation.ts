@@ -13,6 +13,7 @@ import {
 export type Page =
   | "dashboard"
   | "devices"
+  | "compatibility"
   | "firmware"
   | "analysis"
   | "backups"
@@ -42,6 +43,14 @@ export const destinations: Destination[] = [
     eyebrow: "DEVICE EXPLORER",
     description: "Review USB, serial, and network hardware Windows can see.",
     phase: 2,
+  },
+  {
+    id: "compatibility",
+    label: "Compatibility",
+    icon: ListChecks,
+    eyebrow: "DEVICE SUPPORT",
+    description: "Understand feature support, evidence and prerequisites for your device.",
+    phase: 3,
   },
   {
     id: "firmware",

@@ -245,3 +245,133 @@ pub async fn cancel_discovery(
     state.cancel();
     Ok(())
 }
+
+#[tauri::command]
+pub fn get_profile_registry(
+    registry: tauri::State<'_, crate::profiles::Registry>,
+) -> crate::profiles::Registry {
+    registry.inner().clone()
+}
+
+#[tauri::command]
+pub async fn validate_device_profile(
+    document: String,
+) -> Result<crate::profiles::RegistryEntry, crate::profiles::ProfileError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let profile = crate::profiles::validate(&document)?;
+        Ok(crate::profiles::RegistryEntry {
+            content_hash: crate::profiles::digest(
+                &serde_json::to_vec(&profile).expect("Profile serialization"),
+            ),
+            profile,
+            origin: "local_unverified".into(),
+            authoritative: false,
+        })
+    })
+    .await
+    .map_err(|_| crate::profiles::ProfileError {
+        code: "PROFILE_WORKER_FAILED",
+        message: "Profile validation worker unavailable.".into(),
+    })?
+}
+
+#[tauri::command]
+pub async fn get_device_compatibility(
+    device_id: String,
+    state: tauri::State<'_, AppState>,
+    discovery: tauri::State<'_, DiscoveryService>,
+    registry: tauri::State<'_, crate::profiles::Registry>,
+) -> Result<crate::profiles::CompatibilityReport, CommandError> {
+    let snapshot = discovery.snapshot().map_err(discovery_error)?;
+    let device = snapshot
+        .devices
+        .iter()
+        .find(|d| d.id == device_id)
+        .cloned()
+        .ok_or(CommandError {
+            code: "DEVICE_NOT_FOUND",
+            message: "Device is not in the current inventory. Refresh discovery.",
+        })?;
+    let registry = registry.inner().clone();
+    let live = discovery.shared_snapshot();
+    let repository = Arc::clone(&state.repository);
+    tauri::async_runtime::spawn_blocking(move || {
+        let saved = repository
+            .lock()
+            .map_err(database_error)?
+            .routers()
+            .map_err(database_error)?;
+        let mut evidence = crate::profiles::gather_evidence(&device, &saved);
+        evidence.extend(
+            repository
+                .lock()
+                .map_err(database_error)?
+                .identity_observations(&device_id)
+                .map_err(database_error)?,
+        );
+        let mut report = crate::profiles::evaluate(
+            &registry,
+            &device,
+            evidence,
+            crate::connection::now(),
+            snapshot.revision,
+        );
+        let current = live.lock().map_err(database_error)?;
+        if current.revision != snapshot.revision {
+            return Err(CommandError {
+                code: "COMPATIBILITY_STALE",
+                message: "Discovery changed during evaluation. Evaluate the current device again.",
+            });
+        }
+        let mut repository = repository.lock().map_err(database_error)?;
+        if let Some(previous) = repository
+            .prior_compatibility(&device_id)
+            .map_err(database_error)?
+        {
+            crate::profiles::record_change(&mut report, &previous);
+        }
+        repository
+            .save_compatibility(&report)
+            .map_err(database_error)?;
+        Ok(report)
+    })
+    .await
+    .map_err(database_error)?
+}
+
+#[tauri::command]
+pub async fn record_device_observation(
+    device_id: String,
+    attribute: crate::profiles::Attribute,
+    value: String,
+    state: tauri::State<'_, AppState>,
+    discovery: tauri::State<'_, DiscoveryService>,
+) -> Result<(), CommandError> {
+    if !discovery
+        .snapshot()
+        .map_err(discovery_error)?
+        .devices
+        .iter()
+        .any(|d| d.id == device_id)
+    {
+        return Err(CommandError {
+            code: "DEVICE_NOT_FOUND",
+            message: "Select an existing Windows device candidate.",
+        });
+    }
+    let record = crate::profiles::EvidenceRecord::user_reported(
+        device_id,
+        attribute,
+        value,
+        crate::connection::now(),
+    )
+    .map_err(|_| CommandError {
+        code: "INVALID_OBSERVATION",
+        message: "Only bounded, user-reported identity fields may be saved.",
+    })?;
+    let repository = Arc::clone(&state.repository);
+    tauri::async_runtime::spawn_blocking(move || {
+        if !repository.lock().map_err(database_error)?.save_identity_observation(&record).map_err(database_error)? { return Err(CommandError {code:"OBSERVATION_LIMIT",message:"This device already has 32 reported observations. No additional observation was saved."}); }
+        Ok(())
+    }).await.map_err(database_error)?
+}
