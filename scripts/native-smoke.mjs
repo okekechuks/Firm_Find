@@ -121,8 +121,12 @@ try {
 
   await click('a[href="#devices"]');
   await until(() => script("return [...document.querySelectorAll('h2')].some(node => node.textContent === 'What Windows can see')"), 'Device Explorer did not render');
-  const discovery = await invoke('get_discovery');
-  assert(['ready', 'degraded'].includes(discovery.status), `Unexpected discovery status: ${discovery.status}`);
+  let discovery;
+  await until(async () => {
+    discovery = await invoke('get_discovery');
+    assert.notEqual(discovery.status, 'failed', `Windows inventory failed: ${JSON.stringify(discovery.warnings)}`);
+    return ['ready', 'degraded'].includes(discovery.status);
+  }, 'Windows inventory did not finish its initial capture');
   for (const device of discovery.devices) {
     assert.equal(device.capabilities.flash, 'UNSUPPORTED');
     for (const feature of Object.values(device.capabilities.features)) assert.equal(feature.state, 'UNKNOWN');
