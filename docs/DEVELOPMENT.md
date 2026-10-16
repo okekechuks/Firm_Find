@@ -16,10 +16,10 @@ For a clean checkout with prerequisites installed:
 
 ```powershell
 npm ci
-npm run tauri -- dev --no-watch
+npm run tauri -- dev
 ```
 
-`npm run dev` starts only the frontend browser preview. It does not provide native IPC, SQLite, or hardware inventory. `npm run tauri -- dev --no-watch` starts the actual Windows application through the root wrapper.
+`npm run dev` starts only the frontend browser preview. It does not provide native IPC, SQLite, or hardware inventory. `npm run tauri -- dev` starts the actual Windows application through the root wrapper, with React hot reload and the Rust watcher. For an already-cached toolchain, `npm run tauri -- dev -- --locked --offline` is the verified offline variant.
 
 ## Verify the baseline
 
@@ -49,6 +49,19 @@ npm run test:native -- target/debug/obtainer.exe --audit
 Audit mode preserves saved preferences, checks real IPC and discovery, navigates the UI, and checks existing settings after restart. It writes new evidence below `.tools/native-audit/`. App startup still appends normal audit events and refreshes the passive inventory. Omitting `--audit` runs the existing broader smoke test, which temporarily changes appearance and restores it.
 
 In restricted execution, WebView2 can fail with `0x800700AA` before IPC. Reproduce in a normal Windows session before diagnosing a host-runtime defect. Do not delete or reset the existing browser profile to work around this failure.
+
+## Phase 1 native acceptance
+
+With a fresh release executable available, close other OBTAINER development sessions and run in a normal interactive Windows session:
+
+```powershell
+npm run tauri -- build --no-bundle --ci -- --locked --offline
+npm run test:foundation
+```
+
+This uses the existing Tauri development command and release executable, a temporary loopback WebView2 debugging port (9223), and Vite's existing port (1420). It verifies real IPC, eight destinations, repeated discovery refresh, shared storage/settings, native console health, React hot reload, shutdown/reopen and recovery from an interrupted test-owned launch. No WebDriver or extra npm package is needed.
+
+The verifier temporarily instruments the frontend module for explicitly labelled failure/delay tests and changes a sentence to prove hot reload, then restores the exact source it read. Do not edit those files or run another build/test against them concurrently. It writes the existing appearance value through real settings IPC; it does not change the user's chosen appearance. Normal application audit/inventory writes still occur. Evidence is saved in unique `.tools/foundation/` directories. The [Phase 1 report](PHASE_1_VERIFICATION.md) records results and limits.
 
 ## Persistent data
 

@@ -1,0 +1,1619 @@
+OBTAINER — Phase 1 verification, 16 October 2026 (Africa/Lagos)
+Repository: C:\Users\chuka\OneDrive\Documents\Firm_Find
+Initial clean baseline: 4c3c48853d76190a248976859065f58c76b8931b
+Captured command output; ANSI color escapes removed. Records retained in execution/submission order.
+The initial red-run output was truncated by the execution tool; its failure summary is preserved.
+Native graphical commands ran in the normal Windows session.
+
+[dev-help]
+Context: workspace PowerShell
+Command: npm.cmd run tauri -- dev --help
+Exit code: 0
+Result: Local CLI confirms forwarding runner arguments after --.
+Output:
+
+> obtainer-workspace@0.1.0 tauri
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1 dev --help
+
+Run your app in development mode with hot-reloading for the Rust code. It makes use of the `build.devUrl` property from your `tauri.conf.json` file. It also runs your `build.beforeDevCommand` which usually starts your frontend devServer.
+
+Usage: npm run tauri dev [OPTIONS] [ARGS]...
+
+Arguments:
+  [ARGS]...
+          Command line arguments passed to the runner. Use `--` to explicitly mark the start of the arguments. Arguments after a second `--` are passed to the application e.g. `tauri dev -- [runnerArgs] -- [appArgs]`
+
+Options:
+  -r, --runner <RUNNER>
+          Binary to use to run the application
+
+  -v, --verbose...
+          Enables verbose logging
+
+  -t, --target <TARGET>
+          Target triple to build against
+
+  -f, --features [<FEATURES>...]
+          List of cargo features to activate
+
+  -e, --exit-on-panic
+          Exit on panic
+
+  -c, --config <CONFIG>
+          JSON strings or paths to JSON, JSON5 or TOML files to merge with the default configuration file
+          
+          Configurations are merged in the order they are provided, which means a particular value overwrites previous values when a config key-value pair conflicts.
+          
+          Note that a platform-specific file is looked up and merged with the default file by default (tauri.macos.conf.json, tauri.linux.conf.json, tauri.windows.conf.json, tauri.android.conf.json and tauri.ios.conf.json) but you can use this for more specific use cases such as different build flavors.
+
+      --release
+          Run the code in release mode
+
+      --no-dev-server-wait
+          Skip waiting for the frontend dev server to start before building the tauri application
+          
+          [env: TAURI_CLI_NO_DEV_SERVER_WAIT=]
+
+      --no-watch
+          Disable the file watcher
+
+      --additional-watch-folders <ADDITIONAL_WATCH_FOLDERS>
+          Additional paths to watch for changes
+
+      --no-dev-server
+          Disable the built-in dev server for static files
+
+      --port <PORT>
+          Specify port for the built-in dev server for static files. Defaults to 1430
+          
+          [env: TAURI_CLI_PORT=]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+
+[data-before]
+Context: workspace PowerShell
+Command: py .tools/phase-0-audit/probe-data.py .tools/phase-0-audit/phase-1-before.json
+Exit code: 0
+Result: Read-only original data fingerprint; integrity ok, schema 1, system theme.
+Output:
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 449112,
+      "sha256": "7dad0c544cac3ecb6015f57e223f1ee9e1f945e45b4efdfd199c46ed9c1e4147"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 1,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 26,
+    "devices": 48,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 449112,
+      "sha256": "7dad0c544cac3ecb6015f57e223f1ee9e1f945e45b4efdfd199c46ed9c1e4147"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+[initial-dev-launch]
+Context: normal Windows session; loopback native WebView debugging
+Command: $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9223'; $env:CARGO_INCREMENTAL='0'; npm.cmd run tauri -- dev -- --locked --offline
+Exit code: 0
+Result: Actual root Tauri development command; native compiled/rendered; closed normally with exit 0.
+Output:
+
+> obtainer-workspace@0.1.0 tauri
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1 dev -- --locked --offline
+
+     Running BeforeDevCommand (`npm run dev`)
+
+> @obtainer/desktop@0.1.0 dev
+> vite --configLoader runner --host 127.0.0.1
+
+        Warn Waiting for your frontend dev server to start on http://127.0.0.1:1420/...
+
+  VITE v6.4.4  ready in 4690 ms
+
+  ➜  Local:   http://127.0.0.1:1420/
+     Running DevCommand (`cargo  run --locked --offline --no-default-features --color always --`)
+        Info Watching C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src-tauri for changes...
+   Compiling tauri-macros v2.7.2
+   Compiling obtainer v0.1.0 (C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src-tauri)
+    Building [=======================> ] 362/367: obtaine…    Building [=======================> ] 363/367: tauri-m…                                                               Compiling tauri v2.12.3
+    Building [=======================> ] 364/367: tauri       Building [=======================> ] 365/367: obtainer    Building [=======================> ] 366/367: obtaine…                                                                Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 25s
+     Running `C:\Users\chuka\OneDrive\Documents\Firm_Find\target\debug\obtainer.exe`
+11:52:31 AM [vite] (client) page reload src/test/App.test.tsx
+11:54:23 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css
+11:54:24 AM [vite] (client) hmr update /src/features/Preferences.tsx, /src/styles.css
+11:54:25 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css
+11:54:25 AM [vite] (client) page reload src/test/useDeviceInventory.test.tsx
+11:54:59 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css
+11:55:46 AM [vite] (client) page reload src/test/useDeviceInventory.test.tsx
+11:57:24 AM [vite] (client) page reload src/test/App.test.tsx
+12:01:52 PM [vite] (client) hmr update /src/features/Devices.tsx, /src/styles.css
+12:01:53 PM [vite] (client) page reload src/test/Devices.test.tsx
+12:02:19 PM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css
+12:02:21 PM [vite] (client) hmr update /src/app/App.tsx, /src/styles.css
+12:02:21 PM [vite] (client) hmr update /src/features/Preferences.tsx, /src/styles.css
+12:02:23 PM [vite] (client) hmr update /src/features/Preferences.tsx, /src/styles.css
+
+[initial-dev-target]
+Context: workspace PowerShell
+Command: node -e "fetch('http://127.0.0.1:9223/json/list').then(r=>r.json()).then(x=>console.log(JSON.stringify(x.map(({id,type,url,webSocketDebuggerUrl})=>({id,type,url,webSocketDebuggerUrl}))))).catch(e=>{console.error(e.message);process.exitCode=1})"
+Exit code: 1
+Result: Premature CDP probe before native compilation finished; endpoint unavailable.
+Output:
+fetch failed
+
+[regressions-before-fixes]
+Context: workspace PowerShell
+Command: npm.cmd test
+Exit code: 1
+Result: Red run: 8 failures / 19 tests; seven demonstrated state defects and one StrictMode test assumption. Tool output was truncated.
+Output:
+
+> obtainer-workspace@0.1.0 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/apps/desktop
+
+Warning: truncated output (original token count: 11011)
+Total output lines: 1091
+
+ ❯ src/test/useDeviceInventory.test.tsx (4 tests | 3 failed) 1316ms
+   × clears a transient read failure when a later notification succeeds 113ms
+   × preserves a failed live-subscription warning after a successful manual refresh 87ms
+   × cleans up subscriptions under StrictMode and after unmount 1032ms
+ ❯ src/test/App.test.tsx (9 tests | 5 failed) 4668ms
+     × shows connecting state while the first workspace request is pending 152ms
+     × marks a failed refresh disconnected while retaining cached workspace data 332ms
+     × refreshes the first completed inventory and ignores an older workspace reply 1072ms
+     × retains an unsaved appearance choice when workspace metadata refreshes 384ms
+     × reports a confirmed settings save even if the following workspace read fails 1318ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/App.test.tsx > desktop foundation > shows connecting state while the first workspace request is pending
+TestingLibraryElementError: Unable to find an element with the text: Connecting to workspace. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <a
+        class="skip-link"
+        href="#content"
+      >
+        Skip to content
+      </a>
+      <aside
+        class="sidebar"
+      >
+        <a
+          aria-label="OBTAINER overview"
+          class="brand"
+          href="#dashboard"
+        >
+          <img
+            alt=""
+            src="/mark.svg"
+          />
+          <div>
+            <strong>
+              OBTAINER
+            </strong>
+            <span>
+              FIRMWARE WORKSPACE
+            </span>
+          </div>
+        </a>
+        <div
+          class="workspace-switch"
+        >
+          <span
+            class="workspace-avatar"
+          >
+            O
+          </span>
+          <div>
+            <strong>
+              Local workspace
+            </strong>
+            <span>
+              Windows desktop
+            </span>
+          </div>
+          <svg
+            class="lucide lucide-chevron-right"
+            fill="none"
+            height="15"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="15"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m9 18 6-6-6-6"
+            />
+          </svg>
+        </div>
+        <span
+          class="nav-caption"
+        >
+          WORKSPACE
+        </span>
+        <nav
+          aria-label="Main navigation"
+        >
+          <a
+            aria-current="page"
+            class="nav-item active"
+            href="#dashboard"
+          >
+            <svg
+              class="lucide lucide-layout-dashboard"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="9"
+                rx="1"
+                width="7"
+                x="3"
+                y="3"
+              />
+              <rect
+                height="5"
+                rx="1"
+                width="7"
+                x="14"
+                y="3"
+              />
+              <rect
+                height="9"
+                rx="1"
+                width="7"
+                x="14"
+                y="12"
+              />
+              <rect
+                height="5"
+                rx="1"
+                width="7"
+                x="3"
+                y="16"
+              />
+            </svg>
+            <span>
+              Overview
+            </span>
+            <span
+              class="nav-active-dot"
+            />
+          </a>
+          <a
+            class="nav-item"
+            href="#devices"
+          >
+            <svg
+              class="lucide lucide-router"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="8"
+                rx="2"
+                width="20"
+                x="2"
+                y="14"
+              />
+              <path
+                d="M6.01 18H6"
+              />
+              <path
+                d="M10.01 18H10"
+              />
+              <path
+                d="M15 10v4"
+              />
+              <path
+                d="M17.84 7.17a4 4 0 0 0-5.66 0"
+              />
+              <path
+                d="M20.66 4.34a8 8 0 0 0-11.31 0"
+              />
+            </svg>
+            <span>
+              Connected devices
+            </span>
+          </a>
+          <a
+            class="nav-item"
+            href="#firmware"
+          >
+            <svg
+              class="lucide lucide-files"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+          ...
+ ❯ Object.getElementError ../../node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/test/App.test.tsx:53:19
+     51|     vi.mocked(getSnapshot).mockReturnValue(new Promise(() => {}));
+     52|     render(<App />);
+     53|     expect(screen.getByText("Connecting to workspace")).toBeInTheDocum…
+       |                   ^
+     54|     expect(screen.queryByText("Backend unavailable")).not.toBeInTheDoc…
+     55|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/test/App.test.tsx > desktop foundation > marks a failed refresh disconnected while retaining cached workspace data
+Error: expect(element).not.toBeInTheDocument()
+
+expected document not to contain element, found <span>
+  Desktop connected
+</span> instead
+ ❯ src/test/App.test.tsx:64:57
+     62|     await user.click(screen.getByRole("button", { name: "Refresh works…
+     63|     expect(await screen.findByRole("alert")).toHaveTextContent("Databa…
+     64|     expect(screen.queryByText("Desktop connected")).not.toBeInTheDocum…
+       |                                                         ^
+     65|     expect(screen.getByText("Backend unavailable")).toBeInTheDocument(…
+     66|     expect(screen.getByText("Desktop workspace initialized")).toBeInTh…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/test/App.test.tsx > desktop foundation > refreshes the first completed inventory and ignores an older workspace reply
+TestingLibraryElementError: Unable to find an element with the text: OBTAINER · v0.2.0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <a
+        class="skip-link"
+        href="#content"
+      >
+        Skip to content
+      </a>
+      <aside
+        class="sidebar"
+      >
+        <a
+          aria-label="OBTAINER overview"
+          class="brand"
+          href="#dashboard"
+        >
+          <img
+            alt=""
+            src="/mark.svg"
+          />
+          <div>
+            <strong>
+              OBTAINER
+            </strong>
+            <span>
+              FIRMWARE WORKSPACE
+            </span>
+          </div>
+        </a>
+        <div
+          class="workspace-switch"
+        >
+          <span
+            class="workspace-avatar"
+          >
+            O
+          </span>
+          <div>
+            <strong>
+              Local workspace
+            </strong>
+            <span>
+              Windows desktop
+            </span>
+          </div>
+          <svg
+            class="lucide lucide-chevron-right"
+            fill="none"
+            height="15"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="15"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m9 18 6-6-6-6"
+            />
+          </svg>
+        </div>
+        <span
+          class="nav-caption"
+        >
+          WORKSPACE
+        </span>
+        <nav
+          aria-label="Main navigation"
+        >
+          <a
+            aria-current="page"
+            class="nav-item active"
+            href="#dashboard"
+          >
+            […4511 tokens truncated…            height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="8"
+                rx="2"
+                width="20"
+                x="2"
+                y="14"
+              />
+              <path
+                d="M6.01 18H6"
+              />
+              <path
+                d="M10.01 18H10"
+              />
+              <path
+                d="M15 10v4"
+              />
+              <path
+                d="M17.84 7.17a4 4 0 0 0-5.66 0"
+              />
+              <path
+                d="M20.66 4.34a8 8 0 0 0-11.31 0"
+              />
+            </svg>
+            <span>
+              Connected devices
+            </span>
+          </a>
+          <a
+            class="nav-item"
+            href="#firmware"
+          >
+            <svg
+              class="lucide lucide-files"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <a
+        class="skip-link"
+        href="#content"
+      >
+        Skip to content
+      </a>
+      <aside
+        class="sidebar"
+      >
+        <a
+          aria-label="OBTAINER overview"
+          class="brand"
+          href="#dashboard"
+        >
+          <img
+            alt=""
+            src="/mark.svg"
+          />
+          <div>
+            <strong>
+              OBTAINER
+            </strong>
+            <span>
+              FIRMWARE WORKSPACE
+            </span>
+          </div>
+        </a>
+        <div
+          class="workspace-switch"
+        >
+          <span
+            class="workspace-avatar"
+          >
+            O
+          </span>
+          <div>
+            <strong>
+              Local workspace
+            </strong>
+            <span>
+              Windows desktop
+            </span>
+          </div>
+          <svg
+            class="lucide lucide-chevron-right"
+            fill="none"
+            height="15"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="15"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m9 18 6-6-6-6"
+            />
+          </svg>
+        </div>
+        <span
+          class="nav-caption"
+        >
+          WORKSPACE
+        </span>
+        <nav
+          aria-label="Main navigation"
+        >
+          <a
+            class="nav-item"
+            href="#dashboard"
+          >
+            <svg
+              class="lucide lucide-layout-dashboard"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="9"
+                rx="1"
+                width="7"
+                x="3"
+                y="3"
+              />
+              <rect
+                height="5"
+                rx="1"
+                width="7"
+                x="14"
+                y="3"
+              />
+              <rect
+                height="9"
+                rx="1"
+                width="7"
+                x="14"
+                y="12"
+              />
+              <rect
+                height="5"
+                rx="1"
+                width="7"
+                x="3"
+                y="16"
+              />
+            </svg>
+            <span>
+              Overview
+            </span>
+            <span
+              class="nav-active-dot"
+            />
+          </a>
+          <a
+            class="nav-item"
+            href="#devices"
+          >
+            <svg
+              class="lucide lucide-router"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="8"
+                rx="2"
+                width="20"
+                x="2"
+                y="14"
+              />
+              <path
+                d="M6.01 18H6"
+              />
+              <path
+                d="M10.01 18H10"
+              />
+              <path
+                d="M15 10v4"
+              />
+              <path
+                d="M17.84 7.17a4 4 0 0 0-5.66 0"
+              />
+              <path
+                d="M20.66 4.34a8 8 0 0 0-11.31 0"
+              />
+            </svg>
+            <span>
+              Connected devices
+            </span>
+          </a>
+          <a
+            class="nav-item"
+            href="#firmware"
+          >
+            <svg
+              class="lucide lucide-files"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns...
+ ❯ waitForWrapper ../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/App.test.tsx:104:25
+    102|     vi.mocked(getSnapshot).mockRejectedValue(new Error("Read unavailab…
+    103|     await user.click(screen.getByRole("button", { name: "Save preferen…
+    104|     expect(await screen.findByText("Preferences saved to SQLite.")).to…
+       |                         ^
+    105|     expect(screen.getByRole("alert")).toHaveTextContent("Read unavaila…
+    106|     expect(screen.getByRole("radio", { name: /Dark/ })).toBeChecked();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/test/useDeviceInventory.test.tsx > clears a transient read failure when a later notification succeeds
+AssertionError: expected 'Temporary read failure' to be null
+
+- Expected:
+null
+
++ Received:
+"Temporary read failure"
+
+ ❯ src/test/useDeviceInventory.test.tsx:31:32
+     29|   await act(async () => { changed(); });
+     30|   await waitFor(() => expect(result.current.inventory?.revision).toBe(…
+     31|   expect(result.current.error).toBeNull();
+       |                                ^
+     32| });
+     33|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/test/useDeviceInventory.test.tsx > preserves a failed live-subscription warning after a successful manual refresh
+AssertionError: the given combination of arguments (null and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string
+ ❯ src/test/useDeviceInventory.test.tsx:39:32
+     37|   await waitFor(() => expect(result.current.error).toContain("Live upd…
+     38|   await act(async () => { await result.current.refresh(); });
+     39|   expect(result.current.error).toContain("Live updates are unavailable…
+       |                                ^
+     40| });
+     41|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/test/useDeviceInventory.test.tsx > cleans up subscriptions under StrictMode and after unmount
+AssertionError: expected 1 to be 2 // Object.is equality
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div />
+  </body>
+</html>
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/test/useDeviceInventory.test.tsx:61:45
+     59|   const wrapper = ({ children }: { children: ReactNode }) => <StrictMo…
+     60|   const { unmount } = renderHook(() => useDeviceInventory(true), { wra…
+     61|   await waitFor(() => expect(resultCount()).toBe(2));
+       |                                             ^
+     62|   unmount();
+     63|   expect(stops.every((stop) => stop.mock.calls.length === 1)).toBe(tru…
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  2 failed | 2 passed (4)
+      Tests  8 failed | 11 passed (19)
+   Start at  11:52:37
+   Duration  31.66s (transform 1.13s, setup 11.65s, import 2.62s, tests 6.72s, environment 38.87s)
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop
+npm error workspace @obtainer/desktop@0.1.0
+npm error location C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vitest run --configLoader runner
+
+[compiled-dev-target]
+Context: workspace PowerShell
+Command: node -e "fetch('http://127.0.0.1:9223/json/list').then(r=>r.json()).then(x=>console.log(JSON.stringify(x.map(({id,type,url,webSocketDebuggerUrl})=>({id,type,url,webSocketDebuggerUrl}))))).catch(e=>{console.error(e.message);process.exitCode=1})"
+Exit code: 0
+Result: Real native WebView target at the Vite development URL.
+Output:
+[{"id":"5E7151BDC7A7399822B41909E445C0E3","type":"page","url":"http://127.0.0.1:1420/#devices","webSocketDebuggerUrl":"ws://127.0.0.1:9223/devtools/page/5E7151BDC7A7399822B41909E445C0E3"}]
+
+[typecheck]
+Context: workspace PowerShell
+Command: node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit
+Exit code: 1
+Result: New test mock returned an overly broad Vitest Mock type; corrected to a callable () => void.
+Output:
+apps/desktop/src/test/useDeviceInventory.test.tsx(19,52): error TS2345: Argument of type '(callback: () => void) => Promise<Mock<Procedure | Constructable>>' is not assignable to parameter of type '(changed: () => void) => Promise<UnlistenFn>'.
+  Type 'Promise<Mock<Procedure | Constructable>>' is not assignable to type 'Promise<UnlistenFn>'.
+    Type 'Mock<Procedure | Constructable>' is not assignable to type 'UnlistenFn'.
+      Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type 'UnlistenFn'.
+        Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(): void'.
+
+[lint]
+Context: workspace PowerShell
+Command: npm.cmd run lint
+Exit code: 0
+Result: Initial application-fix ESLint pass.
+Output:
+
+> obtainer-workspace@0.1.0 lint
+> eslint . --max-warnings 0
+
+[frontend-tests]
+Context: workspace PowerShell
+Command: $env:DEBUG_PRINT_LIMIT='1200'; npm.cmd test
+Exit code: 1
+Result: 20/21 pass; existing one-shot failure fixture raced the newly working first-inventory recovery; fixture changed to fail until explicit retry.
+Output:
+
+> obtainer-workspace@0.1.0 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/apps/desktop
+
+ ❯ src/test/App.test.tsx (9 tests | 1 failed) 3087ms
+     × shows backend errors and retries without inventing connected state 114ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/App.test.tsx > desktop foundation > shows backend errors and retries without inventing connected state
+Error: expect(element).not.toBeInTheDocument()
+
+expected document not to contain element, found <span>
+  Desktop connected
+</span> instead
+ ❯ src/test/App.test.tsx:166:57
+    164|       "Database unavailable",
+    165|     );
+    166|     expect(screen.queryByText("Desktop connected")).not.toBeInTheDocum…
+       |                                                         ^
+    167|     await user.click(screen.getByRole("button", { name: "Retry" }));
+    168|     expect(await screen.findByText("Desktop connected")).toBeInTheDocu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 20 passed (21)
+   Start at  11:55:06
+   Duration  8.96s (transform 526ms, setup 2.34s, import 1.58s, tests 4.31s, environment 7.49s)
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop
+npm error workspace @obtainer/desktop@0.1.0
+npm error location C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vitest run --configLoader runner
+
+[typecheck-retry]
+Context: workspace PowerShell
+Command: node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit
+Exit code: 0
+Result: Test mock typing corrected; exit 0.
+Output:
+
+
+[frontend-tests-retry]
+Context: workspace PowerShell
+Command: $env:DEBUG_PRINT_LIMIT='1200'; npm.cmd test
+Exit code: 0
+Result: 21 frontend tests pass after state fixes.
+Output:
+
+> obtainer-workspace@0.1.0 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/apps/desktop
+
+
+ Test Files  5 passed (5)
+      Tests  21 passed (21)
+   Start at  11:58:53
+   Duration  10.26s (transform 650ms, setup 2.75s, import 1.44s, tests 4.17s, environment 9.48s)
+
+[lint-runner]
+Context: workspace PowerShell
+Command: npm.cmd run lint
+Exit code: 1
+Result: New acceptance runner threw from finally; cleanup error handling corrected.
+Output:
+
+> obtainer-workspace@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+C:\Users\chuka\OneDrive\Documents\Firm_Find\scripts\verify-foundation.mjs
+  203:12  error  Unsafe usage of ThrowStatement  no-unsafe-finally
+
+✖ 1 problem (1 error, 0 warnings)
+
+[lint-acceptance-runner]
+Context: workspace PowerShell
+Command: npm.cmd run lint
+Exit code: 0
+Result: ESLint passes after cleanup fix.
+Output:
+
+> obtainer-workspace@0.1.0 lint
+> eslint . --max-warnings 0
+
+[native-dev-initial]
+Context: normal Windows session
+Command: node scripts/verify-foundation.mjs --attach-dev
+Exit code: 1
+Result: First harness injection could not overwrite Tauri's immutable invoke property. Actual rendering/navigation/IPC/discovery passed, but the requested injected error never occurred.
+Output:
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\foundation\2026-10-16T10-59-47.981Z
+PASS: dev-initial: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/#devices","pid":21196,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER","theme":"system"}
+PASS: dev-initial: all eight navigation destinations {}
+PASS: dev-initial: discovery, three refreshes, unique IDs, unknown feature support {"records":48,"watching":true,"warnings":[]}
+PASS: dev-initial: same-value settings write/read preserved original preferences {}
+file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:29
+  throw new Error(message);
+        ^
+
+Error: Failed refresh remained falsely connected
+    at until (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:29:9)
+    at async verify (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:176:5)
+    at async file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:225:5
+
+Node.js v22.17.0
+
+[native-dev-initial-retry]
+Context: normal Windows session; temporary test-only module instrumentation restored afterward
+Command: node scripts/verify-foundation.mjs --attach-dev
+Exit code: 0
+Result: Native dev error/loading/HMR/cleanup acceptance passes with temporary, explicitly labelled frontend instrumentation; source restored.
+Output:
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\foundation\2026-10-16T11-02-15.200Z
+PASS: dev-initial: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/#devices","pid":21196,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER","theme":"system"}
+PASS: dev-initial: all eight navigation destinations {}
+PASS: dev-initial: discovery, three refreshes, unique IDs, unknown feature support {"records":48,"watching":true,"warnings":[]}
+PASS: dev-initial: same-value settings write/read preserved original preferences {}
+PASS: dev-initial: injected read error and real IPC retry recovery {}
+PASS: dev-initial: loading state retains cached data {}
+PASS: dev-initial: React hot reload with unchanged app/Vite PIDs {}
+PASS: dev-initial: temporary HMR edit restored {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+
+[rust-format]
+Context: workspace PowerShell
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check
+Exit code: 0
+Result: Rust formatting passes.
+Output:
+
+
+[rust-clippy]
+Context: workspace PowerShell
+Command: $env:CARGO_INCREMENTAL='0'; powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings
+Exit code: 0
+Result: Workspace/all targets, warnings denied, locked/offline: pass.
+Output:
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.85s
+
+[frontend-tests-latest]
+Context: workspace PowerShell
+Command: $env:DEBUG_PRINT_LIMIT='1200'; npm.cmd test
+Exit code: 0
+Result: 23 frontend tests pass, including initial discovery-failure recovery and loading/empty distinction.
+Output:
+
+> obtainer-workspace@0.1.0 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/apps/desktop
+
+
+ Test Files  5 passed (5)
+      Tests  23 passed (23)
+   Start at  12:03:12
+   Duration  9.00s (transform 622ms, setup 2.52s, import 1.68s, tests 4.79s, environment 6.69s)
+
+[typecheck-complete]
+Context: workspace PowerShell
+Command: node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit
+Exit code: 0
+Result: Dedicated project TypeScript noEmit check passes.
+Output:
+
+
+[lint-complete]
+Context: workspace PowerShell
+Command: npm.cmd run lint
+Exit code: 0
+Result: ESLint passes.
+Output:
+
+> obtainer-workspace@0.1.0 lint
+> eslint . --max-warnings 0
+
+[rust-tests]
+Context: workspace PowerShell
+Command: $env:CARGO_INCREMENTAL='0'; powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline
+Exit code: 0
+Result: 11 Rust tests pass; includes native passive Windows capture and temporary DB initialization/settings/reopen.
+Output:
+   Compiling obtainer v0.1.0 (C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src-tauri)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.19s
+     Running unittests src\lib.rs (target\debug\deps\obtainer_lib-d031cf6ddb6a0173.exe)
+
+running 11 tests
+test discovery::tests::gateway_never_establishes_router_support_or_ownership ... ok
+test discovery::tests::cyclic_parent_records_are_bounded_and_invalid_fixture_is_rejected ... ok
+test discovery::tests::composite_correlation_deduplication_and_capabilities ... ok
+test domain::tests::hardware_writes_are_forbidden ... ok
+test discovery::tests::similar_names_and_shared_pc_container_do_not_merge_unrelated_devices ... ok
+test domain::tests::settings_reject_unknown_fields_and_invalid_themes ... ok
+test discovery::tests::arrival_removal_and_reconnection_keep_stable_identity ... ok
+test discovery::tests::downstream_usb_device_is_not_merged_into_upstream_hub ... ok
+test storage::tests::newer_database_is_rejected_without_rewriting_it ... ok
+test storage::tests::migration_and_settings_survive_reopening ... ok
+test discovery::tests::native_inventory_is_available_without_opening_devices ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running unittests src\main.rs (target\debug\deps\obtainer-4973eb05a0b83553.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests obtainer_lib
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[frontend-build]
+Context: workspace PowerShell
+Command: npm.cmd run build
+Exit code: 0
+Result: Production build passes; 1,602 modules.
+Output:
+
+> obtainer-workspace@0.1.0 build
+> npm run build --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 build
+> tsc -b && vite build --configLoader runner
+
+vite v6.4.4 building for production...
+transforming...
+✓ 1602 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.53 kB │ gzip:  0.34 kB
+dist/assets/index-zf8EzxPd.css   24.10 kB │ gzip:  5.88 kB
+dist/assets/index-D_Rj_Spp.js   321.12 kB │ gzip: 94.22 kB
+✓ built in 7.54s
+
+[frontend-tests-final]
+Context: workspace PowerShell
+Command: $env:DEBUG_PRINT_LIMIT='1200'; npm.cmd test
+Exit code: 0
+Result: Final 5 files / 24 frontend tests pass.
+Output:
+
+> obtainer-workspace@0.1.0 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/apps/desktop
+
+
+ Test Files  5 passed (5)
+      Tests  24 passed (24)
+   Start at  12:04:26
+   Duration  10.81s (transform 696ms, setup 2.63s, import 1.75s, tests 6.87s, environment 7.88s)
+
+[tauri-release-build]
+Context: workspace PowerShell
+Command: $env:CARGO_INCREMENTAL='0'; npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline
+Exit code: 0
+Result: Fresh optimized Tauri executable built; configured frontend build also passes; no installer bundling.
+Output:
+
+> obtainer-workspace@0.1.0 tauri
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1 build --no-bundle --ci -- --locked --offline
+
+        Info Looking up installed tauri packages to check mismatched versions...
+     Running beforeBuildCommand `npm run build`
+
+> @obtainer/desktop@0.1.0 build
+> tsc -b && vite build --configLoader runner
+
+vite v6.4.4 building for production...
+transforming...
+✓ 1602 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.53 kB │ gzip:  0.34 kB
+dist/assets/index-zf8EzxPd.css   24.10 kB │ gzip:  5.88 kB
+dist/assets/index-D_Rj_Spp.js   321.12 kB │ gzip: 94.22 kB
+✓ built in 4.77s
+   Compiling obtainer v0.1.0 (C:\Users\chuka\OneDrive\Documents\Firm_Find\apps\desktop\src-tauri)
+    Finished `release` profile [optimized] target(s) in 1m 22s
+       Built application at: C:\Users\chuka\OneDrive\Documents\Firm_Find\target\release\obtainer.exe
+
+[native-foundation-full]
+Context: normal Windows session; test-owned processes
+Command: npm.cmd run test:foundation
+Exit code: 1
+Result: First full lifecycle attempt failed the post-interruption connection wait after an immediate forced page reload. Initial render of that recovery attempt was not captured; failure retained.
+Output:
+
+> obtainer-workspace@0.1.0 test:foundation
+> node scripts/verify-foundation.mjs
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\foundation\2026-10-16T11-14-54.254Z
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: dev-reopen: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/","pid":5504,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER","theme":"system"}
+PASS: dev-reopen: all eight navigation destinations {}
+PASS: dev-reopen: discovery, three refreshes, unique IDs, unknown feature support {"records":48,"watching":true,"warnings":[]}
+PASS: dev-reopen: same-value settings write/read preserved original preferences {}
+PASS: dev-reopen: injected read error and real IPC retry recovery {}
+PASS: dev-reopen: loading state retains cached data {}
+PASS: dev-reopen: React hot reload with unchanged app/Vite PIDs {}
+PASS: dev-reopen: temporary HMR edit restored {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: interrupted owned development launch and released resources {"backendRenderedBeforeInterrupt":false}
+file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:31
+  throw new Error(message);
+        ^
+
+Error: React did not connect to Rust
+    at until (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:31:9)
+    at async connected (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:112:3)
+    at async verify (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:130:37)
+    at async file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:248:19
+
+Node.js v22.17.0
+
+[post-interrupt-data]
+Context: workspace PowerShell
+Command: py .tools/phase-0-audit/probe-data.py .tools/phase-0-audit/phase-1-interrupt-check.json
+Exit code: 0
+Result: Existing SQLite remains intact after interrupted-launch attempt.
+Output:
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 609792,
+      "sha256": "4be957a86e357029ead05d43023f7f6d86478b0842dc0c303e8cb8d8cb3578c0"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 1,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 35,
+    "devices": 48,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 609792,
+      "sha256": "4be957a86e357029ead05d43023f7f6d86478b0842dc0c303e8cb8d8cb3578c0"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+[native-foundation-readiness]
+Context: normal Windows session; first boot readiness before reload
+Command: npm.cmd run test:foundation
+Exit code: 0
+Result: Final full lifecycle passes: wait for first React/IPC bootstrap before reload, dev reopen/HMR, controlled startup interruption, recovery, production, console and process cleanup.
+Output:
+
+> obtainer-workspace@0.1.0 test:foundation
+> node scripts/verify-foundation.mjs
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\foundation\2026-10-16T11-21-55.402Z
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: dev-reopen: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/","pid":15384,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER","theme":"system"}
+PASS: dev-reopen: all eight navigation destinations {}
+PASS: dev-reopen: discovery, three refreshes, unique IDs, unknown feature support {"records":48,"watching":true,"warnings":[]}
+PASS: dev-reopen: same-value settings write/read preserved original preferences {}
+PASS: dev-reopen: injected read error and real IPC retry recovery {}
+PASS: dev-reopen: loading state retains cached data {}
+PASS: dev-reopen: React hot reload with unchanged app/Vite PIDs {}
+PASS: dev-reopen: temporary HMR edit restored {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: interrupted owned development launch and released resources {"backendRenderedBeforeInterrupt":false}
+PASS: dev-recovery: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/","pid":22864,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER","theme":"system"}
+PASS: dev-recovery: all eight navigation destinations {}
+PASS: dev-recovery: discovery, three refreshes, unique IDs, unknown feature support {"records":48,"watching":true,"warnings":[]}
+PASS: dev-recovery: same-value settings write/read preserved original preferences {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: production: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":3268,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER","theme":"system"}
+PASS: production: all eight navigation destinations {}
+PASS: production: discovery, three refreshes, unique IDs, unknown feature support {"records":48,"watching":true,"warnings":[]}
+PASS: production: same-value settings write/read preserved original preferences {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+
+[data-after]
+Context: workspace PowerShell
+Command: py .tools/phase-0-audit/probe-data.py .tools/phase-0-audit/phase-1-after.json
+Exit code: 0
+Result: Post-lifecycle read-only DB integrity/settings check passes.
+Output:
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 770472,
+      "sha256": "b39cd073da17284429e95a4ea24c7a7814746488b6ac011423cd670f199c616e"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 1,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 44,
+    "devices": 48,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 770472,
+      "sha256": "b39cd073da17284429e95a4ea24c7a7814746488b6ac011423cd670f199c616e"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+[lint-final-runtime-runner]
+Context: workspace PowerShell
+Command: npm.cmd run lint
+Exit code: 0
+Result: Final readiness/diagnostic runner passes ESLint.
+Output:
+
+> obtainer-workspace@0.1.0 lint
+> eslint . --max-warnings 0
+
+[protected-files]
+Context: workspace PowerShell
+Command: git diff --exit-code -- apps/desktop/src/lib/backend.ts apps/desktop/src-tauri Cargo.toml Cargo.lock package-lock.json scripts/desktop.ps1 scripts/rust.ps1 scripts/native-smoke.mjs docs/IMPLEMENTATION_ROADMAP.md docs/PHASE_0_AUDIT.md RFS_MASTER_PLAN.md docs/reference
+Exit code: 0
+Result: Rust/discovery/storage/config/locks/original wrappers/native smoke/Phase 0 report/roadmap unchanged.
+Output:
+warning: in the working copy of 'apps/desktop/src/lib/backend.ts', LF will be replaced by CRLF the next time Git touches it
+
+[native-settings-roundtrip]
+Context: normal Windows session; original appearance restored via native UI
+Command: npm.cmd run test:foundation -- --settings-roundtrip
+Exit code: 0
+Result: Actual native UI changed appearance in production; dev read it from the same DB and restored original; production restart confirmed original; console and cleanup pass.
+Output:
+
+> obtainer-workspace@0.1.0 test:foundation
+> node scripts/verify-foundation.mjs --settings-roundtrip
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\foundation\2026-10-16T11-29-56.552Z
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: production UI saved a changed appearance through real Rust/SQLite IPC {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: development reopened the changed production setting from the same database {}
+PASS: development UI restored the original appearance {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: production restart verified the original settings restored by development {}
+PASS: shutdown left no app, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+
+[data-final]
+Context: workspace PowerShell
+Command: py .tools/phase-0-audit/probe-data.py .tools/phase-0-audit/phase-1-final.json
+Exit code: 0
+Result: Final integrity ok, schema 1, original system theme/hash restored; 52 audit events and 48 cached device records.
+Output:
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "files_before": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 943512,
+      "sha256": "894e6b51696f35f0acff35a43e11e40354056706ab9739a68a1679bbaf1e6c63"
+    }
+  },
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 1,
+  "journal_mode": "wal",
+  "table_counts": {
+    "audit_events": 52,
+    "devices": 48,
+    "firmware_artifacts": 0,
+    "jobs": 0,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "files_after": {
+    "obtainer.db": {
+      "bytes": 4096,
+      "sha256": "1fe8f6113488865c546d2faa55b21482662ce4be19d4f505eeefa09bc3131489"
+    },
+    "obtainer.db-wal": {
+      "bytes": 943512,
+      "sha256": "894e6b51696f35f0acff35a43e11e40354056706ab9739a68a1679bbaf1e6c63"
+    }
+  },
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 0
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+[lint-settings-runner]
+Context: workspace PowerShell
+Command: npm.cmd run lint
+Exit code: 0
+Result: Final settings acceptance runner passes root ESLint.
+Output:
+
+> obtainer-workspace@0.1.0 lint
+> eslint . --max-warnings 0
+
+Final checks:
+
+[frontend-tests-boundary-final]
+Command: $env:DEBUG_PRINT_LIMIT='1200'; npm.cmd test
+Exit code: 0
+Result: Final 24 frontend tests pass, including navigation away from a failed view.
+Output:
+
+> obtainer-workspace@0.1.0 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/apps/desktop
+
+
+ Test Files  5 passed (5)
+      Tests  24 passed (24)
+   Start at  12:33:49
+   Duration  8.98s (transform 659ms, setup 2.23s, import 1.49s, tests 5.18s, environment 6.87s)
+
+[validate-evidence]
+Command: py .tools/phase-1/validate-evidence.py
+Exit code: 0
+Result: 19 local links, 15 verified requirements, all 20 phase rows, absent temporary hooks, preserved settings/integrity, zero native console issues and matching release hash.
+Output:
+{
+  "links": 19,
+  "verified_requirements": 15,
+  "phase_rows": 20,
+  "temporary_instrumentation": "absent",
+  "settings_integrity": "preserved",
+  "native_console_issues": 0,
+  "release_sha256": "C487B49E2A1010983162FF937001E4A9E69668B9270B53CB4FB3DCE5519C0096"
+}
+
+[final-whitespace]
+Command: git diff --check
+Exit code: 0
+Result: git diff --check passes; normal LF/CRLF notices only.
+Output:
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/app/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/features/Devices.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/features/Preferences.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/lib/backend.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/lib/useDeviceInventory.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/test/App.test.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/test/Devices.test.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/DEVELOPMENT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/PHASE_STATUS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+
+[final-protected]
+Command: git diff --exit-code -- apps/desktop/src/lib/backend.ts apps/desktop/src-tauri Cargo.toml Cargo.lock package-lock.json scripts/desktop.ps1 scripts/rust.ps1 scripts/native-smoke.mjs docs/IMPLEMENTATION_ROADMAP.md docs/PHASE_0_AUDIT.md RFS_MASTER_PLAN.md docs/reference
+Exit code: 0
+Result: Original Rust/discovery/storage/config/locks/wrappers/Phase 0 report and roadmap remain unchanged.
+Output:
+warning: in the working copy of 'apps/desktop/src/lib/backend.ts', LF will be replaced by CRLF the next time Git touches it
+
+[final-status]
+Command: git status --short --branch; git diff --stat
+Exit code: 0
+Result: Only intended Phase 1 code/tests/docs/new evidence; no source migration, reset or commit.
+Output:
+warning: unable to access 'C:\Users\chuka/.config/git/ignore': Permission denied
+warning: unable to access 'C:\Users\chuka/.config/git/ignore': Permission denied
+## main...origin/main
+ M README.md
+ M apps/desktop/src/app/App.tsx
+ M apps/desktop/src/features/Devices.tsx
+ M apps/desktop/src/features/Preferences.tsx
+ M apps/desktop/src/lib/useDeviceInventory.ts
+ M apps/desktop/src/test/App.test.tsx
+ M apps/desktop/src/test/Devices.test.tsx
+ M docs/DEVELOPMENT.md
+ M docs/PHASE_STATUS.md
+ M package.json
+?? apps/desktop/src/components/ViewBoundary.tsx
+?? apps/desktop/src/test/ViewBoundary.test.tsx
+?? apps/desktop/src/test/useDeviceInventory.test.tsx
+?? docs/PHASE_1_VERIFICATION.md
+?? docs/evidence/phase-1-2026-10-16.txt
+?? docs/images/phase-1-development-2026-10-16.png
+?? docs/images/phase-1-error-2026-10-16.png
+?? docs/images/phase-1-hmr-2026-10-16.png
+?? docs/images/phase-1-loading-2026-10-16.png
+?? docs/images/phase-1-production-2026-10-16.png
+?? scripts/verify-foundation.mjs
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/app/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/features/Devices.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/features/Preferences.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/lib/backend.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/lib/useDeviceInventory.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/test/App.test.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/src/test/Devices.test.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/DEVELOPMENT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/PHASE_STATUS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+ README.md                                  |  2 +-
+ apps/desktop/src/app/App.tsx               | 50 +++++++++---------
+ apps/desktop/src/features/Devices.tsx      |  5 +-
+ apps/desktop/src/features/Preferences.tsx  |  4 +-
+ apps/desktop/src/lib/useDeviceInventory.ts | 14 ++---
+ apps/desktop/src/test/App.test.tsx         | 82 +++++++++++++++++++++++++++++-
+ apps/desktop/src/test/Devices.test.tsx     | 19 +++++++
+ docs/DEVELOPMENT.md                        | 17 ++++++-
+ docs/PHASE_STATUS.md                       | 24 ++++++---
+ package.json                               |  1 +
+ 10 files changed, 172 insertions(+), 46 deletions(-)

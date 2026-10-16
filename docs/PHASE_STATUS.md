@@ -2,9 +2,21 @@
 
 Audited: **16 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0 verdict: PASS. Phase 1 readiness: READY.** Current [technical audit](PHASE_0_AUDIT.md), [exact-command transcript](evidence/phase-0-final-2026-10-16.txt), and [native screenshot](images/phase-0-final-2026-10-16.png) contain the evidence. Phase 1 remains Partial and was not started by this verification.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE.** Current [Phase 1 verification](PHASE_1_VERIFICATION.md), [command transcript](evidence/phase-1-2026-10-16.txt), and [native development screenshot](images/phase-1-development-2026-10-16.png) record the completed desktop foundation. Phase 2 remains Partial and no later feature implementation began.
 
-## Baseline evidence
+## Phase 1 completion evidence
+
+- Existing Tauri development command, initial React/Rust connection, reload and all eight destinations pass in the native Windows app. Production uses the fresh optimized executable.
+- Fixed failed/stale workspace state, initial-inventory metadata refresh, unsaved-theme loss, confirmed-save reporting, subscription/read error handling, initial discovery retry, and view error containment. Existing Rust/discovery/storage modules retained.
+- Final checks pass: TypeScript, lint, 24 frontend tests, Rust formatting/Clippy, 11 Rust tests, frontend production build and native Tauri build.
+- Native lifecycle acceptance passes: HMR with unchanged app/Vite identities, three discovery refreshes per session with unique IDs, clean shutdown, reopen, controlled interruption before native rendering, and recovery. Final console warning/error/exception capture is empty.
+- Changed appearance saved in production is read in development from the same database; development restores the original and production confirms it. Final SQLite integrity is `ok`, schema 1, preference hash unchanged from the pre-test baseline.
+- Final known counts: 48 Windows inventory records, zero firmware artifacts/jobs. These are not verified routers; feature support remains UNKNOWN and flashing UNSUPPORTED.
+- Repository/data paths, lockfiles, schema, identity, original commands and accepted plans were preserved. Detailed failures, counterchecks, regression coverage and remaining hardware/release limits are in the report.
+
+## Accepted Phase 0 evidence (historical)
+
+These records describe the previously accepted Phase 0 run, before the Phase 1 changes above.
 
 - Initial checkout was clean on `main` at `a8e51a92ad48bc40d2acae8b19a742aa6fb31bfe`. `apps/desktop/` already existed in committed history; **KEEP EXISTING STRUCTURE**.
 - Node `22.17.0`, npm `10.9.2`, Rust/Cargo `1.99.0`, installed MSVC target, VS C++ tools, Windows SDK and WebView2 were checked locally. No package/prerequisite install was required.
@@ -52,7 +64,7 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 | Phase | Status | Reusable work | Remaining acceptance work |
 | --- | --- | --- | --- |
 | 0: Repository/environment audit | Complete (PASS) | Current inventory/environment/commands/data/migration evidence; checks and fresh release build pass; native render/navigation/IPC/discovery/restart verified on 16 October. | None at the Phase 0 gate; scoped unverified work is recorded in the audit. |
-| 1: Desktop foundation | Partial | Existing shell, themes, typed IPC and SQLite; current bundled native navigation, reads/refresh and existing-settings restart verification. | Verify development-mode launch; review and close demonstrated loading/error/reconnect gaps; evolve navigation as real features arrive. |
+| 1: Desktop foundation | Complete | Native development/production render, navigation, IPC, cross-mode UI settings, HMR, lifecycle recovery, clean console, 24 frontend/11 Rust tests; report linked above. | No critical foundation blocker; future feature navigation evolves in its own phases. |
 | 2: Discovery | Partial | Native USB/serial/network inventory, correlation, notifications, refresh, evidence, UI and fixtures; real native read/refresh verified in normal-session audits. | Manual management-address entry, richer candidate identity/diagnostics, and physical hot-plug/reconnect evidence. |
 | 3: Profiles/capabilities | Partial | Four unknown feature fields and primitive evidence/confidence display. | Versioned profiles, exact matching, seven new reasoned statuses, evaluator, constraints, conflict tests, support UI. |
 | 4: Storage/jobs/library | Partial | SQLite migration, settings, hashed device IDs, aggregate audit, reserved jobs/artifact tables. | Real jobs/history, controlled file import, immutable vault, hashing/dedup/integrity, manifests, library UI and restart/cancellation tests. |
@@ -74,10 +86,10 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 
 ## Next execution order
 
-1. Begin Phase 1 with development-mode launch verification and a bounded shell loading/error/reconnect review.
-2. Close phase 1 launch verification and phase 2 discovery gaps.
+1. Phase 1 is complete; next work is Phase 2 discovery/candidate identity when requested.
+2. Close the remaining Phase 2 manual management-address, diagnostic/identity and physical hot-plug/reconnect acceptance gaps.
 3. Implement phase 3 profiles and capability decisions before device-management writes.
 4. Build phases 4–6 into a durable library, adapter layer, and real simulator.
 5. Implement phase 8 simulator DNS transactions; phase 7 may proceed with suitable hardware and must pass before real DNS changes in phase 9.
 
-The existing runnable desktop baseline passes Phase 0. Future execution order above remains unchanged; this audit does not execute it.
+The desktop foundation passes Phase 1. Future execution order above remains a tracker; this run implements no Phase 2 or customization features.

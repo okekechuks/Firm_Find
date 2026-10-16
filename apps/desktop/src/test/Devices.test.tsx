@@ -72,3 +72,22 @@ it("explains inventory scan errors and leaves browser preview hardware-free", ()
   expect(screen.getByRole("heading", { name: "Open the Windows app to discover devices" })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Refresh devices" })).not.toBeInTheDocument();
 });
+
+it("allows manual recovery when the initial inventory read fails", async () => {
+  const onRefresh = vi.fn(async () => {});
+  render(<Devices {...props} inventory={null} error="Initial read failed" onRefresh={onRefresh} />);
+  expect(screen.getByRole("heading", { name: "Inventory unavailable" })).toBeInTheDocument();
+  const refresh = screen.getByRole("button", { name: "Refresh devices" });
+  expect(refresh).toBeEnabled();
+  await userEvent.click(refresh);
+  expect(onRefresh).toHaveBeenCalledOnce();
+});
+
+it("distinguishes a pending first scan from a successful empty inventory", () => {
+  const { rerender } = render(<Devices {...props} inventory={null} />);
+  expect(screen.getByText("Reading Windows device inventory…")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Refresh devices" })).toBeDisabled();
+  rerender(<Devices {...props} inventory={{ ...inventory, devices: [] }} />);
+  expect(screen.getByRole("heading", { name: "No devices to show" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Refresh devices" })).toBeEnabled();
+});

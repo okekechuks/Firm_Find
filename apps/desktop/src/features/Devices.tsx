@@ -29,7 +29,8 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh }: {
   );
   const selected = devices.find((device) => device.id === selectedId);
   const present = devices.filter((device) => device.connected).length;
-  const waiting = desktop && (!inventory || inventory.status === "starting");
+  const waiting = desktop && !error && (!inventory || inventory.status === "starting");
+  const unavailable = Boolean(error || inventory?.status === "failed");
   return (
     <>
       <section className="panel inventory-summary">
@@ -53,7 +54,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh }: {
           <button className="secondary-button" disabled={refreshing || waiting} onClick={() => void onRefresh()}><RefreshCw size={15} className={refreshing ? "spin" : undefined}/>{refreshing ? "Refreshing…" : "Refresh devices"}</button>
         </div>
         <div className="section-heading"><h2>{present} present · {devices.length - present} disconnected</h2><span className="muted small">{inventory?.scannedAt ? `Last checked ${new Date(inventory.scannedAt).toLocaleTimeString()}` : "Waiting for first successful scan"}</span></div>
-        {waiting ? <div className="panel device-empty" role="status">Reading Windows device inventory…</div> : visible.length === 0 ? <section className="panel device-empty"><Usb size={32}/><h2>{devices.length === 0 ? "No devices to show" : "No matching devices"}</h2><p>{devices.length === 0 ? "Connect a USB device or refresh the inventory. A failed scan keeps the last successful result." : "Try another search or connection filter."}</p></section> :
+        {waiting ? <div className="panel device-empty" role="status">Reading Windows device inventory…</div> : visible.length === 0 ? <section className="panel device-empty"><Usb size={32}/><h2>{devices.length === 0 ? (unavailable ? "Inventory unavailable" : "No devices to show") : "No matching devices"}</h2><p>{devices.length === 0 ? (unavailable ? "Windows inventory could not be read. Use Refresh devices to try again." : "Connect a USB device or refresh the inventory. A failed scan keeps the last successful result.") : "Try another search or connection filter."}</p></section> :
           <div className="device-grid">{visible.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)}/>)}</div>}
         {selected ? <DeviceDetails device={selected}/> : null}
       </>}

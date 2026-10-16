@@ -13,6 +13,7 @@
     "lint": "eslint . --max-warnings 0",
     "test": "npm run test --workspace @obtainer/desktop",
     "test:native": "node scripts/native-smoke.mjs",
+    "test:foundation": "node scripts/verify-foundation.mjs",
     "tauri": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1"
   }
 }

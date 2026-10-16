@@ -4,10 +4,12 @@ import type { DiscoverySnapshot } from "../types/contracts";
 
 export function useDeviceInventory(desktop: boolean) {
   const [inventory, setInventory] = useState<DiscoverySnapshot | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [readError, setReadError] = useState<string | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const accept = useCallback((next: DiscoverySnapshot) => {
     setInventory((current) => !current || next.revision >= current.revision ? next : current);
+    setReadError(null);
   }, []);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export function useDeviceInventory(desktop: boolean) {
         const next = await getDiscovery();
         if (active) accept(next);
       } catch (failure) {
-        if (active) setError(errorMessage(failure));
+        if (active) setReadError(errorMessage(failure));
       }
     };
     // Subscribe before reading initial state; cleanup also covers registration resolving late.
@@ -28,7 +30,7 @@ export function useDeviceInventory(desktop: boolean) {
       unlisten = stop;
       void read();
     }).catch(() => {
-      if (active) { setError("Live updates are unavailable. Use Refresh to check devices."); void read(); }
+      if (active) { setSubscriptionError("Live updates are unavailable. Use Refresh to check devices."); void read(); }
     });
     return () => { active = false; unlisten?.(); };
   }, [desktop, accept]);
@@ -36,10 +38,10 @@ export function useDeviceInventory(desktop: boolean) {
   const refresh = useCallback(async () => {
     if (!desktop) return;
     setRefreshing(true);
-    setError(null);
+    setReadError(null);
     try { accept(await refreshDiscovery()); }
-    catch (failure) { setError(errorMessage(failure)); }
+    catch (failure) { setReadError(errorMessage(failure)); }
     finally { setRefreshing(false); }
   }, [desktop, accept]);
-  return { inventory, error, refreshing, refresh };
+  return { inventory, error: readError ?? subscriptionError, refreshing, refresh };
 }

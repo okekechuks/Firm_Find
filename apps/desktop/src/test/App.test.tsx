@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../app/App";
@@ -47,6 +47,83 @@ beforeEach(() => {
 });
 
 describe("desktop foundation", () => {
+  it("shows connecting state while the first workspace request is pending", () => {
+    vi.mocked(getSnapshot).mockReturnValue(new Promise(() => {}));
+    render(<App />);
+    expect(screen.getByText("Connecting to workspace")).toBeInTheDocument();
+    expect(screen.queryByText("Backend unavailable")).not.toBeInTheDocument();
+  });
+
+  it("marks a failed refresh disconnected while retaining cached workspace data", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Desktop connected");
+    vi.mocked(getSnapshot).mockRejectedValue(new Error("Database unavailable"));
+    await user.click(screen.getByRole("button", { name: "Refresh workspace" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Database unavailable");
+    expect(screen.queryByText("Desktop connected")).not.toBeInTheDocument();
+    expect(screen.getByText("Backend unavailable")).toBeInTheDocument();
+    expect(screen.getByText("Desktop workspace initialized")).toBeInTheDocument();
+    vi.mocked(getSnapshot).mockResolvedValue(snapshot);
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("Desktop connected")).toBeInTheDocument();
+  });
+
+  it("refreshes the first completed inventory and ignores an older workspace reply", async () => {
+    let resolveOld!: (value: Snapshot) => void;
+    vi.mocked(getSnapshot).mockReturnValueOnce(new Promise((resolve) => { resolveOld = resolve; }));
+    const fresh = { ...snapshot, version: "0.2.0" };
+    vi.mocked(getSnapshot).mockResolvedValue(fresh);
+    render(<App />);
+    expect(await screen.findByText("OBTAINER · v0.2.0")).toBeInTheDocument();
+    await act(async () => { resolveOld(snapshot); });
+    expect(screen.getByText("OBTAINER · v0.2.0")).toBeInTheDocument();
+  });
+
+  it("retains an unsaved appearance choice when workspace metadata refreshes", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Desktop connected");
+    await user.click(screen.getByRole("link", { name: "Settings" }));
+    await user.click(screen.getByRole("radio", { name: /Dark/ }));
+    vi.mocked(getSnapshot).mockResolvedValue({ ...snapshot });
+    await user.click(screen.getByRole("button", { name: "Refresh workspace" }));
+    await screen.findByText("Desktop connected");
+    expect(screen.getByRole("radio", { name: /Dark/ })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Save preferences" })).toBeEnabled();
+  });
+
+  it("reports a confirmed settings save even if the following workspace read fails", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Desktop connected");
+    await user.click(screen.getByRole("link", { name: "Settings" }));
+    await user.click(screen.getByRole("radio", { name: /Dark/ }));
+    vi.mocked(getSnapshot).mockRejectedValue(new Error("Read unavailable after commit"));
+    await user.click(screen.getByRole("button", { name: "Save preferences" }));
+    expect(await screen.findByText("Preferences saved to SQLite.")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Read unavailable after commit");
+    expect(screen.getByRole("radio", { name: /Dark/ })).toBeChecked();
+  });
+
+  it("retains the draft after a failed save and lets the user retry saving", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Desktop connected");
+    await user.click(screen.getByRole("link", { name: "Settings" }));
+    await user.click(screen.getByRole("radio", { name: /Dark/ }));
+    vi.mocked(saveSettings).mockRejectedValueOnce(new Error("Write unavailable"));
+    await user.click(screen.getByRole("button", { name: "Save preferences" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Preferences could not be saved");
+    expect(screen.getByText("Desktop connected")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Dark/ })).toBeChecked();
+    vi.mocked(getSnapshot).mockResolvedValue({ ...snapshot, settings: { theme: "dark" } });
+    await user.click(screen.getByRole("button", { name: "Save preferences" }));
+    expect(await screen.findByText("Preferences saved to SQLite.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("reads native state and navigates every planned workspace", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -96,7 +173,7 @@ describe("desktop foundation", () => {
   });
 
   it("shows backend errors and retries without inventing connected state", async () => {
-    vi.mocked(getSnapshot).mockRejectedValueOnce({
+    vi.mocked(getSnapshot).mockRejectedValue({
       message: "Database unavailable",
     });
     const user = userEvent.setup();
@@ -105,6 +182,7 @@ describe("desktop foundation", () => {
       "Database unavailable",
     );
     expect(screen.queryByText("Desktop connected")).not.toBeInTheDocument();
+    vi.mocked(getSnapshot).mockResolvedValue(snapshot);
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Desktop connected")).toBeInTheDocument();
   });

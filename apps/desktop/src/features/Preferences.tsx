@@ -20,8 +20,8 @@ export function Preferences({
   );
   const [saved, setSaved] = useState(false);
   useEffect(() => {
-    if (snapshot) setTheme(snapshot.settings.theme);
-  }, [snapshot]);
+    if (snapshot?.settings.theme) setTheme(snapshot.settings.theme);
+  }, [snapshot?.settings.theme]);
   const choices = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },

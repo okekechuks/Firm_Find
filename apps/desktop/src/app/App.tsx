@@ -19,6 +19,7 @@ import { Dashboard } from "../features/Dashboard";
 import { Planned } from "../features/Planned";
 import { Preferences } from "../features/Preferences";
 import { Activity } from "../components/Activity";
+import { ViewBoundary } from "../components/ViewBoundary";
 import { Devices } from "../features/Devices";
 import { useDeviceInventory } from "../lib/useDeviceInventory";
 
@@ -28,27 +29,32 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [previewTheme, setPreviewTheme] = useState<Settings["theme"]>("system");
   const lastDiscoveryRevision = useRef(0);
+  const workspaceRequest = useRef(0);
   const desktop = hasDesktopBackend();
   const inventory = useDeviceInventory(desktop);
   const destination =
     destinations.find((item) => item.id === page) ?? destinations[0];
 
   const refresh = useCallback(async () => {
+    const request = ++workspaceRequest.current;
     setLoading(true);
     setError(null);
     try {
-      setSnapshot(await getSnapshot());
+      const next = await getSnapshot();
+      if (request === workspaceRequest.current) setSnapshot(next);
     } catch (failure) {
-      setError(errorMessage(failure));
+      if (request === workspaceRequest.current) setError(errorMessage(failure));
     } finally {
-      setLoading(false);
+      if (request === workspaceRequest.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void refresh();
+    return () => { workspaceRequest.current += 1; };
   }, [refresh]);
   useEffect(() => {
     const changed = () => setPage(pageFromHash());
@@ -57,17 +63,11 @@ export function App() {
   }, []);
   useEffect(() => {
     if (!desktop || !inventory.inventory?.revision) return;
-    // Initial workspace load already fetched the audit snapshot in parallel.
-    if (lastDiscoveryRevision.current === 0) {
-      lastDiscoveryRevision.current = inventory.inventory.revision;
-      return;
-    }
     if (inventory.inventory.revision <= lastDiscoveryRevision.current) return;
     lastDiscoveryRevision.current = inventory.inventory.revision;
-    let active = true;
-    void getSnapshot().then((next) => { if (active) setSnapshot(next); }).catch(() => {});
-    return () => { active = false; };
-  }, [desktop, inventory.inventory?.revision]);
+    // Initial enumeration can finish after the first workspace read.
+    void refresh();
+  }, [desktop, inventory.inventory?.revision, refresh]);
   useEffect(() => {
     const theme = snapshot?.settings.theme ?? previewTheme;
     const query = window.matchMedia("(prefers-color-scheme: dark)");
@@ -89,17 +89,17 @@ export function App() {
   };
   const persist = async (settings: Settings): Promise<boolean> => {
     setSaving(true);
-    setError(null);
+    setSaveError(null);
     try {
       const result = await saveSettings(settings);
       setSnapshot((current) =>
         current ? { ...current, settings: result } : current,
       );
-      const updated = await getSnapshot();
-      setSnapshot(updated);
+      // A confirmed write stays successful even if the subsequent metadata read fails.
+      await refresh();
       return true;
     } catch (failure) {
-      setError(errorMessage(failure));
+      setSaveError(errorMessage(failure));
       return false;
     } finally {
       setSaving(false);
@@ -197,11 +197,9 @@ export function App() {
           <div className="backend-status">
             <Circle size={7} fill="currentColor" />
             <span>
-              {snapshot
-                ? "Desktop connected"
-                : desktop
-                  ? "Backend unavailable"
-                  : "Browser preview"}
+              {!desktop ? "Browser preview"
+                : loading ? (snapshot ? "Refreshing workspace" : "Connecting to workspace")
+                  : error || !snapshot ? "Backend unavailable" : "Desktop connected"}
             </span>
           </div>
         </header>
@@ -222,7 +220,7 @@ export function App() {
               {loading ? "Connecting…" : "Refresh"}
             </button>
           </div>
-          {error ? (
+          {error || saveError ? (
             <div
               className="connection-notice"
               role={desktop ? "alert" : "status"}
@@ -231,16 +229,16 @@ export function App() {
               <div>
                 <strong>
                   {desktop
-                    ? "Workspace connection failed"
+                    ? (saveError && !error ? "Preferences could not be saved" : "Workspace connection failed")
                     : "You’re viewing the interface preview"}
                 </strong>
                 <p>
                   {desktop
-                    ? error
+                    ? error ?? saveError
                     : "The native backend is not connected. Device counts, audit records, and saved preferences are available in the Windows app."}
                 </p>
               </div>
-              {desktop ? (
+              {desktop && error ? (
                 <button onClick={() => void refresh()} className="text-button">
                   Retry
                 </button>
@@ -252,6 +250,7 @@ export function App() {
               Connecting to local workspace…
             </div>
           ) : null}
+          <ViewBoundary key={page}>
           {page === "dashboard" ? (
             <Dashboard snapshot={snapshot} navigate={navigate} />
           ) : page === "devices" ? (
@@ -279,6 +278,7 @@ export function App() {
           ) : (
             <Planned destination={destination} navigate={navigate} />
           )}
+          </ViewBoundary>
           <footer className="workspace-footer">
             <span>LOCAL FIRST. ORIGINALS INTACT.</span>
             <span>OBTAINER / WINDOWS</span>

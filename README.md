@@ -4,7 +4,7 @@ OBTAINER is a Windows app intended to help owners keep unsupported routers and M
 
 ## Current status
 
-**Phase 0 audit is complete; Phase 1 is ready to begin.** The current project structure is retained. Frontend and Rust checks, Windows debug and release builds, and desktop launch checks pass. The [technical audit](docs/PHASE_0_AUDIT.md) records what was tested and what remains unfinished.
+**Phase 1 desktop foundation is complete.** Development and production launches, navigation, device refresh, saved appearance, hot reload and restart recovery are verified. The current project structure is retained. The [Phase 1 report](docs/PHASE_1_VERIFICATION.md) records the checks and remaining limits.
 
 The app can list USB devices, serial ports, and network adapters that Windows reports. It groups related interfaces when Windows provides matching identity information, updates the inventory as devices change, and lets users refresh it. It also has eight workspaces and remembers light or dark appearance settings. This discovery is passive: it does not identify every router's chipset or firmware, change router settings, extract firmware, or install anything.
 
