@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../app/App";
-import { getSnapshot, hasDesktopBackend, onDiscoveryChanged, getDiscovery, refreshDiscovery, saveSettings } from "../lib/backend";
+import { getSnapshot, hasDesktopBackend, onDiscoveryChanged, getDiscovery, refreshDiscovery, saveSettings, onLibraryChanged, listFirmwareArtifacts, listLibraryJobs, getLibraryActivity } from "../lib/backend";
 import type { DiscoverySnapshot, Snapshot } from "../types/contracts";
 
 vi.mock("../lib/backend", async (importOriginal) => {
@@ -15,6 +15,7 @@ vi.mock("../lib/backend", async (importOriginal) => {
     getDiscovery: vi.fn(),
     refreshDiscovery: vi.fn(),
     onDiscoveryChanged: vi.fn(),
+    onLibraryChanged: vi.fn(),listFirmwareArtifacts:vi.fn(),listLibraryJobs:vi.fn(),getLibraryActivity:vi.fn(),
   };
 });
 
@@ -44,6 +45,9 @@ beforeEach(() => {
   vi.mocked(getDiscovery).mockResolvedValue(inventory);
   vi.mocked(refreshDiscovery).mockResolvedValue(inventory);
   vi.mocked(onDiscoveryChanged).mockResolvedValue(vi.fn());
+  vi.mocked(onLibraryChanged).mockResolvedValue(vi.fn());
+  vi.mocked(listFirmwareArtifacts).mockResolvedValue({artifacts:[],total:0,uniqueBytes:0,page:0,pageSize:25,maxFileBytes:2147483648});
+  vi.mocked(listLibraryJobs).mockResolvedValue([]);vi.mocked(getLibraryActivity).mockResolvedValue([]);
 });
 
 describe("desktop foundation", () => {
@@ -133,7 +137,7 @@ describe("desktop foundation", () => {
     ).toBeInTheDocument();
     const pages = [
       ["Connected devices", "No devices to show"],
-      ["Firmware library", "An intact original. Every time."],
+      ["Firmware library", "Firmware file library"],
       ["Analysis", "Understand what’s inside"],
       ["Backup manager", "Only supported, authorized backups"],
       ["Firmware builder", "Build for a supported target"],
@@ -150,7 +154,7 @@ describe("desktop foundation", () => {
     }
     await user.click(screen.getByRole("link", { name: "Jobs & activity" }));
     expect(
-      screen.getByRole("heading", { name: "No running jobs" }),
+      screen.getByRole("heading", { name: "Persistent library jobs" }),
     ).toBeInTheDocument();
   });
 

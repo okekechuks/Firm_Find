@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-verify-firmware-integrity"
+description = "Enables the verify_firmware_integrity command without any pre-configured scope."
+commands.allow = ["verify_firmware_integrity"]
+
+[[permission]]
+identifier = "deny-verify-firmware-integrity"
+description = "Denies the verify_firmware_integrity command without any pre-configured scope."
+commands.deny = ["verify_firmware_integrity"]

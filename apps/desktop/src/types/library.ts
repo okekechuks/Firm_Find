@@ -1,0 +1,16 @@
+import { z } from "zod";
+const number=z.number().int().nonnegative();
+const hash=z.string().regex(/^[a-f0-9]{64}$/);
+export const jobSchema=z.object({id:z.string(),kind:z.string(),status:z.enum(["pending","running","completed","failed","cancelled"]),createdAt:number,startedAt:number.nullable(),finishedAt:number.nullable(),updatedAt:number,progressBytes:number,totalBytes:number,stage:z.string(),errorCode:z.string().nullable(),message:z.string(),relatedArtifact:hash.nullable(),importId:z.string().nullable(),cancelRequested:z.boolean(),duplicate:z.boolean(),recoveryInfo:z.string().nullable()});
+export const artifactSchema=z.object({sha256:hash,sizeBytes:number,storageStatus:z.enum(["present","missing","unreadable","unknown"]),integrityStatus:z.enum(["not_checked","checking","verified","hash_mismatch","missing","unreadable","verification_failed"]),firstImportedAt:number,lastVerifiedAt:number.nullable(),format:z.string(),sourceCount:number,originalFilename:z.string(),sourceCategory:z.string()});
+export const importSchema=z.object({importId:z.string(),artifactSha256:hash,originalFilename:z.string(),importedAt:number,sourceCategory:z.string(),provenanceStatus:z.string(),description:z.string().nullable(),associatedDeviceId:z.string().nullable(),jobId:z.string()});
+const checkSchema=z.object({artifactSha256:hash,expectedSize:number,actualSize:number.nullable(),actualSha256:hash.nullable(),status:z.string(),verifiedAt:number,errorCode:z.string().nullable()});
+export const detailsSchema=z.object({artifact:artifactSchema,imports:z.array(importSchema).max(50),checks:z.array(checkSchema).max(50)});
+export const libraryPageSchema=z.object({artifacts:z.array(artifactSchema).max(25),total:number,uniqueBytes:number,page:number,pageSize:number,maxFileBytes:number});
+export const selectionSchema=z.object({ticket:z.string().regex(/^[a-f0-9]{32}$/),filename:z.string(),sizeBytes:number,expiresAt:number,sourceCategory:z.literal("user_import"),maxFileBytes:number});
+export const activitySchema=z.object({id:number,kind:z.string(),message:z.string(),createdAt:z.string(),jobId:z.string().nullable(),artifactSha256:hash.nullable(),severity:z.string()});
+export type JobRecord=z.infer<typeof jobSchema>;
+export type FileSelection=z.infer<typeof selectionSchema>;
+export type LibraryPage=z.infer<typeof libraryPageSchema>;
+export type ArtifactDetails=z.infer<typeof detailsSchema>;
+export type LibraryQuery={search?:string;integrity?:string|null;source?:string|null;fromDate?:number|null;toDate?:number|null;page?:number};

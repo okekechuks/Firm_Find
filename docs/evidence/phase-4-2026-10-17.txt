@@ -1,0 +1,496 @@
+OBTAINER Phase 4 evidence ? 17 October 2026, Africa/Lagos
+Source baseline: clean d7853ad. Existing apps/desktop structure retained.
+Sources: harmless generated 1 MiB marker bytes; 256 MiB generated zero-byte file.
+No real router firmware selected, modified, executed, unpacked or flashed.
+No device settings or router requests made by the Phase 4 native suite.
+
+Final executed commands (CARGO_INCREMENTAL=0 for Rust/native compilation):
+node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit: exit 0
+npm.cmd run lint: exit 0, no warnings
+npm.cmd run test -- --run: exit 0, 53 tests / 8 files
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all: exit 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check: exit 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings: exit 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline: exit 0, 69 tests, no ignored tests
+npm.cmd run build: exit 0, tsc -b and Vite; 1,609 modules
+npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline: exit 0; optimized Rust release 52.49 s
+npm.cmd run test:foundation -- --phase3 --phase4: exit 0, 64 acceptance records
+py .tools/phase-0-audit/probe-data.py .tools/phase-4/data-before.json: exit 0
+py .tools/phase-0-audit/probe-data.py .tools/phase-4/data-after.json: exit 0
+py .tools/phase-4/compare-data.py: exit 0 after distinguishing refreshed computed compatibility cache from preserved user data
+
+Corrected failures:
+- Two Rust query-tail borrow errors resolved through local row bindings.
+- Clippy too_many_arguments resolved with typed JobInput.
+- Unused JS mkdir import removed.
+- Restricted filesystem tests denied profile-directory leases; normal user session passes all tests with guards retained.
+- DRIVE_REMOTE was unavailable in the selected windows-sys module; documented Win32 value 4 used, followed by passing rebuild/Clippy/tests.
+- Native UI Automation Unsupported Pattern; subsequent Save filename lookup failure. Win32 child enumeration located Edit/1001 and nested Save button; owned-control driver corrected. Timing-only correction had failed.
+- Initial comparison expected stale computed evaluation report to remain identical; preserved identity/user/profile rows confirmed and cache refresh recorded explicitly.
+- Initial screenshot caught loading state; final capture waits for rendered persisted artifact.
+No app data was reset to satisfy a test.
+
+Local raw evidence: .tools/foundation/2026-10-16T23-46-16.955Z/
+Previous successful 59-check run: .tools/foundation/2026-10-16T23-44-21.337Z/
+Earlier failed native runs retained: 23-29-58.521Z, 23-33-52.455Z, 23-40-56.784Z, 23-42-13.628Z, 23-43-15.082Z on 16 October UTC.
+WAL-aware SQLite backup: .tools/phase-4/data-before-backup.db
+Native console issue capture: []
+Populated development and production library screenshots visually inspected.
+
+Final native command records and acceptance evidence:
+{
+  "results": [
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "dev-reopen: native window, React and real SQLite IPC",
+      "url": "http://127.0.0.1:1420/",
+      "pid": 24568,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+      "theme": "system"
+    },
+    {
+      "name": "dev-reopen: all nine navigation destinations"
+    },
+    {
+      "name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 104,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "dev-reopen: real registry IPC, strict rejection, local preview never activated"
+    },
+    {
+      "name": "dev-reopen: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged"
+    },
+    {
+      "name": "dev-reopen: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified",
+      "deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+      "confidence": "CANDIDATE",
+      "reported": [
+        {
+          "attribute": "reported_identifier",
+          "value": "LT800/",
+          "verification": "user_reported"
+        },
+        {
+          "attribute": "firmware_version",
+          "value": "MF69_AM802L_ZX_DD_N_241106_EU",
+          "verification": "user_reported"
+        }
+      ]
+    },
+    {
+      "name": "dev-reopen: reported evidence survives same-value saves and restarts",
+      "observationIds": [
+        "5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af",
+        "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"
+      ]
+    },
+    {
+      "name": "dev-reopen: connected-device details use the real compatibility engine"
+    },
+    {
+      "name": "dev-reopen: schema 4 and existing Phase 3.1 profile/compatibility IPC preserved"
+    },
+    {
+      "name": "dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+      "jobId": "fe3fbea897b62c2088ee4737b8cf8a2e",
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "size": 1048576
+    },
+    {
+      "name": "dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+      "sourceCount": 16
+    },
+    {
+      "name": "dev-reopen: actual streamed integrity verification and history",
+      "checks": 24
+    },
+    {
+      "name": "dev-reopen: actual native save dialog and unsigned metadata-only manifest",
+      "manifestSchemaVersion": 1
+    },
+    {
+      "name": "dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact",
+      "bytesObserved": 4194304,
+      "totalBytes": 268435456,
+      "elapsedMs": 1526,
+      "copyThroughputMiBPerSecond": 34.48275862068965,
+      "memory": {
+        "WorkingSet64": 87011328,
+        "PeakWorkingSet64": 89223168,
+        "PrivateMemorySize64": 23851008
+      }
+    },
+    {
+      "name": "dev-reopen: persisted job and activity screens render after restart"
+    },
+    {
+      "name": "dev-reopen: dashboard displays actual committed artifact count and no running library work",
+      "artifacts": 1
+    },
+    {
+      "name": "dev-reopen: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "dev-reopen: injected read error and real IPC retry recovery"
+    },
+    {
+      "name": "dev-reopen: loading state retains cached data"
+    },
+    {
+      "name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"
+    },
+    {
+      "name": "dev-reopen: temporary HMR edit restored"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "Phase 4: actual copying job recorded before forced termination",
+      "jobId": "1be0534695fda65a1652b7ea9aaeb635"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "interrupted owned development launch and released resources",
+      "backendRenderedBeforeInterrupt": true
+    },
+    {
+      "name": "dev-recovery: native window, React and real SQLite IPC",
+      "url": "http://127.0.0.1:1420/",
+      "pid": 14764,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+      "theme": "system"
+    },
+    {
+      "name": "dev-recovery: all nine navigation destinations"
+    },
+    {
+      "name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 104,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "dev-recovery: real registry IPC, strict rejection, local preview never activated"
+    },
+    {
+      "name": "dev-recovery: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged"
+    },
+    {
+      "name": "dev-recovery: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified",
+      "deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+      "confidence": "CANDIDATE",
+      "reported": [
+        {
+          "attribute": "reported_identifier",
+          "value": "LT800/",
+          "verification": "user_reported"
+        },
+        {
+          "attribute": "firmware_version",
+          "value": "MF69_AM802L_ZX_DD_N_241106_EU",
+          "verification": "user_reported"
+        }
+      ]
+    },
+    {
+      "name": "dev-recovery: reported evidence survives same-value saves and restarts",
+      "observationIds": [
+        "5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af",
+        "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"
+      ]
+    },
+    {
+      "name": "dev-recovery: connected-device details use the real compatibility engine"
+    },
+    {
+      "name": "dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn"
+    },
+    {
+      "name": "dev-recovery: interrupted copy recovered as failed, known staging removed, no false success",
+      "jobId": "1be0534695fda65a1652b7ea9aaeb635"
+    },
+    {
+      "name": "dev-recovery: schema 4 and existing Phase 3.1 profile/compatibility IPC preserved"
+    },
+    {
+      "name": "dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+      "jobId": "5d6aa99166ede0729f934f6882e16abf",
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "size": 1048576
+    },
+    {
+      "name": "dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+      "sourceCount": 18
+    },
+    {
+      "name": "dev-recovery: actual streamed integrity verification and history",
+      "checks": 27
+    },
+    {
+      "name": "dev-recovery: actual native save dialog and unsigned metadata-only manifest",
+      "manifestSchemaVersion": 1
+    },
+    {
+      "name": "dev-recovery: persisted job and activity screens render after restart"
+    },
+    {
+      "name": "dev-recovery: dashboard displays actual committed artifact count and no running library work",
+      "artifacts": 1
+    },
+    {
+      "name": "dev-recovery: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "production: native window, React and real SQLite IPC",
+      "url": "http://tauri.localhost/",
+      "pid": 16496,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+      "theme": "system"
+    },
+    {
+      "name": "production: all nine navigation destinations"
+    },
+    {
+      "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 104,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "production: real registry IPC, strict rejection, local preview never activated"
+    },
+    {
+      "name": "production: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged"
+    },
+    {
+      "name": "production: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified",
+      "deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f",
+      "confidence": "CANDIDATE",
+      "reported": [
+        {
+          "attribute": "reported_identifier",
+          "value": "LT800/",
+          "verification": "user_reported"
+        },
+        {
+          "attribute": "firmware_version",
+          "value": "MF69_AM802L_ZX_DD_N_241106_EU",
+          "verification": "user_reported"
+        }
+      ]
+    },
+    {
+      "name": "production: reported evidence survives same-value saves and restarts",
+      "observationIds": [
+        "5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af",
+        "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"
+      ]
+    },
+    {
+      "name": "production: connected-device details use the real compatibility engine"
+    },
+    {
+      "name": "production: existing artifact/import history available before any new import; stale verified label withdrawn"
+    },
+    {
+      "name": "production: schema 4 and existing Phase 3.1 profile/compatibility IPC preserved"
+    },
+    {
+      "name": "production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+      "jobId": "02604fc4a0fc5eb9598e1026e578772e",
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "size": 1048576
+    },
+    {
+      "name": "production: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+      "sourceCount": 20
+    },
+    {
+      "name": "production: actual streamed integrity verification and history",
+      "checks": 30
+    },
+    {
+      "name": "production: actual native save dialog and unsigned metadata-only manifest",
+      "manifestSchemaVersion": 1
+    },
+    {
+      "name": "production: persisted job and activity screens render after restart"
+    },
+    {
+      "name": "production: dashboard displays actual committed artifact count and no running library work",
+      "artifacts": 1
+    },
+    {
+      "name": "production: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "shutdown left no app, Vite process or development listener"
+    },
+    {
+      "name": "no captured native console warnings or unhandled exceptions"
+    }
+  ],
+  "commands": [
+    {
+      "command": "npm.cmd run tauri -- dev -- --locked --offline",
+      "kind": "dev",
+      "exitCode": 0
+    },
+    {
+      "command": "npm.cmd run tauri -- dev -- --locked --offline",
+      "kind": "dev",
+      "exitCode": 1
+    },
+    {
+      "command": "npm.cmd run tauri -- dev -- --locked --offline",
+      "kind": "dev",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer.exe",
+      "kind": "release",
+      "exitCode": 0
+    }
+  ]
+}
+
+Read-only final probe (without file byte fingerprints):
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "integrity_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "user_version": 4,
+  "journal_mode": "wal",
+  "table_counts": {
+    "activity_links": 74,
+    "artifact_details": 1,
+    "artifact_imports": 20,
+    "audit_events": 209,
+    "compatibility_evaluations": 2,
+    "device_identity_observations": 2,
+    "devices": 104,
+    "discovery_metadata": 104,
+    "firmware_artifacts": 1,
+    "integrity_checks": 30,
+    "job_details": 34,
+    "jobs": 34,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "theme": "system",
+  "database_bytes_unchanged_during_probe": true,
+  "directories": {
+    "logs": {
+      "exists": true,
+      "file_count": 3
+    },
+    "vault": {
+      "exists": true,
+      "file_count": 2
+    },
+    "workspaces": {
+      "exists": true,
+      "file_count": 0
+    },
+    "reports": {
+      "exists": true,
+      "file_count": 0
+    }
+  }
+}
+
+Backup comparison:
+{
+  "schema_before": 3,
+  "schema_after": 4,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": [],
+  "tables": {
+    "audit_events": {
+      "before": 103,
+      "after": 209,
+      "original_rows_preserved": true,
+      "original_primary_keys_preserved": true
+    },
+    "compatibility_evaluations": {
+      "before": 1,
+      "after": 2,
+      "original_primary_keys_preserved": true,
+      "original_rows_preserved": false,
+      "note": "Existing computed cache is refreshed by normal compatibility reads; compare identities, not expired timestamps/reports."
+    },
+    "device_identity_observations": {
+      "before": 2,
+      "after": 2,
+      "exact_rows_preserved": true
+    },
+    "devices": {
+      "before": 83,
+      "after": 104,
+      "original_primary_keys_preserved": true
+    },
+    "discovery_metadata": {
+      "before": 83,
+      "after": 104,
+      "original_primary_keys_preserved": true
+    },
+    "firmware_artifacts": {
+      "before": 0,
+      "after": 1,
+      "original_primary_keys_preserved": true
+    },
+    "jobs": {
+      "before": 0,
+      "after": 34,
+      "original_primary_keys_preserved": true
+    },
+    "manual_routers": {
+      "before": 1,
+      "after": 1,
+      "exact_rows_preserved": true
+    },
+    "profile_versions": {
+      "before": 2,
+      "after": 2,
+      "exact_rows_preserved": true
+    },
+    "settings": {
+      "before": 1,
+      "after": 1,
+      "exact_rows_preserved": true
+    }
+  },
+  "artifacts": [
+    {
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "size": 1048576,
+      "actual_size": 1048576,
+      "hash_matches": true
+    }
+  ],
+  "job_counts": {
+    "cancelled": 2,
+    "completed": 30,
+    "failed": 2
+  },
+  "stage_files": []
+}

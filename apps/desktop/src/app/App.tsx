@@ -13,12 +13,14 @@ import {
   getSnapshot,
   hasDesktopBackend,
   saveSettings,
+  onLibraryChanged,
 } from "../lib/backend";
 import type { Settings, Snapshot } from "../types/contracts";
 import { Dashboard } from "../features/Dashboard";
 import { Planned } from "../features/Planned";
 import { Preferences } from "../features/Preferences";
-import { Activity } from "../components/Activity";
+import { FirmwareLibrary } from "../features/FirmwareLibrary";
+import { Jobs } from "../features/Jobs";
 import { ViewBoundary } from "../components/ViewBoundary";
 import { Devices } from "../features/Devices";
 import { Compatibility } from "../features/Compatibility";
@@ -57,6 +59,11 @@ export function App() {
     void refresh();
     return () => { workspaceRequest.current += 1; };
   }, [refresh]);
+  useEffect(()=>{
+    if(!desktop)return;let active=true;let unlisten:(()=>void)|undefined;const states=new Map<string,string>();
+    void onLibraryChanged(job=>{if(active&&states.get(job.id)!==job.status){states.set(job.id,job.status);if(states.size>256)states.delete(states.keys().next().value!);void refresh();}}).then(fn=>{if(active)unlisten=fn;else fn();}).catch(()=>{});
+    return()=>{active=false;unlisten?.();};
+  },[desktop,refresh]);
   useEffect(() => {
     const changed = () => setPage(pageFromHash());
     window.addEventListener("hashchange", changed);
@@ -259,6 +266,8 @@ export function App() {
               refreshing={inventory.refreshing} onRefresh={inventory.refresh} onCancel={inventory.cancel} />
           ) : page === "compatibility" ? (
             <Compatibility devices={inventory.inventory?.devices ?? []} revision={inventory.inventory?.revision ?? 0} desktop={desktop}/>
+          ) : page === "firmware" ? (
+            <FirmwareLibrary desktop={desktop}/>
           ) : page === "settings" ? (
             <Preferences
               snapshot={snapshot}
@@ -268,16 +277,7 @@ export function App() {
               onPreviewTheme={setPreviewTheme}
             />
           ) : page === "jobs" ? (
-            <>
-              <section className="panel jobs-summary">
-                <ListStatus count={snapshot?.counts.runningJobs} />
-                <p>
-                  Background device and firmware jobs will appear here as those
-                  workflows are implemented.
-                </p>
-              </section>
-              <Activity snapshot={snapshot} />
-            </>
+            <Jobs desktop={desktop}/>
           ) : (
             <Planned destination={destination} navigate={navigate} />
           )}
@@ -289,17 +289,5 @@ export function App() {
         </main>
       </div>
     </div>
-  );
-}
-
-function ListStatus({ count }: { count: number | undefined }) {
-  return (
-    <h2>
-      {count === undefined
-        ? "Jobs require the desktop backend"
-        : count === 0
-          ? "No running jobs"
-          : `${count} running jobs`}
-    </h2>
   );
 }

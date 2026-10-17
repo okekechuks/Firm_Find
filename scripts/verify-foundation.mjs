@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
 import { verifyProfiles } from './verify-profiles.mjs';
+import { verifyFirmware, interruptFirmwareImport } from './verify-firmware.mjs';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -144,7 +145,7 @@ async function verify(label, extended = false) {
   originalSettings ??= before.settings;
   assert.deepEqual(before.settings, originalSettings);
   assert.equal(path.normalize(before.dataDirectory).toLowerCase(), path.join(env.LOCALAPPDATA, 'OBTAINER').toLowerCase());
-  assert.equal(before.databaseVersion, 3);
+  assert.equal(before.databaseVersion, 4);
   const state = processes();
   assert.equal(state.apps.length, 1); assert.notEqual(state.apps[0].window, 0, 'Native window missing');
   assert.equal(state.vite.length, isDev ? 1 : 0);
@@ -183,6 +184,7 @@ async function verify(label, extended = false) {
     await verifyDiscovery(client, {label, evidence, record, routerAddress: index >= 0 ? process.argv[index + 1] : undefined, hotplug: process.argv.includes('--hotplug')});
   }
   if (process.argv.includes('--phase3')) await verifyProfiles(client, {label,evidence,record});
+  if (process.argv.includes('--phase4')) await verifyFirmware(client, {label,evidence,record,pid:state.apps[0].id});
   // Exercise real save IPC with the existing value, without changing user preferences.
   assert.deepEqual(await invoke('save_settings', { settings: originalSettings }), originalSettings);
   assert.deepEqual((await invoke('get_snapshot')).settings, originalSettings);
@@ -295,6 +297,7 @@ try {
     start('dev'); await verify('dev-reopen', true); await closeWindow();
     const interrupted = start('dev');
     await until(serverUp, 'Interrupted launch never started Vite', 120000);
+    if(process.argv.includes('--phase4')) {await connect();await connected();await interruptFirmwareImport(client,{pid:processes().apps[0].id,evidence,record});client.close();client=undefined;}
     const backendRenderedBeforeInterrupt = (await targets()).some((item) => item.type === 'page');
     spawnSync('taskkill', ['/PID', String(interrupted.process.pid), '/T', '/F'], { windowsHide: true });
     await clean();
@@ -308,6 +311,16 @@ try {
   await writeFile(path.join(evidence, 'console-issues.json'), JSON.stringify(issues, null, 2));
   assert.equal(issues.length, 0, 'Review native console-issues.json');
   record('no captured native console warnings or unhandled exceptions');
+} catch (error) {
+  await writeFile(path.join(evidence, 'failure.json'), JSON.stringify({message:error.message,stack:error.stack},null,2));
+  if(client) {
+    try {
+      await writeFile(path.join(evidence,'failure-ui.txt'),await client.evaluate('document.body.innerText'));
+      const capture=await client.send('Page.captureScreenshot',{format:'png'});
+      await writeFile(path.join(evidence,'failure.png'),Buffer.from(capture.data,'base64'));
+    } catch { /* Preserve the original failure if the window has already exited. */ }
+  }
+  throw error;
 } finally {
   // Preserve the original preference if a roundtrip assertion fails before normal restoration.
   if (settingsRoundtrip && originalSettings && client) {

@@ -2,6 +2,7 @@ mod commands;
 pub mod connection;
 pub mod discovery;
 pub mod domain;
+pub mod library;
 pub mod profiles;
 pub mod storage;
 
@@ -26,11 +27,29 @@ pub fn run() -> tauri::Result<()> {
                 .map_err(|error| std::io::Error::other(error.to_string()))?;
             app.manage(guard);
             let mut repository = storage::Repository::open(&directory.join("obtainer.db"))?;
-            repository.record_startup()?;
             let mut profiles = profiles::Registry::bundled();
             repository.install_registry(&mut profiles)?;
             app.manage(profiles);
             let repository = Arc::new(Mutex::new(repository));
+            let events = app.handle().clone();
+            let max = std::env::var("OBTAINER_IMPORT_MAX_BYTES")
+                .ok()
+                .map(|v| v.parse::<u64>())
+                .transpose()?
+                .unwrap_or(library::DEFAULT_MAX);
+            app.manage(library::LibraryService::start(
+                Arc::clone(&repository),
+                directory.clone(),
+                max,
+                Arc::new(move |job| {
+                    use tauri::Emitter;
+                    let _ = events.emit("library-job-changed", job);
+                }),
+            )?);
+            repository
+                .lock()
+                .map_err(|_| std::io::Error::other("Workspace lock unavailable"))?
+                .record_startup()?;
             let discovery =
                 discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
             app.manage(discovery);
@@ -43,6 +62,17 @@ pub fn run() -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            library::ipc::select_firmware_file,
+            library::ipc::discard_firmware_selection,
+            library::ipc::start_firmware_import,
+            library::ipc::list_firmware_artifacts,
+            library::ipc::get_firmware_artifact,
+            library::ipc::verify_firmware_integrity,
+            library::ipc::cancel_library_job,
+            library::ipc::list_library_jobs,
+            library::ipc::get_library_job,
+            library::ipc::get_library_activity,
+            library::ipc::export_artifact_manifest,
             commands::get_snapshot,
             commands::save_settings,
             commands::get_discovery,
@@ -61,6 +91,7 @@ pub fn run() -> tauri::Result<()> {
         .build(tauri::generate_context!())?
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<library::LibraryService>().stop();
                 app.state::<discovery::DiscoveryService>().shutdown();
             }
         });

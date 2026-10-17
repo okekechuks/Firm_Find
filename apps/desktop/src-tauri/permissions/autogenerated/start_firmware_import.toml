@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-start-firmware-import"
+description = "Enables the start_firmware_import command without any pre-configured scope."
+commands.allow = ["start_firmware_import"]
+
+[[permission]]
+identifier = "deny-start-firmware-import"
+description = "Denies the start_firmware_import command without any pre-configured scope."
+commands.deny = ["start_firmware_import"]

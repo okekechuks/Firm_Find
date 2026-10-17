@@ -1,8 +1,20 @@
 # OBTAINER phase status
 
-Audited: **16 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
+Updated: **17 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4 readiness: READY; not started.** The [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), [hardening transcript](evidence/phase-3-1-2026-10-16.txt), [original evidence](evidence/phase-3-2026-10-16.txt), [device profiles](DEVICE_PROFILES.md), and [capability engine](CAPABILITY_ENGINE.md) document the implementation.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4: COMPLETE (PASS). Phase 5 readiness: READY; not started.** The [Phase 4 verification](PHASE_4_VERIFICATION.md), [evidence transcript](evidence/phase-4-2026-10-17.txt), [firmware library](FIRMWARE_LIBRARY.md), [job engine](JOB_ENGINE.md), and [vault](FIRMWARE_VAULT.md) document the latest work. Accepted [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), [device profiles](DEVICE_PROFILES.md), and [capability engine](CAPABILITY_ENGINE.md) remain retained.
+
+## Phase 4 completion evidence
+
+- Additive schema **3 → 4** preserves the original artifact/job tables and adds persistent metadata, import/integrity history and audit relationships. WAL-aware pre-migration backup retained; settings, saved router, profile versions and reported observations compare exactly. Original device/discovery/audit identities remain; computed compatibility cache refreshes normally.
+- Real native Open dialog → React confirmation → durable job → 1 MiB streaming copy/SHA-256 → synchronized staging → no-overwrite content-addressed publication → final verification → atomic SQLite metadata completion. No arbitrary path IPC or source mutation. User imports remain passive files with unverified provenance and UNKNOWN format.
+- Same/different filenames deduplicate by content; changed bytes remain distinct. Missing/corrupt blobs, Windows junctions/sharing conflicts, SQL failure after publication, orphan reuse, cancellation near commit and recovery are covered in isolated tests. Live tests use generated harmless binaries exclusively.
+- One bounded worker, persistent progress, idempotent cancellation and failed/INTERRUPTED recovery work. Actual 256 MiB source copy reaches React progress, cancels without a partial entry, and a separately killed copying job recovers on restart. Known staging is empty after final checks; complete unreferenced blobs are retained conservatively when needed.
+- Library search/filter/pagination, details, history, explicit integrity checks, real native manifest Save, persisted Jobs/Activity and actual Dashboard counts work through validated IPC. Development/recovery/production retrieve existing artifacts before reimporting; stale verified labels reset to not_checked.
+- **53 frontend tests, 69 Rust tests and 64 final native acceptance checks pass.** Independent TypeScript, lint, formatting, Clippy, frontend production build and optimized Tauri build pass. Native console issue capture is empty; populated development/production screenshots inspected. Earlier failed dialog automation and its correction are recorded in the report.
+- All nine destinations, HMR, discovery refresh, original storage/settings and Phase 3.1 native profile regression pass. Connected MG11 keeps all four features UNKNOWN and its software user-reported; no Apply action or router request/configuration change was introduced.
+- Final SQLite integrity `ok`, no FK violations: one clearly named generated 1 MiB artifact, 20 import occurrences, 30 integrity records, 34 jobs (30 complete, two deliberate cancellations, two interrupted failures), zero unfinished jobs, 104 retained device/metadata rows. Original preference hash unchanged. No real MiFi firmware was used or overwritten.
+- No critical Phase 4 blocker remains. Maximum-size/multi-filesystem/clean-machine qualification remains scoped; no extraction, analysis, execution, flashing or Phase 5 implementation was added.
 
 ## Phase 3.1 targeted hardening evidence
 
@@ -95,8 +107,8 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 | 0: Repository/environment audit | Complete (PASS) | Current inventory/environment/commands/data/migration evidence; checks and fresh release build pass; native render/navigation/IPC/discovery/restart verified on 16 October. | None at the Phase 0 gate; scoped unverified work is recorded in the audit. |
 | 1: Desktop foundation | Complete | Native development/production render, navigation, IPC, cross-mode UI settings, HMR, lifecycle recovery, clean console, 24 frontend/11 Rust tests; report linked above. | No critical foundation blocker; future feature navigation evolves in its own phases. |
 | 2: Discovery | Complete (PASS) | Native topology/evidence, correlation, classification, saved manual targets, bounded checks, cancellation, restart persistence; real MG11 HTTP and physical USB reconnect; 32 frontend/22 Rust tests and native suites pass. | No critical blocker. Broader phone/VPN/vendor/IPv6 hardware qualification is explicitly unverified. |
-| 3: Profiles/capabilities | Partial | Four unknown feature fields and primitive evidence/confidence display. | Versioned profiles, exact matching, seven new reasoned statuses, evaluator, constraints, conflict tests, support UI. |
-| 4: Storage/jobs/library | Partial | SQLite migration, settings, hashed device IDs, aggregate audit, reserved jobs/artifact tables. | Real jobs/history, controlled file import, immutable vault, hashing/dedup/integrity, manifests, library UI and restart/cancellation tests. |
+| 3: Profiles/capabilities | Complete (PASS), including 3.1 | Versioned registry, numeric/opaque firmware matching, trusted-profile precedence, reasoned independent feature assessments, native IPC/UI and preserved reported evidence. | No critical Phase 3/3.1 blocker; authenticated identity and physical feature qualification remain later work. |
+| 4: Storage/jobs/library | Complete (PASS) | Schema 4, safe native import, streamed SHA-256 vault, deduplication, integrity/history, bounded persistent jobs, cancellation/recovery, manifests, backend library queries and real UI. 53 frontend/69 Rust/64 native checks pass. | No critical blocker. Broad filesystem/maximum-size/installer qualification remains unverified; see Phase 4 report. |
 | 5: Adapters | Not started | Discovery provider is reusable infrastructure, not a router adapter framework. | Contracts, registry, authentication, typed errors, protected credentials, mock adapter and contract tests. |
 | 6: Simulator | Not started | Discovery fixtures exist; no interactive router/modem simulator. | Stateful local simulator, four feature reads, authentication, fault injection, desktop connection. |
 | 7: OpenWrt read-only | Not started | No authenticated router management sessions. | Verified interface/version research, trusted endpoint, reads/probes, and selected hardware evidence. |
@@ -115,10 +127,10 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 
 ## Next execution order
 
-1. Phase 2 is complete; Phase 3 profiles and capability evaluation are ready to begin when requested.
+1. Phase 4 is complete; Phase 5 typed read-only adapter contracts and registry are ready when requested.
 2. Keep unknown support until exact device/version/profile evidence supports a decision. Current MG11 model is user-supplied.
 3. Continue broader hardware qualification as suitable devices become available.
-4. Build phases 4-6 into the durable library, adapter layer and real simulator after their dependencies.
+4. Reuse the completed durable library and jobs for Phase 5 adapters, then Phase 6's local simulator.
 5. Implement simulator transactions before authorized hardware configuration changes in later phases.
 
-This tracker records completed Phase 2 work. No Phase 3 or customization implementation began in this run.
+This tracker records completed Phase 4 work and retains historical phase evidence. Phase 5 and device customization have not begun.

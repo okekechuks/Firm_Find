@@ -9,6 +9,7 @@
     "windows"
   ],
   "permissions": [
+    "allow-select-firmware-file","allow-discard-firmware-selection","allow-start-firmware-import","allow-list-firmware-artifacts","allow-get-firmware-artifact","allow-verify-firmware-integrity","allow-cancel-library-job","allow-list-library-jobs","allow-get-library-job","allow-get-library-activity","allow-export-artifact-manifest",
     "allow-get-snapshot",
     "allow-save-settings",
     "allow-get-discovery",

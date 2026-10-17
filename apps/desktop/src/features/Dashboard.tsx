@@ -30,13 +30,13 @@ export function Dashboard({
       label: "Firmware artifacts",
       value: snapshot?.counts.artifacts,
       icon: Files,
-      detail: "Local import not available yet",
+      detail: "Copies stored in the local vault",
     },
     {
       label: "Running jobs",
       value: snapshot?.counts.runningJobs,
       icon: ListChecks,
-      detail: "No operations available yet",
+      detail: "Persistent library operations",
     },
   ];
   return (

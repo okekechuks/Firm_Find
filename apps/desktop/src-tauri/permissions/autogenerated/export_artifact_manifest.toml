@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-export-artifact-manifest"
+description = "Enables the export_artifact_manifest command without any pre-configured scope."
+commands.allow = ["export_artifact_manifest"]
+
+[[permission]]
+identifier = "deny-export-artifact-manifest"
+description = "Denies the export_artifact_manifest command without any pre-configured scope."
+commands.deny = ["export_artifact_manifest"]

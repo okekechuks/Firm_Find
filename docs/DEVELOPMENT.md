@@ -77,6 +77,20 @@ npm run tauri -- build --no-bundle --ci -- --locked --offline
 npm run test:foundation -- --phase3
 ```
 
-The optional `--phase3` suite verifies both the Compatibility workspace and connected-device details through real native WebView2 and IPC. It validates/rejects profile documents, saves the exact owner-provided identifier/software text as unverified local evidence, confirms four unknown MG11 feature assessments and checks persistence across dev/recovery/production launches. Repeated reports deduplicate. It makes no new router request and changes no router settings. The shared foundation suite now checks nine destinations and database schema 3. The interruption case deliberately terminates only its own launch; exit 1 for that subprocess is expected.
+The optional `--phase3` suite verifies both the Compatibility workspace and connected-device details through real native WebView2 and IPC. It validates/rejects profile documents, saves the exact owner-provided identifier/software text as unverified local evidence, confirms four unknown MG11 feature assessments and checks persistence across dev/recovery/production launches. Repeated reports deduplicate. It makes no new router request and changes no router settings. The shared foundation suite checks nine destinations and the current database schema (4 after Phase 4). The interruption case deliberately terminates only its own launch; exit 1 for that subprocess is expected.
 
 For manual inspection, run `npm run tauri -- dev -- --locked --offline`, open **Compatibility**, select the USB device candidate and expand feature evidence, candidate exclusions and identity evidence. Confirm unknown features stay unknown when there is no exact verified identity. Add a reported field and reopen the app to inspect persistence. The local profile validator previews schema validity only; it does not install a trusted profile. Native automation evidence and limits are in [Phase 3 verification](PHASE_3_VERIFICATION.md).
+
+## Phase 4 native verification
+
+Close other OBTAINER sessions and build the release first. Use a normal interactive Windows session; restrictive automation tokens can prevent the directory-sharing leases used by the vault.
+
+```powershell
+$env:CARGO_INCREMENTAL='0'
+npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline
+npm.cmd run test:foundation -- --phase3 --phase4
+```
+
+`--phase3` requires the previously qualified MG11 USB candidate. Omit that flag when no device is available and report hardware regression as unverified. `--phase4` generates its own clearly named harmless 1 MiB and 256 MiB files in the Windows temporary directory. It never selects real firmware. It drives native Open/Save dialogs, confirms import through React, checks persisted jobs and vault bytes, verifies duplicate imports and integrity, exports a manifest, cancels a real copy, forcibly terminates an owned active import, then verifies recovery and production persistence. A harmless generated artifact and its history remain in the real library; destructive corruption/SQL failure tests use isolated Rust temporary databases and vaults.
+
+The test's temporary WebView2 debugging port is enabled only for its own processes. Native evidence, screenshots and captured failures are saved under `.tools/foundation/`. Do not edit the temporarily instrumented frontend files or run frontend checks concurrently with this suite. See [Phase 4 verification](PHASE_4_VERIFICATION.md), [library](FIRMWARE_LIBRARY.md), [jobs](JOB_ENGINE.md) and [vault](FIRMWARE_VAULT.md).

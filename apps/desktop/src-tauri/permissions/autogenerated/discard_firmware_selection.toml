@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-discard-firmware-selection"
+description = "Enables the discard_firmware_selection command without any pre-configured scope."
+commands.allow = ["discard_firmware_selection"]
+
+[[permission]]
+identifier = "deny-discard-firmware-selection"
+description = "Denies the discard_firmware_selection command without any pre-configured scope."
+commands.deny = ["discard_firmware_selection"]

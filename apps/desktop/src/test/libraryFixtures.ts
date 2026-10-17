@@ -1,0 +1,6 @@
+import type { ArtifactDetails,FileSelection,JobRecord,LibraryPage } from "../types/library";
+export const selection:FileSelection={ticket:"a".repeat(32),filename:"harmless.bin",sizeBytes:1024,expiresAt:Date.now()+300000,sourceCategory:"user_import",maxFileBytes:2147483648};
+export const artifact:ArtifactDetails["artifact"]={sha256:"b".repeat(64),sizeBytes:1024,storageStatus:"present",integrityStatus:"verified",firstImportedAt:1792195200000,lastVerifiedAt:1792195200000,format:"UNKNOWN",sourceCount:1,originalFilename:"harmless.bin",sourceCategory:"user_import"};
+export const details:ArtifactDetails={artifact,imports:[{importId:"c".repeat(32),artifactSha256:artifact.sha256,originalFilename:"harmless.bin",importedAt:1792195200000,sourceCategory:"user_import",provenanceStatus:"unverified",description:null,associatedDeviceId:null,jobId:"d".repeat(32)}],checks:[]};
+export const job:JobRecord={id:"d".repeat(32),kind:"firmware_import",status:"running",createdAt:1792195200000,startedAt:1792195200000,finishedAt:null,updatedAt:1792195200000,progressBytes:512,totalBytes:1024,stage:"copying",errorCode:null,message:"Operation running.",relatedArtifact:null,importId:null,cancelRequested:false,duplicate:false,recoveryInfo:null};
+export const empty:LibraryPage={artifacts:[],total:0,uniqueBytes:0,page:0,pageSize:25,maxFileBytes:2147483648};

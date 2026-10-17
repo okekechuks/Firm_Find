@@ -1,16 +1,18 @@
 ﻿# OBTAINER
 
-OBTAINER is a Windows app intended to help owners keep unsupported routers and MiFi devices useful. It aims to help people understand what a device can do, then safely make supported changes such as custom DNS, Wi-Fi user limits, automatic or manual APN settings, and router-hosted USSD. Firmware storage, inspection, and builds for selected OpenWrt devices are later project goals.
+OBTAINER is a Windows app intended to help owners keep unsupported routers and MiFi devices useful. It helps people understand connected devices and preserve copies of firmware files. Later phases aim to add supported changes such as custom DNS, Wi-Fi user limits, APN settings and router-hosted USSD, plus firmware inspection and selected OpenWrt builds.
 
 ## Current status
 
-**Phase 3 device profiles and compatibility review are complete.** The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can save a router address, check whether its management page responds, and review a separate support assessment for DNS, Wi-Fi user limits, APN and USSD.
+The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can save a router address, check whether its management page responds, and review a separate support assessment for DNS, Wi-Fi user limits, APN and USSD.
 
 A new Compatibility workspace explains each feature's evidence, missing information and prerequisites. Saved label or software details stay clearly marked as user-reported. Profiles distinguish exact hardware revisions and firmware versions; an uncertain match keeps feature support unknown. The app does not change router settings.
 
 A USB-connected comFi MG11 was checked through the real desktop app. Its discovery record and saved details survive restarts, but its exact hardware identity and four feature capabilities remain unverified. The supplied `LT800/` identifier and software version are preserved as reports, not proof of support. See the [Phase 3 verification report](docs/PHASE_3_VERIFICATION.md).
 
-The desktop foundation, nine destinations, device refresh, saved appearance, hot reload and restart recovery work. Firmware storage/import workflows come next in Phase 4. Firmware extraction, customization and installation remain future work.
+**Phase 4 adds a local firmware library.** Choose a file, review it, then store a separate copy. The app checks its contents, avoids storing identical copies twice, keeps import history, and lets you check stored files again or export a small information file. Jobs show real progress, cancellation and interrupted-operation results. Your original file stays untouched. Verification status and test results are in the [Phase 4 report](docs/PHASE_4_VERIFICATION.md).
+
+The desktop foundation, nine destinations, device refresh, saved appearance, hot reload and restart recovery work. Firmware extraction, customization and installation remain future work. Storing a file does not establish that it is safe or compatible with a router.
 
 The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) retain the supplied development sequence and existing project structure.
 
@@ -25,7 +27,7 @@ The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROAD
 - Preview changes, save the previous configuration, verify results, and restore settings where supported.
 - Keep firmware files and their history; later inspect proprietary files or build for explicitly supported OpenWrt devices.
 
-Discovery and compatibility review are available now. Reading and changing device settings, firmware extraction and installation remain future goals. Device changes will require verified support and a safe recovery path.
+Discovery, compatibility review and local file storage are available now. Reading and changing device settings, firmware extraction and installation remain future goals. Device changes will require verified support and a safe recovery path.
 
 ## Project structure
 

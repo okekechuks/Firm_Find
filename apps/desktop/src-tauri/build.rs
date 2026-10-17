@@ -1,6 +1,17 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "select_firmware_file",
+            "discard_firmware_selection",
+            "start_firmware_import",
+            "list_firmware_artifacts",
+            "get_firmware_artifact",
+            "verify_firmware_integrity",
+            "cancel_library_job",
+            "list_library_jobs",
+            "get_library_job",
+            "get_library_activity",
+            "export_artifact_manifest",
             "get_profile_registry",
             "get_device_compatibility",
             "validate_device_profile",
