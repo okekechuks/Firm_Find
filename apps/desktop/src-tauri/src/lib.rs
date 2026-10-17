@@ -3,6 +3,7 @@ pub mod connection;
 pub mod discovery;
 pub mod domain;
 pub mod library;
+mod native_test;
 pub mod profiles;
 pub mod storage;
 
@@ -11,9 +12,73 @@ use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
 pub fn run() -> tauri::Result<()> {
+    native_test::reject_overrides(false)?;
+    run_profile(None)
+}
+
+struct NativeProfile {
+    root: std::path::PathBuf,
+    id: String,
+    _owner: Box<dyn std::any::Any + Send + Sync>,
+}
+
+#[cfg(feature = "native-test-profile")]
+pub fn run_native_test() -> tauri::Result<()> {
+    let id = native_test::reject_overrides(true)?.expect("validated test ID");
+    let local = native_test::local_data()?;
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    if args == ["--cleanup-native-test-run"] {
+        native_test::cleanup(&local, &id)?;
+        println!("{{\"removed\":true,\"runId\":\"{id}\"}}");
+        return Ok(());
+    }
+    if !args.is_empty() {
+        return Err(std::io::Error::other(
+            "Unsupported native-test arguments; paths are never accepted.",
+        )
+        .into());
+    }
+    let run = native_test::TestRun::open(&local, &id)?;
+    run_profile(Some(NativeProfile {
+        root: run.root.clone(),
+        id: run.id.clone(),
+        _owner: Box::new(run),
+    }))
+}
+
+fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
+    let mut context = tauri::generate_context!();
+    let expected = if profile.is_some() {
+        "com.obtainer.desktop.native-test"
+    } else {
+        "com.obtainer.desktop"
+    };
+    if context.config().identifier != expected {
+        return Err(std::io::Error::other(
+            "Executable/configuration identity mismatch; startup refused.",
+        )
+        .into());
+    }
+    if let Some(test) = &profile {
+        for window in &mut context.config_mut().app.windows {
+            window.data_directory = Some(test.root.join("webview"));
+            window.title = format!("OBTAINER — ISOLATED NATIVE TEST {}", test.id);
+        }
+    }
     tauri::Builder::default()
-        .setup(|app| {
-            let directory = app.path().local_data_dir()?.join("OBTAINER");
+        .setup(move |app| {
+            let directory = profile
+                .as_ref()
+                .map(|p| p.root.join("data"))
+                .unwrap_or(app.path().local_data_dir()?.join("OBTAINER"));
+            let test_profile = profile.as_ref().map(|p| domain::NativeTestInfo {
+                run_id: p.id.clone(),
+                discovery_source: "windows_observed".into(),
+                simulated_adapters: false,
+            });
+            if let Some(profile) = profile {
+                app.manage(profile);
+            }
             for child in ["logs", "vault", "workspaces", "reports"] {
                 std::fs::create_dir_all(directory.join(child))?;
             }
@@ -57,6 +122,7 @@ pub fn run() -> tauri::Result<()> {
             app.manage(AppState {
                 repository,
                 directory,
+                test_profile,
             });
             tracing::info!(version = env!("CARGO_PKG_VERSION"), "OBTAINER initialized");
             Ok(())
@@ -88,7 +154,7 @@ pub fn run() -> tauri::Result<()> {
             commands::get_device_compatibility,
             commands::validate_device_profile
         ])
-        .build(tauri::generate_context!())?
+        .build(context)?
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
                 app.state::<library::LibraryService>().stop();

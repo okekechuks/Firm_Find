@@ -48,6 +48,13 @@ impl From<std::io::Error> for LibraryError {
     }
 }
 pub type Result<T> = std::result::Result<T, LibraryError>;
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestExportResult {
+    pub saved: bool,
+    pub activity_recorded: bool,
+    pub warning: Option<String>,
+}
 #[derive(Default)]
 pub(crate) struct JobInput<'a> {
     pub filename: Option<&'a str>,

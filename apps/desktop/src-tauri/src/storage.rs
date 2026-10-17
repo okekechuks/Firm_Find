@@ -353,6 +353,7 @@ impl Repository {
             settings: self.settings()?,
             counts,
             recent_events: events.collect::<Result<Vec<_>, _>>()?,
+            test_profile: None,
         })
     }
 }

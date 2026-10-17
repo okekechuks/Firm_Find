@@ -12,6 +12,7 @@ use std::{
 pub struct AppState {
     pub repository: Arc<Mutex<Repository>>,
     pub directory: PathBuf,
+    pub test_profile: Option<crate::domain::NativeTestInfo>,
 }
 
 #[derive(Debug, Serialize)]
@@ -33,9 +34,12 @@ fn database_error(error: impl std::fmt::Display) -> CommandError {
 pub async fn get_snapshot(state: tauri::State<'_, AppState>) -> Result<Snapshot, CommandError> {
     let repository = Arc::clone(&state.repository);
     let directory = state.directory.clone();
+    let test_profile = state.test_profile.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let repository = repository.lock().map_err(database_error)?;
-        repository.snapshot(&directory).map_err(database_error)
+        let mut snapshot = repository.snapshot(&directory).map_err(database_error)?;
+        snapshot.test_profile = test_profile;
+        Ok(snapshot)
     })
     .await
     .map_err(database_error)?

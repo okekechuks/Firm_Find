@@ -1,0 +1,343 @@
+OBTAINER Phase 4.1 executed verification ? 17 October 2026, Africa/Lagos
+Baseline commit: af09834; checkout initially clean. No Phase 5 implementation.
+
+FINAL CHECK COMMANDS (workspace root; CARGO_INCREMENTAL=0 for Rust/native builds)
+node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit
+  exit/result: 0
+npm.cmd run lint
+  exit/result: 0, no warnings
+npm.cmd test
+  exit/result: 0, 56 tests / 8 files
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check
+  exit/result: 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings
+  exit/result: 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings
+  exit/result: 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline
+  exit/result: 0, 76 tests
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --features native-test-profile --locked --offline
+  exit/result: 0, 76 tests
+npm.cmd run build
+  exit/result: 0, TypeScript/Vite production assets
+npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline
+  exit/result: 0, ordinary optimized application
+npm.cmd run build:native-tests
+  exit/result: 0, optimized explicit native-test binary with embedded production assets; ordinary executable SHA unchanged
+npm.cmd run test:foundation -- --phase3 --phase4 --phase4-1
+  exit/result: 0, 83 acceptance checkpoints
+npm.cmd run test:foundation -- --settings-roundtrip
+  exit/result: 0, 17 acceptance checkpoints
+npm.cmd run test:native -- target/release/obtainer-native-test.exe --audit
+  exit/result: 0, six logged PASS checkpoints and two launches
+git diff --check
+  exit/result: 0, LF/CRLF notices only
+
+MAIN NATIVE ACCEPTANCE
+Evidence: .tools/foundation/2026-10-17T05-15-40.890Z
+Passed checkpoints: 83
+Normal full before/after equality: VERIFIED; console warnings/errors/exceptions: []
+Actual native child commands and exit codes:
+[
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline",
+    "kind": "dev",
+    "exitCode": 1
+  },
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": ".\\target\\release\\obtainer-native-test.exe",
+    "kind": "release",
+    "exitCode": 0
+  }
+]
+Cleanup result:
+{
+  "status": 0,
+  "stdout": "{\"removed\":true,\"runId\":\"590b48b960a7bfe686b62af03177b96d\"}\n",
+  "stderr": ""
+}
+Checkpoints:
+1. PASS: {"name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"}
+2. PASS: {"name": "ordinary production executable rejects test activation before opening data"}
+3. PASS: {"name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"}
+4. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+5. PASS: {"name": "active test ownership prevents cleanup"}
+6. PASS: {"name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "590b48b960a7bfe686b62af03177b96d", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\590b48b960a7bfe686b62af03177b96d\\data"}
+7. PASS: {"name": "dev-reopen: native window, React and real SQLite IPC", "url": "http://127.0.0.1:1420/", "pid": 13824, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\590b48b960a7bfe686b62af03177b96d\\data", "theme": "system"}
+8. PASS: {"name": "dev-reopen: all nine navigation destinations"}
+9. PASS: {"name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support", "records": 53, "watching": true, "warnings": []}
+10. PASS: {"name": "dev-reopen: real registry IPC, strict rejection, local preview never activated"}
+11. PASS: {"name": "dev-reopen: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged"}
+12. PASS: {"name": "dev-reopen: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified", "deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f", "confidence": "CANDIDATE", "reported": [{"attribute": "reported_identifier", "value": "LT800/", "verification": "user_reported"}, {"attribute": "firmware_version", "value": "MF69_AM802L_ZX_DD_N_241106_EU", "verification": "user_reported"}]}
+13. PASS: {"name": "dev-reopen: reported evidence survives same-value saves and restarts", "observationIds": ["5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af", "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"]}
+14. PASS: {"name": "dev-reopen: connected-device details use the real compatibility engine"}
+15. PASS: {"name": "dev-reopen: schema 4 and existing Phase 3.1 profile/compatibility IPC preserved"}
+16. PASS: {"name": "dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "629ab9a839b5a1ca0f5b9c159e914dc8", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+17. PASS: {"name": "dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 2}
+18. PASS: {"name": "dev-reopen: actual streamed integrity verification and history", "checks": 3}
+19. PASS: {"name": "dev-reopen: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+20. PASS: {"name": "dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact", "bytesObserved": 4194304, "totalBytes": 268435456, "elapsedMs": 1453, "copyThroughputMiBPerSecond": 32.78688524590164, "memory": {"WorkingSet64": 81260544, "PeakWorkingSet64": 86052864, "PrivateMemorySize64": 22179840}}
+21. PASS: {"name": "dev-reopen: persisted job and activity screens render after restart"}
+22. PASS: {"name": "dev-reopen: dashboard displays actual committed artifact count and no running library work", "artifacts": 1}
+23. PASS: {"name": "isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences"}
+24. PASS: {"name": "isolated native corruption and missing-blob detection; source reimport restores generated bytes without touching normal vault"}
+25. PASS: {"name": "isolated native database failure after artifact publication: failed job, retained orphan, verified reuse on retry"}
+26. PASS: {"name": "isolated native manifest remains saved when activity transaction fails; React displays separate warning"}
+27. PASS: {"name": "dev-reopen: same-value settings write/read preserved original preferences"}
+28. PASS: {"name": "dev-reopen: injected read error and real IPC retry recovery"}
+29. PASS: {"name": "dev-reopen: loading state retains cached data"}
+30. PASS: {"name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"}
+31. PASS: {"name": "dev-reopen: temporary HMR edit restored"}
+32. PASS: {"name": "isolated native verification observed running before graceful application shutdown", "jobId": "0fca7941b559d67ccc965bffcc587c73"}
+33. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+34. PASS: {"name": "graceful shutdown cancelled active verification; restart preserved terminal job and usable artifact"}
+35. PASS: {"name": "Phase 4: actual copying job recorded before forced termination", "jobId": "89ec866bdf2f6a0c80975bcb152677dd"}
+36. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+37. PASS: {"name": "interrupted owned development launch and released resources", "backendRenderedBeforeInterrupt": true}
+38. PASS: {"name": "dev-recovery: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "590b48b960a7bfe686b62af03177b96d", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\590b48b960a7bfe686b62af03177b96d\\data"}
+39. PASS: {"name": "dev-recovery: native window, React and real SQLite IPC", "url": "http://127.0.0.1:1420/", "pid": 22824, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\590b48b960a7bfe686b62af03177b96d\\data", "theme": "system"}
+40. PASS: {"name": "dev-recovery: all nine navigation destinations"}
+41. PASS: {"name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support", "records": 53, "watching": true, "warnings": []}
+42. PASS: {"name": "dev-recovery: real registry IPC, strict rejection, local preview never activated"}
+43. PASS: {"name": "dev-recovery: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged"}
+44. PASS: {"name": "dev-recovery: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified", "deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f", "confidence": "CANDIDATE", "reported": [{"attribute": "reported_identifier", "value": "LT800/", "verification": "user_reported"}, {"attribute": "firmware_version", "value": "MF69_AM802L_ZX_DD_N_241106_EU", "verification": "user_reported"}]}
+45. PASS: {"name": "dev-recovery: reported evidence survives same-value saves and restarts", "observationIds": ["5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af", "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"]}
+46. PASS: {"name": "dev-recovery: connected-device details use the real compatibility engine"}
+47. PASS: {"name": "dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn"}
+48. PASS: {"name": "dev-recovery: interrupted copy recovered as failed, known staging removed, no false success", "jobId": "89ec866bdf2f6a0c80975bcb152677dd"}
+49. PASS: {"name": "dev-recovery: schema 4 and existing Phase 3.1 profile/compatibility IPC preserved"}
+50. PASS: {"name": "dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "f4ddc3bdc1183a3c0cf6d07176aa4c32", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+51. PASS: {"name": "dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 5}
+52. PASS: {"name": "dev-recovery: actual streamed integrity verification and history", "checks": 9}
+53. PASS: {"name": "dev-recovery: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+54. PASS: {"name": "dev-recovery: persisted job and activity screens render after restart"}
+55. PASS: {"name": "dev-recovery: dashboard displays actual committed artifact count and no running library work", "artifacts": 3}
+56. PASS: {"name": "dev-recovery: same-value settings write/read preserved original preferences"}
+57. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+58. PASS: {"name": "production: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "590b48b960a7bfe686b62af03177b96d", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\590b48b960a7bfe686b62af03177b96d\\data"}
+59. PASS: {"name": "production: native window, React and real SQLite IPC", "url": "http://tauri.localhost/", "pid": 11256, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\590b48b960a7bfe686b62af03177b96d\\data", "theme": "system"}
+60. PASS: {"name": "production: all nine navigation destinations"}
+61. PASS: {"name": "production: discovery, three refreshes, unique IDs, unknown feature support", "records": 53, "watching": true, "warnings": []}
+62. PASS: {"name": "production: real registry IPC, strict rejection, local preview never activated"}
+63. PASS: {"name": "production: schema-1 opaque preview passes real React/Rust IPC; invalid constraints rejected; registry unchanged"}
+64. PASS: {"name": "production: MG11 real React/Rust matrix; four UNKNOWN features; owner text remains unverified", "deviceId": "8198d94a197a40c7d6aa47967a7a713fd468e6be5bae947e15d3c013ab77086f", "confidence": "CANDIDATE", "reported": [{"attribute": "reported_identifier", "value": "LT800/", "verification": "user_reported"}, {"attribute": "firmware_version", "value": "MF69_AM802L_ZX_DD_N_241106_EU", "verification": "user_reported"}]}
+65. PASS: {"name": "production: reported evidence survives same-value saves and restarts", "observationIds": ["5fc3ce8a0eeb9139af325ee5f34e318d71763f157c54eed7ad762e50608eb2af", "e6cb50ada94fca4d6891605d54b3c1b0a465c0f68f6eb27c2921f98f887ab426"]}
+66. PASS: {"name": "production: connected-device details use the real compatibility engine"}
+67. PASS: {"name": "production: repeated startup keeps interrupted job terminal without rerunning it"}
+68. PASS: {"name": "production: existing artifact/import history available before any new import; stale verified label withdrawn"}
+69. PASS: {"name": "production: schema 4 and existing Phase 3.1 profile/compatibility IPC preserved"}
+70. PASS: {"name": "production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "86e4833eddd55dc2169544fc19ea8ea9", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+71. PASS: {"name": "production: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 7}
+72. PASS: {"name": "production: actual streamed integrity verification and history", "checks": 12}
+73. PASS: {"name": "production: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+74. PASS: {"name": "production: persisted job and activity screens render after restart"}
+75. PASS: {"name": "production: dashboard displays actual committed artifact count and no running library work", "artifacts": 3}
+76. PASS: {"name": "production: same-value settings write/read preserved original preferences"}
+77. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+78. PASS: {"name": "no captured native console warnings or unhandled exceptions"}
+79. PASS: {"name": "cleanup rejects mismatched marker/run ID and retains test data"}
+80. PASS: {"name": "cleanup retains unknown staging without deleting files"}
+81. PASS: {"name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"}
+82. PASS: {"name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"}
+83. PASS: {"name": "owned isolated run cleaned after all processes stopped", "runId": "590b48b960a7bfe686b62af03177b96d"}
+
+CHANGED SETTINGS ROUND-TRIP
+Evidence: .tools/foundation/2026-10-17T05-18-32.204Z
+Passed checkpoints: 17
+Normal full before/after equality: VERIFIED; console warnings/errors/exceptions: []
+Actual native child commands and exit codes:
+[
+  {
+    "command": ".\\target\\release\\obtainer-native-test.exe",
+    "kind": "release",
+    "exitCode": 0
+  },
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": ".\\target\\release\\obtainer-native-test.exe",
+    "kind": "release",
+    "exitCode": 0
+  }
+]
+Cleanup result:
+{
+  "status": 0,
+  "stdout": "{\"removed\":true,\"runId\":\"15f1fbb565ede4c5e12e18689cfbf69b\"}\n",
+  "stderr": ""
+}
+Checkpoints:
+1. PASS: {"name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"}
+2. PASS: {"name": "ordinary production executable rejects test activation before opening data"}
+3. PASS: {"name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"}
+4. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+5. PASS: {"name": "production UI saved a changed appearance through real Rust/SQLite IPC"}
+6. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+7. PASS: {"name": "development reopened the changed production setting from the same database"}
+8. PASS: {"name": "development UI restored the original appearance"}
+9. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+10. PASS: {"name": "production restart verified the original settings restored by development"}
+11. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+12. PASS: {"name": "no captured native console warnings or unhandled exceptions"}
+13. PASS: {"name": "cleanup rejects mismatched marker/run ID and retains test data"}
+14. PASS: {"name": "cleanup retains unknown staging without deleting files"}
+15. PASS: {"name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"}
+16. PASS: {"name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"}
+17. PASS: {"name": "owned isolated run cleaned after all processes stopped", "runId": "15f1fbb565ede4c5e12e18689cfbf69b"}
+
+NORMAL DATA PROOF ? FINAL ISOLATED SUITES
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "vault_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER\\vault",
+  "schema": 4,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": [],
+  "table_counts": {
+    "activity_links": 74,
+    "artifact_details": 1,
+    "artifact_imports": 20,
+    "audit_events": 213,
+    "compatibility_evaluations": 2,
+    "device_identity_observations": 2,
+    "devices": 122,
+    "discovery_metadata": 122,
+    "firmware_artifacts": 1,
+    "integrity_checks": 30,
+    "job_details": 34,
+    "jobs": 34,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "all_rows_sha256": "5cdc4186397ffbc5dd95e3cee881e2ae674f7fed0b81dc79c005a96d19eb4c68",
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "saved_router_ids": [
+    "b61f3765b1807d02d05f1c6e0236967025f51e671ebc062c70fe62c90dcdb147"
+  ],
+  "profile_ids": [
+    "observed.comfi-mg11",
+    "tplink.archer-c7-v5.openwrt-23-05-5"
+  ],
+  "database_files": {
+    "obtainer.db": {
+      "bytes": 299008,
+      "sha256": "b3d00cba067dde53dd3a4dc01d0a56e1f325396a1122a25964d5061be518d980"
+    },
+    "obtainer.db-wal": {
+      "bytes": 4124152,
+      "sha256": "a39098df08f51e94d95eccbf8b0729372cdf883e4e44832f92dc5e58cb6127fa"
+    }
+  },
+  "vault_files": {
+    "sha256\\c9\\c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264.bin": {
+      "bytes": 1048576,
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264"
+    }
+  },
+  "other_directories": {
+    "logs": {
+      "obtainer.jsonl.2026-10-14": {
+        "bytes": 1015,
+        "sha256": "a25eff6ecdcafc443c11a5b874e91c0d35221716c0a8036ac50c60db030504ae"
+      },
+      "obtainer.jsonl.2026-10-15": {
+        "bytes": 580,
+        "sha256": "cb9efc4942e1352d9d5a501937dd2f326136e4d8ce3d91b4a7d7c6ace43c7b2b"
+      },
+      "obtainer.jsonl.2026-10-16": {
+        "bytes": 6090,
+        "sha256": "2636f36ae2de216f81ddad11f2a415f5a6ac9ffbda1123403a7cb784ae31c884"
+      },
+      "obtainer.jsonl.2026-10-17": {
+        "bytes": 290,
+        "sha256": "15b813b3a0ba5af5845d39a6524335ac4be2f1b8ff340acf0537a2e0701adbaf"
+      }
+    },
+    "workspaces": {},
+    "reports": {}
+  }
+}
+
+EARLIER BUILD-DEBUGGING DELTA ? NOT CLAIMED UNCHANGED
+First probe: audit_events=211, rows=48cf60d250be0d3f8839eb98a07129b24b1c7acd6a1d0c5b842ea270b1a57899, WAL=791732d5723caf5e77d7646741e531da4e6a5c079fa44f03b8aa05c05fc15c23
+Normal startup recorded at 05:02:43.847Z (audit 212), passive inventory event at 05:02:44.322Z (audit 213).
+WAL, collective row fingerprint and startup log changed before corrected separate-binary qualification. A read-only diagnostic excluding only added audit rows still does not match initial rows; no field-by-field original snapshot exists.
+Schema, main DB bytes, settings, saved router/profile IDs, artifact/job/history counts and full vault inventory match first probe. No rollback, data cleanup or removal of normal history attempted.
+
+FAILED ATTEMPTS RETAINED
+Initial test-build selection used Tauri package-binary rename behavior; corrected by explicit Cargo --bin and custom-protocol. Normal release rebuilt, then hash-protected by helper.
+.tools/foundation/2026-10-17T04-55-45.592Z: preflight stopped with absent ordinary executable; no GUI proof claimed; normal before/after equal.
+.tools/foundation/2026-10-17T05-10-09.419Z: exit 1, MG11 powered off. Failed test data ae4064e06b86172a22b75b6c657e88de retained; normal before/after equal.
+.tools/foundation/2026-10-17T05-11-44.292Z: exit 1, 60s concurrent debug timeout; first job completed, second still hashing. Deadline for that queued 256 MiB case changed to bounded 180s. Data 85395ec4092ca7848674c7a5634f90df retained; normal before/after equal.
+Initial Clippy collapsible_if warning corrected. Read-only schema/quoting diagnostics and the initial-to-current-only-audit-exclusion comparison exited 1; not preservation successes.
+
+VISUAL AND HARDWARE EVIDENCE
+Inspected actual dev-reopen-library.png, production-library.png and production-compatibility.png in the main evidence folder. Native React rendered; isolated run notice and generated artifacts visible; four UNKNOWN features visible.
+Powered-on MG11 USB 1286:4E31 observed; RNDIS/composite OK; Windows diagnostic/AT driver errors retained. No support inferred from USB IDs or user text.
+MG11 identifier LT800/ and software MF69_AM802L_ZX_DD_N_241106_EU remain user_reported. No Apply action or router configuration request introduced.
+Only generated harmless 1 MiB/256 MiB binaries selected. Near-commit cancellation verified with deterministic Rust barriers, not claimed as a precisely timed native click.
+
+NORMAL RELEASE SHA-256
+C70F4D1B41162B4E6CC8FEBFE47F85F5AD1A5FF49910F0ED7063B25756C1436A
+
+SOURCE / DOC INVENTORY
+apps/desktop/src-tauri/Cargo.toml
+apps/desktop/src-tauri/src/commands.rs
+apps/desktop/src-tauri/src/domain.rs
+apps/desktop/src-tauri/src/lib.rs
+apps/desktop/src-tauri/src/library/db.rs
+apps/desktop/src-tauri/src/library/ipc.rs
+apps/desktop/src-tauri/src/library/mod.rs
+apps/desktop/src-tauri/src/library/tests.rs
+apps/desktop/src-tauri/src/library/types.rs
+apps/desktop/src-tauri/src/native_test.rs
+apps/desktop/src-tauri/src/native_test_main.rs
+apps/desktop/src-tauri/src/storage.rs
+apps/desktop/src-tauri/tauri.native-test.conf.json
+apps/desktop/src/app/App.tsx
+apps/desktop/src/features/FirmwareLibrary.tsx
+apps/desktop/src/lib/backend.ts
+apps/desktop/src/test/App.test.tsx
+apps/desktop/src/test/FirmwareLibrary.test.tsx
+apps/desktop/src/types/contracts.ts
+apps/desktop/src/types/library.ts
+docs/DEVELOPMENT.md
+docs/FIRMWARE_LIBRARY.md
+docs/FIRMWARE_VAULT.md
+docs/JOB_ENGINE.md
+docs/NATIVE_TESTING.md
+docs/PHASE_4_1_VERIFICATION.md
+docs/PHASE_STATUS.md
+docs/evidence/phase-4-1-2026-10-17.txt
+package.json
+scripts/build-native-tests.ps1
+scripts/native-smoke.mjs
+scripts/native-test-profile.mjs
+scripts/probe-native-isolation.py
+scripts/verify-firmware.mjs
+scripts/verify-foundation.mjs
+
+VERDICT: PASS for corrected targeted hardening. No critical blocker. Earlier normal-startup delta disclosed; failed test runs intentionally retained. Maximum-size/additional-filesystem/clean-machine qualification not claimed.
+PHASE 5: READY, NOT STARTED.
+
+FINAL READ-ONLY WINDOWS CENSUS (exit 0)
+Application/driver processes (obtainer, native-test, tauri-driver, msedgedriver, workspace Vite): 0.
+Listeners on 1420 / 9223 / 4445 / 4446: 0.
+Main, settings and smoke successful run directories: all absent after guarded cleanup.

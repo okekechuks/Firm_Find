@@ -41,6 +41,16 @@ pub struct Snapshot {
     pub settings: Settings,
     pub counts: Counts,
     pub recent_events: Vec<AuditEvent>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub test_profile: Option<NativeTestInfo>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NativeTestInfo {
+    pub run_id: String,
+    pub discovery_source: String,
+    pub simulated_adapters: bool,
 }
 
 #[derive(Debug, Clone, Copy)]

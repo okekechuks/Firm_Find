@@ -425,6 +425,114 @@ fn metadata_search_pagination_manifest_privacy_and_no_overwrite() {
     assert_eq!(fs::read_to_string(out).unwrap(), text);
 }
 #[test]
+fn manifest_saved_survives_activity_failure_without_partial_audit_or_overwrite() {
+    let (d, repo, s) = setup();
+    let input = source(
+        d.path(),
+        "harmless-export.bin",
+        b"generated metadata export bytes",
+    );
+    let job = completed(&s, &input);
+    let hash = job.related_artifact.unwrap();
+    let events = repo
+        .lock()
+        .unwrap()
+        .connection
+        .query_row("SELECT COUNT(*) FROM audit_events", [], |r| {
+            r.get::<_, i64>(0)
+        })
+        .unwrap();
+    repo.lock().unwrap().connection.execute_batch("CREATE TRIGGER fail_export_activity BEFORE INSERT ON activity_links WHEN (SELECT kind FROM audit_events WHERE id=NEW.event_id)='manifest_exported' BEGIN SELECT RAISE(FAIL,'injected activity failure'); END;").unwrap();
+    let path = d.path().join("saved-despite-log-failure.json");
+    let result = s.export_path(&hash, &path).unwrap();
+    assert!(result.saved);
+    assert!(!result.activity_recorded);
+    assert!(result.warning.unwrap().contains("Manifest saved"));
+    let bytes = fs::read(&path).unwrap();
+    let data: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(data["sha256"], hash);
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .connection
+            .query_row("SELECT COUNT(*) FROM audit_events", [], |r| r
+                .get::<_, i64>(0))
+            .unwrap(),
+        events
+    );
+    assert!(s.export_path(&hash, &path).is_err());
+    assert_eq!(fs::read(&path).unwrap(), bytes);
+    repo.lock()
+        .unwrap()
+        .connection
+        .execute_batch("DROP TRIGGER fail_export_activity;")
+        .unwrap();
+    let result = s.export_path(&hash, &d.path().join("logged.json")).unwrap();
+    assert!(result.saved && result.activity_recorded && result.warning.is_none());
+}
+
+#[test]
+fn shutdown_during_verification_cancels_and_repeated_startup_keeps_terminal_state() {
+    let d = tempfile::tempdir().unwrap();
+    let root = d.path().join("data");
+    fs::create_dir(&root).unwrap();
+    let repo = Arc::new(Mutex::new(Repository::open(&root.join("db")).unwrap()));
+    let gate = Arc::new(AtomicBool::new(false));
+    let active = Arc::clone(&gate);
+    let (tx, rx) = mpsc::channel();
+    let (release, go) = mpsc::channel();
+    let go = Mutex::new(go);
+    let s = LibraryService::start(
+        Arc::clone(&repo),
+        root.clone(),
+        DEFAULT_MAX,
+        Arc::new(move |j| {
+            if active.load(Ordering::Acquire)
+                && j.kind == "integrity_verify"
+                && j.status == JobStatus::Running
+                && j.stage == "running"
+            {
+                tx.send(()).unwrap();
+                go.lock().unwrap().recv().unwrap();
+            }
+        }),
+    )
+    .unwrap();
+    let j = completed(
+        &s,
+        &source(d.path(), "verify-shutdown.bin", b"harmless verified bytes"),
+    );
+    let hash = j.related_artifact.unwrap();
+    gate.store(true, Ordering::Release);
+    let j = s.verify(&hash).unwrap();
+    rx.recv_timeout(Duration::from_secs(5)).unwrap();
+    let copy = s.clone();
+    let closing = thread::spawn(move || copy.stop());
+    while !s.inner.shutdown.load(Ordering::Acquire) {
+        thread::yield_now();
+    }
+    release.send(()).unwrap();
+    closing.join().unwrap();
+    assert_eq!(wait(&s, &j.id).status, JobStatus::Cancelled);
+    drop(s);
+    for _ in 0..2 {
+        let service = LibraryService::start(
+            Arc::clone(&repo),
+            root.clone(),
+            DEFAULT_MAX,
+            Arc::new(|_| {}),
+        )
+        .unwrap();
+        assert_eq!(service.job(&j.id).unwrap().status, JobStatus::Cancelled);
+        assert_ne!(
+            service.details(&hash).unwrap().artifact.integrity_status,
+            "checking"
+        );
+        service.stop();
+        drop(service);
+    }
+}
+#[test]
 fn nonempty_schema_three_upgrade_and_repeated_startup_preserve_all_legacy_rows() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("legacy.db");

@@ -1,5 +1,5 @@
 mod db;
-mod files;
+pub(crate) mod files;
 pub mod ipc;
 pub mod types;
 use crate::{connection::now, storage::Repository};
@@ -351,7 +351,7 @@ impl LibraryService {
     pub fn activity(&self) -> Result<Vec<ActivityEvent>> {
         lock(&self.inner.repo)?.library_activity()
     }
-    pub fn export(&self, hash: &str, owner: isize) -> Result<bool> {
+    pub fn export(&self, hash: &str, owner: isize) -> Result<ManifestExportResult> {
         self.ensure_open()?;
         if self.inner.dialog_open.swap(true, Ordering::AcqRel) {
             return Err(LibraryError::new(
@@ -360,16 +360,17 @@ impl LibraryService {
             ));
         }
         let result = dialog(true, owner).and_then(|p| match p {
-            Some(p) => {
-                self.export_path(hash, &p)?;
-                Ok(true)
-            }
-            None => Ok(false),
+            Some(p) => self.export_path(hash, &p),
+            None => Ok(ManifestExportResult {
+                saved: false,
+                activity_recorded: false,
+                warning: None,
+            }),
         });
         self.inner.dialog_open.store(false, Ordering::Release);
         result
     }
-    pub(crate) fn export_path(&self, hash: &str, path: &Path) -> Result<()> {
+    pub(crate) fn export_path(&self, hash: &str, path: &Path) -> Result<ManifestExportResult> {
         safe_path(path)?;
         if inside(path, &self.inner.root)? {
             return Err(LibraryError::new(
@@ -392,7 +393,7 @@ impl LibraryService {
         let sources:Vec<_>=d.imports.iter().map(|i|serde_json::json!({"originalFilename":i.original_filename,"importedAt":i.imported_at,"sourceCategory":i.source_category,"provenanceStatus":i.provenance_status})).collect();
         let manifest = serde_json::json!({"manifestSchemaVersion":1,"applicationVersion":env!("CARGO_PKG_VERSION"),"sha256":hash,"sizeBytes":d.artifact.size_bytes,"format":d.artifact.format,"integrityStatus":d.artifact.integrity_status,"lastVerifiedAt":d.artifact.last_verified_at,"sourceCount":d.artifact.source_count,"sources":sources,"omittedSourceCount":d.artifact.source_count.saturating_sub(d.imports.len() as u64),"notice":"Unsigned checksum metadata; not proof of authenticity, safety, compatibility or flashing support."});
         let temp = parent.join(format!(".obtainer-{}.tmp", nonce()?));
-        let result = (|| -> Result<()> {
+        let result = (|| -> Result<ManifestExportResult> {
             let mut f = new_file(&temp)?;
             f.write_all(&serde_json::to_vec_pretty(&manifest).map_err(|_| {
                 LibraryError::new("EXPORT_FAILED", "Manifest serialization failed.")
@@ -400,8 +401,15 @@ impl LibraryService {
             f.sync_all()?;
             drop(f);
             fs::hard_link(&temp, path)?;
-            lock(&self.inner.repo)?.library_exported(hash)?;
-            Ok(())
+            // Publication is the save commit point. Audit failure cannot undo a valid export.
+            let activity_recorded = lock(&self.inner.repo)
+                .and_then(|mut repo| repo.library_exported(hash))
+                .is_ok();
+            Ok(ManifestExportResult {
+                saved: true,
+                activity_recorded,
+                warning: (!activity_recorded).then(|| "Manifest saved, but workspace activity could not be recorded. Keep the saved file; do not retry using the same filename.".into()),
+            })
         })();
         let _ = fs::remove_file(&temp);
         result

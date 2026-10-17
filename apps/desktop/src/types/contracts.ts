@@ -8,6 +8,7 @@ export const snapshotSchema = z.object({
   version: z.string(),
   databaseVersion: z.number().int().nonnegative(),
   dataDirectory: z.string(),
+  testProfile: z.object({runId:z.string().regex(/^[a-f0-9]{32}$/),discoverySource:z.literal("windows_observed"),simulatedAdapters:z.literal(false)}).optional(),
   settings: settingsSchema,
   counts: z.object({
     devices: z.number().int().nonnegative(),

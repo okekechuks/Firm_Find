@@ -10,6 +10,7 @@ export const libraryPageSchema=z.object({artifacts:z.array(artifactSchema).max(2
 export const selectionSchema=z.object({ticket:z.string().regex(/^[a-f0-9]{32}$/),filename:z.string(),sizeBytes:number,expiresAt:number,sourceCategory:z.literal("user_import"),maxFileBytes:number});
 export const activitySchema=z.object({id:number,kind:z.string(),message:z.string(),createdAt:z.string(),jobId:z.string().nullable(),artifactSha256:hash.nullable(),severity:z.string()});
 export type JobRecord=z.infer<typeof jobSchema>;
+export const manifestExportSchema=z.object({saved:z.boolean(),activityRecorded:z.boolean(),warning:z.string().nullable()}).superRefine((r,ctx)=>{if((!r.saved&&(r.activityRecorded||r.warning!==null))||(r.saved&&(r.activityRecorded?r.warning!==null:r.warning===null)))ctx.addIssue({code:z.ZodIssueCode.custom,message:"Inconsistent export result."});});
 export type FileSelection=z.infer<typeof selectionSchema>;
 export type LibraryPage=z.infer<typeof libraryPageSchema>;
 export type ArtifactDetails=z.infer<typeof detailsSchema>;

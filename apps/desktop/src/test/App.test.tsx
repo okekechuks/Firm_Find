@@ -212,3 +212,7 @@ describe("desktop foundation", () => {
     expect(saveSettings).not.toHaveBeenCalled();
   });
 });
+
+it("distinguishes isolated test data from real Windows observations",async()=>{
+ vi.mocked(getSnapshot).mockResolvedValue({...snapshot,testProfile:{runId:"0123456789abcdef0123456789abcdef",discoverySource:"windows_observed",simulatedAdapters:false}});render(<App/>);expect(await screen.findByText(/ISOLATED NATIVE TEST/)).toHaveTextContent("no simulated adapters or verified device support");
+});

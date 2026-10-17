@@ -362,15 +362,17 @@ impl Repository {
             .collect::<rusqlite::Result<Vec<_>>>()?;
         Ok(rows)
     }
-    pub fn library_exported(&self, hash: &str) -> Result<()> {
+    pub fn library_exported(&mut self, hash: &str) -> Result<()> {
+        let tx = self.connection.transaction()?;
         event(
-            &self.connection,
+            &tx,
             "manifest_exported",
             "Artifact metadata manifest exported; unsigned checksum record only.",
             None,
             Some(hash),
             "info",
         )?;
+        tx.commit()?;
         Ok(())
     }
 }

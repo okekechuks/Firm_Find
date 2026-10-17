@@ -4,6 +4,15 @@ version = "0.1.0"
 description = "OBTAINER Windows firmware workspace"
 edition = "2021"
 publish = false
+default-run = "obtainer"
+
+[features]
+native-test-profile = []
+
+[[bin]]
+name = "obtainer-native-test"
+path = "src/native_test_main.rs"
+required-features = ["native-test-profile"]
 
 [lib]
 name = "obtainer_lib"
@@ -39,6 +48,8 @@ windows-sys = { version = "0.61", features = [
     "Win32_Security_Cryptography",
     "Win32_Storage_FileSystem",
     "Win32_UI_Controls_Dialogs",
+    "Win32_UI_Shell",
+    "Win32_System_Com",
 ] }
 
 [dev-dependencies]

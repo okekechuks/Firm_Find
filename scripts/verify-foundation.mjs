@@ -2,19 +2,23 @@
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
 import { verifyProfiles } from './verify-profiles.mjs';
-import { verifyFirmware, interruptFirmwareImport } from './verify-firmware.mjs';
+import { configureFirmwareTestRun, verifyFirmware, interruptFirmwareImport, verifyFirmwareHardening, startShutdownVerification } from './verify-firmware.mjs';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createTestProfile, probeNormal, cleanupProcess, verifyCleanupGuards, verifyActivationGuards } from './native-test-profile.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const attach = process.argv.includes('--attach-dev');
+assert(!attach,'Attaching to an existing app is disabled: native verification requires an owned isolated profile.');
+const profile=createTestProfile(root);
+configureFirmwareTestRun(profile);
 const settingsRoundtrip = process.argv.includes('--settings-roundtrip');
 const evidence = path.join(root, '.tools/foundation', new Date().toISOString().replaceAll(':', '-'));
 await mkdir(evidence, { recursive: true });
 const results = [], consoleEvents = [], commands = [], launches = [];
-const env = { ...process.env, OBTAINER_TEST_ROOT: root, CARGO_INCREMENTAL: '0',
+const env = { ...process.env, OBTAINER_TEST_ROOT: root, OBTAINER_NATIVE_TEST_RUN_ID:profile.id, CARGO_INCREMENTAL: '0',
   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9223' };
 const preferencePath = path.join(root, 'apps/desktop/src/features/Preferences.tsx');
 const backendPath = path.join(root, 'apps/desktop/src/lib/backend.ts');
@@ -46,17 +50,17 @@ function powershell(source) {
   return execFileSync('powershell.exe', ['-NoProfile', '-Command', source], { cwd: root, env, windowsHide: true, encoding: 'utf8' }).trim();
 }
 function processes() {
-  return JSON.parse(powershell(`$ErrorActionPreference='Stop'; $apps=@(Get-Process -Name obtainer -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith((Join-Path $env:OBTAINER_TEST_ROOT 'target\\'),[StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { [pscustomobject]@{id=$_.Id; window=$_.MainWindowHandle.ToInt64(); path=$_.Path} }); $vite=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -like ('*'+$env:OBTAINER_TEST_ROOT+'*') -and $_.CommandLine -match '[\\\\/]vite[\\\\/]bin[\\\\/]vite\\.js' } | ForEach-Object { $_.ProcessId }); [pscustomobject]@{apps=$apps;vite=$vite} | ConvertTo-Json -Depth 4`));
+  return JSON.parse(powershell(`$ErrorActionPreference='Stop'; $apps=@(Get-Process -Name obtainer,obtainer-native-test -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith((Join-Path $env:OBTAINER_TEST_ROOT 'target\\'),[StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { [pscustomobject]@{id=$_.Id; window=$_.MainWindowHandle.ToInt64(); path=$_.Path} }); $vite=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -like ('*'+$env:OBTAINER_TEST_ROOT+'*') -and $_.CommandLine -match '[\\\\/]vite[\\\\/]bin[\\\\/]vite\\.js' } | ForEach-Object { $_.ProcessId }); $webviews=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'msedgewebview2.exe' -and $_.CommandLine -like ('*'+$env:OBTAINER_NATIVE_TEST_RUN_ID+'*') } | ForEach-Object { $_.ProcessId }); [pscustomobject]@{apps=$apps;vite=$vite;webviews=$webviews} | ConvertTo-Json -Depth 4`));
 }
 async function clean() {
   await until(async () => !(await serverUp()) && (await targets()).length === 0, 'Native session or Vite listener did not stop');
-  const state = processes();
+  let state;await until(()=>{state=processes();return state.apps.length===0&&state.vite.length===0&&state.webviews.length===0;},'Owned native/WebView/Vite processes did not stop');
   assert.equal(state.apps.length, 0, 'OBTAINER process remains');
   assert.equal(state.vite.length, 0, 'Vite process remains');
-  record('shutdown left no app, Vite process or development listener');
+  record('shutdown left no app, owned WebView process, Vite process or development listener');
 }
 function start(kind) {
-  const command = kind === 'dev' ? 'npm.cmd run tauri -- dev -- --locked --offline' : '.\\target\\release\\obtainer.exe';
+  const command = kind === 'dev' ? 'npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline' : '.\\target\\release\\obtainer-native-test.exe';
   commands.push({ command, kind });
   const process_ = spawn('powershell.exe', ['-NoProfile', '-Command', command], {
     cwd: root, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
@@ -144,8 +148,12 @@ async function verify(label, extended = false) {
   const before = await invoke('get_snapshot');
   originalSettings ??= before.settings;
   assert.deepEqual(before.settings, originalSettings);
-  assert.equal(path.normalize(before.dataDirectory).toLowerCase(), path.join(env.LOCALAPPDATA, 'OBTAINER').toLowerCase());
+  assert.equal(path.normalize(before.dataDirectory).toLowerCase(), path.join(profile.root,'data').toLowerCase());
   assert.equal(before.databaseVersion, 4);
+  assert.equal(before.testProfile.runId,profile.id);assert.equal(before.testProfile.discoverySource,'windows_observed');assert.equal(before.testProfile.simulatedAdapters,false);
+  assert.equal(await client.evaluate("document.querySelector('.native-test-notice')?.dataset.testRunId"),profile.id);
+  if(label==='dev-reopen'){assert.notEqual(cleanupProcess(profile,env).status,0);record('active test ownership prevents cleanup');}
+  record(label+': isolated database/vault/logs and WebView profile; explicit test banner',{runId:profile.id,dataDirectory:before.dataDirectory});
   const state = processes();
   assert.equal(state.apps.length, 1); assert.notEqual(state.apps[0].window, 0, 'Native window missing');
   assert.equal(state.vite.length, isDev ? 1 : 0);
@@ -185,6 +193,7 @@ async function verify(label, extended = false) {
   }
   if (process.argv.includes('--phase3')) await verifyProfiles(client, {label,evidence,record});
   if (process.argv.includes('--phase4')) await verifyFirmware(client, {label,evidence,record,pid:state.apps[0].id});
+  if(process.argv.includes('--phase4-1')&&label==='dev-reopen')await verifyFirmwareHardening(client,{pid:state.apps[0].id,evidence,record});
   // Exercise real save IPC with the existing value, without changing user preferences.
   assert.deepEqual(await invoke('save_settings', { settings: originalSettings }), originalSettings);
   assert.deepEqual((await invoke('get_snapshot')).settings, originalSettings);
@@ -245,6 +254,7 @@ async function verify(label, extended = false) {
     url: client.url, dataDirectory: before.dataDirectory, databaseVersion: before.databaseVersion,
     settings: before.settings, process: state, records: discovery.devices.length,
   }, null, 2));
+  if(process.argv.includes('--phase4-1')&&label==='dev-reopen')await startShutdownVerification(client,{record,evidence});
 }
 async function closeWindow() {
   client?.close(); client = undefined;
@@ -260,7 +270,10 @@ async function chooseAppearance(theme) {
   await until(() => client.evaluate("document.body.innerText.includes('Preferences saved to SQLite.')"), 'Native appearance save failed');
   assert.equal((await invoke('get_snapshot')).settings.theme, theme);
 }
+let succeeded=false;let baselineCaptured=false;
 try {
+  probeNormal(root,evidence,'before');baselineCaptured=true;record('normal schema/settings/artifact/job/profile/router/vault baseline captured read-only');
+  verifyActivationGuards(root,profile,env,record);
   if (process.argv.includes('--watch-usb')) {
     await clean(); start('dev'); await connect(); await connected();
     await screen('devices', 'Connected devices');
@@ -311,6 +324,8 @@ try {
   await writeFile(path.join(evidence, 'console-issues.json'), JSON.stringify(issues, null, 2));
   assert.equal(issues.length, 0, 'Review native console-issues.json');
   record('no captured native console warnings or unhandled exceptions');
+  await verifyCleanupGuards(profile,env,evidence,record);
+  succeeded=true;
 } catch (error) {
   await writeFile(path.join(evidence, 'failure.json'), JSON.stringify({message:error.message,stack:error.stack},null,2));
   if(client) {
@@ -337,6 +352,9 @@ try {
     await writeFile(path.join(evidence, `launch-${index}-${launch.kind}.txt`), launch.output);
     commands[index].exitCode = launch.exitCode;
   }
+  if(baselineCaptured){probeNormal(root,evidence,'after');record('normal database rows/file hashes and vault blobs unchanged after isolated native suite');}
+  if(succeeded){const cleanup=cleanupProcess(profile,env);await writeFile(path.join(evidence,'cleanup.json'),JSON.stringify({status:cleanup.status,stdout:cleanup.stdout,stderr:cleanup.stderr},null,2));assert.equal(cleanup.status,0,'Test cleanup retained files; inspect cleanup.json');record('owned isolated run cleaned after all processes stopped',{runId:profile.id});}
+  else console.log('Failed test run retained: '+profile.root);
   await writeFile(path.join(evidence, 'console.json'), JSON.stringify(consoleEvents, null, 2));
   await writeFile(path.join(evidence, 'results.json'), JSON.stringify({ results, commands }, null, 2));
 }

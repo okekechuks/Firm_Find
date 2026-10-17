@@ -2,7 +2,19 @@
 
 Updated: **17 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4: COMPLETE (PASS). Phase 5 readiness: READY; not started.** The [Phase 4 verification](PHASE_4_VERIFICATION.md), [evidence transcript](evidence/phase-4-2026-10-17.txt), [firmware library](FIRMWARE_LIBRARY.md), [job engine](JOB_ENGINE.md), and [vault](FIRMWARE_VAULT.md) document the latest work. Accepted [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), [device profiles](DEVICE_PROFILES.md), and [capability engine](CAPABILITY_ENGINE.md) remain retained.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4: COMPLETE (PASS). Phase 4.1: COMPLETE (PASS). Phase 5 readiness: READY; not started.** Latest results: [Phase 4.1 verification](PHASE_4_1_VERIFICATION.md), [evidence transcript](evidence/phase-4-1-2026-10-17.txt) and [isolated native testing](NATIVE_TESTING.md). Historical [Phase 4 verification](PHASE_4_VERIFICATION.md), [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), profiles and discovery evidence remain retained.
+
+## Phase 4.1 completion evidence
+
+- Separate feature-enabled native test executable, strict run IDs, fixed Windows known-folder root, matching ownership markers/locks, per-run database/vault/logs/workspaces/reports and WebView data. Normal executable cannot activate this mode or accept a data-path override. Existing schema 4, normal location and functional modules remain.
+- Actual native dev/recovery/optimized-release GUI, React, nine destinations, real IPC, dialogs, HMR and process cleanup pass. **56 frontend tests, 76 Rust tests, 83 main native checks, 17 changed-settings round-trip checks** and the retained WebDriver smoke pass. TypeScript, lint, formatting, Clippy, frontend/native builds and final whitespace checks exit 0. Ordinary release binary remains byte-identical after the separate test build.
+- Generated binaries exercise concurrent deduplication, live cancellation, forced import termination/recovery, corruption/missing bytes, SQL failure after publication, shutdown during verification and repeated restart. Near-commit cancellation is verified with deterministic Rust barriers. No real MiFi firmware is selected.
+- Manifest publication now returns saved state separately from activity recording. Injected audit transaction failure preserves valid exports and shows saved-with-warning through actual React/native Save. No overwrite, manifest-schema or privacy weakening.
+- Cleanup refuses active owners/processes, mismatched run markers, unknown staging and junctions; unrelated sentinel survives. Successful suites remove only their own marked runs. Failed runs are retained. Existing normal firmware/test history is not cleaned.
+- Final isolated suites leave complete normal database/WAL, settings, router/profile IDs, vault and other data-directory fingerprints identical to their own before snapshots; integrity is `ok`, FK violations empty. **Earlier build-debugging interval is separately disclosed:** a normal startup added audit IDs 212/213 and changed the WAL/collective row fingerprint before final qualification. No rollback or deletion concealed that delta. Settings, vault, schema, saved IDs and artifact/job counts remain equal to the first probe. See report for both baselines and limits.
+- Powered-on MG11 discovery passes in dev/recovery/release; all four features stay UNKNOWN, owner text stays user-reported and no Apply is offered. Diagnostic/AT Windows driver errors remain observed; RNDIS/composite are available. No router configuration change or Phase 5 adapter work.
+
+The following completion evidence is historical and retains each phase's original counts.
 
 ## Phase 4 completion evidence
 

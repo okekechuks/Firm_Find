@@ -212,6 +212,7 @@ export function App() {
           </div>
         </header>
         <main id="content" tabIndex={-1}>
+          {snapshot?.testProfile ? <div className="connection-notice native-test-notice" role="status" data-test-run-id={snapshot.testProfile.runId}>ISOLATED NATIVE TEST · {snapshot.testProfile.runId}. Separate test data. Discovery shows Windows observations; no simulated adapters or verified device support.</div> : null}
           <div className="page-heading">
             <div>
               <span className="eyebrow">{destination.eyebrow}</span>

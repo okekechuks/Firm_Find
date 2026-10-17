@@ -10,7 +10,7 @@ vi.mock("../lib/backend",async(original)=>({...await original<typeof import("../
 beforeEach(()=>{
  vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue(empty);vi.mocked(backend.listLibraryJobs).mockResolvedValue([]);vi.mocked(backend.getLibraryActivity).mockResolvedValue([]);
  vi.mocked(backend.selectFirmwareFile).mockResolvedValue(selection);vi.mocked(backend.discardFirmwareSelection).mockResolvedValue();vi.mocked(backend.getFirmwareArtifact).mockResolvedValue(details);
- vi.mocked(backend.startFirmwareImport).mockResolvedValue(job);vi.mocked(backend.verifyFirmwareIntegrity).mockResolvedValue({...job,kind:"integrity_verify"});vi.mocked(backend.exportArtifactManifest).mockResolvedValue(true);
+ vi.mocked(backend.startFirmwareImport).mockResolvedValue(job);vi.mocked(backend.verifyFirmwareIntegrity).mockResolvedValue({...job,kind:"integrity_verify"});vi.mocked(backend.exportArtifactManifest).mockResolvedValue({saved:true,activityRecorded:true,warning:null});
 });
 it("shows a real empty library and native file selection confirmation",async()=>{
  const user=userEvent.setup();render(<FirmwareLibrary desktop/>);await screen.findByText("No firmware files imported");expect(screen.queryByText(artifact.sha256)).not.toBeInTheDocument();
@@ -45,3 +45,10 @@ it("shows persisted failed/interrupted jobs and structured activity",async()=>{
  vi.mocked(backend.listLibraryJobs).mockResolvedValue([{...job,status:"failed",errorCode:"INTERRUPTED",message:"Interrupted import retained for recovery."}]);vi.mocked(backend.getLibraryActivity).mockResolvedValue([{id:1,kind:"library_failed",message:"Import interrupted at shutdown.",createdAt:new Date().toISOString(),jobId:job.id,artifactSha256:null,severity:"warning"}]);render(<Jobs desktop/>);expect(await screen.findByRole("alert")).toHaveTextContent("Interrupted import");expect(screen.getByText("Import interrupted at shutdown.")).toBeInTheDocument();expect(screen.getByText("INTERRUPTED")).toBeInTheDocument();
 });
 it("browser preview performs no library IPC and disables import",()=>{render(<FirmwareLibrary desktop={false}/>);expect(screen.getByRole("button",{name:"Import Firmware"})).toBeDisabled();expect(backend.listFirmwareArtifacts).not.toHaveBeenCalled();});
+
+it("reports a saved manifest separately from activity-log failure",async()=>{
+ vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue({...empty,total:1,artifacts:[artifact]});vi.mocked(backend.exportArtifactManifest).mockResolvedValue({saved:true,activityRecorded:false,warning:"Manifest saved, but workspace activity could not be recorded."});const user=userEvent.setup();render(<FirmwareLibrary desktop/>);await user.click(await screen.findByRole("button",{name:/harmless.bin/}));await user.click(await screen.findByRole("button",{name:"Export Manifest"}));expect(await screen.findByText("Manifest saved, but workspace activity could not be recorded.")).toHaveAttribute("role","status");expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+it("reports cancelled export without claiming a file was saved",async()=>{
+ vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue({...empty,total:1,artifacts:[artifact]});vi.mocked(backend.exportArtifactManifest).mockResolvedValue({saved:false,activityRecorded:false,warning:null});const user=userEvent.setup();render(<FirmwareLibrary desktop/>);await user.click(await screen.findByRole("button",{name:/harmless.bin/}));await user.click(await screen.findByRole("button",{name:"Export Manifest"}));expect(await screen.findByText("Manifest export cancelled.")).toBeInTheDocument();
+});

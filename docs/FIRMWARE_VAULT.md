@@ -22,3 +22,7 @@ SQLite cannot commit a filesystem change atomically. The consistency sequence is
 Startup reconciles artifact existence/size in pages of 128, without loading/hashing the whole vault or trusting an old verification label. Full integrity verification remains an explicit job. Unknown orphan blobs are preserved; Phase 4 deliberately has no general vault deletion/garbage-collection feature. Source files are never renamed, deleted, patched or executed.
 
 Before upgrading a schema-3 database, use a WAL-aware SQLite backup. The Phase 4 run retains one at `.tools/phase-4/data-before-backup.db` and records exact preservation comparisons. Copying the main `.db` file alone while WAL is active is insufficient.
+
+Phase 4.1 destructive native regressions use only the dedicated test executable's marked `OBTAINER-NativeTests\<run-id>\data\vault`, never this normal vault. Each run records the normal database/WAL, settings and vault fingerprints before and after testing. Cleanup derives its path from the validated run ID and fixed Windows known folder, refuses active owners/processes and any reparse point, and retains nonempty staging or uncertain ownership. It does not garbage-collect normal data or historical test runs. See [native testing](NATIVE_TESTING.md).
+
+Manifest publication retains the same synchronized temporary-file and no-overwrite hard-link guarantees. Once publication succeeds, an activity database failure is a separate warning; the saved manifest is neither deleted nor reported as absent. See [export behavior](FIRMWARE_LIBRARY.md).

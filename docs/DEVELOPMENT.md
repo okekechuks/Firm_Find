@@ -43,10 +43,11 @@ The native runner expects `.tools/cargo/bin/tauri-driver.exe` and `.tools/webdri
 Run from a normal Windows user session with an interactive desktop:
 
 ```powershell
-npm run test:native -- target/debug/obtainer.exe --audit
+npm run build:native-tests
+npm run test:native -- target/release/obtainer-native-test.exe --audit
 ```
 
-Audit mode preserves saved preferences, checks real IPC and discovery, navigates the UI, and checks existing settings after restart. It writes new evidence below `.tools/native-audit/`. App startup still appends normal audit events and refreshes the passive inventory. Omitting `--audit` runs the existing broader smoke test, which temporarily changes appearance and restores it.
+Audit mode preserves saved preferences, checks real IPC and discovery, navigates the UI, and checks existing settings after restart. It writes new evidence below `.tools/native-audit/`. App startup appends audit events and refreshes passive inventory only in its isolated test database. Omitting `--audit` runs the existing broader smoke test, which temporarily changes appearance and restores it.
 
 In restricted execution, WebView2 can fail with `0x800700AA` before IPC. Reproduce in a normal Windows session before diagnosing a host-runtime defect. Do not delete or reset the existing browser profile to work around this failure.
 
@@ -56,12 +57,13 @@ With a fresh release executable available, close other OBTAINER development sess
 
 ```powershell
 npm run tauri -- build --no-bundle --ci -- --locked --offline
+npm run build:native-tests
 npm run test:foundation
 ```
 
-This uses the existing Tauri development command and release executable, a temporary loopback WebView2 debugging port (9223), and Vite's existing port (1420). It verifies real IPC, eight destinations, repeated discovery refresh, shared storage/settings, native console health, React hot reload, shutdown/reopen and recovery from an interrupted test-owned launch. No WebDriver or extra npm package is needed.
+This uses the existing Tauri development command and release executable, a temporary loopback WebView2 debugging port (9223), and Vite's existing port (1420). It verifies real IPC, nine destinations, repeated discovery refresh, shared storage/settings, native console health, React hot reload, shutdown/reopen and recovery from an interrupted test-owned launch. No WebDriver or extra npm package is needed.
 
-The verifier temporarily instruments the frontend module for explicitly labelled failure/delay tests and changes a sentence to prove hot reload, then restores the exact source it read. Do not edit those files or run another build/test against them concurrently. It writes the existing appearance value through real settings IPC; it does not change the user's chosen appearance. Normal application audit/inventory writes still occur. Evidence is saved in unique `.tools/foundation/` directories. The [Phase 1 report](PHASE_1_VERIFICATION.md) records results and limits.
+The verifier temporarily instruments the frontend module for explicitly labelled failure/delay tests and changes a sentence to prove hot reload, then restores the exact source it read. Do not edit those files or run another build/test against them concurrently. It writes the existing appearance value through real settings IPC; it does not change the user's chosen appearance. Audit/inventory writes occur only in the unique isolated test profile; the normal database and vault are checked read-only before and after. Evidence is saved in unique `.tools/foundation/` directories. The [Phase 1 report](PHASE_1_VERIFICATION.md) records results and limits.
 
 ## Persistent data
 
@@ -74,6 +76,7 @@ Build the current release first, close other OBTAINER sessions, and keep the own
 ```powershell
 node scripts/generate-profile-schema.mjs
 npm run tauri -- build --no-bundle --ci -- --locked --offline
+npm run build:native-tests
 npm run test:foundation -- --phase3
 ```
 
@@ -88,9 +91,12 @@ Close other OBTAINER sessions and build the release first. Use a normal interact
 ```powershell
 $env:CARGO_INCREMENTAL='0'
 npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline
-npm.cmd run test:foundation -- --phase3 --phase4
+npm.cmd run build:native-tests
+npm.cmd run test:foundation -- --phase3 --phase4 --phase4-1
 ```
 
-`--phase3` requires the previously qualified MG11 USB candidate. Omit that flag when no device is available and report hardware regression as unverified. `--phase4` generates its own clearly named harmless 1 MiB and 256 MiB files in the Windows temporary directory. It never selects real firmware. It drives native Open/Save dialogs, confirms import through React, checks persisted jobs and vault bytes, verifies duplicate imports and integrity, exports a manifest, cancels a real copy, forcibly terminates an owned active import, then verifies recovery and production persistence. A harmless generated artifact and its history remain in the real library; destructive corruption/SQL failure tests use isolated Rust temporary databases and vaults.
+`--phase3` requires the previously qualified MG11 USB candidate. Omit that flag when no device is available and report hardware regression as unverified. `--phase4` generates its own clearly named harmless 1 MiB and 256 MiB files under the isolated run's fixtures directory. It never selects real firmware. It drives native Open/Save dialogs, confirms import through React, checks persisted jobs and vault bytes, verifies duplicate imports and integrity, exports a manifest, cancels a real copy, forcibly terminates an owned active import, then verifies recovery and production persistence. All generated artifacts, history and destructive native checks use isolated run data; additional Rust failures use temporary databases and vaults. Successful runs clean only their owned test directory. Earlier Phase 4 history in normal data remains untouched.
 
 The test's temporary WebView2 debugging port is enabled only for its own processes. Native evidence, screenshots and captured failures are saved under `.tools/foundation/`. Do not edit the temporarily instrumented frontend files or run frontend checks concurrently with this suite. See [Phase 4 verification](PHASE_4_VERIFICATION.md), [library](FIRMWARE_LIBRARY.md), [jobs](JOB_ENGINE.md) and [vault](FIRMWARE_VAULT.md).
+
+Native profile activation, fixed paths, process ownership, cleanup guards, failure injection and normal-data equality checks are documented in [isolated native testing](NATIVE_TESTING.md). Normal builds and normal development launches keep their original data directory.

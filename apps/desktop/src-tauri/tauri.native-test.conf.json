@@ -1,0 +1,5 @@
+{
+  "productName": "OBTAINER Native Test",
+  "identifier": "com.obtainer.desktop.native-test",
+  "bundle": { "active": false }
+}

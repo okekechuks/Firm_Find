@@ -6,11 +6,15 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createTestProfile, probeNormal, cleanupProcess } from './native-test-profile.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arguments_ = process.argv.slice(2);
 const auditOnly = arguments_.includes('--audit');
-const binary = path.resolve(root, arguments_.find((argument) => argument !== '--audit') ?? 'target/release/obtainer.exe');
+const binary = path.resolve(root, arguments_.find((argument) => argument !== '--audit') ?? 'target/release/obtainer-native-test.exe');
+assert(['debug','release'].some(mode=>binary===path.join(root,'target',mode,'obtainer-native-test.exe')),'Native smoke tests accept only the dedicated native-test executable. Normal OBTAINER binaries cannot be automated.');
+const profile=createTestProfile(root);profile.binary=binary;
+const env={...process.env,OBTAINER_NATIVE_TEST_RUN_ID:profile.id};
 const auditDirectory = path.join(root, '.tools/native-audit', new Date().toISOString().replaceAll(':', '-'));
 const driver = path.join(root, '.tools/cargo/bin/tauri-driver.exe');
 const nativeDriver = path.join(root, '.tools/webdriver/msedgedriver.exe');
@@ -18,8 +22,9 @@ for (const file of [binary, driver, nativeDriver]) {
   assert(existsSync(file), `Required native test dependency missing: ${file}`);
 }
 
+await mkdir(auditDirectory,{recursive:true});probeNormal(root,auditDirectory,'before');
 const server = spawn(driver, ['--port', '4445', '--native-port', '4446', '--native-driver', nativeDriver], {
-  cwd: root, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+  cwd: root, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
 });
 let driverOutput = '';
 server.stdout.on('data', (data) => { driverOutput += data.toString(); });
@@ -79,7 +84,8 @@ async function launch() {
   const value = await request('POST', '/session', { capabilities: { alwaysMatch: { 'tauri:options': { application: binary } } } });
   session = value.sessionId;
   await until(() => script("return document.body.innerText.includes('Desktop connected')"), 'Native app did not connect to Rust/SQLite');
-  console.log('PASS: native window rendered and connected to Rust');
+  const isolated=await invoke('get_snapshot');assert.equal(isolated.testProfile.runId,profile.id);assert.equal(path.normalize(isolated.dataDirectory),path.join(profile.root,'data'));
+  console.log('PASS: isolated native window rendered and connected to Rust');
 }
 
 async function close() {
@@ -176,7 +182,7 @@ try {
   await click('a[href="#dashboard"]');
   await until(() => script("return document.querySelector('h1')?.textContent === 'Overview'"), 'Overview did not render');
   const image = await request('GET', `/session/${session}/screenshot`);
-  const screenshotDirectory = auditOnly ? auditDirectory : path.join(root, 'docs/images');
+  const screenshotDirectory = auditDirectory;
   await mkdir(screenshotDirectory, { recursive: true });
   await writeFile(path.join(screenshotDirectory, 'desktop-smoke.png'), Buffer.from(image, 'base64'));
 
@@ -204,6 +210,9 @@ try {
     } catch (error) { console.error('Native test cleanup:', error.message); }
   }
   if (server.pid) spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+  probeNormal(root,auditDirectory,'after');
+  const cleanup=cleanupProcess(profile,env);await writeFile(path.join(auditDirectory,'cleanup.json'),JSON.stringify({status:cleanup.status,stdout:cleanup.stdout,stderr:cleanup.stderr},null,2));
+  if(cleanup.status!==0)console.error('Isolated smoke data retained: '+profile.root+'; '+cleanup.stderr);
   const logDirectory = auditOnly ? auditDirectory : path.join(root, '.tools');
   await mkdir(logDirectory, { recursive: true });
   await writeFile(path.join(logDirectory, 'native-driver.log'), driverOutput);

@@ -120,7 +120,7 @@ pub async fn export_artifact_manifest(
     sha256: String,
     app: tauri::AppHandle,
     service: tauri::State<'_, LibraryService>,
-) -> Result<bool> {
+) -> Result<ManifestExportResult> {
     let id = owner(&app);
     let service = service.inner().clone();
     tauri::async_runtime::spawn_blocking(move || service.export(&sha256, id))
