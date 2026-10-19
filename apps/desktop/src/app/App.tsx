@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, Circle, RefreshCw, ShieldCheck, TriangleAlert, PanelLeftClose, PanelLeftOpen, HardDrive, ArrowUpRight } from "lucide-react";
+import { Circle, RefreshCw, TriangleAlert, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { destinations, pageFromHash, type Page } from "./navigation";
 import {
   errorMessage,
@@ -37,7 +37,7 @@ export function App() {
   const desktop = hasDesktopBackend();
   const inventory = useDeviceInventory(desktop);
   const destination =
-    destinations.find((item) => item.id === page) ?? { ...destinations[1], label: "Device compatibility", description: "Evidence, capabilities and limits for your device." };
+    destinations.find((item) => item.id === page) ?? { ...destinations[1], label: "Device compatibility" };
 
   const refresh = useCallback(async () => {
     const request = ++workspaceRequest.current;
@@ -119,15 +119,13 @@ export function App() {
       <a href="#content" className="skip-link" onClick={event => { event.preventDefault(); document.getElementById("content")?.focus(); }}>Skip to content</a>
       <aside className="sidebar">
         <a className="brand" href="#dashboard" onClick={() => navigate("dashboard")} aria-label="OBTAINER overview"><img src="/mark.svg" alt=""/><div><strong>OBTAINER<span className="brand-dot">.</span></strong><span>FIRMWARE WORKSPACE</span></div></a>
-        <div className="workspace-switch"><span className="workspace-avatar"><HardDrive size={17}/></span><div><strong>Personal workspace</strong><span><i className="status-dot"/>Local & private</span></div><ChevronRight size={14}/></div>
-        <span className="nav-caption">WORKSPACE</span>
         <nav aria-label="Main navigation">{destinations.map(({ id, label, icon: Icon }) => <a key={id} href={`#${id}`} onClick={() => navigate(id)} title={label} aria-label={label} className={`nav-item${page === id || (page === "compatibility" && id === "devices") ? " active" : ""}`} aria-current={page === id || (page === "compatibility" && id === "devices") ? "page" : undefined}><Icon size={19}/><span>{label}</span>{page === id ? <i className="nav-active-dot"/> : null}</a>)}</nav>
         <div className="sidebar-bottom"><div className="sidebar-meta"><span className="version">OBTAINER · v{snapshot?.version ?? "0.1.0"}</span><button className="icon-button sidebar-toggle" aria-label={compact ? "Expand sidebar" : "Collapse sidebar"} onClick={() => setCompact(v => !v)}>{compact ? <PanelLeftOpen size={16}/> : <PanelLeftClose size={16}/>}</button></div></div>
       </aside>
-      <div className="main-shell"><header className="topbar"><div className="breadcrumb"><span>Workspace</span><ChevronRight size={12}/><strong>{destination.label}</strong></div><div className="backend-status"><Circle size={6} fill="currentColor"/><span>{!desktop ? "Browser preview" : loading ? snapshot ? "Refreshing workspace" : "Connecting to workspace" : error || !snapshot ? "Backend unavailable" : "Desktop connected"}</span></div></header>
+      <div className="main-shell"><header className="topbar"><div className="backend-status"><Circle size={6} fill="currentColor"/><span>{!desktop ? "Browser preview" : loading ? snapshot ? "Refreshing workspace" : "Connecting to workspace" : error || !snapshot ? "Backend unavailable" : "Desktop connected"}</span></div></header>
         <main id="content" tabIndex={-1}>
           {snapshot?.testProfile ? <div className="connection-notice native-test-notice" role="status" data-test-run-id={snapshot.testProfile.runId}>ISOLATED NATIVE TEST · {snapshot.testProfile.runId}. Separate test data. Discovery shows Windows observations; no simulated adapters or verified device support.</div> : null}
-          <div className="page-heading"><div><span className="eyebrow">{destination.eyebrow}</span><h1>{destination.label}</h1><p>{destination.description}</p></div><div className="page-actions"><button className="icon-button workspace-refresh refresh-button" onClick={() => void refresh()} disabled={loading} aria-label="Refresh workspace" title="Refresh workspace"><RefreshCw size={17} className={loading ? "spin" : undefined}/></button><PageHelp key={page} page={page}/></div></div>
+          <div className="page-heading"><h1>{destination.label}</h1><div className="page-actions"><button className="icon-button workspace-refresh refresh-button" onClick={() => void refresh()} disabled={loading} aria-label="Refresh workspace" title="Refresh workspace"><RefreshCw size={17} className={loading ? "spin" : undefined}/></button><PageHelp key={page} page={page}/></div></div>
           {error || saveError ? <div className="connection-notice" role={desktop ? "alert" : "status"}><TriangleAlert size={18}/><div><strong>{desktop ? saveError && !error ? "Preferences could not be saved" : "Workspace connection failed" : "You’re viewing the interface preview"}</strong><p>{desktop ? error ?? saveError : "Live device inventory and saved data are available in the Windows app."}</p></div>{desktop && error ? <button className="text-button" onClick={() => void refresh()}>Retry</button> : null}</div> : null}
           {loading && !snapshot ? <div className="loading-state" role="status">Connecting to local workspace…</div> : null}
           <ViewBoundary key={page}>
@@ -140,7 +138,6 @@ export function App() {
               : page === "settings" ? <Preferences snapshot={snapshot} saving={saving} onSave={persist} previewTheme={previewTheme} onPreviewTheme={setPreviewTheme}/>
               : null}
           </ViewBoundary>
-          <footer className="workspace-footer"><span><ShieldCheck size={12}/>Your workspace. Your hardware. Your control.</span><a href="#jobs" onClick={() => navigate("jobs")}>Workspace Logs <ArrowUpRight size={12}/></a></footer>
         </main>
       </div>
     </div>

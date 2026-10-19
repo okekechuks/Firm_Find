@@ -38,7 +38,6 @@ export function Preferences({
         <div className="panel-heading">
           <div>
             <h2>Appearance</h2>
-            <p>Choose how OBTAINER looks on your desktop.</p>
           </div>
           <Sun size={21} />
         </div>
@@ -64,9 +63,7 @@ export function Preferences({
               />
               <Icon size={25} />
               <strong>{label}</strong>
-              <span className="muted small">
-                {value === "system" ? "Follow Windows" : `${label} workspace`}
-              </span>
+              {value === "system" ? <span className="muted small">Follow Windows</span> : null}
             </label>
           ))}
         </fieldset>
@@ -105,12 +102,12 @@ function DesktopPreferencesPanel({ snapshot }: { snapshot: Snapshot | null }) {
   const move = async () => { if (!plan) return; setBusy(true); setError(null); try { await relocateFirmwareLibrary(plan.ticket); setPlan(null); setNotice("Verified library copy queued. Track progress in Overview, then restart OBTAINER."); await workspace?.refresh(); } catch (e) { setError(errorMessage(e)); } finally { setBusy(false); } };
   const dirty = saved && (Object.keys(draft) as (keyof typeof draft)[]).some(key => draft[key] !== saved[key]);
   return <>
-    <section className="panel preference-panel"><div className="panel-heading"><div><h2>Devices & notifications</h2><p>Stay informed, at your own pace.</p></div><Bell size={21}/></div>
+    <section className="panel preference-panel"><div className="panel-heading"><h2>Devices & notifications</h2><Bell size={21}/></div>
       {[{ key: "autoRefresh" as const, label: "Automatic device refresh", detail: "Update inventory when Windows reports hardware changes.", icon: RefreshCw }, { key: "notifyCompleted" as const, label: "Job completion notifications", detail: "Let me know when an operation finishes.", icon: Bell }, { key: "notifyFailed" as const, label: "Job failure notifications", detail: "Keep failures visible until I dismiss them.", icon: Bell }, { key: "notifyDevices" as const, label: "Device arrival and removal", detail: "Notify me when detected device candidates change.", icon: Bell }].map(({ key, label, detail, icon: Icon }) => <label className="setting-row" key={key}><Icon size={18}/><span><strong>{label}</strong><small>{detail}</small></span><input role="switch" type="checkbox" checked={draft[key]} disabled={!state || busy} onChange={e => { setDraft(v => ({ ...v, [key]: e.target.checked })); setNotice(null); }}/></label>)}
       <div className="preference-actions"><span className="muted small">Manual Refresh stays available.</span><button className="primary-button" disabled={!dirty || busy} onClick={() => void persist()}>Save workspace preferences</button></div>
       {notice ? <p role="status" className="inline-success">{notice}</p> : null}{error || workspace?.error ? <p role="alert" className="inline-error">{error ?? workspace?.error}</p> : null}
     </section>
-    <section className="panel preference-panel"><div className="panel-heading"><div><h2>Storage & originals</h2><p>Managed locations, with a clear path back.</p></div><Database size={21}/></div>
+    <section className="panel preference-panel"><div className="panel-heading"><h2>Storage & originals</h2><Database size={21}/></div>
       <div className="storage-setting"><div className="section-heading"><strong>Library directory</strong><button className="text-button" disabled={!state || busy || state.restartRequired} onClick={() => void choose()}>Change folder <ArrowUpRight size={13}/></button></div><p className="mono path-display">{state?.libraryDirectory ?? "Connect the Windows desktop workspace"}</p><div className="section-heading"><span className="muted small">{state ? formatBytes(state.libraryBytes) : "—"} stored</span><button className="secondary-button" disabled={!state} onClick={() => void openManagedFolder("library").catch(e => setError(errorMessage(e)))}><FolderOpen size={15}/>Open Library folder</button></div></div>
       <div className="storage-setting"><strong>Backup directory</strong><p className="mono path-display">{state?.backupDirectory ?? "Created automatically in your per-user application data"}</p><div className="section-heading"><span className="muted small">Separate, preserved copies</span><button className="secondary-button" disabled={!state} onClick={() => void openManagedFolder("backups").catch(e => setError(errorMessage(e)))}><FolderOpen size={15}/>Open Backup folder</button></div></div>
       {state?.restartRequired ? <div className="inline-notice" role="status">Library copy is queued or ready. Check Overview for completion, then close and reopen OBTAINER to activate the new location. Previous storage is preserved.</div> : null}

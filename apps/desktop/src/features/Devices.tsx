@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Cable, Network, Search, ShieldCheck, Usb, RefreshCw } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { Cable, Network, Search, ShieldCheck, Usb, RefreshCw, X } from "lucide-react";
 import { ManualRouters, type RouterDraft } from "./ManualRouters";
 import { CompatibilityPanel } from "./Compatibility";
 import { deviceStatus, extractionEligibility } from "../lib/device-status";
@@ -23,6 +23,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
   const [transport, setTransport] = useState("all");
   const [showDisconnected, setShowDisconnected] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [infoId, setInfoId] = useState<string | null>(null);
   const devices = inventory?.devices ?? [];
   const matches = devices.filter((device) =>
     (showDisconnected || device.connected) &&
@@ -34,13 +35,14 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
   const candidateDevices = visible.filter((device) => ["router_mifi_candidate", "usb_modem_candidate", "network_gateway_candidate"].includes(device.category ?? "unknown"));
   const otherDevices = visible.filter((device) => !candidateDevices.includes(device));
   const selected = devices.find((device) => device.id === selectedId);
+  const infoDevice = devices.find((device) => device.id === infoId);
   const present = devices.filter((device) => device.connected).length;
   const waiting = desktop && !error && (!inventory || inventory.status === "starting");
   const unavailable = Boolean(error || inventory?.status === "failed");
   return (
     <>
       <section className="panel inventory-summary">
-        <div><span className="eyebrow">DEVICE DISCOVERY</span><h2>What Windows can see</h2>
+        <div><h2>What Windows can see</h2>
           <p>Windows observations, grouped by device identity.</p></div>
         <span className="inventory-monitor" role="status">
           {!desktop ? "Windows app required" : waiting ? "Reading inventory…" : inventory?.status === "failed" ? "Inventory needs attention" : workspace?.state?.preferences.autoRefresh===false ? "Automatic refresh paused" : inventory?.watching && !error ? "Live updates on" : "Periodic updates"}
@@ -62,12 +64,12 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
           <button className="primary-button" onClick={() => setDraft({address: "", interfaceId: null})}>Add Router</button>
         </div>
         {inventory?.cancelled ? <p role="status">Discovery cancelled or superseded. Last successful inventory retained; refresh to try again.</p> : null}
-        <label className="disconnected-toggle"><input type="checkbox" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)}/>Show advanced Windows diagnostics and unrelated devices</label>
+        <label className="disconnected-toggle"><input type="checkbox" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)}/>Show Unsupported Hardware and unrelated devices</label>
         <div className="section-heading"><h2>{present} present · {devices.length - present} disconnected</h2><span className="muted small">{inventory?.scannedAt ? `Last checked ${new Date(inventory.scannedAt).toLocaleTimeString()}` : "Waiting for first successful scan"}</span></div>
         {waiting ? <div className="panel device-empty" role="status">Reading Windows device inventory…</div> : visible.length === 0 ? <section className="panel device-empty"><Usb size={32}/><h2>{devices.length === 0 ? (unavailable ? "Inventory unavailable" : "No devices to show") : "No relevant candidates"}</h2><p>{devices.length === 0 ? (unavailable ? "Windows inventory could not be read. Use Refresh devices to try again." : "Connect a USB device or refresh the inventory. A failed scan keeps the last successful result.") : "Try another search or connection filter, add a router manually, or open advanced Windows diagnostics."}</p></section> :
-          <>{candidateDevices.length > 0 ? <section aria-label="Router and MiFi candidates"><h2 className="device-group-heading">Router / MiFi candidates | identity unverified</h2><div className="device-grid">{candidateDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)}/>)}</div></section> : <p className="muted">No router candidates identified. Generic interfaces do not establish router identity. Add a management address manually.</p>}
-          {otherDevices.length > 0 ? <details className="other-interfaces" open={advanced}><summary>Other Windows interfaces{advanced ? " and diagnostics" : ""} ({otherDevices.length})</summary><div className="device-grid">{otherDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)}/>)}</div></details> : null}</>}
-        {selected ? <DeviceDetails device={selected} onGateway={(address, interfaceId) => setDraft({address, interfaceId})}/> : null}
+          <>{candidateDevices.length > 0 ? <section aria-label="Router and MiFi candidates"><h2 className="device-group-heading">Router / MiFi candidates | identity unverified</h2><div className="device-grid">{candidateDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)} onMoreInfo={() => setInfoId(device.id)}/>)}</div></section> : <p className="muted">No router candidates identified. Generic interfaces do not establish router identity. Add a management address manually.</p>}
+          {otherDevices.length > 0 ? <details className="other-interfaces" open={advanced}><summary>Other Windows interfaces{advanced ? " and diagnostics" : ""} ({otherDevices.length})</summary><div className="device-grid">{otherDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)} onMoreInfo={() => setInfoId(device.id)}/>)}</div></details> : null}</>}
+        {infoDevice ? <DeviceDetails device={infoDevice} onClose={() => setInfoId(null)} onGateway={(address, interfaceId) => {setDraft({address, interfaceId}); setInfoId(null);}}/> : null}
         {selected ? <CompatibilityPanel key={selected.id} deviceId={selected.id} revision={inventory?.revision ?? 0} desktop={desktop}/> : null}
         <ManualRouters devices={devices} draft={draft} onClose={() => setDraft(null)}/>
       </>}
@@ -76,21 +78,32 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
   );
 }
 
-function DeviceCard({device, selected, onSelect}: {device: Device; selected: boolean; onSelect: () => void}) {
+function DeviceCard({device, selected, onSelect, onMoreInfo}: {device: Device; selected: boolean; onSelect: () => void; onMoreInfo: () => void}) {
   const classification = deviceStatus(device);
   const Icon = device.transports.includes("usb") ? Usb : device.transports.includes("serial") ? Cable : Network;
-  return <button className={`panel device-card device-${classification.tone}${selected ? " selected" : ""}${device.connected ? "" : " disconnected"}`} aria-pressed={selected} onClick={onSelect}>
+  return <article className={`panel device-card device-${classification.tone}${selected ? " selected" : ""}${device.connected ? "" : " disconnected"}`}>
     <div className="device-card-top"><Icon size={23}/><span className={`device-state${device.connected ? " present" : ""}`}>{device.connected ? "Present" : "Disconnected"}</span></div>
-    <h3>{device.displayName || "Unknown Windows device"}</h3><span className={`badge ${classification.tone}`}>{classification.label}</span><p>{device.assessment}</p><p className="muted small">{device.category?.replaceAll("_", " ") ?? "Unknown"} | {device.identity?.confidence ?? "unknown"} identity | {device.lifecycle ?? "discovered"}</p>
-    <div className="device-tags">{device.transports.map((type) => <span key={type}>{labels[type]}</span>)}{device.interfaces.filter((item) => item.portName).map((item) => <span key={item.instanceId}>{item.portName}</span>)}</div>
-    <span className="device-card-bottom">{device.vendorId && device.productId ? `VID ${device.vendorId} · PID ${device.productId}` : "Identity not verified"}<span>Details →</span></span>
-  </button>;
+    <h3>{device.displayName || "Unknown Windows device"}</h3><span className={`badge ${classification.tone}`}>{classification.label}</span>
+    <div className="device-tags">{device.transports.map((type) => <span key={type}>{labels[type]}</span>)}</div>
+    <div className="device-card-actions"><button className="secondary-button" onClick={onMoreInfo} aria-label={`More info for ${device.displayName || "unknown device"}`}>More info</button><button className="text-button" onClick={onSelect} aria-label={`Check compatibility for ${device.displayName || "unknown device"}`} aria-pressed={selected}>{selected ? "Selected for compatibility" : "Check compatibility"}</button></div>
+  </article>;
 }
 
-function DeviceDetails({device, onGateway}: {device: Device; onGateway: (address: string, interfaceId: string) => void}) {
+function DeviceDetails({device, onClose, onGateway}: {device: Device; onClose: () => void; onGateway: (address: string, interfaceId: string) => void}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
   const eligibility=extractionEligibility(device);
-  return <section className="panel device-details" aria-label="Device details">
-    <div className="section-heading"><h2>{device.displayName}</h2><span className="muted small">{device.connected ? "Currently present" : `Last seen ${new Date(device.lastSeenAt).toLocaleString()}`}</span></div>
+  useEffect(() => {
+    const element = dialog.current;
+    const previous = document.activeElement as HTMLElement | null;
+    element?.showModal();
+    closeButton.current?.focus();
+    return () => { element?.close(); previous?.focus(); };
+  }, []);
+  return <dialog ref={dialog} className="device-info-dialog" aria-labelledby={titleId} onCancel={(event) => {event.preventDefault(); onClose();}} onClick={(event) => {if (event.target === event.currentTarget) onClose();}}>
+    <section className="device-details" aria-label="Device details">
+    <div className="section-heading"><div><h2 id={titleId}>{device.displayName}</h2><span className="muted small">{device.connected ? "Currently present" : `Last seen ${new Date(device.lastSeenAt).toLocaleString()}`}</span></div><button ref={closeButton} className="icon-button" aria-label="Close device information" onClick={onClose}><X size={18}/></button></div>
     <div className="extraction-unavailable" aria-label="Firmware extraction"><div><h3>Firmware extraction</h3><p>{eligibility.reason}</p></div><button className="primary-button" disabled={!eligibility.allowed}><LockKeyhole size={15}/>Extract Firmware</button></div>
     <div className="device-detail-grid">
       <div><h3>Identification</h3><p>{device.assessment}</p><p>Identity confidence: <strong>{device.identity?.confidence ?? "unknown"}</strong>. {device.identity?.explanation ?? "No supported management identity response has been collected."}</p>
@@ -107,7 +120,8 @@ function DeviceDetails({device, onGateway}: {device: Device; onGateway: (address
     {device.networks.map((network) => <div className="network-detail" key={network.id}><h3>{network.displayName || "Network adapter"} · {network.linkUp ? "Link up" : "Link down"}</h3><p>{network.description}</p><dl><div><dt>Local addresses</dt><dd>{network.addresses.join(", ") || "None reported"}</dd></div><div><dt>Reported gateways</dt><dd>{network.gateways.join(", ") || "None reported"}</dd></div></dl><dl><div><dt>Windows indexes / LUID</dt><dd>{network.interfaceIndex} / {network.ipv6Index ?? "Unknown"} / {network.luid ?? "Unknown"}</dd></div><div><dt>Local prefixes</dt><dd>{network.prefixes?.map((p) => `${p.address}/${p.length}`).join(", ") || "None reported"}</dd></div><div><dt>DNS servers</dt><dd>{network.dnsServers?.join(", ") || "None reported"}</dd></div><div><dt>Default routes (route metric offset)</dt><dd>{network.defaultRoutes?.map((r) => `${r.gateway} | ${r.family} | ${r.metric}`).join(", ") || "None reported"}</dd></div><div><dt>Windows interface kind</dt><dd>{network.virtualInterface ? "Virtual / software interface" : "Physical or unclassified"}</dd></div></dl>
       {network.linkUp && !network.virtualInterface ? <div className="router-actions">{network.gateways.map((gateway) => <button className="secondary-button" key={gateway} onClick={() => onGateway(gateway.split("%")[0], network.id)}>Use gateway {gateway}</button>)}</div> : null}
       </div>)}
-  </section>;
+    </section>
+  </dialog>;
 }
 
 function maskIdentifier(value: string) {

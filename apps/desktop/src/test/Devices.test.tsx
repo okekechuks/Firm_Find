@@ -39,15 +39,20 @@ it("shows real device evidence, unknown backup support and unverified gateway", 
   const user = userEvent.setup();
   render(<Devices {...props} />);
   expect(screen.getByText("1 present · 1 disconnected")).toBeInTheDocument();
-  expect(screen.getByText("Possible router or MiFi")).toBeInTheDocument();
-  const deviceCard = screen.getByRole("button", { name: /Test MiFi/ });
-  expect(within(deviceCard).getByText("COM7")).toBeInTheDocument();
-  await user.click(deviceCard);
-  const details = screen.getByRole("region", { name: "Device details" });
-  expect(within(details).getAllByText("UNKNOWN")).toHaveLength(1);
+  expect(screen.getByText("Possible candidate")).toBeInTheDocument();
+  expect(screen.queryByText("COM7")).not.toBeInTheDocument();
+  expect(screen.queryByText("Identification")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Check compatibility for Test MiFi" }));
   expect(screen.getByRole("region", {name:"Device compatibility"})).toBeInTheDocument();
+  expect(screen.queryByText("Identification")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "More info for Test MiFi" }));
+  const details = screen.getByRole("dialog", { name: "Test MiFi" });
+  expect(details).toHaveTextContent("COM7");
+  expect(within(details).getAllByText("UNKNOWN")).toHaveLength(1);
   expect(within(details).getByText("UNSUPPORTED")).toBeInTheDocument();
   expect(within(details).getByText("192.0.2.1")).toBeInTheDocument();
+  await user.click(within(details).getByRole("button", {name:"Close device information"}));
+  expect(screen.queryByRole("dialog", {name:"Test MiFi"})).not.toBeInTheDocument();
 });
 
 it("filters disconnected devices and connection types", async () => {

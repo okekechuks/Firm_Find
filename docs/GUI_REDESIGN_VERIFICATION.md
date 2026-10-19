@@ -6,7 +6,7 @@ Date: 19 October 2026 (Africa/Lagos). Starting commit: `e71f676`, clean checkout
 
 ## Repository audit and preservation
 
-Reused the React shell/navigation, `Devices`/`ManualRouters`/`CompatibilityPanel`, `FirmwareLibrary`, appearance settings, `useDeviceInventory`, validated IPC, Windows discovery, profile engine, SQLite repository and bounded `LibraryService` worker. Original Analysis/Builder planning components remain in source; obsolete links leave the primary sidebar. Compatibility remains accessible inside device details and through the retained internal route.
+Reused the React shell/navigation, `Devices`/`ManualRouters`/`CompatibilityPanel`, `FirmwareLibrary`, appearance settings, `useDeviceInventory`, validated IPC, Windows discovery, profile engine, SQLite repository and bounded `LibraryService` worker. Removed the unreferenced planned-screen component and its styles; the roadmap remains documented separately. Legacy Analysis/Builder hashes still lead to the Library, and Compatibility remains accessible inside device details and through the retained internal route.
 
 Normal data baseline: `.tools/gui-2026-10-19/normal-before.json`, read-only. Schema 4, one firmware artifact, 34 jobs, 20 import occurrences, 30 integrity checks, 141 device/metadata rows, one saved router, two profiles, 216 audit events. Settings fingerprint `70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97`; collective table fingerprint `a00a104f7fd022a1ca348cac652b4d4127dabc60b6d926ee2abd1a7c2c958c1d`. Tests use marked `OBTAINER-NativeTests` profiles or temporary Rust vaults, never real firmware or the normal database. The ordinary executable is compiled, not interactively driven against normal data.
 
