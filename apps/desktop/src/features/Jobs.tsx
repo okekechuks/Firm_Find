@@ -1,22 +1,39 @@
-import { useEffect,useState } from "react";
-import { cancelLibraryJob,errorMessage,getLibraryActivity,listLibraryJobs } from "../lib/backend";
+import { useEffect, useState } from "react";
+import { Search, ScrollText, ArrowDownUp, X, CircleCheck, Clock3, CircleAlert, Ban, File } from "lucide-react";
+import { cancelLibraryJob, errorMessage, getLibraryActivity, listLibraryJobs } from "../lib/backend";
 import { useLibraryFeed } from "../lib/useLibraryFeed";
+import { useWorkspace, isActiveJob } from "../lib/workspace-context";
+import { human, formatBytes } from "../lib/format";
 import type { JobRecord } from "../types/library";
-
-export function JobRows({jobs,onCancel}:{jobs:JobRecord[];onCancel:(id:string)=>Promise<void>}) {
-  return <div className="library-jobs">{jobs.map(job=><article className="panel job-row" key={job.id} data-job-id={job.id}>
-    <div className="section-heading"><h3>{job.kind.replaceAll("_"," ")}</h3><strong>{job.status}</strong></div>
-    <p>{job.stage.replaceAll("_"," ")} · {job.progressBytes.toLocaleString()} / {job.totalBytes.toLocaleString()} bytes{job.totalBytes?` · ${Math.min(100,Math.floor(job.progressBytes/job.totalBytes*100))}%`:""}</p>
-    {job.status==="running"||job.status==="pending"?<><progress max={Math.max(1,job.totalBytes)} value={job.progressBytes}/><button className="secondary-button" disabled={job.cancelRequested} onClick={()=>void onCancel(job.id)}>{job.cancelRequested?"Cancellation requested":"Cancel job"}</button></>:null}
-    <p role={job.status==="failed"?"alert":undefined}>{job.message}</p>{job.errorCode?<p className="muted small">{job.errorCode}</p>:null}{job.duplicate?<p>Duplicate recognized. One stored blob; another import occurrence recorded.</p>:null}
-    {job.relatedArtifact?<p className="hash-value">SHA-256: {job.relatedArtifact}</p>:null}{job.recoveryInfo?<p>{job.recoveryInfo}</p>:null}
-    <time className="muted small">{new Date(job.createdAt).toLocaleString()} · Job {job.id}</time>
-  </article>)}</div>;
+export function JobRows({ jobs, onCancel }: { jobs: JobRecord[]; onCancel: (id: string) => Promise<void> }) {
+  return <div className="library-jobs">{jobs.map(job => {
+    const active = isActiveJob(job);
+    const measured = job.status === "running" && job.totalBytes > 0 && !["queued", "running"].includes(job.stage);
+    const percentage = Math.min(100, Math.floor(job.progressBytes / Math.max(1, job.totalBytes) * 100));
+    return <article className="job-row" key={job.id} data-job-id={job.id}><div className="job-icon"><File size={20}/></div><div className="job-content"><div className="section-heading"><div><h3>{job.originalFilename ?? human(job.kind)}</h3><p className="job-type">{human(job.kind)} · {human(job.stage)}</p></div><span className={`badge ${job.status === "failed" ? "error" : active ? "info" : "neutral"}`}>{job.cancelRequested && active ? "Cancelling" : job.status === "pending" ? "Queued" : human(job.status)}</span></div>
+      {active ? <div className="job-progress"><progress aria-label={`Progress for ${job.originalFilename ?? human(job.kind)}`} max={Math.max(1, job.totalBytes)} {...(measured ? { value: Math.min(job.progressBytes, job.totalBytes) } : {})}/><span>{measured ? `${percentage}%` : "Waiting"}</span></div> : null}
+      <div className="job-meta"><span>{measured ? `${formatBytes(job.progressBytes)} / ${formatBytes(job.totalBytes)}` : job.message}</span>{active ? <button className="text-button" disabled={job.cancelRequested} onClick={() => void onCancel(job.id)}>{job.cancelRequested ? "Cancellation requested" : "Cancel job"}</button> : <time>{new Date(job.createdAt).toLocaleString()}</time>}</div>
+      {job.errorCode ? <p className="inline-error">{job.errorCode} · {job.message}</p> : null}{job.recoveryInfo ? <p className="muted small">{job.recoveryInfo}</p> : null}
+    </div></article>;
+  })}</div>;
 }
-export function Jobs({desktop}:{desktop:boolean}) {
-  const revision=useLibraryFeed(desktop);const [jobs,setJobs]=useState<JobRecord[]>([]);const [activity,setActivity]=useState<Awaited<ReturnType<typeof getLibraryActivity>>>([]);const [error,setError]=useState<string|null>(null);const [loaded,setLoaded]=useState(false);
-  useEffect(()=>{let active=true;if(desktop)void Promise.all([listLibraryJobs(),getLibraryActivity()]).then(([j,a])=>{if(active){setJobs(j);setActivity(a);setError(null);setLoaded(true);}}).catch(e=>{if(active)setError(errorMessage(e));});return()=>{active=false;};},[desktop,revision]);
-  const cancel=async(id:string)=>{try{await cancelLibraryJob(id);}catch(e){setError(errorMessage(e));}};
-  return <><section className="panel library-panel"><h2>Persistent library jobs</h2><p>Latest 100 operations. Progress and history come from the Windows backend.</p>{!desktop?<p>Open the Windows app to view saved jobs and activity.</p>:!loaded&&!error?<p role="status">Loading jobs…</p>:null}{error?<p role="alert">{error}</p>:null}{loaded&&jobs.length===0?<p>No library jobs yet. Import a file from Firmware Library.</p>:null}</section><JobRows jobs={jobs} onCancel={cancel}/>
-    <section className="panel library-panel" aria-label="Persistent activity"><h2>Workspace activity</h2>{activity.length?<ul className="library-activity">{activity.map(e=><li key={e.id}><strong>{e.message}</strong><p>{e.kind.replaceAll("_"," ")} · {e.severity}{e.jobId?` · Job ${e.jobId}`:""}</p><time>{new Date(e.createdAt).toLocaleString()}</time></li>)}</ul>:<p>No saved activity to show.</p>}</section></>;
+export function Jobs({ desktop }: { desktop: boolean }) {
+  const workspace = useWorkspace(); const revision = useLibraryFeed(desktop);
+  const [fallback, setFallback] = useState<{ jobs: JobRecord[]; activity: Awaited<ReturnType<typeof getLibraryActivity>> }>({ jobs: [], activity: [] });
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState(""); const [category, setCategory] = useState(""); const [severity, setSeverity] = useState(""); const [status, setStatus] = useState(""); const [newest, setNewest] = useState(true); const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => { if (workspace || !desktop) return; let current = true; void Promise.all([listLibraryJobs(), getLibraryActivity()]).then(([jobs, activity]) => { if (current) setFallback({ jobs, activity }); }).catch(e => { if (current) setError(errorMessage(e)); }); return () => { current = false; }; }, [desktop, revision, workspace]);
+  const jobs = workspace?.jobs ?? fallback.jobs; const activity = workspace?.activity ?? fallback.activity;
+  const rows = [
+    ...jobs.map(j => ({ id: `job-${j.id}`, date: j.createdAt, category: j.kind, message: j.originalFilename ? `${j.originalFilename} — ${j.message}` : j.message, severity: j.status === "failed" ? "error" : j.status === "cancelled" ? "warning" : "info", status: j.status, job: j, artifact: j.relatedArtifact })),
+    ...activity.map(e => ({ id: `event-${e.id}`, date: Date.parse(e.createdAt), category: e.kind, message: e.message, severity: e.severity, status: e.jobId ? jobs.find(j => j.id === e.jobId)?.status ?? "recorded" : "recorded", job: jobs.find(j => j.id === e.jobId), artifact: e.artifactSha256 })),
+  ];
+  const filtered = rows.filter(r => (!category || r.category === category) && (!severity || r.severity === severity) && (!status || r.status === status) && `${r.message} ${r.category} ${r.job?.id ?? ""} ${r.artifact ?? ""}`.toLowerCase().includes(search.trim().toLowerCase())).sort((a, b) => newest ? b.date - a.date : a.date - b.date);
+  const detail = rows.find(r => r.id === selected);
+  return <><section className="panel logs-panel"><div className="section-heading"><div className="section-title"><span className="section-icon"><ScrollText size={20}/></span><div><h2>Operation history</h2><p>{rows.length} saved job and event records</p></div></div><button className="secondary-button" onClick={() => setNewest(v => !v)}><ArrowDownUp size={14}/>{newest ? "Newest first" : "Oldest first"}</button></div>
+    <div className="table-toolbar"><label className="search-field"><Search size={16}/><input aria-label="Search logs" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search events, files or job IDs…"/></label><select aria-label="Filter log category" value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{[...new Set(rows.map(r => r.category))].sort().map(c => <option key={c} value={c}>{human(c)}</option>)}</select><select aria-label="Filter log severity" value={severity} onChange={e => setSeverity(e.target.value)}><option value="">All severities</option>{["info", "warning", "error"].map(s => <option key={s}>{s}</option>)}</select><select aria-label="Filter job status" value={status} onChange={e => setStatus(e.target.value)}><option value="">All statuses</option>{["pending", "running", "completed", "failed", "cancelled", "recorded"].map(s => <option key={s}>{s}</option>)}</select></div>
+    {error || workspace?.error ? <p role="alert" className="inline-error">{error ?? workspace?.error}</p> : null}
+    <div className="table-scroll"><table className="data-table logs-table"><thead><tr><th>Event</th><th>Category</th><th>Status</th><th>Date & time</th></tr></thead><tbody>{filtered.map(row => { const Icon = row.status === "completed" ? CircleCheck : row.status === "failed" ? CircleAlert : row.status === "cancelled" ? Ban : Clock3; return <tr key={row.id} className={row.id === selected ? "selected" : ""}><td><button className="table-select log-select" onClick={() => setSelected(row.id)}><span className={`log-icon ${row.severity}`}><Icon size={17}/></span><span>{row.message}<small>{row.severity}</small></span></button></td><td>{human(row.category)}</td><td><span className={`badge ${row.status === "completed" ? "success" : row.status === "failed" ? "error" : "neutral"}`}>{row.status}</span></td><td><time>{new Date(row.date).toLocaleString()}</time></td></tr>; })}</tbody></table></div>
+    {!filtered.length ? <div className="empty-state"><ScrollText size={30}/><h3>{desktop ? workspace?.loading ? "Reading saved history…" : "No matching records" : "Open the Windows app to view Logs"}</h3><p>Completed jobs and real workspace events appear here.</p></div> : null}<div className="panel-footnote">Latest 100 jobs and 100 events · Full history retained locally</div>
+  </section>{detail ? <section className="panel record-details" aria-label="Event details"><div className="section-heading"><h2>Event details</h2><button className="icon-button" aria-label="Close event details" onClick={() => setSelected(null)}><X size={18}/></button></div><p>{detail.message}</p><dl className="details"><div><dt>Exact timestamp</dt><dd>{new Date(detail.date).toISOString()}</dd></div><div><dt>Category</dt><dd>{human(detail.category)}</dd></div><div><dt>Outcome / severity</dt><dd>{detail.status} / {detail.severity}</dd></div>{detail.job ? <div><dt>Job ID</dt><dd className="mono">{detail.job.id}</dd></div> : null}{detail.artifact ? <div><dt>SHA-256</dt><dd className="mono">{detail.artifact}</dd></div> : null}</dl>{detail.job?.errorCode?<p className="inline-error">Error code: {detail.job.errorCode}</p>:null}{detail.job?.recoveryInfo ? <div className="inline-notice">{detail.job.recoveryInfo}</div> : null}{detail.job && isActiveJob(detail.job) ? <button className="secondary-button" onClick={() => void (workspace?.cancel(detail.job!.id) ?? cancelLibraryJob(detail.job!.id).then(() => {}))}>Cancel job</button> : null}</section> : null}</>;
 }

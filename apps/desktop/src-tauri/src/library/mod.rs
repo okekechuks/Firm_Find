@@ -1,4 +1,5 @@
 mod db;
+pub mod desktop;
 pub(crate) mod files;
 pub mod ipc;
 pub mod types;
@@ -25,8 +26,26 @@ struct Selection {
     preview: FileSelection,
 }
 enum Task {
-    Import { job: String, selection: Selection },
-    Verify { job: String, hash: String },
+    Import {
+        job: String,
+        selection: Selection,
+    },
+    Verify {
+        job: String,
+        hash: String,
+    },
+    Backup {
+        job: String,
+        hash: String,
+    },
+    Restore {
+        job: String,
+        backup: String,
+    },
+    Relocate {
+        job: String,
+        plan: desktop::StoragePlan,
+    },
 }
 type Notify = Arc<dyn Fn(JobRecord) + Send + Sync>;
 struct Inner {
@@ -41,6 +60,8 @@ struct Inner {
     dialog_open: AtomicBool,
     finalize: Mutex<()>,
     notify: Notify,
+    relocating: AtomicBool,
+    plans: Mutex<HashMap<String, desktop::StoragePlan>>,
 }
 #[derive(Clone)]
 pub struct LibraryService {
@@ -68,7 +89,13 @@ impl LibraryService {
                 "Import size limit must be between 1 byte and 8 GiB.",
             ));
         }
-        let vault = Vault::open(&root.join("vault"))?;
+        let configured = lock(&repo)?.desktop_preferences()?.library_directory;
+        let vault = Vault::open(
+            &configured
+                .map(PathBuf::from)
+                .unwrap_or_else(|| root.join("vault")),
+        )?;
+        let _backup_guards = directory(&root.join("backups"))?;
         let (sender, receiver) = mpsc::sync_channel(16);
         let inner = Arc::new(Inner {
             repo,
@@ -82,6 +109,8 @@ impl LibraryService {
             dialog_open: AtomicBool::new(false),
             finalize: Mutex::new(()),
             notify,
+            relocating: AtomicBool::new(false),
+            plans: Mutex::new(HashMap::new()),
         });
         inner.recover()?;
         let service = Arc::clone(&inner);
@@ -139,10 +168,12 @@ impl LibraryService {
         result
     }
     fn ensure_open(&self) -> Result<()> {
-        if self.inner.shutdown.load(Ordering::Acquire) {
+        if self.inner.shutdown.load(Ordering::Acquire)
+            || self.inner.relocating.load(Ordering::Acquire)
+        {
             return Err(LibraryError::new(
                 "SHUTTING_DOWN",
-                "The library is shutting down. Reopen the application.",
+                "The library is restarting or relocating. Wait for the copy to finish, then reopen the application.",
             ));
         }
         Ok(())
@@ -150,7 +181,7 @@ impl LibraryService {
     pub(crate) fn select_path(&self, path: &Path) -> Result<FileSelection> {
         self.ensure_open()?;
         safe_path(path)?;
-        if inside(path, &self.inner.root)? {
+        if inside(path, &self.inner.root)? || inside(path, &self.inner.vault.root)? {
             return Err(LibraryError::new(
                 "INTERNAL_SOURCE",
                 "Select an external source copy, not application data or vault internals.",
@@ -224,6 +255,7 @@ impl LibraryService {
             }
         }
         let mut controls = lock(&self.inner.controls)?;
+        self.ensure_open()?;
         if controls.len() >= 16 {
             return Err(LibraryError::new(
                 "QUEUE_FULL",
@@ -283,6 +315,7 @@ impl LibraryService {
         self.ensure_open()?;
         let details = lock(&self.inner.repo)?.library_details(hash)?;
         let mut controls = lock(&self.inner.controls)?;
+        self.ensure_open()?;
         if controls.len() >= 16 {
             return Err(LibraryError::new("QUEUE_FULL", "Library queue is full."));
         }
@@ -325,7 +358,15 @@ impl LibraryService {
         if job.status.terminal() {
             return Ok(job);
         }
-        if !["firmware_import", "integrity_verify"].contains(&job.kind.as_str()) {
+        if ![
+            "firmware_import",
+            "integrity_verify",
+            "firmware_backup",
+            "backup_restore",
+            "library_relocation",
+        ]
+        .contains(&job.kind.as_str())
+        {
             return Err(LibraryError::new(
                 "UNSUPPORTED_JOB",
                 "Historical job retained; this service cannot cancel that job type.",
@@ -372,7 +413,7 @@ impl LibraryService {
     }
     pub(crate) fn export_path(&self, hash: &str, path: &Path) -> Result<ManifestExportResult> {
         safe_path(path)?;
-        if inside(path, &self.inner.root)? {
+        if inside(path, &self.inner.root)? || inside(path, &self.inner.vault.root)? {
             return Err(LibraryError::new(
                 "INTERNAL_DESTINATION",
                 "Save manifests outside application data and the vault.",
@@ -434,7 +475,11 @@ impl Inner {
     }
     fn execute(&self, task: Task) {
         let id = match &task {
-            Task::Import { job, .. } | Task::Verify { job, .. } => job.clone(),
+            Task::Import { job, .. }
+            | Task::Verify { job, .. }
+            | Task::Backup { job, .. }
+            | Task::Restore { job, .. }
+            | Task::Relocate { job, .. } => job.clone(),
         };
         let flag = match self.controls.lock().ok().and_then(|m| m.get(&id).cloned()) {
             Some(f) => f,
@@ -450,9 +495,21 @@ impl Inner {
             match task {
                 Task::Import { selection, .. } => self.run_import(&id, selection, &flag),
                 Task::Verify { hash, .. } => self.run_verify(&id, &hash, &flag),
+                Task::Backup { hash, .. } => self.run_backup(&id, &hash, &flag),
+                Task::Restore { backup, .. } => self.run_restore(&id, &backup, &flag),
+                Task::Relocate { plan, .. } => self.run_relocation(&id, &plan, &flag),
             }
         })();
         if let Err(error) = result {
+            if self
+                .repo
+                .lock()
+                .ok()
+                .and_then(|r| r.library_job(&id).ok())
+                .is_some_and(|j| j.kind == "library_relocation")
+            {
+                self.relocating.store(false, Ordering::Release);
+            }
             if let Ok(mut repo) = self.repo.lock() {
                 let _=repo.connection.execute("UPDATE artifact_details SET integrity_status='not_checked' WHERE integrity_status='checking' AND sha256=(SELECT artifact_sha256 FROM job_details WHERE job_id=?1)",[&id]);
                 let _ = repo.library_transition(
@@ -664,7 +721,7 @@ impl Inner {
     fn recover(&self) -> Result<()> {
         let pending: Vec<String> = {
             let repo = lock(&self.repo)?;
-            let mut q=repo.connection.prepare("SELECT id FROM jobs WHERE kind IN ('firmware_import','integrity_verify') AND status IN ('pending','running')")?;
+            let mut q=repo.connection.prepare("SELECT id FROM jobs WHERE kind IN ('firmware_import','integrity_verify','firmware_backup','backup_restore','library_relocation') AND status IN ('pending','running')")?;
             let rows = q.query_map([], |r| r.get(0))?;
             rows.collect::<rusqlite::Result<Vec<_>>>()?
         };

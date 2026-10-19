@@ -127,3 +127,103 @@ pub async fn export_artifact_manifest(
         .await
         .map_err(worker_error)?
 }
+
+#[tauri::command]
+pub async fn get_desktop_state(
+    service: tauri::State<'_, LibraryService>,
+) -> Result<desktop::DesktopState> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.desktop_state())
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn save_desktop_preferences(
+    input: desktop::PreferenceInput,
+    state: tauri::State<'_, crate::commands::AppState>,
+) -> Result<desktop::DesktopPreferences> {
+    let repo = Arc::clone(&state.repository);
+    tauri::async_runtime::spawn_blocking(move || lock(&repo)?.save_desktop_preferences(input))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn list_firmware_backups(
+    service: tauri::State<'_, LibraryService>,
+) -> Result<Vec<desktop::Backup>> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.backups())
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn create_firmware_backup(
+    sha256: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<JobRecord> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.create_backup(&sha256))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn restore_firmware_backup(
+    id: String,
+    confirmed: bool,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<JobRecord> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.restore_backup(&id, confirmed))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn remove_firmware_item(
+    id: String,
+    backup: bool,
+    confirmed: bool,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<()> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.remove_item(&id, backup, confirmed))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn open_managed_folder(
+    target: String,
+    id: Option<String>,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<()> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.open_folder(&target, id.as_deref()))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn select_library_directory(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::commands::AppState>,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<Option<desktop::StoragePlan>> {
+    let hwnd = owner(&app);
+    let scope = state
+        .test_profile
+        .as_ref()
+        .and_then(|_| state.directory.parent().map(Path::to_path_buf));
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.choose_directory(hwnd, scope.as_deref()))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn relocate_firmware_library(
+    ticket: String,
+    confirmed: bool,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<JobRecord> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.relocate(&ticket, confirmed))
+        .await
+        .map_err(worker_error)?
+}

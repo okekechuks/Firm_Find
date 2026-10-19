@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Cable, Network, Search, ShieldCheck, Usb, RefreshCw } from "lucide-react";
 import { ManualRouters, type RouterDraft } from "./ManualRouters";
 import { CompatibilityPanel } from "./Compatibility";
+import { deviceStatus, extractionEligibility } from "../lib/device-status";
+import { useWorkspace } from "../lib/workspace-context";
+import { LockKeyhole } from "lucide-react";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
 
 const labels = {usb: "USB", serial: "Serial", network: "Network"};
@@ -13,6 +16,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
   onRefresh: () => Promise<void>;
   onCancel?: () => Promise<void>;
 }) {
+  const workspace=useWorkspace();
   const [draft, setDraft] = useState<RouterDraft | null>(null);
   const [advanced, setAdvanced] = useState(false);
   const [query, setQuery] = useState("");
@@ -37,9 +41,9 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
     <>
       <section className="panel inventory-summary">
         <div><span className="eyebrow">DEVICE DISCOVERY</span><h2>What Windows can see</h2>
-          <p>USB devices, serial ports, and network adapters on this computer. Related interfaces are grouped where Windows provides a matching identity.</p></div>
+          <p>Windows observations, grouped by device identity.</p></div>
         <span className="inventory-monitor" role="status">
-          {!desktop ? "Windows app required" : waiting ? "Reading inventory…" : inventory?.status === "failed" ? "Inventory needs attention" : inventory?.watching && !error ? "Live updates on" : "Periodic updates"}
+          {!desktop ? "Windows app required" : waiting ? "Reading inventory…" : inventory?.status === "failed" ? "Inventory needs attention" : workspace?.state?.preferences.autoRefresh===false ? "Automatic refresh paused" : inventory?.watching && !error ? "Live updates on" : "Periodic updates"}
         </span>
       </section>
       {!desktop ? <section className="panel device-empty"><Usb size={32}/><h2>Open the Windows app to discover devices</h2><p>Browser preview has no hardware inventory.</p></section> : <>
@@ -73,18 +77,21 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
 }
 
 function DeviceCard({device, selected, onSelect}: {device: Device; selected: boolean; onSelect: () => void}) {
+  const classification = deviceStatus(device);
   const Icon = device.transports.includes("usb") ? Usb : device.transports.includes("serial") ? Cable : Network;
-  return <button className={`panel device-card${selected ? " selected" : ""}${device.connected ? "" : " disconnected"}`} aria-pressed={selected} onClick={onSelect}>
+  return <button className={`panel device-card device-${classification.tone}${selected ? " selected" : ""}${device.connected ? "" : " disconnected"}`} aria-pressed={selected} onClick={onSelect}>
     <div className="device-card-top"><Icon size={23}/><span className={`device-state${device.connected ? " present" : ""}`}>{device.connected ? "Present" : "Disconnected"}</span></div>
-    <h3>{device.displayName || "Unknown Windows device"}</h3><p>{device.assessment}</p><p className="muted small">{device.category?.replaceAll("_", " ") ?? "Unknown"} | {device.identity?.confidence ?? "unknown"} identity | {device.lifecycle ?? "discovered"}</p>
+    <h3>{device.displayName || "Unknown Windows device"}</h3><span className={`badge ${classification.tone}`}>{classification.label}</span><p>{device.assessment}</p><p className="muted small">{device.category?.replaceAll("_", " ") ?? "Unknown"} | {device.identity?.confidence ?? "unknown"} identity | {device.lifecycle ?? "discovered"}</p>
     <div className="device-tags">{device.transports.map((type) => <span key={type}>{labels[type]}</span>)}{device.interfaces.filter((item) => item.portName).map((item) => <span key={item.instanceId}>{item.portName}</span>)}</div>
     <span className="device-card-bottom">{device.vendorId && device.productId ? `VID ${device.vendorId} · PID ${device.productId}` : "Identity not verified"}<span>Details →</span></span>
   </button>;
 }
 
 function DeviceDetails({device, onGateway}: {device: Device; onGateway: (address: string, interfaceId: string) => void}) {
+  const eligibility=extractionEligibility(device);
   return <section className="panel device-details" aria-label="Device details">
     <div className="section-heading"><h2>{device.displayName}</h2><span className="muted small">{device.connected ? "Currently present" : `Last seen ${new Date(device.lastSeenAt).toLocaleString()}`}</span></div>
+    <div className="extraction-unavailable" aria-label="Firmware extraction"><div><h3>Firmware extraction</h3><p>{eligibility.reason}</p></div><button className="primary-button" disabled={!eligibility.allowed}><LockKeyhole size={15}/>Extract Firmware</button></div>
     <div className="device-detail-grid">
       <div><h3>Identification</h3><p>{device.assessment}</p><p>Identity confidence: <strong>{device.identity?.confidence ?? "unknown"}</strong>. {device.identity?.explanation ?? "No supported management identity response has been collected."}</p>
         <p>Verified manufacturer: {device.identity?.manufacturer ?? "Unknown"} | Model: {device.identity?.model ?? "Unknown"} | Firmware: {device.identity?.firmware ?? "Unknown"}</p>

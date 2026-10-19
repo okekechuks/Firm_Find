@@ -2,7 +2,7 @@ use super::types::*;
 use crate::{connection::now, storage::Repository};
 use rusqlite::{params, Connection, OptionalExtension};
 
-const JOB_SQL:&str="SELECT j.id,j.kind,j.status,d.created_at,d.started_at,d.finished_at,d.updated_at,d.progress_bytes,d.total_bytes,d.stage,d.error_code,d.message,d.artifact_sha256,d.import_id,d.cancel_requested,d.duplicate,d.recovery_info FROM jobs j JOIN job_details d ON j.id=d.job_id";
+const JOB_SQL:&str="SELECT j.id,j.kind,j.status,d.created_at,d.started_at,d.finished_at,d.updated_at,d.progress_bytes,d.total_bytes,d.stage,d.error_code,d.message,d.artifact_sha256,d.import_id,d.cancel_requested,d.duplicate,d.recovery_info,d.original_filename,d.device_id FROM jobs j JOIN job_details d ON j.id=d.job_id";
 fn job(r: &rusqlite::Row) -> rusqlite::Result<JobRecord> {
     let status: String = r.get(2)?;
     let status = match status.as_str() {
@@ -30,9 +30,11 @@ fn job(r: &rusqlite::Row) -> rusqlite::Result<JobRecord> {
         cancel_requested: r.get(14)?,
         duplicate: r.get(15)?,
         recovery_info: r.get(16)?,
+        original_filename: r.get(17)?,
+        device_id: r.get(18)?,
     })
 }
-fn event(
+pub(super) fn event(
     c: &Connection,
     kind: &str,
     message: &str,
@@ -183,6 +185,18 @@ impl Repository {
         }
         tx.execute("INSERT INTO artifact_details(sha256,storage_key,integrity_status,first_imported_at,last_verified_at) VALUES(?1,?2,'verified',?3,?3) ON CONFLICT(sha256) DO UPDATE SET storage_key=excluded.storage_key,storage_status='present',integrity_status='verified',last_verified_at=excluded.last_verified_at",params![hash,key,now()])?;
         tx.execute("INSERT INTO artifact_imports SELECT job_id,?2,original_filename,?3,'user_import','unverified',description,device_id,job_id FROM job_details WHERE job_id=?1",params![id,hash,now()])?;
+        tx.execute(
+            "UPDATE artifact_details SET removed_at=NULL WHERE sha256=?1",
+            [hash],
+        )?;
+        let restored: bool = tx.query_row(
+            "SELECT kind='backup_restore' FROM jobs WHERE id=?1",
+            [id],
+            |r| r.get(0),
+        )?;
+        if restored {
+            tx.execute("INSERT INTO artifact_presentation SELECT ?2,original_filename,'restored_default' FROM job_details WHERE job_id=?1 ON CONFLICT(sha256) DO UPDATE SET display_name=excluded.display_name,kind=excluded.kind",params![id,hash])?;
+        }
         tx.execute("INSERT INTO integrity_checks(artifact_sha256,job_id,expected_size,actual_size,actual_sha256,status,verified_at) VALUES(?1,?2,?3,?3,?1,'verified',?4)",params![hash,id,size,now()])?;
         tx.execute("UPDATE job_details SET artifact_sha256=?2,import_id=?1,duplicate=?3,recovery_info=NULL WHERE job_id=?1",params![id,hash,duplicate])?;
         // Metadata and successful job publication share a single transaction.
@@ -258,15 +272,45 @@ impl Repository {
                 "Invalid library search, date range or filter.",
             ));
         }
-        let condition=" WHERE (instr(a.sha256,lower(?1))>0 OR EXISTS(SELECT 1 FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND instr(lower(i.original_filename),lower(?1))>0)) AND (?2 IS NULL OR d.integrity_status=?2) AND (?3 IS NULL OR EXISTS(SELECT 1 FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND i.source_category=?3)) AND (?4 IS NULL OR d.first_imported_at>=?4) AND (?5 IS NULL OR d.first_imported_at<=?5)";
-        let values = params![search, q.integrity, q.source, q.from_date, q.to_date];
+        let kind_sql="COALESCE((SELECT kind FROM artifact_presentation p WHERE p.sha256=a.sha256),CASE (SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1) WHEN 'user_import' THEN 'imported_original' WHEN 'official_vendor_download' THEN 'imported_original' WHEN 'authorized_device_acquisition' THEN 'extracted' WHEN 'generated_build' THEN 'build_output' ELSE 'unknown' END)";
+        if q.kind.as_ref().is_some_and(|v| {
+            ![
+                "imported_original",
+                "extracted",
+                "customized",
+                "restored_default",
+                "build_output",
+                "unknown",
+            ]
+            .contains(&v.as_str())
+        }) {
+            return Err(LibraryError::new(
+                "INVALID_FILTER",
+                "Unknown firmware type.",
+            ));
+        }
+        let order=match q.sort.as_deref().unwrap_or("newest") {
+            "newest"=>"d.first_imported_at DESC,a.sha256", "oldest"=>"d.first_imported_at ASC,a.sha256", "largest"=>"a.size_bytes DESC,a.sha256", "smallest"=>"a.size_bytes ASC,a.sha256",
+            "name"=>"lower(COALESCE((SELECT display_name FROM artifact_presentation p WHERE p.sha256=a.sha256),(SELECT original_filename FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'Legacy artifact')) ASC,a.sha256",
+            _=>return Err(LibraryError::new("INVALID_FILTER","Unknown sort order.")),
+        };
+        let condition=" WHERE d.removed_at IS NULL AND (instr(a.sha256,lower(?1))>0 OR EXISTS(SELECT 1 FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND instr(lower(i.original_filename),lower(?1))>0)) AND (?2 IS NULL OR d.integrity_status=?2) AND (?3 IS NULL OR EXISTS(SELECT 1 FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND i.source_category=?3)) AND (?4 IS NULL OR d.first_imported_at>=?4) AND (?5 IS NULL OR d.first_imported_at<=?5)";
+        let condition = format!("{condition} AND (?6 IS NULL OR {kind_sql}=?6)");
+        let values = params![
+            search,
+            q.integrity,
+            q.source,
+            q.from_date,
+            q.to_date,
+            q.kind
+        ];
         let total=self.connection.query_row(&format!("SELECT COUNT(*) FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition}"),values,|r|r.get(0))?;
         let unique_bytes = self.connection.query_row(
-            "SELECT COALESCE(SUM(size_bytes),0) FROM firmware_artifacts",
+            "SELECT COALESCE(SUM(a.size_bytes),0) FROM firmware_artifacts a JOIN artifact_details d USING(sha256) WHERE d.removed_at IS NULL",
             [],
             |r| r.get(0),
         )?;
-        let sql=format!("SELECT a.sha256,a.size_bytes,d.storage_status,d.integrity_status,d.first_imported_at,d.last_verified_at,d.format,(SELECT COUNT(*) FROM artifact_imports i WHERE i.artifact_sha256=a.sha256),COALESCE((SELECT original_filename FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'Legacy artifact'),COALESCE((SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 LIMIT 1),'unknown') FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition} ORDER BY d.first_imported_at DESC,a.sha256 LIMIT 25 OFFSET {}",page*25);
+        let sql=format!("SELECT a.sha256,a.size_bytes,d.storage_status,d.integrity_status,d.first_imported_at,d.last_verified_at,d.format,(SELECT COUNT(*) FROM artifact_imports i WHERE i.artifact_sha256=a.sha256),COALESCE((SELECT display_name FROM artifact_presentation p WHERE p.sha256=a.sha256),(SELECT original_filename FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'Legacy artifact'),COALESCE((SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'unknown'),COALESCE((SELECT kind FROM artifact_presentation p WHERE p.sha256=a.sha256),CASE (SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1) WHEN 'user_import' THEN 'imported_original' WHEN 'official_vendor_download' THEN 'imported_original' WHEN 'authorized_device_acquisition' THEN 'extracted' WHEN 'generated_build' THEN 'build_output' ELSE 'unknown' END) FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition} ORDER BY {order} LIMIT 25 OFFSET {}",page*25);
         let mut s = self.connection.prepare(&sql)?;
         let artifacts = s
             .query_map(values, |r| {
@@ -281,6 +325,7 @@ impl Repository {
                     source_count: r.get(7)?,
                     original_filename: r.get(8)?,
                     source_category: r.get(9)?,
+                    kind: r.get(10)?,
                 })
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;

@@ -129,6 +129,8 @@ pub struct JobRecord {
     pub cancel_requested: bool,
     pub duplicate: bool,
     pub recovery_info: Option<String>,
+    pub original_filename: Option<String>,
+    pub device_id: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -141,6 +143,7 @@ pub struct FirmwareArtifact {
     pub last_verified_at: Option<u64>,
     pub format: String,
     pub source_count: u64,
+    pub kind: String,
     pub original_filename: String,
     pub source_category: String,
 }
@@ -194,6 +197,8 @@ pub struct LibraryQuery {
     pub from_date: Option<u64>,
     pub to_date: Option<u64>,
     pub page: Option<u32>,
+    pub kind: Option<String>,
+    pub sort: Option<String>,
 }
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

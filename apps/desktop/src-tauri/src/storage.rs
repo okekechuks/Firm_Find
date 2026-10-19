@@ -25,7 +25,7 @@ impl Repository {
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         connection.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
         let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 4 {
+        if version > 5 {
             return Err(StorageError::NewerSchema);
         }
         if version == 0 {
@@ -50,6 +50,12 @@ impl Repository {
             let transaction = connection.transaction()?;
             transaction.execute_batch(include_str!("../migrations/004_firmware_library.sql"))?;
             transaction.pragma_update(None, "user_version", 4)?;
+            transaction.commit()?;
+        }
+        if version < 5 {
+            let transaction = connection.transaction()?;
+            transaction.execute_batch(include_str!("../migrations/005_desktop_workspace.sql"))?;
+            transaction.pragma_update(None, "user_version", 5)?;
             transaction.commit()?;
         }
         Ok(Self { connection })
@@ -340,7 +346,7 @@ impl Repository {
             })
         })?;
         let counts = self.connection.query_row(
-            "SELECT (SELECT COUNT(*) FROM devices WHERE connected = 1), (SELECT COUNT(*) FROM firmware_artifacts), (SELECT COUNT(*) FROM jobs WHERE status = 'running')",
+            "SELECT (SELECT COUNT(*) FROM devices WHERE connected = 1), (SELECT COUNT(*) FROM firmware_artifacts a JOIN artifact_details d USING(sha256) WHERE d.removed_at IS NULL), (SELECT COUNT(*) FROM jobs WHERE status IN ('pending','running'))",
             [],
             |row| Ok(Counts { devices: row.get(0)?, artifacts: row.get(1)?, running_jobs: row.get(2)? }),
         )?;
@@ -471,7 +477,7 @@ mod tests {
         repository.record_startup()?;
         repository.save_discovery(&DiscoverySnapshot::default())?;
         let snapshot = repository.snapshot(temporary.path())?;
-        assert_eq!(snapshot.database_version, 4);
+        assert_eq!(snapshot.database_version, 5);
         assert_eq!(snapshot.counts.artifacts, 1);
         assert!(snapshot.recent_events.iter().any(|e| e.kind == "existing"));
         assert_eq!(
@@ -502,7 +508,7 @@ mod tests {
         }
         let repository = Repository::open(&path)?;
         let snapshot = repository.snapshot(temporary.path())?;
-        assert_eq!(snapshot.database_version, 4);
+        assert_eq!(snapshot.database_version, 5);
         assert_eq!(snapshot.settings.theme, Theme::Dark);
         assert_eq!(snapshot.recent_events.len(), 2);
         assert_eq!(snapshot.counts.devices, 0);

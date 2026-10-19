@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-relocate-firmware-library"
+description = "Enables the relocate_firmware_library command without any pre-configured scope."
+commands.allow = ["relocate_firmware_library"]
+
+[[permission]]
+identifier = "deny-relocate-firmware-library"
+description = "Denies the relocate_firmware_library command without any pre-configured scope."
+commands.deny = ["relocate_firmware_library"]

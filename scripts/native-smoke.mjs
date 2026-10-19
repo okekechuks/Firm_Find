@@ -116,9 +116,7 @@ try {
   await launch();
 
   for (const [screen, heading] of [
-    ['devices', 'Connected devices'], ['firmware', 'Firmware library'],
-    ['analysis', 'Analysis'], ['backups', 'Backup manager'],
-    ['builder', 'Firmware builder'], ['jobs', 'Jobs & activity'],
+    ['dashboard','Overview'],['devices','Connected Devices'],['firmware','Library'],['backups','Backup Manager'],['jobs','Logs'],['settings','Settings'],
   ]) {
     await click(`a[href="#${screen}"]`);
     await until(() => script('return document.querySelector("h1")?.textContent === arguments[0]', [heading]), `Navigation failed: ${screen}`);

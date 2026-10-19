@@ -58,3 +58,11 @@ After validation, the marker becomes `cleaning`, preventing another startup from
 Successful foundation verification removes only its own isolated run. Evidence stays in the workspace. Historical Phase 4 test artifacts/jobs already present in normal OBTAINER data are **not removed**. Manual deletion of those records requires separate owner approval.
 
 Implementation references: `src-tauri/src/native_test.rs`, `native_test_main.rs`, `lib.rs`, and `scripts/native-test-profile.mjs`. Windows root resolution follows [SHGetKnownFolderPath](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath); WebView separation uses Tauri's [window dataDirectory](https://v2.tauri.app/reference/config/#windowconfig). Final observed results belong in [Phase 4.1 verification](PHASE_4_1_VERIFICATION.md).
+
+## GUI acceptance
+
+After the normal and dedicated native releases are built, run `npm.cmd run test:gui`. This executes the retained Phase 4/4.1 generated-file regressions plus six-page GUI acceptance. It drives real React/Rust IPC, native file/folder dialogs, help keyboard behavior, an owned window resize, active-job navigation/cancellation, backups/restores, removal confirmations, themes and persistent settings. A reviewed copy plan is executed only inside the marked run, then the optimized app restarts to verify the new Library location and preserved metadata/backup path. It captures real screenshots under `docs/images/gui-*.png`.
+
+No extraction or build adapter is simulated. The extraction screenshot explicitly shows the unavailable state. A connected MG11 is optional for GUI acceptance; add the separate `--phase3` hardware regression only when the device is available. Normal-data probes, marker/path/ownership checks, failure retention and guarded cleanup remain mandatory.
+
+`npm.cmd run test:foundation -- --gui-preview --gui --phase4` runs a development-only diagnostic with generated files. HMR verification reloads the restored backend module graph after fault injection, then proves a component edit and restoration without another page reload or changed app/Vite PIDs. Do not run builds/tests or edit watched frontend/Rust files while native verification is active.

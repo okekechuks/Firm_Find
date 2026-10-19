@@ -61,7 +61,7 @@ npm run build:native-tests
 npm run test:foundation
 ```
 
-This uses the existing Tauri development command and release executable, a temporary loopback WebView2 debugging port (9223), and Vite's existing port (1420). It verifies real IPC, nine destinations, repeated discovery refresh, shared storage/settings, native console health, React hot reload, shutdown/reopen and recovery from an interrupted test-owned launch. No WebDriver or extra npm package is needed.
+This uses the existing Tauri development command and release executable, a temporary loopback WebView2 debugging port (9223), and Vite's existing port (1420). It verifies real IPC, six primary destinations, repeated discovery refresh, shared storage/settings, native console health, React hot reload, shutdown/reopen and recovery from an interrupted test-owned launch. No WebDriver or extra npm package is needed.
 
 The verifier temporarily instruments the frontend module for explicitly labelled failure/delay tests and changes a sentence to prove hot reload, then restores the exact source it read. Do not edit those files or run another build/test against them concurrently. It writes the existing appearance value through real settings IPC; it does not change the user's chosen appearance. Audit/inventory writes occur only in the unique isolated test profile; the normal database and vault are checked read-only before and after. Evidence is saved in unique `.tools/foundation/` directories. The [Phase 1 report](PHASE_1_VERIFICATION.md) records results and limits.
 
@@ -80,7 +80,7 @@ npm run build:native-tests
 npm run test:foundation -- --phase3
 ```
 
-The optional `--phase3` suite verifies both the Compatibility workspace and connected-device details through real native WebView2 and IPC. It validates/rejects profile documents, saves the exact owner-provided identifier/software text as unverified local evidence, confirms four unknown MG11 feature assessments and checks persistence across dev/recovery/production launches. Repeated reports deduplicate. It makes no new router request and changes no router settings. The shared foundation suite checks nine destinations and the current database schema (4 after Phase 4). The interruption case deliberately terminates only its own launch; exit 1 for that subprocess is expected.
+The optional `--phase3` suite verifies both the Compatibility workspace and connected-device details through real native WebView2 and IPC. It validates/rejects profile documents, saves the exact owner-provided identifier/software text as unverified local evidence, confirms four unknown MG11 feature assessments and checks persistence across dev/recovery/production launches. Repeated reports deduplicate. It makes no new router request and changes no router settings. The shared foundation suite checks six primary destinations and the current database schema (4 after Phase 4). The interruption case deliberately terminates only its own launch; exit 1 for that subprocess is expected.
 
 For manual inspection, run `npm run tauri -- dev -- --locked --offline`, open **Compatibility**, select the USB device candidate and expand feature evidence, candidate exclusions and identity evidence. Confirm unknown features stay unknown when there is no exact verified identity. Add a reported field and reopen the app to inspect persistence. The local profile validator previews schema validity only; it does not install a trusted profile. Native automation evidence and limits are in [Phase 3 verification](PHASE_3_VERIFICATION.md).
 
@@ -100,3 +100,7 @@ npm.cmd run test:foundation -- --phase3 --phase4 --phase4-1
 The test's temporary WebView2 debugging port is enabled only for its own processes. Native evidence, screenshots and captured failures are saved under `.tools/foundation/`. Do not edit the temporarily instrumented frontend files or run frontend checks concurrently with this suite. See [Phase 4 verification](PHASE_4_VERIFICATION.md), [library](FIRMWARE_LIBRARY.md), [jobs](JOB_ENGINE.md) and [vault](FIRMWARE_VAULT.md).
 
 Native profile activation, fixed paths, process ownership, cleanup guards, failure injection and normal-data equality checks are documented in [isolated native testing](NATIVE_TESTING.md). Normal builds and normal development launches keep their original data directory.
+
+## GUI redesign acceptance
+
+Build the ordinary release, run `npm.cmd run build:native-tests`, then `npm.cmd run test:gui` in a normal interactive Windows session. The GUI uses additive schema 5, while the normal data location is unchanged unless its owner explicitly approves a storage copy through Settings. Only test-owned data is modified during acceptance. [GUI verification](GUI_REDESIGN_VERIFICATION.md) records the six-page redesign, exact results, screenshots and capability limits.

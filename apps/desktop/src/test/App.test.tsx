@@ -3,12 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../app/App";
 import { getSnapshot, hasDesktopBackend, onDiscoveryChanged, getDiscovery, refreshDiscovery, saveSettings, onLibraryChanged, listFirmwareArtifacts, listLibraryJobs, getLibraryActivity } from "../lib/backend";
+import { desktopState } from "./libraryFixtures";
+import { getDesktopState, listFirmwareBackups } from "../lib/backend";
 import type { DiscoverySnapshot, Snapshot } from "../types/contracts";
 
 vi.mock("../lib/backend", async (importOriginal) => {
   const original = await importOriginal<typeof import("../lib/backend")>();
   return {
     ...original,
+    getDesktopState:vi.fn(),listFirmwareBackups:vi.fn(),
     getSnapshot: vi.fn(),
     hasDesktopBackend: vi.fn(),
     saveSettings: vi.fn(),
@@ -40,6 +43,8 @@ const inventory: DiscoverySnapshot = {
 
 beforeEach(() => {
   vi.mocked(hasDesktopBackend).mockReturnValue(true);
+  vi.mocked(getDesktopState).mockResolvedValue(desktopState);
+  vi.mocked(listFirmwareBackups).mockResolvedValue([]);
   vi.mocked(getSnapshot).mockResolvedValue(snapshot);
   vi.mocked(saveSettings).mockResolvedValue({ theme: "dark" });
   vi.mocked(getDiscovery).mockResolvedValue(inventory);
@@ -67,7 +72,7 @@ describe("desktop foundation", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Database unavailable");
     expect(screen.queryByText("Desktop connected")).not.toBeInTheDocument();
     expect(screen.getByText("Backend unavailable")).toBeInTheDocument();
-    expect(screen.getByText("Desktop workspace initialized")).toBeInTheDocument();
+    expect(screen.getByText(/0 stored artifacts/)).toBeInTheDocument();
     vi.mocked(getSnapshot).mockResolvedValue(snapshot);
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Desktop connected")).toBeInTheDocument();
@@ -128,19 +133,16 @@ describe("desktop foundation", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("reads native state and navigates every planned workspace", async () => {
+  it("reads native state and navigates the redesigned primary workspaces", async () => {
     const user = userEvent.setup();
     render(<App />);
     expect(await screen.findByText("Desktop connected")).toBeInTheDocument();
-    expect(
-      screen.getByText("Desktop workspace initialized"),
-    ).toBeInTheDocument();
+    expect(screen.queryByText("Desktop workspace initialized")).not.toBeInTheDocument();
     const pages = [
-      ["Connected devices", "No devices to show"],
-      ["Firmware library", "Firmware file library"],
-      ["Analysis", "Understand what’s inside"],
-      ["Backup manager", "Only supported, authorized backups"],
-      ["Firmware builder", "Build for a supported target"],
+      ["Connected Devices", "No devices to show"],
+      ["Library", "Firmware file library"],
+      ["Backup Manager", "Preserved originals"],
+      ["Settings", "Appearance"],
     ];
     for (const [label, heading] of pages) {
       await user.click(screen.getByRole("link", { name: label }));
@@ -152,9 +154,9 @@ describe("desktop foundation", () => {
         "page",
       );
     }
-    await user.click(screen.getByRole("link", { name: "Jobs & activity" }));
+    await user.click(screen.getByRole("link", { name: "Logs" }));
     expect(
-      screen.getByRole("heading", { name: "Persistent library jobs" }),
+      screen.getByRole("heading", { name: "Operation history" }),
     ).toBeInTheDocument();
   });
 

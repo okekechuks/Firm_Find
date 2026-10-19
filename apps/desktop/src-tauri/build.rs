@@ -1,6 +1,15 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "get_desktop_state",
+            "save_desktop_preferences",
+            "list_firmware_backups",
+            "create_firmware_backup",
+            "restore_firmware_backup",
+            "remove_firmware_item",
+            "open_managed_folder",
+            "select_library_directory",
+            "relocate_firmware_library",
             "select_firmware_file",
             "discard_firmware_selection",
             "start_firmware_import",

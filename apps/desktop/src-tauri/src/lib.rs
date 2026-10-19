@@ -128,6 +128,15 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            library::ipc::get_desktop_state,
+            library::ipc::save_desktop_preferences,
+            library::ipc::list_firmware_backups,
+            library::ipc::create_firmware_backup,
+            library::ipc::restore_firmware_backup,
+            library::ipc::remove_firmware_item,
+            library::ipc::open_managed_folder,
+            library::ipc::select_library_directory,
+            library::ipc::relocate_firmware_library,
             library::ipc::select_firmware_file,
             library::ipc::discard_firmware_selection,
             library::ipc::start_firmware_import,

@@ -1,0 +1,322 @@
+OBTAINER GUI redesign evidence, 19 October 2026 (Africa/Lagos)
+Starting commit e71f676, clean checkout. Existing structure and normal user data preserved.
+Final native command: npm.cmd run test:gui => EXIT 0; 91 checkpoints
+Final native evidence: .tools\foundation\2026-10-19T12-35-41.796Z
+Final run: 995d66c51c7a8a0901843f0645034e26
+Ordinary release SHA-256: 066FF4C83EFEFD4197F3DB31019550DBB22D087460D8182591B44AA0592795A9
+
+
+
+Commands run from the repository root; `CARGO_INCREMENTAL=0` for Rust/native compilation.
+
+| Command | Executed outcome |
+| --- | --- |
+| `node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit` | 0 after initial test callback typing correction; production `tsc -b` also passes. |
+| `npm.cmd run lint` | 0; no warnings. |
+| `npm.cmd test` | 0 final; 84 tests / nine files. Earlier timed-out attempt retained in execution history. |
+| `npm.cmd run test --workspace @obtainer/desktop -- --maxWorkers=1 --reporter=dot` | 0; 84 tests. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check` | 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings` | 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings` | 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline` | 0; 85 tests. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --features native-test-profile --locked --offline` | 0; 85 tests. |
+| `npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline` | 0; current frontend production assets and Windows executable. |
+| `npm.cmd run build:native-tests` | 0; dedicated optimized test executable; ordinary executable SHA-256 preserved. |
+| `npm.cmd run test:foundation -- --gui-preview --gui --phase4` | 0; populated development GUI, backup/restore/removal, real progress, theme/help/settings and preservation/cleanup. |
+| `npm.cmd run test:gui` | 0 final; 91 native checkpoints, including storage-copy restart and new-location integrity. Earlier failed attempts documented below. |
+| `npm.cmd run test:native -- target/release/obtainer-native-test.exe --audit` | 0; retained WebDriver smoke, same-value preferences and restart. |
+| `py scripts/probe-native-isolation.py .tools/gui-2026-10-19/normal-after.json .tools/gui-2026-10-19/normal-before.json` | 0; exact full normal-data equality. |
+| `git diff --check` | 0; LF/CRLF notices only. |
+
+
+Native child commands (exit 1 for deliberately forced dev interruption is expected):
+[
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline",
+    "kind": "dev",
+    "exitCode": 1
+  },
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": ".\\target\\release\\obtainer-native-test.exe",
+    "kind": "release",
+    "exitCode": 0
+  },
+  {
+    "command": ".\\target\\release\\obtainer-native-test.exe",
+    "kind": "release",
+    "exitCode": 0
+  }
+]
+
+Native checkpoints:
+01. PASS: {"name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"}
+02. PASS: {"name": "ordinary production executable rejects test activation before opening data"}
+03. PASS: {"name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"}
+04. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+05. PASS: {"name": "active test ownership prevents cleanup"}
+06. PASS: {"name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "995d66c51c7a8a0901843f0645034e26", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data"}
+07. PASS: {"name": "dev-reopen: native window, React and real SQLite IPC", "url": "http://127.0.0.1:1420/", "pid": 26072, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data", "theme": "system"}
+08. PASS: {"name": "dev-reopen: exactly six primary navigation destinations"}
+09. PASS: {"name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support", "records": 51, "watching": true, "warnings": []}
+10. PASS: {"name": "dev-reopen: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"}
+11. PASS: {"name": "dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "cd4e75a44be82e1574650a1afa6068ee", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+12. PASS: {"name": "dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 2}
+13. PASS: {"name": "dev-reopen: actual streamed integrity verification and history", "checks": 3}
+14. PASS: {"name": "dev-reopen: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+15. PASS: {"name": "dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact", "bytesObserved": 3145728, "totalBytes": 268435456, "elapsedMs": 2671, "copyThroughputMiBPerSecond": 24.793388429752067, "memory": {"WorkingSet64": 93147136, "PeakWorkingSet64": 95457280, "PrivateMemorySize64": 23711744}}
+16. PASS: {"name": "dev-reopen: persisted job and activity screens render after restart"}
+17. PASS: {"name": "dev-reopen: dashboard and Library reflect committed counts and no active work", "artifacts": 1}
+18. PASS: {"name": "isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences"}
+19. PASS: {"name": "isolated native corruption and missing-blob detection; source reimport restores generated bytes without touching normal vault"}
+20. PASS: {"name": "isolated native database failure after artifact publication: failed job, retained orphan, verified reuse on retry"}
+21. PASS: {"name": "isolated native manifest remains saved when activity transaction fails; React displays separate warning"}
+22. PASS: {"name": "dev-reopen: same-value settings write/read preserved original preferences"}
+23. PASS: {"name": "dev-reopen: injected read error and real IPC retry recovery"}
+24. PASS: {"name": "dev-reopen: loading state retains cached data"}
+25. PASS: {"name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"}
+26. PASS: {"name": "dev-reopen: temporary HMR edit restored"}
+27. PASS: {"name": "dev-reopen: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed"}
+28. PASS: {"name": "dev-reopen: all six help popovers stay in bounds, take focus, close on real Escape and return focus"}
+29. PASS: {"name": "dev-reopen: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help"}
+30. PASS: {"name": "dev-reopen: actual Windows selection/classification and disabled extraction; no extraction operation invented"}
+31. PASS: {"name": "dev-reopen: recorded firmware tags and four disabled capability-aware customization controls"}
+32. PASS: {"name": "dev-reopen: real 256 MiB progress survives navigation; cancellation clears Overview and retains Logs"}
+33. PASS: {"name": "dev-reopen: native verified backup and _DEFAULT restore; cancelled confirmation preserves original; actual completion toast"}
+34. PASS: {"name": "dev-reopen: file-specific confirmation, reversible removal and verified recovery; bytes/history preserved"}
+35. PASS: {"name": "dev-reopen: timestamped persisted Logs and completed-status filtering"}
+36. PASS: {"name": "dev-reopen: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off"}
+37. PASS: {"name": "isolated native verification observed running before graceful application shutdown", "jobId": "37cd69436da638ee258b582bab6367b5"}
+38. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+39. PASS: {"name": "graceful shutdown cancelled active verification; restart preserved terminal job and usable artifact"}
+40. PASS: {"name": "Phase 4: actual copying job recorded before forced termination", "jobId": "988bbe9e8cc486096516944f54105550"}
+41. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+42. PASS: {"name": "interrupted owned development launch and released resources", "backendRenderedBeforeInterrupt": true}
+43. PASS: {"name": "dev-recovery: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "995d66c51c7a8a0901843f0645034e26", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data"}
+44. PASS: {"name": "dev-recovery: native window, React and real SQLite IPC", "url": "http://127.0.0.1:1420/", "pid": 28380, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data", "theme": "system"}
+45. PASS: {"name": "dev-recovery: exactly six primary navigation destinations"}
+46. PASS: {"name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support", "records": 51, "watching": true, "warnings": []}
+47. PASS: {"name": "dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn"}
+48. PASS: {"name": "dev-recovery: interrupted copy recovered as failed, known staging removed, no false success", "jobId": "988bbe9e8cc486096516944f54105550"}
+49. PASS: {"name": "dev-recovery: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"}
+50. PASS: {"name": "dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "c9742d7ac1141c27d54e861e7f7e14db", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+51. PASS: {"name": "dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 7}
+52. PASS: {"name": "dev-recovery: actual streamed integrity verification and history", "checks": 11}
+53. PASS: {"name": "dev-recovery: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+54. PASS: {"name": "dev-recovery: persisted job and activity screens render after restart"}
+55. PASS: {"name": "dev-recovery: dashboard and Library reflect committed counts and no active work", "artifacts": 3}
+56. PASS: {"name": "dev-recovery: same-value settings write/read preserved original preferences"}
+57. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+58. PASS: {"name": "production: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "995d66c51c7a8a0901843f0645034e26", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data"}
+59. PASS: {"name": "production: native window, React and real SQLite IPC", "url": "http://tauri.localhost/", "pid": 28544, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data", "theme": "system"}
+60. PASS: {"name": "production: exactly six primary navigation destinations"}
+61. PASS: {"name": "production: discovery, three refreshes, unique IDs, unknown feature support", "records": 51, "watching": true, "warnings": []}
+62. PASS: {"name": "production: repeated startup keeps interrupted job terminal without rerunning it"}
+63. PASS: {"name": "production: existing artifact/import history available before any new import; stale verified label withdrawn"}
+64. PASS: {"name": "production: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"}
+65. PASS: {"name": "production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "96ad7c2a4d12425dbe3f950ffe776a74", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+66. PASS: {"name": "production: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 9}
+67. PASS: {"name": "production: actual streamed integrity verification and history", "checks": 14}
+68. PASS: {"name": "production: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+69. PASS: {"name": "production: persisted job and activity screens render after restart"}
+70. PASS: {"name": "production: dashboard and Library reflect committed counts and no active work", "artifacts": 3}
+71. PASS: {"name": "production: same-value settings write/read preserved original preferences"}
+72. PASS: {"name": "production: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed"}
+73. PASS: {"name": "production: all six help popovers stay in bounds, take focus, close on real Escape and return focus"}
+74. PASS: {"name": "production: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help"}
+75. PASS: {"name": "production: actual Windows selection/classification and disabled extraction; no extraction operation invented"}
+76. PASS: {"name": "production: recorded firmware tags and four disabled capability-aware customization controls"}
+77. PASS: {"name": "production: native verified backup and _DEFAULT restore; cancelled confirmation preserves original; actual completion toast"}
+78. PASS: {"name": "production: file-specific confirmation, reversible removal and verified recovery; bytes/history preserved"}
+79. PASS: {"name": "production: timestamped persisted Logs and completed-status filtering"}
+80. PASS: {"name": "production: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off"}
+81. PASS: {"name": "production: real folder picker, plan cancellation, verified storage copy and restart gate; old Library preserved"}
+82. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+83. PASS: {"name": "production restart: copied Library active, artifacts/provenance/counts/settings retained, backup path unchanged and old vault preserved"}
+84. PASS: {"name": "production restart: actual integrity job reads and verifies bytes from relocated Library"}
+85. PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+86. PASS: {"name": "no captured native console warnings or unhandled exceptions"}
+87. PASS: {"name": "cleanup rejects mismatched marker/run ID and retains test data"}
+88. PASS: {"name": "cleanup retains unknown staging without deleting files"}
+89. PASS: {"name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"}
+90. PASS: {"name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"}
+91. PASS: {"name": "owned isolated run cleaned after all processes stopped", "runId": "995d66c51c7a8a0901843f0645034e26"}
+
+Console issues: []
+Cleanup: {
+  "status": 0,
+  "stdout": "{\"removed\":true,\"runId\":\"995d66c51c7a8a0901843f0645034e26\"}\n",
+  "stderr": ""
+}
+
+Storage-copy plan/results:
+{
+  "destination": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\fixtures\\gui-library-parent\\OBTAINER-Library",
+  "previous": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data\\vault",
+  "artifacts": [
+    {
+      "sha256": "bdbc6c856ac2bae6afbc8b96d29dc635018d41478069d676851dc8bde861fa49",
+      "sizeBytes": 1048576,
+      "kind": "imported_original",
+      "sourceCount": 1
+    },
+    {
+      "sha256": "a6d72ac7690f53be6ae46ba88506bd97302a093f7108472bd9efc3cefda06484",
+      "sizeBytes": 268435456,
+      "kind": "imported_original",
+      "sourceCount": 2
+    },
+    {
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "sizeBytes": 1048576,
+      "kind": "restored_default",
+      "sourceCount": 11
+    }
+  ],
+  "backupDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data\\backups",
+  "theme": "system"
+}
+{
+  "preferences": {
+    "autoRefresh": true,
+    "notifyCompleted": true,
+    "notifyFailed": true,
+    "notifyDevices": false,
+    "libraryDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\fixtures\\gui-library-parent\\OBTAINER-Library"
+  },
+  "libraryDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\fixtures\\gui-library-parent\\OBTAINER-Library",
+  "backupDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\995d66c51c7a8a0901843f0645034e26\\data\\backups",
+  "restartRequired": false,
+  "libraryBytes": 270532608,
+  "backupBytes": 2097152,
+  "extracted": 0,
+  "customized": 0,
+  "maxConcurrentJobs": 1
+}
+
+Normal data before/after: EXACT EQUALITY
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "vault_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER\\vault",
+  "schema": 4,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": [],
+  "table_counts": {
+    "activity_links": 74,
+    "artifact_details": 1,
+    "artifact_imports": 20,
+    "audit_events": 216,
+    "compatibility_evaluations": 2,
+    "device_identity_observations": 2,
+    "devices": 141,
+    "discovery_metadata": 141,
+    "firmware_artifacts": 1,
+    "integrity_checks": 30,
+    "job_details": 34,
+    "jobs": 34,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "all_rows_sha256": "a00a104f7fd022a1ca348cac652b4d4127dabc60b6d926ee2abd1a7c2c958c1d",
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "saved_router_ids": [
+    "b61f3765b1807d02d05f1c6e0236967025f51e671ebc062c70fe62c90dcdb147"
+  ],
+  "profile_ids": [
+    "observed.comfi-mg11",
+    "tplink.archer-c7-v5.openwrt-23-05-5"
+  ],
+  "database_files": {
+    "obtainer.db": {
+      "bytes": 299008,
+      "sha256": "b3d00cba067dde53dd3a4dc01d0a56e1f325396a1122a25964d5061be518d980"
+    },
+    "obtainer.db-wal": {
+      "bytes": 4124152,
+      "sha256": "a4ada65217682032d7a1c50d97e45743ee9a7fa25a408fde8ebdff32f2706828"
+    }
+  },
+  "vault_files": {
+    "sha256\\c9\\c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264.bin": {
+      "bytes": 1048576,
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264"
+    }
+  },
+  "other_directories": {
+    "logs": {
+      "obtainer.jsonl.2026-10-14": {
+        "bytes": 1015,
+        "sha256": "a25eff6ecdcafc443c11a5b874e91c0d35221716c0a8036ac50c60db030504ae"
+      },
+      "obtainer.jsonl.2026-10-15": {
+        "bytes": 580,
+        "sha256": "cb9efc4942e1352d9d5a501937dd2f326136e4d8ce3d91b4a7d7c6ace43c7b2b"
+      },
+      "obtainer.jsonl.2026-10-16": {
+        "bytes": 6090,
+        "sha256": "2636f36ae2de216f81ddad11f2a415f5a6ac9ffbda1123403a7cb784ae31c884"
+      },
+      "obtainer.jsonl.2026-10-17": {
+        "bytes": 435,
+        "sha256": "fc72e1a7234159ba5a69ac5f9c692cb4a26e5fbdbe333bbc6ee15b10872ce811"
+      }
+    },
+    "workspaces": {},
+    "reports": {}
+  }
+}
+
+Final process/listener census:
+{
+  "apps": [],
+  "workspaceVite": [],
+  "testListeners": [],
+  "successfulRunStillExists": false
+}
+
+Screenshots:
+docs/images/gui-dev-reopen-backup-manager.png
+docs/images/gui-dev-reopen-compact-layout.png
+docs/images/gui-dev-reopen-connected-devices.png
+docs/images/gui-dev-reopen-customize-firmware.png
+docs/images/gui-dev-reopen-extraction-unavailable.png
+docs/images/gui-dev-reopen-information-popover.png
+docs/images/gui-dev-reopen-library.png
+docs/images/gui-dev-reopen-light-theme.png
+docs/images/gui-dev-reopen-logs.png
+docs/images/gui-dev-reopen-overview-active-job.png
+docs/images/gui-dev-reopen-overview.png
+docs/images/gui-dev-reopen-selected-device-details.png
+docs/images/gui-dev-reopen-settings.png
+docs/images/gui-production-backup-manager.png
+docs/images/gui-production-compact-layout.png
+docs/images/gui-production-connected-devices.png
+docs/images/gui-production-customize-firmware.png
+docs/images/gui-production-extraction-unavailable.png
+docs/images/gui-production-information-popover.png
+docs/images/gui-production-library.png
+docs/images/gui-production-light-theme.png
+docs/images/gui-production-logs.png
+docs/images/gui-production-overview.png
+docs/images/gui-production-selected-device-details.png
+docs/images/gui-production-settings.png
+docs/images/gui-production-storage-copy-plan.png
+
+Retained WebDriver smoke: .tools/native-audit/2026-10-19T12-27-06.803Z/; command exit 0, cleanup 0, same-value settings/restart, normal before/after equality.
+Known limits: MG11 absent today; no extraction, device configuration, flashing, Apply or proprietary rebuild. Extraction screenshot shows disabled state. Delete is reversible catalog removal, not byte purge. No Explorer GUI or installer/signing qualification. Normal owner-data GUI not automated; native dev/release share actual application code through a guarded dedicated entry and isolated roots.
+Earlier failed attempts and corrections: docs/GUI_REDESIGN_VERIFICATION.md. Failed test roots retained; successful roots removed through native cleanup guard.
+Next action: owner UI review. Phase 5 not started.

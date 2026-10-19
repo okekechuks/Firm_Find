@@ -1,3 +1,4 @@
+import { verifyGUI, verifyGUIRestart } from "./verify-gui.mjs";
 // Exercises the actual Windows Tauri dev command and release executable through native WebView2.
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
@@ -146,10 +147,12 @@ async function verify(label, extended = false) {
   await connected();
   await client.send('Page.reload'); await connected();
   const before = await invoke('get_snapshot');
+  const guiState=await invoke('get_desktop_state');assert.equal(guiState.maxConcurrentJobs,1);assert.equal(typeof guiState.customized,'number');
+  await writeFile(path.join(evidence,label+'-desktop-state.json'),JSON.stringify(guiState,null,2));
   originalSettings ??= before.settings;
   assert.deepEqual(before.settings, originalSettings);
   assert.equal(path.normalize(before.dataDirectory).toLowerCase(), path.join(profile.root,'data').toLowerCase());
-  assert.equal(before.databaseVersion, 4);
+  assert.equal(before.databaseVersion, 5);
   assert.equal(before.testProfile.runId,profile.id);assert.equal(before.testProfile.discoverySource,'windows_observed');assert.equal(before.testProfile.simulatedAdapters,false);
   assert.equal(await client.evaluate("document.querySelector('.native-test-notice')?.dataset.testRunId"),profile.id);
   if(label==='dev-reopen'){assert.notEqual(cleanupProcess(profile,env).status,0);record('active test ownership prevents cleanup');}
@@ -158,14 +161,12 @@ async function verify(label, extended = false) {
   assert.equal(state.apps.length, 1); assert.notEqual(state.apps[0].window, 0, 'Native window missing');
   assert.equal(state.vite.length, isDev ? 1 : 0);
   record(label + ': native window, React and real SQLite IPC', { url: client.url, pid: state.apps[0].id, dataDirectory: before.dataDirectory, theme: before.settings.theme });
-  for (const [page, heading] of [
-    ['dashboard', 'Overview'], ['devices', 'Connected devices'], ['firmware', 'Firmware library'],
-    ['analysis', 'Analysis'], ['backups', 'Backup manager'], ['builder', 'Firmware builder'],
-    ['jobs', 'Jobs & activity'], ['settings', 'Settings'], ['compatibility', 'Compatibility'],
-  ]) await screen(page, heading);
-  record(label + ': all nine navigation destinations');
+  const navigation=[['dashboard','Overview'],['devices','Connected Devices'],['firmware','Library'],['backups','Backup Manager'],['jobs','Logs'],['settings','Settings']];
+  assert.equal(await client.evaluate("document.querySelectorAll('nav[aria-label=\"Main navigation\"] a').length"),6);
+  for(const [page,heading] of navigation) {await screen(page,heading);await screenshot(label+'-'+page);}
+  record(label+': exactly six primary navigation destinations');
 
-  await screen('devices', 'Connected devices');
+  await screen('devices', 'Connected Devices');
   let discovery;
   await until(async () => {
     discovery = await invoke('get_discovery');
@@ -226,7 +227,8 @@ async function verify(label, extended = false) {
     await writeFile(backendPath, originalBackend); changedBackend = undefined;
     await connected();
     record(label + ': loading state retains cached data');
-
+    // Start the component HMR proof from the restored module graph, after fault-injection imports settle.
+    await client.send('Page.reload'); await connected();
     await screen('settings', 'Settings');
     originalSource = await readFile(preferencePath, 'utf8');
     const anchor = 'Choose how OBTAINER looks on your desktop.';
@@ -249,6 +251,7 @@ async function verify(label, extended = false) {
     await until(() => client.evaluate("!document.body.innerText.includes('Hot reload verified.')"), 'HMR restoration did not render');
     record(label + ': temporary HMR edit restored');
   }
+  if(process.argv.includes('--gui')&&['dev-reopen','production'].includes(label))await verifyGUI(client,{label,pid:state.apps[0].id,profile,evidence,record});
   await screen('dashboard', 'Overview'); await connected(); await screenshot(label);
   await writeFile(path.join(evidence, label + '-summary.json'), JSON.stringify({
     url: client.url, dataDirectory: before.dataDirectory, databaseVersion: before.databaseVersion,
@@ -276,9 +279,11 @@ try {
   verifyActivationGuards(root,profile,env,record);
   if (process.argv.includes('--watch-usb')) {
     await clean(); start('dev'); await connect(); await connected();
-    await screen('devices', 'Connected devices');
+    await screen('devices', 'Connected Devices');
     await watchUsb(client, {evidence, record});
     await closeWindow();
+  } else if (process.argv.includes('--gui-preview')) {
+    await clean();start('dev');await verify('dev-reopen',true);await closeWindow();
   } else if (settingsRoundtrip) {
     await clean();
     start('release'); await connect(); await connected();
@@ -317,6 +322,7 @@ try {
     record('interrupted owned development launch and released resources', { backendRenderedBeforeInterrupt });
     start('dev'); await verify('dev-recovery'); await closeWindow();
     start('release'); await verify('production'); await closeWindow();
+    if(process.argv.includes('--gui')){start('release');await connect();await connected();await verifyGUIRestart(client,{profile,evidence,record});await screenshot('production-relocated');await closeWindow();}
   }
   const issues = consoleEvents.filter((event) => event.method === 'Runtime.exceptionThrown' ||
     ['warning', 'error'].includes(event.params?.entry?.level) ||

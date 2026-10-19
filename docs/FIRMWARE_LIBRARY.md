@@ -17,3 +17,17 @@ Defaults: 1 MiB buffers; one binary-processing worker; at most 16 active/queued 
 All existing application data remains at `%LOCALAPPDATA%\OBTAINER\`. Schema 4 complements the existing artifact/job tables with metadata/history tables. No original device/settings/profile record is removed. See [vault guarantees](FIRMWARE_VAULT.md), [persistent jobs](JOB_ENGINE.md), and [verification evidence](PHASE_4_VERIFICATION.md).
 
 Automated native tests use a separate, explicitly enabled executable and a unique marked run beneath the Windows LocalAppData known folder's `OBTAINER-NativeTests` directory. Its database, vault, logs, workspaces, reports and WebView data are isolated. Harmless generated fixtures are used for corruption/interruption tests. Ordinary launches retain the path above. See [native test activation and cleanup](NATIVE_TESTING.md) and [Phase 4.1 verification](PHASE_4_1_VERIFICATION.md).
+
+## Redesigned desktop workflows
+
+The six primary destinations are Overview, Connected Devices, Library, Backup Manager, Logs and Settings. Compatibility remains in device details. Overview contains only four current statistics and active jobs; historical work belongs in Logs. One shared provider reads saved jobs and drives real completion/failure notifications across navigation. Stage-specific byte progress is measured; unreliable percentages and ETAs are omitted.
+
+Library supports global type and sort filters alongside existing search/integrity/source/date filters. User imports show Imported Original, never Extracted. Restored copies show Restored Default; future acquired/build/customized categories require corresponding recorded provenance. Details retain checksum, imports, integrity history and device association. Customize shows four unavailable feature switches; it cannot start a proprietary rebuild or a device write.
+
+Create Backup streams and independently verifies a separate copy under the managed per-user `backups` directory. Backup Manager preserves the source and checksum. Confirmed Restore rechecks the backup before copying through the existing import pipeline, adds `_DEFAULT` before the extension and resolves case-insensitive conflicts with a suffix. The original backup remains intact. Latest 100 active backup records are shown.
+
+Delete requires a file-specific confirmation and no active library work. It removes only that item's active catalog entry, retaining bytes, provenance, backups and job history for recovery. It does not free disk space or permanently purge data. Counts/byte summaries describe active catalog images, not all retained or orphaned disk files. Reimport or a verified backup restore recovers a removed Library image.
+
+Additive schema 5 stores GUI preferences, backup metadata, presentation labels and removal timestamps; existing theme JSON and historical rows remain. Settings can request a native folder-selection copy plan. Only a reviewed opaque ticket can queue relocation. Registered blobs are copied and independently verified before the final transaction selects the future location. Imports pause until restart activates it, while the original directory remains. Failure/cancellation preserves the old location and uncertain outputs. Backup storage and the workspace database do not move.
+
+See [GUI verification](GUI_REDESIGN_VERIFICATION.md) for actual native results and limitations.

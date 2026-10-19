@@ -1,8 +1,8 @@
 import { z } from "zod";
 const number=z.number().int().nonnegative();
 const hash=z.string().regex(/^[a-f0-9]{64}$/);
-export const jobSchema=z.object({id:z.string(),kind:z.string(),status:z.enum(["pending","running","completed","failed","cancelled"]),createdAt:number,startedAt:number.nullable(),finishedAt:number.nullable(),updatedAt:number,progressBytes:number,totalBytes:number,stage:z.string(),errorCode:z.string().nullable(),message:z.string(),relatedArtifact:hash.nullable(),importId:z.string().nullable(),cancelRequested:z.boolean(),duplicate:z.boolean(),recoveryInfo:z.string().nullable()});
-export const artifactSchema=z.object({sha256:hash,sizeBytes:number,storageStatus:z.enum(["present","missing","unreadable","unknown"]),integrityStatus:z.enum(["not_checked","checking","verified","hash_mismatch","missing","unreadable","verification_failed"]),firstImportedAt:number,lastVerifiedAt:number.nullable(),format:z.string(),sourceCount:number,originalFilename:z.string(),sourceCategory:z.string()});
+export const jobSchema=z.object({id:z.string(),kind:z.string(),status:z.enum(["pending","running","completed","failed","cancelled"]),createdAt:number,startedAt:number.nullable(),finishedAt:number.nullable(),updatedAt:number,progressBytes:number,totalBytes:number,stage:z.string(),errorCode:z.string().nullable(),message:z.string(),relatedArtifact:hash.nullable(),importId:z.string().nullable(),cancelRequested:z.boolean(),duplicate:z.boolean(),recoveryInfo:z.string().nullable(),originalFilename:z.string().nullable().optional(),deviceId:z.string().nullable().optional()});
+export const artifactSchema=z.object({sha256:hash,sizeBytes:number,storageStatus:z.enum(["present","missing","unreadable","unknown"]),integrityStatus:z.enum(["not_checked","checking","verified","hash_mismatch","missing","unreadable","verification_failed"]),firstImportedAt:number,lastVerifiedAt:number.nullable(),format:z.string(),sourceCount:number,originalFilename:z.string(),sourceCategory:z.string(),kind:z.string().optional()});
 export const importSchema=z.object({importId:z.string(),artifactSha256:hash,originalFilename:z.string(),importedAt:number,sourceCategory:z.string(),provenanceStatus:z.string(),description:z.string().nullable(),associatedDeviceId:z.string().nullable(),jobId:z.string()});
 const checkSchema=z.object({artifactSha256:hash,expectedSize:number,actualSize:number.nullable(),actualSha256:hash.nullable(),status:z.string(),verifiedAt:number,errorCode:z.string().nullable()});
 export const detailsSchema=z.object({artifact:artifactSchema,imports:z.array(importSchema).max(50),checks:z.array(checkSchema).max(50)});
@@ -14,4 +14,13 @@ export const manifestExportSchema=z.object({saved:z.boolean(),activityRecorded:z
 export type FileSelection=z.infer<typeof selectionSchema>;
 export type LibraryPage=z.infer<typeof libraryPageSchema>;
 export type ArtifactDetails=z.infer<typeof detailsSchema>;
-export type LibraryQuery={search?:string;integrity?:string|null;source?:string|null;fromDate?:number|null;toDate?:number|null;page?:number};
+export type LibraryQuery={search?:string;integrity?:string|null;source?:string|null;fromDate?:number|null;toDate?:number|null;page?:number;kind?:string|null;sort?:string};
+
+export const desktopPreferencesSchema=z.object({autoRefresh:z.boolean(),notifyCompleted:z.boolean(),notifyFailed:z.boolean(),notifyDevices:z.boolean(),libraryDirectory:z.string().nullable()});
+export const desktopStateSchema=z.object({preferences:desktopPreferencesSchema,libraryDirectory:z.string(),backupDirectory:z.string(),restartRequired:z.boolean(),libraryBytes:number,backupBytes:number,extracted:number,customized:number,maxConcurrentJobs:z.literal(1)});
+export const backupSchema=z.object({id:z.string().regex(/^[a-f0-9]{32}$/),artifactSha256:hash,filename:z.string(),sizeBytes:number,createdAt:number,verifiedAt:number,sourceKind:z.string(),location:z.string()});
+export const storagePlanSchema=z.object({ticket:z.string().regex(/^[a-f0-9]{32}$/),source:z.string(),destination:z.string(),fileCount:number,bytes:number,expiresAt:number});
+export type DesktopState=z.infer<typeof desktopStateSchema>;
+export type DesktopPreferences=z.infer<typeof desktopPreferencesSchema>;
+export type Backup=z.infer<typeof backupSchema>;
+export type StoragePlan=z.infer<typeof storagePlanSchema>;

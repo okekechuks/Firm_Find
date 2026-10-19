@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
-  "description": "Local main window may read workspace state, save preferences and request passive device inventory.",
+  "description": "Local desktop workspace may discover devices, manage selected firmware copies and backups, review history and persist preferences. No device write command.",
   "windows": [
     "main"
   ],
@@ -9,7 +9,26 @@
     "windows"
   ],
   "permissions": [
-    "allow-select-firmware-file","allow-discard-firmware-selection","allow-start-firmware-import","allow-list-firmware-artifacts","allow-get-firmware-artifact","allow-verify-firmware-integrity","allow-cancel-library-job","allow-list-library-jobs","allow-get-library-job","allow-get-library-activity","allow-export-artifact-manifest",
+    "allow-get-desktop-state",
+    "allow-save-desktop-preferences",
+    "allow-list-firmware-backups",
+    "allow-create-firmware-backup",
+    "allow-restore-firmware-backup",
+    "allow-remove-firmware-item",
+    "allow-open-managed-folder",
+    "allow-select-library-directory",
+    "allow-relocate-firmware-library",
+    "allow-select-firmware-file",
+    "allow-discard-firmware-selection",
+    "allow-start-firmware-import",
+    "allow-list-firmware-artifacts",
+    "allow-get-firmware-artifact",
+    "allow-verify-firmware-integrity",
+    "allow-cancel-library-job",
+    "allow-list-library-jobs",
+    "allow-get-library-job",
+    "allow-get-library-activity",
+    "allow-export-artifact-manifest",
     "allow-get-snapshot",
     "allow-save-settings",
     "allow-get-discovery",

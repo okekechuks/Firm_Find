@@ -552,7 +552,7 @@ fn nonempty_schema_three_upgrade_and_repeated_startup_preserve_all_legacy_rows()
     drop(c);
     for _ in 0..2 {
         let r = Repository::open(&path).unwrap();
-        assert_eq!(r.snapshot(dir.path()).unwrap().database_version, 4);
+        assert_eq!(r.snapshot(dir.path()).unwrap().database_version, 5);
         assert_eq!(
             r.connection
                 .query_row("SELECT COUNT(*) FROM jobs WHERE id='old-job'", [], |r| r
@@ -715,4 +715,367 @@ fn directory_junctions_and_exclusive_source_handles_are_rejected() {
         .open(&p)
         .unwrap();
     assert!(s.select_path(&p).is_err());
+}
+
+#[test]
+fn gui_backup_restore_verifies_copies_and_preserves_original_history() {
+    let (d, repo, s) = setup();
+    let bytes = b"harmless original backup fixture";
+    let original = completed(&s, &source(d.path(), "router.bin", bytes));
+    let hash = original.related_artifact.unwrap();
+    let backup_job = wait(&s, &s.create_backup(&hash).unwrap().id);
+    assert_eq!(backup_job.status, JobStatus::Completed);
+    let b = s.backups().unwrap().remove(0);
+    assert_eq!(fs::read(&b.location).unwrap(), bytes);
+    while !s.inner.controls.lock().unwrap().is_empty() {
+        thread::yield_now();
+    }
+    assert!(s.remove_item(&hash, false, false).is_err());
+    s.remove_item(&hash, false, true).unwrap();
+    assert_eq!(s.list(&LibraryQuery::default()).unwrap().total, 0);
+    let restored = wait(&s, &s.restore_backup(&b.id, true).unwrap().id);
+    assert_eq!(restored.status, JobStatus::Completed);
+    let details = s.details(&hash).unwrap();
+    assert_eq!(details.artifact.original_filename, "router_DEFAULT.bin");
+    assert_eq!(details.artifact.kind, "restored_default");
+    assert_eq!(details.artifact.source_count, 2);
+    assert_eq!(fs::read(&b.location).unwrap(), bytes);
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .library_job(&original.id)
+            .unwrap()
+            .status,
+        JobStatus::Completed
+    );
+    assert!(s.restore_backup(&b.id, false).is_err());
+    while !s.inner.controls.lock().unwrap().is_empty() {
+        thread::yield_now();
+    }
+    s.remove_item(&b.id, true, true).unwrap();
+    assert!(s.backups().unwrap().is_empty());
+    assert!(Path::new(&b.location).is_file());
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .connection
+            .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))
+            .unwrap(),
+        "ok"
+    );
+}
+#[test]
+fn gui_backup_and_restore_reject_corruption_without_claiming_success() {
+    let (d, _, s) = setup();
+    let original = completed(
+        &s,
+        &source(d.path(), "corruption.bin", b"generated test bytes"),
+    );
+    let hash = original.related_artifact.unwrap();
+    let good = wait(&s, &s.create_backup(&hash).unwrap().id);
+    assert_eq!(good.status, JobStatus::Completed);
+    let b = s.backups().unwrap().remove(0);
+    fs::write(&b.location, b"tampered backup bytes").unwrap();
+    let restored = wait(&s, &s.restore_backup(&b.id, true).unwrap().id);
+    assert_eq!(restored.status, JobStatus::Failed);
+    assert_eq!(restored.error_code.as_deref(), Some("HASH_MISMATCH"));
+    assert_eq!(s.details(&hash).unwrap().artifact.source_count, 1);
+    let (blob, _guards) = s.inner.vault.blob(&hash).unwrap();
+    fs::write(blob, b"tampered vault bytes").unwrap();
+    let backup = wait(&s, &s.create_backup(&hash).unwrap().id);
+    assert_eq!(backup.status, JobStatus::Failed);
+    assert_eq!(backup.error_code.as_deref(), Some("HASH_MISMATCH"));
+    assert_eq!(s.backups().unwrap().len(), 1);
+}
+#[test]
+fn gui_restored_names_keep_extensions_and_avoid_casefold_conflicts() {
+    use super::desktop::restored_name;
+    assert_eq!(
+        restored_name("Huawei_E5577.bin", &[]),
+        "Huawei_E5577_DEFAULT.bin"
+    );
+    assert_eq!(restored_name("router", &[]), "router_DEFAULT");
+    assert_eq!(
+        restored_name("router_DEFAULT.img", &[]),
+        "router_DEFAULT.img"
+    );
+    assert_eq!(
+        restored_name(
+            "router.bin",
+            &["ROUTER_default.BIN".into(), "router_DEFAULT_1.bin".into()]
+        ),
+        "router_DEFAULT_2.bin"
+    );
+}
+#[test]
+fn gui_preferences_are_strict_persistent_and_cannot_override_storage_paths() {
+    use super::desktop::PreferenceInput;
+    let (d, repo, s) = setup();
+    let old = repo.lock().unwrap().settings().unwrap();
+    assert!(serde_json::from_str::<PreferenceInput>(r#"{"autoRefresh":false,"notifyCompleted":false,"notifyFailed":true,"notifyDevices":true,"libraryDirectory":"C:/unsafe"}"#).is_err());
+    let saved = repo
+        .lock()
+        .unwrap()
+        .save_desktop_preferences(PreferenceInput {
+            auto_refresh: false,
+            notify_completed: false,
+            notify_failed: true,
+            notify_devices: true,
+        })
+        .unwrap();
+    s.stop();
+    drop(s);
+    drop(repo);
+    let real = d.path().join("data/test.db");
+    let reopened = Repository::open(&real).unwrap();
+    assert_eq!(reopened.desktop_preferences().unwrap(), saved);
+    assert_eq!(reopened.settings().unwrap(), old);
+}
+#[test]
+fn gui_type_sort_and_visibility_filters_preserve_shared_bytes() {
+    let (d, _, s) = setup();
+    let a = completed(&s, &source(d.path(), "a.bin", b"short"));
+    let b = completed(&s, &source(d.path(), "b.bin", b"longer generated bytes"));
+    let page = s
+        .list(&LibraryQuery {
+            sort: Some("largest".into()),
+            kind: Some("imported_original".into()),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(page.total, 2);
+    assert_eq!(page.artifacts[0].original_filename, "b.bin");
+    assert_eq!(
+        s.list(&LibraryQuery {
+            kind: Some("extracted".into()),
+            ..Default::default()
+        })
+        .unwrap()
+        .total,
+        0
+    );
+    assert!(s
+        .list(&LibraryQuery {
+            sort: Some("DROP TABLE jobs".into()),
+            ..Default::default()
+        })
+        .is_err());
+    while !s.inner.controls.lock().unwrap().is_empty() {
+        thread::yield_now();
+    }
+    s.remove_item(a.related_artifact.as_deref().unwrap(), false, true)
+        .unwrap();
+    let page = s.list(&LibraryQuery::default()).unwrap();
+    assert_eq!(page.total, 1);
+    assert_eq!(page.unique_bytes, b"longer generated bytes".len() as u64);
+    assert_eq!(page.artifacts[0].sha256, b.related_artifact.unwrap());
+    assert!(s
+        .inner
+        .vault
+        .blob(a.related_artifact.as_deref().unwrap())
+        .unwrap()
+        .0
+        .exists());
+}
+#[test]
+fn gui_storage_copy_switches_only_after_verified_commit_and_restart() {
+    let (d, repo, s) = setup();
+    let input = source(
+        d.path(),
+        "relocate.bin",
+        b"generated storage migration bytes",
+    );
+    let j = completed(&s, &input);
+    let hash = j.related_artifact.unwrap();
+    let backup = wait(&s, &s.create_backup(&hash).unwrap().id);
+    assert_eq!(backup.status, JobStatus::Completed);
+    while !s.inner.controls.lock().unwrap().is_empty() {
+        thread::yield_now();
+    }
+    let parent = d.path().join("new-library");
+    fs::create_dir(&parent).unwrap();
+    let plan = s.plan_directory(&parent, Some(d.path())).unwrap();
+    assert_eq!(plan.file_count, 1);
+    assert!(s.relocate(&plan.ticket, false).is_err());
+    let job = wait(&s, &s.relocate(&plan.ticket, true).unwrap().id);
+    assert_eq!(job.status, JobStatus::Completed);
+    assert!(s.desktop_state().unwrap().restart_required);
+    let old = s.inner.vault.blob(&hash).unwrap().0;
+    let new = Path::new(&plan.destination).join(Vault::key(&hash));
+    assert_eq!(fs::read(&old).unwrap(), fs::read(&new).unwrap());
+    assert!(s.select_path(&input).is_err());
+    let backup_dir = s.desktop_state().unwrap().backup_directory;
+    s.stop();
+    drop(s);
+    let reopened =
+        LibraryService::start(repo, d.path().join("data"), DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    assert_eq!(
+        reopened.desktop_state().unwrap().library_directory,
+        plan.destination
+    );
+    assert_eq!(
+        reopened.desktop_state().unwrap().backup_directory,
+        backup_dir
+    );
+    assert!(!reopened.desktop_state().unwrap().restart_required);
+    assert_eq!(
+        reopened.details(&hash).unwrap().artifact.size_bytes,
+        fs::metadata(&input).unwrap().len()
+    );
+    assert!(old.exists());
+}
+#[test]
+fn gui_storage_conflicts_scope_and_corruption_fail_without_switching() {
+    let (d, _, s) = setup();
+    let j = completed(
+        &s,
+        &source(d.path(), "unsafe-move.bin", b"generated safe bytes"),
+    );
+    let hash = j.related_artifact.unwrap();
+    while !s.inner.controls.lock().unwrap().is_empty() {
+        thread::yield_now();
+    }
+    assert!(s.plan_directory(d.path(), Some(d.path())).is_err());
+    let outside = tempfile::tempdir().unwrap();
+    assert_eq!(
+        s.plan_directory(outside.path(), Some(d.path()))
+            .unwrap_err()
+            .code,
+        "TEST_SCOPE_REQUIRED"
+    );
+    let parent = d.path().join("copy");
+    fs::create_dir(&parent).unwrap();
+    fs::create_dir(parent.join("OBTAINER-Library")).unwrap();
+    assert_eq!(
+        s.plan_directory(&parent, None).unwrap_err().code,
+        "STORAGE_CONFLICT"
+    );
+    fs::remove_dir(parent.join("OBTAINER-Library")).unwrap();
+    let plan = s.plan_directory(&parent, None).unwrap();
+    fs::write(
+        s.inner.vault.blob(&hash).unwrap().0,
+        b"corrupt generated bytes",
+    )
+    .unwrap();
+    let job = wait(&s, &s.relocate(&plan.ticket, true).unwrap().id);
+    assert_eq!(job.status, JobStatus::Failed);
+    assert!(s
+        .desktop_state()
+        .unwrap()
+        .preferences
+        .library_directory
+        .is_none());
+    assert!(!s.desktop_state().unwrap().restart_required);
+    assert!(Path::new(&plan.destination).is_dir());
+}
+
+#[test]
+fn gui_active_backup_blocks_removal_and_cancels_without_a_false_copy() {
+    let d = tempfile::tempdir().unwrap();
+    let root = d.path().join("data");
+    fs::create_dir(&root).unwrap();
+    let repo = Arc::new(Mutex::new(Repository::open(&root.join("test.db")).unwrap()));
+    let (tx, rx) = mpsc::channel();
+    let (release, go) = mpsc::channel();
+    let go = Mutex::new(go);
+    let s = LibraryService::start(
+        repo,
+        root,
+        DEFAULT_MAX,
+        Arc::new(move |j| {
+            if j.kind == "firmware_backup" && j.status == JobStatus::Running && j.stage == "running"
+            {
+                tx.send(()).unwrap();
+                go.lock().unwrap().recv().unwrap();
+            }
+        }),
+    )
+    .unwrap();
+    let j = completed(
+        &s,
+        &source(d.path(), "busy.bin", b"harmless backup cancellation bytes"),
+    );
+    let hash = j.related_artifact.unwrap();
+    let queued = s.create_backup(&hash).unwrap();
+    rx.recv_timeout(Duration::from_secs(5)).unwrap();
+    assert_eq!(
+        s.remove_item(&hash, false, true).unwrap_err().code,
+        "FILE_IN_USE"
+    );
+    assert!(s.cancel(&queued.id).unwrap().cancel_requested);
+    release.send(()).unwrap();
+    assert_eq!(wait(&s, &queued.id).status, JobStatus::Cancelled);
+    assert!(s.backups().unwrap().is_empty());
+    assert_eq!(s.details(&hash).unwrap().artifact.source_count, 1);
+}
+#[test]
+fn gui_schema_four_upgrade_preserves_existing_rows_and_theme_exactly() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("legacy-four.db");
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch(include_str!("../../migrations/001_foundation.sql"))
+        .unwrap();
+    c.execute_batch(include_str!("../../migrations/002_discovery.sql"))
+        .unwrap();
+    c.execute_batch(include_str!("../../migrations/003_profiles.sql"))
+        .unwrap();
+    c.execute_batch("UPDATE settings SET value='{\"theme\":\"dark\"}'; INSERT INTO devices VALUES('old-device','Original MiFi label',1); INSERT INTO jobs VALUES('old-job','historical','completed'); INSERT INTO audit_events(kind,message) VALUES('retained','Original history');").unwrap();
+    c.execute(
+        "INSERT INTO firmware_artifacts VALUES(?1,42)",
+        ["b".repeat(64)],
+    )
+    .unwrap();
+    c.execute_batch(include_str!("../../migrations/004_firmware_library.sql"))
+        .unwrap();
+    c.execute_batch("PRAGMA user_version=4").unwrap();
+    let before: String = c
+        .query_row(
+            "SELECT value FROM settings WHERE key='preferences'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap_or_else(|_| {
+            c.query_row("SELECT value FROM settings LIMIT 1", [], |r| r.get(0))
+                .unwrap()
+        });
+    let events: i64 = c
+        .query_row("SELECT COUNT(*) FROM audit_events", [], |r| r.get(0))
+        .unwrap();
+    drop(c);
+    for _ in 0..2 {
+        let repo = Repository::open(&path).unwrap();
+        assert_eq!(
+            repo.connection
+                .query_row("SELECT value FROM settings LIMIT 1", [], |r| r
+                    .get::<_, String>(0))
+                .unwrap(),
+            before
+        );
+        assert_eq!(
+            repo.connection
+                .query_row("SELECT COUNT(*) FROM audit_events", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            events
+        );
+        assert_eq!(
+            repo.connection
+                .query_row(
+                    "SELECT display_name FROM devices WHERE id='old-device'",
+                    [],
+                    |r| r.get::<_, String>(0)
+                )
+                .unwrap(),
+            "Original MiFi label"
+        );
+        assert_eq!(
+            repo.connection
+                .query_row("SELECT size_bytes FROM firmware_artifacts", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            42
+        );
+        assert!(repo.desktop_preferences().unwrap().auto_refresh);
+        assert_eq!(repo.snapshot(dir.path()).unwrap().database_version, 5);
+    }
 }

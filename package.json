@@ -15,6 +15,7 @@
     "test:native": "node scripts/native-smoke.mjs",
     "test:foundation": "node scripts/verify-foundation.mjs",
     "build:native-tests": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-native-tests.ps1",
-    "tauri": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1"
+    "tauri": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1",
+    "test:gui": "node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui"
   }
 }

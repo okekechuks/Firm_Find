@@ -167,6 +167,15 @@ fn run_worker(
         if stopped.load(Ordering::Acquire) {
             break;
         }
+        let automatic = repository
+            .lock()
+            .ok()
+            .and_then(|r| r.desktop_preferences().ok())
+            .map(|p| p.auto_refresh)
+            .unwrap_or(true);
+        if replies.is_empty() && !automatic {
+            continue;
+        }
         // Replies are fulfilled after the following scan, not with an earlier inventory.
         scan_and_reply(
             &repository,

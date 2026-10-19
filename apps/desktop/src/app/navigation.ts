@@ -1,108 +1,17 @@
-import {
-  LayoutDashboard,
-  Router,
-  Files,
-  ScanLine,
-  Archive,
-  Blocks,
-  ListChecks,
-  Settings2,
-  type LucideIcon,
-} from "lucide-react";
-
-export type Page =
-  | "dashboard"
-  | "devices"
-  | "compatibility"
-  | "firmware"
-  | "analysis"
-  | "backups"
-  | "builder"
-  | "jobs"
-  | "settings";
-export interface Destination {
-  id: Page;
-  label: string;
-  icon: LucideIcon;
-  eyebrow: string;
-  description: string;
-  phase?: number;
-}
+import { LayoutDashboard, Router, Files, Archive, ScrollText, Settings2, type LucideIcon } from "lucide-react";
+export type Page = "dashboard" | "devices" | "firmware" | "backups" | "jobs" | "settings" | "compatibility" | "analysis" | "builder";
+export interface Destination { id: Page; label: string; icon: LucideIcon; eyebrow: string; description: string; phase?: number }
 export const destinations: Destination[] = [
-  {
-    id: "dashboard",
-    label: "Overview",
-    icon: LayoutDashboard,
-    eyebrow: "YOUR WORKSPACE",
-    description: "A clear view of your firmware research.",
-  },
-  {
-    id: "devices",
-    label: "Connected devices",
-    icon: Router,
-    eyebrow: "DEVICE EXPLORER",
-    description: "Review USB, serial, and network hardware Windows can see.",
-    phase: 2,
-  },
-  {
-    id: "compatibility",
-    label: "Compatibility",
-    icon: ListChecks,
-    eyebrow: "DEVICE SUPPORT",
-    description: "Understand feature support, evidence and prerequisites for your device.",
-    phase: 3,
-  },
-  {
-    id: "firmware",
-    label: "Firmware library",
-    icon: Files,
-    eyebrow: "ARTIFACT VAULT",
-    description: "Preserve original images and their provenance.",
-    phase: 4,
-  },
-  {
-    id: "analysis",
-    label: "Analysis",
-    icon: ScanLine,
-    eyebrow: "ANALYSIS WORKSPACE",
-    description: "Inspect firmware structure without changing the original.",
-    phase: 16,
-  },
-  {
-    id: "backups",
-    label: "Backup manager",
-    icon: Archive,
-    eyebrow: "AUTHORIZED ACQUISITION",
-    description: "Read-only backups for verified, supported device profiles.",
-    phase: 8,
-  },
-  {
-    id: "builder",
-    label: "Firmware builder",
-    icon: Blocks,
-    eyebrow: "OPENWRT BUILDER",
-    description: "Create separate images for supported OpenWrt targets.",
-    phase: 15,
-  },
-  {
-    id: "jobs",
-    label: "Jobs & activity",
-    icon: ListChecks,
-    eyebrow: "WORKSPACE ACTIVITY",
-    description: "Follow operations and review the local audit trail.",
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: Settings2,
-    eyebrow: "PREFERENCES",
-    description: "Make this workspace yours.",
-  },
+  { id: "dashboard", label: "Overview", icon: LayoutDashboard, eyebrow: "YOUR WORKSPACE", description: "A little clarity. A longer life for your hardware." },
+  { id: "devices", label: "Connected Devices", icon: Router, eyebrow: "DISCOVER & IDENTIFY", description: "Know what is connected before taking the next step." },
+  { id: "firmware", label: "Library", icon: Files, eyebrow: "YOUR FIRMWARE, PRESERVED", description: "Every image. Its origin. A place to keep it safe." },
+  { id: "backups", label: "Backup Manager", icon: Archive, eyebrow: "KEEP A WAY BACK", description: "Preserved copies, ready when you need them." },
+  { id: "jobs", label: "Logs", icon: ScrollText, eyebrow: "THE FULL PICTURE", description: "A clear record of what happened, and what comes next." },
+  { id: "settings", label: "Settings", icon: Settings2, eyebrow: "MAKE IT YOURS", description: "Your workspace. Your preferences." },
 ];
-
 export function pageFromHash(): Page {
   const id = window.location.hash.slice(1);
-  return (
-    destinations.find((destination) => destination.id === id)?.id ?? "dashboard"
-  );
+  if (id === "compatibility") return id;
+  if (id === "analysis" || id === "builder") return "firmware";
+  return destinations.find(d => d.id === id)?.id ?? "dashboard";
 }

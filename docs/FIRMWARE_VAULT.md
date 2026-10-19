@@ -1,6 +1,6 @@
 # Firmware vault
 
-Vault blobs live at `%LOCALAPPDATA%\OBTAINER\vault\sha256\<first-two-hex-digits>\<64-lowercase-hex-digest>.bin`. Staging lives in `vault\staging\<32-hex-job-id>.part` on the same volume. Original filenames are metadata only; user text never determines a blob/staging path. Existing data directories and the application identity are unchanged.
+By default, vault blobs live at `%LOCALAPPDATA%\OBTAINER\vault\sha256\<first-two-hex-digits>\<64-lowercase-hex-digest>.bin`. Staging lives in `vault\staging\<32-hex-job-id>.part` on the same volume. Original filenames are metadata only; user text never determines a blob/staging path. Existing data directories and the application identity are unchanged.
 
 Import opens the selected source with a read lease that denies writes/deletion in Windows. Ancestors are checked for reparse points. Destination directories are held by metadata-only Windows leases to prevent replacement/renaming during operations. Vault ownership is exclusive between app instances through `vault/library.lock`; workers within that owner are bounded. The normal Windows session is required for these directory leases; restricted execution can deny profile-directory handles.
 
@@ -26,3 +26,7 @@ Before upgrading a schema-3 database, use a WAL-aware SQLite backup. The Phase 4
 Phase 4.1 destructive native regressions use only the dedicated test executable's marked `OBTAINER-NativeTests\<run-id>\data\vault`, never this normal vault. Each run records the normal database/WAL, settings and vault fingerprints before and after testing. Cleanup derives its path from the validated run ID and fixed Windows known folder, refuses active owners/processes and any reparse point, and retains nonempty staging or uncertain ownership. It does not garbage-collect normal data or historical test runs. See [native testing](NATIVE_TESTING.md).
 
 Manifest publication retains the same synchronized temporary-file and no-overwrite hard-link guarantees. Once publication succeeds, an activity database failure is a separate warning; the saved manifest is neither deleted nor reported as absent. See [export behavior](FIRMWARE_LIBRARY.md).
+
+The GUI's schema-5 workflows can preserve independent local copies under the managed `backups` directory. Restore independently hashes the backup before using the import pipeline and never flashes a device. Delete is an explicitly confirmed catalog removal: bytes and history are retained, not physically purged.
+
+An owner-approved Library relocation uses a native folder picker and a reviewed expiring plan ticket. The existing worker copies all registered blobs (including retained catalog removals), verifies them and commits only the future storage selection after successful copying. The original vault and any unregistered orphan remain preserved at their previous location. Imports pause until restart; the next launch uses the verified location. The database and backup path stay unchanged. Failed/cancelled destinations are retained for review rather than adopted or recursively removed. Native test relocation is additionally confined beneath its marked run root.

@@ -39,7 +39,7 @@ export async function interruptFirmwareImport(client,{pid,record,evidence}){
  interruptedId=job.id;await writeFile(path.join(evidence,'interrupted-import.json'),JSON.stringify({jobId:job.id,source:'harmless generated 256 MiB bytes'},null,2));record('Phase 4: actual copying job recorded before forced termination',{jobId:job.id});
 }
 export async function verifyFirmware(client,{label,pid,record,evidence}){
- await prepare();const invoke=api(client);const snapshot=await invoke('get_snapshot');assert.equal(snapshot.databaseVersion,4);assert.equal(snapshot.testProfile.runId,profile.id);assert.equal(path.normalize(snapshot.dataDirectory).toLowerCase(),path.join(profile.root,'data').toLowerCase());await checkShutdown(client,record);
+ await prepare();const invoke=api(client);const snapshot=await invoke('get_snapshot');assert.equal(snapshot.databaseVersion,5);assert.equal(snapshot.testProfile.runId,profile.id);assert.equal(path.normalize(snapshot.dataDirectory).toLowerCase(),path.join(profile.root,'data').toLowerCase());await checkShutdown(client,record);
  if(recoveredInterrupted){const j=await invoke('get_library_job',{id:recoveredInterrupted.id});assert.equal(j.status,'failed');assert.equal(j.errorCode,'INTERRUPTED');assert.equal(j.finishedAt,recoveredInterrupted.finishedAt);record(label+': repeated startup keeps interrupted job terminal without rerunning it');}
  if(label!=='dev-reopen'){
   const saved=await invoke('get_firmware_artifact',{sha256:hash});assert.equal(saved.artifact.sizeBytes,bytes.length);assert(saved.imports.length>=2);assert.equal(saved.artifact.integrityStatus,'not_checked');
@@ -48,7 +48,7 @@ export async function verifyFirmware(client,{label,pid,record,evidence}){
  if(interruptedId){const j=await invoke('get_library_job',{id:interruptedId});assert.equal(j.status,'failed');assert.equal(j.errorCode,'INTERRUPTED');assert.equal(await stat(path.join(snapshot.dataDirectory,'vault/staging',interruptedId+'.part')).then(()=>true,()=>false),false);record(label+': interrupted copy recovered as failed, known staging removed, no false success',{jobId:interruptedId});recoveredInterrupted={id:j.id,finishedAt:j.finishedAt};interruptedId=undefined;}
  const registry=await invoke('get_profile_registry');assert.equal(registry.profiles.length,2);assert.deepEqual(registry.diagnostics,[]);
  const discovery=await invoke('get_discovery');if(discovery.devices.length){const r=await invoke('get_device_compatibility',{deviceId:discovery.devices[0].id});assert(Object.values(r.features).every(f=>f.assessment==='UNKNOWN'&&!f.canApply));}
- record(label+': schema 4 and existing Phase 3.1 profile/compatibility IPC preserved');
+ record(label+': schema 5 and existing Phase 3.1 profile/compatibility IPC preserved');
  const first=await importFile(client,pid,'obtainer-generated-phase4.bin');const a=await terminal(client,first.id);assert.equal(a.status,'completed');assert.equal(a.relatedArtifact,hash);assert.equal(a.progressBytes,bytes.length);
  await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})))`),'Committed artifact did not render in React');
  const blob=path.join(snapshot.dataDirectory,'vault/sha256',hash.slice(0,2),hash+'.bin');assert.deepEqual(await readFile(blob),bytes);assert.deepEqual(await readFile(path.join(fixtures,'obtainer-generated-phase4.bin')),bytes);
@@ -74,12 +74,12 @@ export async function verifyFirmware(client,{label,pid,record,evidence}){
    const cancelled=await terminal(client,big.id);assert.equal(cancelled.status,'cancelled');assert.equal((await invoke('cancel_library_job',{id:big.id})).status,'cancelled');assert.equal((await invoke('list_firmware_artifacts',{query:{}})).total,beforeCount);
    record(label+': real copy progress, UI cancellation, idempotent retry and no incomplete library artifact',{bytesObserved:progress.progressBytes,totalBytes:progress.totalBytes,elapsedMs:Date.now()-started,copyThroughputMiBPerSecond:progress.progressBytes/1048576/Math.max(.001,(progress.updatedAt-progress.startedAt)/1000),memory});
  }
- await client.evaluate("document.querySelector('a[href=\"#jobs\"]').click()");await until(()=>client.evaluate("document.body.innerText.includes('Persistent library jobs') && document.body.innerText.includes('Firmware file imported')"),'Persisted jobs/activity did not render');
+ await client.evaluate("document.querySelector('a[href=\"#jobs\"]').click()");await until(()=>client.evaluate("document.body.innerText.includes('Operation history') && document.body.innerText.includes('Firmware file imported')"),'Persisted jobs/activity did not render');
  record(label+': persisted job and activity screens render after restart');
  const counts=(await invoke('get_snapshot')).counts;const listing=await invoke('list_firmware_artifacts',{query:{}});assert.equal(counts.artifacts,listing.total);assert.equal(counts.runningJobs,0);
  await client.evaluate("document.querySelector('a[href=\"#dashboard\"]').click()");
- await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.stats-grid .stat')].find(c=>c.textContent.includes('Firmware artifacts')&&c.querySelector('strong')?.textContent===${JSON.stringify(String(counts.artifacts))}))`),'Dashboard count did not reflect committed SQLite artifacts');
- record(label+': dashboard displays actual committed artifact count and no running library work',{artifacts:counts.artifacts});
+ await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.stats-grid .stat')].find(c=>c.textContent.includes('Active jobs')&&c.querySelector('strong')?.textContent===${JSON.stringify(String(counts.runningJobs))}))`),'Dashboard count did not reflect committed SQLite artifacts');
+ record(label+': dashboard and Library reflect committed counts and no active work',{artifacts:counts.artifacts});
  await writeFile(path.join(evidence,label+'-library.json'),JSON.stringify({artifact:await invoke('get_firmware_artifact',{sha256:hash}),jobs:await invoke('list_library_jobs'),activity:await invoke('get_library_activity')},null,2));
  await screen(client);await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})))`),'Persisted library did not render for screenshot');
  await client.evaluate('window.scrollTo(0,0)');await client.evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');

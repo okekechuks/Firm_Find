@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-remove-firmware-item"
+description = "Enables the remove_firmware_item command without any pre-configured scope."
+commands.allow = ["remove_firmware_item"]
+
+[[permission]]
+identifier = "deny-remove-firmware-item"
+description = "Denies the remove_firmware_item command without any pre-configured scope."
+commands.deny = ["remove_firmware_item"]

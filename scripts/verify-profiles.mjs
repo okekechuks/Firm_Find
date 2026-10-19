@@ -35,7 +35,7 @@ export async function verifyProfiles(client, {label, evidence, record}) {
   const discovery=await invoke('get_discovery');
   const device=discovery.devices.find((d) => d.connected && d.vendorId === '1286' && d.productId === '4E31');
   assert(device,'Connected owner-reported MG11 USB candidate missing; physical qualification remains pending');
-  await evaluate("document.querySelector('a[href=\"#compatibility\"]').click()");
+  await evaluate("window.location.hash='compatibility'");
   await until(() => evaluate("Boolean(document.querySelector('.compatibility-selector select'))"),'Compatibility screen missing');
   await evaluate("[...document.querySelectorAll('summary')].find(s=>s.textContent==='Validate a local profile document').parentElement.open=true");
   await evaluate(`(()=>{const i=document.querySelector('.compatibility-panel textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(i,${JSON.stringify(JSON.stringify(opaque))});i.dispatchEvent(new Event('input',{bubbles:true}));})()`);

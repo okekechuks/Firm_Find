@@ -1,3 +1,4 @@
+import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema } from "../types/library";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { jobSchema, libraryPageSchema, detailsSchema, selectionSchema, activitySchema, manifestExportSchema, type LibraryQuery } from "../types/library";
@@ -61,7 +62,7 @@ export async function onDiscoveryChanged(changed: () => void) {
   });
 }
 
-function requireDesktop() { if (!hasDesktopBackend()) throw new Error("Saved router checks require the Windows app."); }
+function requireDesktop() { if (!hasDesktopBackend()) throw new Error("This operation is available in the Windows app."); }
 export async function getManualRouters() {
   requireDesktop(); return savedRouterSchema.array().parse(await invoke("get_manual_routers"));
 }
@@ -95,3 +96,13 @@ export async function validateDeviceProfile(document: string) {
   if (new TextEncoder().encode(document).length > 65536) throw new Error("Profile exceeds 64 KiB.");
   return registryEntrySchema.parse(await invoke("validate_device_profile", {document}));
 }
+
+export async function getDesktopState(){requireDesktop();return desktopStateSchema.parse(await invoke("get_desktop_state"));}
+export async function saveDesktopPreferences(input:Omit<import("../types/library").DesktopPreferences,"libraryDirectory">){requireDesktop();return desktopPreferencesSchema.parse(await invoke("save_desktop_preferences",{input}));}
+export async function listFirmwareBackups(){requireDesktop();return backupSchema.array().max(100).parse(await invoke("list_firmware_backups"));}
+export async function createFirmwareBackup(sha256:string){requireDesktop();return jobSchema.parse(await invoke("create_firmware_backup",{sha256}));}
+export async function restoreFirmwareBackup(id:string){requireDesktop();return jobSchema.parse(await invoke("restore_firmware_backup",{id,confirmed:true}));}
+export async function removeFirmwareItem(id:string,backup:boolean){requireDesktop();await invoke("remove_firmware_item",{id,backup,confirmed:true});}
+export async function openManagedFolder(target:"library"|"backups"|"artifact",id:string|null=null){requireDesktop();await invoke("open_managed_folder",{target,id});}
+export async function selectLibraryDirectory(){requireDesktop();return storagePlanSchema.nullable().parse(await invoke("select_library_directory"));}
+export async function relocateFirmwareLibrary(ticket:string){requireDesktop();return jobSchema.parse(await invoke("relocate_firmware_library",{ticket,confirmed:true}));}
