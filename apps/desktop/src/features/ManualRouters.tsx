@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { addManualRouter, cancelEndpointProbe, errorMessage, getManualRouters, probeManagementEndpoint, removeManualRouter } from "../lib/backend";
 import type { Device, EndpointResult, ManualRouterInput, SavedRouter } from "../types/contracts";
 
 export type RouterDraft = {address: string; interfaceId: string | null};
-export function ManualRouters({devices, draft, onClose}: {devices: Device[]; draft: RouterDraft | null; onClose: () => void}) {
+export function ManualRouters({devices, draft, open = true, onClose, onDraftClose = onClose}: {devices: Device[]; draft: RouterDraft | null; open?: boolean; onClose: () => void; onDraftClose?: () => void}) {
   const [routers, setRouters] = useState<SavedRouter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -12,6 +12,9 @@ export function ManualRouters({devices, draft, onClose}: {devices: Device[]; dra
   const [observations, setObservations] = useState<Record<string, EndpointResult>>({});
   const [notices, setNotices] = useState<Record<string, string>>({});
   const mounted = useRef(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
   const generations = useRef(new Map<string, number>());
   const listGeneration = useRef(0);
   const mutations = useRef<Promise<void>>(Promise.resolve());
@@ -24,6 +27,14 @@ export function ManualRouters({devices, draft, onClose}: {devices: Device[]; dra
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; mounted.current = false; };
   }, []);
+  useEffect(() => {
+    const element = dialog.current;
+    if (!open || !element) return;
+    const previous = document.activeElement as HTMLElement | null;
+    element.showModal();
+    closeButton.current?.focus();
+    return () => { element.close(); previous?.focus(); };
+  }, [open]);
   const acceptList = (saved: SavedRouter[]) => { listGeneration.current++; setRouters(saved); setError(null); setLoading(false); };
   // Serialize UI mutations; response order must agree with SQLite commit order.
   const mutate = (action: () => Promise<SavedRouter[]>) => {
@@ -64,10 +75,11 @@ export function ManualRouters({devices, draft, onClose}: {devices: Device[]; dra
     catch (failure) { if (mounted.current) setError(errorMessage(failure)); }
   };
   const networks = devices.filter((d) => d.connected).flatMap((d) => d.networks);
-  return <section className="panel manual-routers" aria-label="Saved manual connections">
-    <div className="section-heading"><h2>Saved manual connections</h2><span className="muted small">Names supplied by you · identity unverified</span></div>
+  return <dialog ref={dialog} className="saved-connections-dialog" aria-labelledby={titleId} onCancel={(event) => {event.preventDefault(); onClose();}} onClick={(event) => {if (event.target === event.currentTarget) onClose();}}>
+    <section className="panel manual-routers" aria-label="Saved manual connections">
+    <div className="section-heading"><div><h2 id={titleId}>Saved manual connections</h2><span className="muted small">Names supplied by you · identity unverified</span></div><button ref={closeButton} className="icon-button" aria-label="Close saved connections" onClick={onClose}><span aria-hidden="true">×</span></button></div>
     <p className="muted small">Saving sends no network request. Checks run only after you confirm ownership. Responses are observations, not verified device identities.</p>
-    {draft ? <RouterForm key={`${draft.address}|${draft.interfaceId}`} draft={draft} networks={networks} onClose={onClose} onSave={(input) => mutate(() => addManualRouter(input))}/> : null}
+    {draft ? <RouterForm key={`${draft.address}|${draft.interfaceId}`} draft={draft} networks={networks} onClose={onDraftClose} onSave={(input) => mutate(() => addManualRouter(input))}/> : null}
     {loading ? <p role="status">Reading saved connections…</p> : null}
     {error ? <p className="inventory-warning" role="status">{error}</p> : null}
     {!loading && !error && routers.length === 0 ? <p className="muted">No saved routers. Use Add Router or select a candidate gateway.</p> : null}
@@ -95,7 +107,8 @@ export function ManualRouters({devices, draft, onClose}: {devices: Device[]; dra
           <button className="secondary-button" onClick={() => void remove(router.id)}>Remove saved entry</button></div>
       </article>;
     })}
-  </section>;
+    </section>
+  </dialog>;
 }
 
 function RouterForm({draft, networks, onClose, onSave}: {draft: RouterDraft; networks: Device["networks"]; onClose: () => void; onSave: (input: ManualRouterInput) => Promise<void>}) {
@@ -116,7 +129,7 @@ function RouterForm({draft, networks, onClose, onSave}: {draft: RouterDraft; net
     catch (failure) { if (active.current) setError(errorMessage(failure)); }
     finally { if (active.current) setSaving(false); }
   };
-  return <div className="router-form" role="dialog" aria-label="Add Router" onKeyDown={(e) => { if (e.key === "Escape" && !saving) onClose(); }}>
+  return <div className="router-form" aria-label="Add router form" onKeyDown={(e) => { if (e.key === "Escape" && !saving) onClose(); }}>
     <form onSubmit={(event) => void submit(event)}>
       <h3>Add Router</h3>
       <label>Management address<input ref={input} required maxLength={2048} value={address} disabled={saving} onChange={(e) => setAddress(e.target.value)} placeholder="192.168.100.1 or https://router.local"/></label>

@@ -17,7 +17,7 @@ it("validates manual input, displays backend rejection, saves normalized entries
   const user = userEvent.setup();
   render(<ManualRouters devices={[]} draft={{address: "", interfaceId: null}} onClose={close}/>);
   await screen.findByText(/No saved routers/);
-  const dialog = screen.getByRole("dialog", {name: "Add Router"});
+  const dialog = screen.getByRole("dialog", {name: "Saved manual connections"});
   const input = within(dialog).getByLabelText("Management address");
   await user.type(input, "user@192.168.100.1");
   await user.click(within(dialog).getByRole("button", {name: "Save router"}));

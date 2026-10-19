@@ -59,7 +59,7 @@ it("filters disconnected devices and connection types", async () => {
   const user = userEvent.setup();
   render(<Devices {...props} />);
   const search = screen.getByRole("textbox", { name: "Search devices" });
-  await user.click(screen.getByRole("checkbox", {name: /Show advanced Windows/}));
+  await user.click(screen.getByRole("checkbox", {name: "Show advanced Windows diagnostics and unrelated devices"}));
   await user.type(search, "reader");
   expect(screen.getByRole("heading", { name: "Disconnected reader" })).toBeInTheDocument();
   await user.click(screen.getByRole("checkbox", { name: "Show disconnected" }));
@@ -95,4 +95,14 @@ it("distinguishes a pending first scan from a successful empty inventory", () =>
   rerender(<Devices {...props} inventory={{ ...inventory, devices: [] }} />);
   expect(screen.getByRole("heading", { name: "No devices to show" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Refresh devices" })).toBeEnabled();
+});
+
+it("keeps saved manual connections out of the device page until requested", async () => {
+  const user = userEvent.setup();
+  render(<Devices {...props} />);
+  expect(screen.queryByRole("dialog", {name: "Saved manual connections"})).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", {name: "Manage saved connections"}));
+  const dialog = await screen.findByRole("dialog", {name: "Saved manual connections"});
+  await user.click(within(dialog).getByRole("button", {name: "Close saved connections"}));
+  expect(screen.queryByRole("dialog", {name: "Saved manual connections"})).not.toBeInTheDocument();
 });

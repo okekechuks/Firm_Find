@@ -18,6 +18,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
 }) {
   const workspace=useWorkspace();
   const [draft, setDraft] = useState<RouterDraft | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
   const [advanced, setAdvanced] = useState(false);
   const [query, setQuery] = useState("");
   const [transport, setTransport] = useState("all");
@@ -61,17 +62,18 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
           <label className="disconnected-toggle"><input type="checkbox" checked={showDisconnected} onChange={(event) => setShowDisconnected(event.target.checked)} />Show disconnected</label>
           <button className="secondary-button" disabled={refreshing || waiting} onClick={() => void onRefresh()}><RefreshCw size={15} className={refreshing ? "spin" : undefined}/>{refreshing ? "Refreshing…" : "Refresh devices"}</button>
           {refreshing && onCancel ? <button className="secondary-button" onClick={() => void onCancel()}>Cancel refresh</button> : null}
-          <button className="primary-button" onClick={() => setDraft({address: "", interfaceId: null})}>Add Router</button>
+          <button className="primary-button" onClick={() => {setDraft({address: "", interfaceId: null}); setManualOpen(true);}}>Add Router</button>
+          <button className="secondary-button" onClick={() => setManualOpen(true)}>Manage saved connections</button>
         </div>
         {inventory?.cancelled ? <p role="status">Discovery cancelled or superseded. Last successful inventory retained; refresh to try again.</p> : null}
-        <label className="disconnected-toggle"><input type="checkbox" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)}/>Show Unsupported Hardware and unrelated devices</label>
+        <label className="disconnected-toggle"><input type="checkbox" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)}/>Show advanced Windows diagnostics and unrelated devices</label>
         <div className="section-heading"><h2>{present} present · {devices.length - present} disconnected</h2><span className="muted small">{inventory?.scannedAt ? `Last checked ${new Date(inventory.scannedAt).toLocaleTimeString()}` : "Waiting for first successful scan"}</span></div>
         {waiting ? <div className="panel device-empty" role="status">Reading Windows device inventory…</div> : visible.length === 0 ? <section className="panel device-empty"><Usb size={32}/><h2>{devices.length === 0 ? (unavailable ? "Inventory unavailable" : "No devices to show") : "No relevant candidates"}</h2><p>{devices.length === 0 ? (unavailable ? "Windows inventory could not be read. Use Refresh devices to try again." : "Connect a USB device or refresh the inventory. A failed scan keeps the last successful result.") : "Try another search or connection filter, add a router manually, or open advanced Windows diagnostics."}</p></section> :
           <>{candidateDevices.length > 0 ? <section aria-label="Router and MiFi candidates"><h2 className="device-group-heading">Router / MiFi candidates | identity unverified</h2><div className="device-grid">{candidateDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)} onMoreInfo={() => setInfoId(device.id)}/>)}</div></section> : <p className="muted">No router candidates identified. Generic interfaces do not establish router identity. Add a management address manually.</p>}
           {otherDevices.length > 0 ? <details className="other-interfaces" open={advanced}><summary>Other Windows interfaces{advanced ? " and diagnostics" : ""} ({otherDevices.length})</summary><div className="device-grid">{otherDevices.map((device) => <DeviceCard key={device.id} device={device} selected={selectedId === device.id} onSelect={() => setSelectedId(device.id)} onMoreInfo={() => setInfoId(device.id)}/>)}</div></details> : null}</>}
-        {infoDevice ? <DeviceDetails device={infoDevice} onClose={() => setInfoId(null)} onGateway={(address, interfaceId) => {setDraft({address, interfaceId}); setInfoId(null);}}/> : null}
+        {infoDevice ? <DeviceDetails device={infoDevice} onClose={() => setInfoId(null)} onGateway={(address, interfaceId) => {setDraft({address, interfaceId}); setManualOpen(true); setInfoId(null);}}/> : null}
         {selected ? <CompatibilityPanel key={selected.id} deviceId={selected.id} revision={inventory?.revision ?? 0} desktop={desktop}/> : null}
-        <ManualRouters devices={devices} draft={draft} onClose={() => setDraft(null)}/>
+        <ManualRouters devices={devices} draft={draft} open={manualOpen} onClose={() => {setDraft(null); setManualOpen(false);}} onDraftClose={() => setDraft(null)}/>
       </>}
       <div className="safety-note"><ShieldCheck size={17}/><span>Detection does not establish firmware access. Network checks require your action and ownership confirmation. Gateway identity and ownership remain unverified.</span></div>
     </>
