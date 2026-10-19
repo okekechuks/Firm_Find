@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage, getDeviceCompatibility, getProfileRegistry, recordDeviceObservation, validateDeviceProfile } from "../lib/backend";
 import type { Device } from "../types/contracts";
+import { AdapterStatus } from "./AdapterStatus";
 import type { CompatibilityReport, Registry } from "../types/profiles";
 
 const featureNames = {dns: "Custom DNS", wifiUserLimit: "Wi-Fi user limit", apn: "APN", ussd: "USSD"};
@@ -48,6 +49,7 @@ export function CompatibilityPanel({deviceId, revision, desktop}: {deviceId: str
     {visible ? <>
       <p><strong>Profile match: {visible.confidence}</strong>{visible.selectedProfile ? ` · ${visible.selectedProfile} @ ${visible.profileVersion}` : " · No authoritative profile selected"}</p>
       <p className="muted small">A profile match does not authorize changes. Reported labels, USB identifiers and HTTP responses do not verify retail model or feature support.</p>
+      <AdapterStatus deviceId={deviceId} revision={revision} desktop={desktop}/>
       {visible.warnings.map((warning) => <p role="status" key={warning}>{warning}</p>)}
       {visible.conflicts.length ? <p role="alert">Conflicting evidence: {visible.conflicts.map(human).join(", ")}. Obtain a trusted identity response to resolve it.</p> : null}
       <div className="support-table-wrap"><table className="support-table"><caption>Four-feature support matrix</caption><thead><tr><th>Feature</th><th>Assessment</th><th>Readiness</th><th>Evidence quality</th></tr></thead><tbody>

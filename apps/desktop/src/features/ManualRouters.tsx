@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { addManualRouter, cancelEndpointProbe, errorMessage, getManualRouters, probeManagementEndpoint, removeManualRouter } from "../lib/backend";
 import type { Device, EndpointResult, ManualRouterInput, SavedRouter } from "../types/contracts";
+import { AdapterStatus } from "./AdapterStatus";
 
 export type RouterDraft = {address: string; interfaceId: string | null};
 export function ManualRouters({devices, draft, open = true, onClose, onDraftClose = onClose}: {devices: Device[]; draft: RouterDraft | null; open?: boolean; onClose: () => void; onDraftClose?: () => void}) {
@@ -11,6 +12,7 @@ export function ManualRouters({devices, draft, open = true, onClose, onDraftClos
   const [consent, setConsent] = useState<Record<string, boolean>>({});
   const [observations, setObservations] = useState<Record<string, EndpointResult>>({});
   const [notices, setNotices] = useState<Record<string, string>>({});
+  const [adapterId, setAdapterId] = useState<string | null>(null);
   const mounted = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -104,7 +106,9 @@ export function ManualRouters({devices, draft, open = true, onClose, onDraftClos
         <label className="target-consent"><input type="checkbox" checked={consent[router.id] ?? false} disabled={busy[router.id]} onChange={(e) => setConsent((old) => ({...old, [router.id]: e.target.checked}))}/>I own or administer this target and allow one read-only check.</label>
         <div className="router-actions"><button className="secondary-button" disabled={!consent[router.id] || busy[router.id]} onClick={() => void check(router)}>Check / Retry</button>
           {busy[router.id] ? <button className="secondary-button" onClick={() => void cancel(router.id)}>Cancel check</button> : null}
+          <button className="secondary-button" onClick={() => setAdapterId(old=>old===router.id?null:router.id)} aria-expanded={adapterId===router.id}>Adapter status</button>
           <button className="secondary-button" onClick={() => void remove(router.id)}>Remove saved entry</button></div>
+        {adapterId===router.id?<AdapterStatus deviceId={router.id} revision={null} desktop targetKind="saved_endpoint"/>:null}
       </article>;
     })}
     </section>

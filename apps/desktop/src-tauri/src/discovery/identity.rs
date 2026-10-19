@@ -69,6 +69,9 @@ pub fn resolve(device: &mut Device, now: u64) {
         .iter()
         .any(|i| i.class_name.eq_ignore_ascii_case("Modem"));
     let physical_network = device.networks.iter().any(|n| !n.virtual_interface);
+    // An adapter observed only through IP Helper belongs to this PC. Its gateway can be a
+    // router candidate, but the PC's Wi-Fi/Ethernet interface is never that router.
+    let host_network_adapter = is_host_hardware(device);
     let gateway = device
         .networks
         .iter()
@@ -82,13 +85,15 @@ pub fn resolve(device: &mut Device, now: u64) {
         i.class_name.eq_ignore_ascii_case("Bluetooth")
             || i.instance_id.to_ascii_uppercase().starts_with("BTH")
     });
-    device.category = if bluetooth {
+    device.category = if host_network_adapter && !device.networks.is_empty() {
+        Category::GenericNetworkInterface
+    } else if bluetooth || host_network_adapter {
         Category::UnrelatedDevice
     } else if usb && physical_network && !phone_hint {
         Category::RouterMifiCandidate
     } else if usb && (modem || serial) && !phone_hint {
         Category::UsbModemCandidate
-    } else if gateway {
+    } else if gateway && !host_network_adapter && !phone_hint {
         Category::NetworkGatewayCandidate
     } else if !device.networks.is_empty() {
         Category::GenericNetworkInterface
@@ -144,6 +149,35 @@ pub fn resolve(device: &mut Device, now: u64) {
     }
     .into();
     device.identity = identity;
+}
+
+/// Host PCI/ACPI/software adapters and storage/HID peripherals are not the gateway they reach.
+pub fn is_host_hardware(device: &Device) -> bool {
+    let usb = device.transports.iter().any(|t| t == "usb");
+    (!usb && !device.networks.is_empty())
+        || device.interfaces.iter().any(|i| {
+            let instance = i.instance_id.to_ascii_uppercase();
+            instance.starts_with("USBSTOR\\")
+                || (!usb
+                    && ["PCI\\", "ACPI\\", "ROOT\\", "SWD\\"]
+                        .iter()
+                        .any(|p| instance.starts_with(p)))
+                || [
+                    "diskdrive",
+                    "hdc",
+                    "scsiadapter",
+                    "hidclass",
+                    "keyboard",
+                    "mouse",
+                    "display",
+                    "processor",
+                    "system",
+                    "computer",
+                    "battery",
+                ]
+                .iter()
+                .any(|c| i.class_name.eq_ignore_ascii_case(c))
+        })
 }
 
 #[cfg(test)]

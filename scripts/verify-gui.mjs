@@ -5,7 +5,8 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { assertOwned } from './native-test-profile.mjs';
 const root=path.resolve(import.meta.dirname,'..');
-const imageRoot=path.join(root,'docs/images');
+let imageRoot=path.join(root,'docs/images');
+export function configureGUIEvidence(directory){imageRoot=directory;}
 let initialPreferences,migration;
 const headings={dashboard:'Overview',devices:'Connected Devices',firmware:'Library',backups:'Backup Manager',jobs:'Logs',settings:'Settings'};
 async function until(check,message,timeout=30000){const end=Date.now()+timeout;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,80));}throw new Error(message);}
@@ -56,11 +57,12 @@ export async function verifyGUI(client,{label,pid,profile,evidence,record}){
  } finally {execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/resize-native-test-window.ps1'),'-OwnerPid',String(pid),'-Width',String(size.Width),'-Height',String(size.Height)],{windowsHide:true});}
  await until(()=>client.evaluate('innerWidth>=960'),'Native window size was not restored');record(label+': real narrow/short native window, compact sidebar, no horizontal overflow and bounded help');
 
- await screen(client,'devices');await until(()=>client.evaluate("Boolean(document.querySelector('.device-card'))"),'No real Windows device rows for selection');await shot(client,'connected-devices',label);
- await client.evaluate("document.querySelector('.device-card').click()");await until(()=>client.evaluate("Boolean(document.querySelector('[aria-label=\"Firmware extraction\"]'))"),'Selected device details missing');
- assert.equal(await client.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Extract Firmware')).disabled"),true);assert.equal(await client.evaluate("document.querySelectorAll('.device-card[aria-pressed=true]').length"),1);
+ await screen(client,'devices');await client.evaluate("(()=>{const label=[...document.querySelectorAll('label')].find(e=>e.textContent.includes('Show advanced Windows'));const input=label?.querySelector('input');if(input&&!input.checked)input.click();})()");await until(()=>client.evaluate("Boolean(document.querySelector('.device-card'))"),'No real Windows device rows for selection');await shot(client,'connected-devices',label);
+ await client.evaluate("document.querySelector('.device-card button[aria-label^=\"Check compatibility\"]').click();document.querySelector('.device-card button[aria-label^=\"More info\"]').click()");await until(()=>client.evaluate("Boolean(document.querySelector('[aria-label=\"Firmware extraction\"]'))"),'Selected device details missing');
+ assert.equal(await client.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Extract Firmware')).disabled"),true);assert.equal(await client.evaluate("document.querySelectorAll('.device-card button[aria-pressed=true]').length"),1);
  await client.evaluate("document.querySelector('[aria-label=\"Device details\"]').scrollIntoView({block:'start'})");await shot(client,'selected-device-details',label);await shot(client,'extraction-unavailable',label);
  record(label+': actual Windows selection/classification and disabled extraction; no extraction operation invented');
+ await client.evaluate("document.querySelector('[aria-label=\"Close device information\"]').click()");
  const listing=await invoke('list_firmware_artifacts',{query:{}});const small=listing.artifacts.find(a=>a.sizeBytes===1048576&&a.originalFilename.includes('phase4'));assert(small,'Generated Phase 4 import required');
  await details(client,small.sha256);await dismiss(client);await shot(client,'library',label);await button(client,'Customize');
  assert.equal(await client.evaluate("document.querySelectorAll('.feature-card input[disabled]').length"),4);assert.equal(await client.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Rebuild firmware')).disabled"),true);

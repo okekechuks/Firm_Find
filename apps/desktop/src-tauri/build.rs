@@ -22,6 +22,8 @@ fn main() {
             "get_library_activity",
             "export_artifact_manifest",
             "get_profile_registry",
+            "list_available_adapters",
+            "get_device_adapter_matches",
             "get_device_compatibility",
             "validate_device_profile",
             "record_device_observation",

@@ -2,7 +2,11 @@
 
 Updated: **19 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4: COMPLETE (PASS). Phase 4.1: COMPLETE (PASS). GUI desktop foundation: COMPLETE (PASS). Phase 5 readiness: READY; not started.** Latest results: [GUI redesign verification](GUI_REDESIGN_VERIFICATION.md), [GUI evidence](evidence/gui-2026-10-19.txt), [Phase 4.1 verification](PHASE_4_1_VERIFICATION.md), [evidence transcript](evidence/phase-4-1-2026-10-17.txt) and [isolated native testing](NATIVE_TESTING.md). Historical [Phase 4 verification](PHASE_4_VERIFICATION.md), [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), profiles and discovery evidence remain retained.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4: COMPLETE (PASS). Phase 4.1: COMPLETE (PASS). GUI desktop foundation: COMPLETE (PASS). Phase 5: COMPLETE (PASS). Phase 6 readiness: READY.** Latest results: [Phase 5 verification](PHASE_5_VERIFICATION.md), [adapter implementation](PHASE_5_IMPLEMENTATION.md), [GUI redesign verification](GUI_REDESIGN_VERIFICATION.md), [GUI evidence](evidence/gui-2026-10-19.txt), [Phase 4.1 verification](PHASE_4_1_VERIFICATION.md), [evidence transcript](evidence/phase-4-1-2026-10-17.txt) and [isolated native testing](NATIVE_TESTING.md). Historical [Phase 4 verification](PHASE_4_VERIFICATION.md), [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), profiles and discovery evidence remain retained.
+
+## Phase 5 adapter framework
+
+**COMPLETE (PASS).** [Implementation map and security model](PHASE_5_IMPLEMENTATION.md) document reused modules, typed contracts, validated registry, evidence/ranking, scoped authorization, authentication, deadlines/cancellation and resource cleanup. [Verification report](PHASE_5_VERIFICATION.md) records exact commands, failures/corrections and acceptance. Actual results: **99 frontend tests, 115 Rust tests in each profile, 103 native checkpoints**, TypeScript, lint, formatting, both Clippy profiles and ordinary/dedicated optimized Windows builds pass. Real development/recovery/isolated-release GUI/IPC, saved-endpoint form, HMR, retained library/backups/settings workflows and zero console issues pass. Full normal DB/WAL/rows/settings/vault fingerprints remain identical; successful marked test run cleaned after all owned processes stopped. Host PCIe Wi-Fi/Ethernet interfaces no longer count as routers. MG11 was absent; saved software remains user-reported and all four unknown-capability regressions pass. No physical adapter, router write, extraction or Phase 6 simulator was enabled. Phase 6 is READY when requested.
 
 ## GUI redesign verification
 
@@ -132,7 +136,7 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 | 3: Profiles/capabilities | Complete (PASS), including 3.1 | Versioned registry, numeric/opaque firmware matching, trusted-profile precedence, reasoned independent feature assessments, native IPC/UI and preserved reported evidence. | No critical Phase 3/3.1 blocker; authenticated identity and physical feature qualification remain later work. |
 | 4: Storage/jobs/library | Complete (PASS) | Schema 4, safe native import, streamed SHA-256 vault, deduplication, integrity/history, bounded persistent jobs, cancellation/recovery, manifests, backend library queries and real UI. 53 frontend/69 Rust/64 native checks pass. | No critical blocker. Broad filesystem/maximum-size/installer qualification remains unverified; see Phase 4 report. |
 | GUI redesign: desktop foundation | Complete (PASS) | Six blue sections, shared real jobs, backup/restore, storage-copy restart, persisted preferences, 84 frontend/85 Rust/91 native checks and screenshots. Additive schema 5 qualified in isolation. | Device acquisition/rebuild unavailable; no fresh MG11 qualification. No critical tested GUI blocker. |
-| 5: Adapters | Not started | Discovery provider is reusable infrastructure, not a router adapter framework. | Contracts, registry, authentication, typed errors, protected credentials, mock adapter and contract tests. |
+| 5: Adapters | Complete (PASS) | Typed optional interfaces, validated deterministic registry, existing evidence/profile integration, backend-scoped policy, in-memory secrets, authenticated simulated handshake, cancellation/deadlines/cleanup, strict IPC and bounded GUI status. 99 frontend/115 Rust per profile/103 native checkpoints pass. | No critical Phase 5 blocker. Physical transports remain Phase 7; full simulator Phase 6. |
 | 6: Simulator | Not started | Discovery fixtures exist; no interactive router/modem simulator. | Stateful local simulator, four feature reads, authentication, fault injection, desktop connection. |
 | 7: OpenWrt read-only | Not started | No authenticated router management sessions. | Verified interface/version research, trusted endpoint, reads/probes, and selected hardware evidence. |
 | 8: Backup/transactions | Not started | No configuration write APIs. | Snapshots, previews, approvals, durable execution, verification, reconnect, rollback/recovery and failure tests. |
@@ -150,10 +154,10 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 
 ## Next execution order
 
-1. GUI desktop foundation is verified; review the blue UI and actual screenshots. Phase 5 typed read-only adapter contracts and registry are ready when requested.
+1. Phase 5 framework is verified. Begin Phase 6's explicitly isolated router/modem simulator when requested; reuse these contracts and policy gates.
 2. Keep unknown support until exact device/version/profile evidence supports a decision. Current MG11 model is user-supplied.
 3. Continue broader hardware qualification as suitable devices become available.
-4. Reuse the completed durable library and jobs for Phase 5 adapters, then Phase 6's local simulator.
+4. Reuse the completed durable library/jobs and adapter framework for Phase 6's local simulator; physical read-only OpenWrt qualification remains Phase 7.
 5. Implement simulator transactions before authorized hardware configuration changes in later phases.
 
-This tracker records completed Phase 4/4.1 and GUI foundation work, retaining historical phase evidence. Phase 5 and device customization have not begun.
+This tracker records completed Phases 0–5, targeted hardening and GUI foundation work while retaining historical evidence. Phase 6 and physical device customization have not begun.

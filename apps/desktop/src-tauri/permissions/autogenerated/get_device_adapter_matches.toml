@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-device-adapter-matches"
+description = "Enables the get_device_adapter_matches command without any pre-configured scope."
+commands.allow = ["get_device_adapter_matches"]
+
+[[permission]]
+identifier = "deny-get-device-adapter-matches"
+description = "Denies the get_device_adapter_matches command without any pre-configured scope."
+commands.deny = ["get_device_adapter_matches"]

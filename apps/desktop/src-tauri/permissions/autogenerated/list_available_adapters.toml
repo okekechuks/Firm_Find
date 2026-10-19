@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-list-available-adapters"
+description = "Enables the list_available_adapters command without any pre-configured scope."
+commands.allow = ["list_available_adapters"]
+
+[[permission]]
+identifier = "deny-list-available-adapters"
+description = "Denies the list_available_adapters command without any pre-configured scope."
+commands.deny = ["list_available_adapters"]

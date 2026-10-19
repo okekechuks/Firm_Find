@@ -1,5 +1,9 @@
 # Isolated Windows native testing
 
+Phase 5 adapter qualification adds `npm.cmd run test:gui -- --phase5` after the ordinary and dedicated releases are built. This runs the existing full GUI/Phase 4/4.1 suite plus passive adapter registry/match queries, malformed/direct-IPC rejection, host-NIC protection, the actual saved-endpoint form/status flow and four-feature UNKNOWN checks. It performs no router management request or physical configuration change. The small mock connector exists only in Rust unit tests (`cfg(test)`), never in either native executable.
+
+Phase 5 native captures use a new per-run evidence folder under `.tools/foundation/`; historical GUI screenshots remain preserved. The retained GUI verifier now selects the real **Check compatibility** / **More info** buttons and uses the existing Appearance heading for its temporary HMR edit after the owner's earlier filler removal. No removed product copy is restored. Final Phase 5 execution evidence is in [the verification report](PHASE_5_VERIFICATION.md).
+
 Normal `obtainer.exe` and `npm run tauri -- dev -- --locked --offline` continue using `%LOCALAPPDATA%\OBTAINER\` and the existing production WebView profile. Native automation uses **a different executable**, `obtainer-native-test.exe`, compiled only when Cargo feature `native-test-profile` is explicitly enabled. The test configuration has its own application identifier. No production data path override exists.
 
 Build from the repository root, then run in a normal interactive Windows user session:

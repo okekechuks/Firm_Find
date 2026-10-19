@@ -1,3 +1,4 @@
+pub mod adapters;
 mod commands;
 pub mod connection;
 pub mod discovery;
@@ -95,6 +96,8 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             let mut profiles = profiles::Registry::bundled();
             repository.install_registry(&mut profiles)?;
             app.manage(profiles);
+            app.manage(adapters::Registry::production().map_err(std::io::Error::other)?);
+            app.manage(adapters::SessionManager::default());
             let repository = Arc::new(Mutex::new(repository));
             let events = app.handle().clone();
             let max = std::env::var("OBTAINER_IMPORT_MAX_BYTES")
@@ -159,6 +162,8 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             commands::cancel_endpoint_probe,
             commands::cancel_discovery,
             commands::get_profile_registry,
+            commands::list_available_adapters,
+            commands::get_device_adapter_matches,
             commands::record_device_observation,
             commands::get_device_compatibility,
             commands::validate_device_profile
@@ -166,6 +171,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
         .build(context)?
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<adapters::SessionManager>().shutdown();
                 app.state::<library::LibraryService>().stop();
                 app.state::<discovery::DiscoveryService>().shutdown();
             }

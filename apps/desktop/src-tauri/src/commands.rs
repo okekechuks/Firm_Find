@@ -258,6 +258,96 @@ pub fn get_profile_registry(
 }
 
 #[tauri::command]
+pub fn list_available_adapters(
+    registry: tauri::State<'_, crate::adapters::Registry>,
+) -> Vec<crate::adapters::AdapterDescriptor> {
+    registry.descriptors()
+}
+
+#[tauri::command]
+pub async fn get_device_adapter_matches(
+    input: crate::adapters::AdapterQuery,
+    state: tauri::State<'_, AppState>,
+    discovery: tauri::State<'_, DiscoveryService>,
+    profiles: tauri::State<'_, crate::profiles::Registry>,
+    adapters: tauri::State<'_, crate::adapters::Registry>,
+) -> Result<crate::adapters::AdapterEvaluation, crate::adapters::AdapterError> {
+    use crate::adapters::{AdapterError, AdapterErrorCode, AdapterTargetKind, DeviceContext};
+    input.validate()?;
+    let snapshot = discovery.snapshot().map_err(AdapterError::internal)?;
+    let live = discovery.shared_snapshot();
+    let repository = Arc::clone(&state.repository);
+    let profiles = profiles.inner().clone();
+    let adapters = adapters.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let now = crate::connection::now();
+        let repository = repository
+            .lock()
+            .map_err(|_| AdapterError::internal("database lock"))?;
+        let saved = repository
+            .routers()
+            .map_err(|_| AdapterError::internal("saved endpoint query"))?;
+        let result = if input.target_kind == AdapterTargetKind::SavedEndpoint {
+            if !saved.iter().any(|r| r.id == input.device_id) {
+                return Err(AdapterError::new(
+                    AdapterErrorCode::DeviceNotFound,
+                    "Saved endpoint no longer exists.",
+                    None,
+                    true,
+                    "Select a saved connection again.",
+                ));
+            }
+            adapters.evaluate_saved_endpoint(&input.device_id, snapshot.revision, now)
+        } else {
+            let device = snapshot
+                .devices
+                .iter()
+                .find(|d| d.id == input.device_id)
+                .ok_or_else(|| {
+                    AdapterError::new(
+                        AdapterErrorCode::DeviceNotFound,
+                        "Device is not in current discovery.",
+                        None,
+                        true,
+                        "Refresh devices.",
+                    )
+                })?;
+            let mut evidence = crate::profiles::gather_evidence(device, &saved);
+            evidence.extend(
+                repository
+                    .identity_observations(&input.device_id)
+                    .map_err(|_| AdapterError::internal("identity query"))?,
+            );
+            let report =
+                crate::profiles::evaluate(&profiles, device, evidence, now, snapshot.revision);
+            adapters.evaluate(&DeviceContext {
+                device,
+                profile: &report,
+                profiles: &profiles,
+                revision: snapshot.revision,
+                now,
+            })
+        };
+        drop(repository);
+        let current = live
+            .lock()
+            .map_err(|_| AdapterError::internal("discovery lock"))?;
+        if current.revision != snapshot.revision {
+            return Err(AdapterError::new(
+                AdapterErrorCode::OperationCancelled,
+                "Discovery changed during adapter evaluation.",
+                Some(crate::adapters::AdapterOperation::CapabilityEvaluation),
+                true,
+                "Evaluate current evidence again.",
+            ));
+        }
+        Ok(result)
+    })
+    .await
+    .map_err(|_| AdapterError::internal("adapter worker"))?
+}
+
+#[tauri::command]
 pub async fn validate_device_profile(
     document: String,
 ) -> Result<crate::profiles::RegistryEntry, crate::profiles::ProfileError> {

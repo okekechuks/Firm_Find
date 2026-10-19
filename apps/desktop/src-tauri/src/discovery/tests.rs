@@ -197,7 +197,7 @@ fn bluetooth_usb_serial_and_pan_functions_are_not_router_candidates() {
 }
 
 #[test]
-fn virtual_gateway_phone_hint_and_multiple_physical_gateways_stay_unverified() {
+fn virtual_gateway_phone_hint_and_host_network_adapters_stay_unverified() {
     let nodes = vec![RawNode {
         instance_id: "USB\\VID_1234&PID_5678\\PHONE".into(),
         adapter_id: Some("phone".into()),
@@ -227,13 +227,65 @@ fn virtual_gateway_phone_hint_and_multiple_physical_gateways_stay_unverified() {
         .iter()
         .filter(|d| d.networks[0].id == "phone")
         .all(|d| d.category != identity::Category::RouterMifiCandidate));
-    assert_eq!(
-        devices
-            .iter()
-            .filter(|d| d.category == identity::Category::NetworkGatewayCandidate)
-            .count(),
-        3
+    assert!(devices
+        .iter()
+        .filter(|d| d.interfaces.is_empty())
+        .all(|d| d.category == identity::Category::GenericNetworkInterface));
+    assert!(devices
+        .iter()
+        .filter(|d| d.networks[0].id == "phone")
+        .all(|d| d.category == identity::Category::GenericNetworkInterface));
+}
+
+#[test]
+fn external_usb_network_device_remains_a_router_candidate_while_host_wifi_is_excluded() {
+    let host = NetworkAdapter {
+        id: "host-wifi".into(),
+        display_name: "MediaTek MT7921 Wi-Fi 6 802.11ax PCIe Adapter".into(),
+        link_up: true,
+        gateways: vec!["192.168.1.1".into()],
+        ..Default::default()
+    };
+    let external_node = RawNode {
+        instance_id: "USB\\VID_12D1&PID_14DC\\MIFI".into(),
+        adapter_id: Some("external-rndis".into()),
+        ..Default::default()
+    };
+    let external = NetworkAdapter {
+        id: "external-rndis".into(),
+        link_up: true,
+        gateways: vec!["192.168.8.1".into()],
+        ..Default::default()
+    };
+    let devices = assemble(
+        Inventory {
+            nodes: vec![
+                external_node,
+                RawNode {
+                    instance_id: "PCI\\VEN_14C3&DEV_7961\\HOST".into(),
+                    adapter_id: Some("host-wifi".into()),
+                    class_name: "Net".into(),
+                    ..Default::default()
+                },
+            ],
+            adapters: vec![host, external],
+        },
+        1,
     );
+    assert!(devices.iter().any(|device| {
+        device
+            .networks
+            .iter()
+            .any(|network| network.id == "host-wifi")
+            && device.category == identity::Category::GenericNetworkInterface
+    }));
+    assert!(devices.iter().any(|device| {
+        device
+            .networks
+            .iter()
+            .any(|network| network.id == "external-rndis")
+            && device.category == identity::Category::RouterMifiCandidate
+    }));
 }
 
 #[cfg(windows)]

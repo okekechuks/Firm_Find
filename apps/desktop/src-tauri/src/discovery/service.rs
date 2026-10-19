@@ -238,6 +238,10 @@ fn scan_and_reply(
     if let Ok(mut current) = state.lock() {
         *current = snapshot.clone();
     }
+    use tauri::Manager;
+    if let Some(adapters) = app.try_state::<crate::adapters::SessionManager>() {
+        adapters.observe_discovery(snapshot);
+    }
     // Events contain a revision only, never hardware identifiers.
     let _ = app.emit("discovery-changed", snapshot.revision);
     for (run, reply) in replies {

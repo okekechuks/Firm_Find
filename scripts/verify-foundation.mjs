@@ -1,4 +1,5 @@
-import { verifyGUI, verifyGUIRestart } from "./verify-gui.mjs";
+import { verifyGUI, verifyGUIRestart, configureGUIEvidence } from "./verify-gui.mjs";
+import { verifyAdapters } from "./verify-adapters.mjs";
 // Exercises the actual Windows Tauri dev command and release executable through native WebView2.
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
@@ -18,6 +19,7 @@ configureFirmwareTestRun(profile);
 const settingsRoundtrip = process.argv.includes('--settings-roundtrip');
 const evidence = path.join(root, '.tools/foundation', new Date().toISOString().replaceAll(':', '-'));
 await mkdir(evidence, { recursive: true });
+if(process.argv.includes('--phase5'))configureGUIEvidence(path.join(evidence,'gui'));
 const results = [], consoleEvents = [], commands = [], launches = [];
 const env = { ...process.env, OBTAINER_TEST_ROOT: root, OBTAINER_NATIVE_TEST_RUN_ID:profile.id, CARGO_INCREMENTAL: '0',
   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9223' };
@@ -188,6 +190,7 @@ async function verify(label, extended = false) {
     assert.notEqual(next.status, 'failed');
   }
   record(label + ': discovery, three refreshes, unique IDs, unknown feature support', { records: discovery.devices.length, watching: discovery.watching, warnings: discovery.warnings });
+  if(process.argv.includes('--phase5'))await verifyAdapters(client,{label,evidence,record});
   if (process.argv.includes('--phase2')) {
     const index = process.argv.indexOf('--router');
     await verifyDiscovery(client, {label, evidence, record, routerAddress: index >= 0 ? process.argv[index + 1] : undefined, hotplug: process.argv.includes('--hotplug')});
@@ -231,7 +234,8 @@ async function verify(label, extended = false) {
     await client.send('Page.reload'); await connected();
     await screen('settings', 'Settings');
     originalSource = await readFile(preferencePath, 'utf8');
-    const anchor = 'Choose how OBTAINER looks on your desktop.';
+    const anchor = '<h2>Appearance</h2>';
+    assert(originalSource.includes(anchor), 'HMR proof anchor missing');
     changedSource = originalSource.replace(anchor, anchor + ' Hot reload verified.');
     assert.notEqual(changedSource, originalSource, 'HMR proof anchor missing');
     let restoreConflict = false;

@@ -2,14 +2,17 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Compatibility, CompatibilityPanel } from "../features/Compatibility";
-import { getDeviceCompatibility, getProfileRegistry, recordDeviceObservation, validateDeviceProfile } from "../lib/backend";
+import { getDeviceAdapterMatches, getDeviceCompatibility, getProfileRegistry, recordDeviceObservation, validateDeviceProfile } from "../lib/backend";
 import { report } from "./profileFixtures";
 import { profileSchema } from "../types/profiles";
+import { evaluation } from "./adapterFixtures";
 import observed from "../../../../device-profiles/observed-comfi-mg11.json";
 
-vi.mock("../lib/backend", async (original) => ({...await original<typeof import("../lib/backend")>(),getDeviceCompatibility:vi.fn(),getProfileRegistry:vi.fn(),recordDeviceObservation:vi.fn(),validateDeviceProfile:vi.fn()}));
+vi.mock("../lib/backend", async (original) => ({...await original<typeof import("../lib/backend")>(),getDeviceCompatibility:vi.fn(),getDeviceAdapterMatches:vi.fn(),getProfileRegistry:vi.fn(),recordDeviceObservation:vi.fn(),validateDeviceProfile:vi.fn()}));
+const adapter = (deviceId="fixture-device", discoveryRevision=1) => evaluation(deviceId,discoveryRevision);
 beforeEach(() => {
   vi.mocked(getDeviceCompatibility).mockResolvedValue(report());
+  vi.mocked(getDeviceAdapterMatches).mockResolvedValue(adapter());
   vi.mocked(getProfileRegistry).mockResolvedValue({profiles:[],diagnostics:[],digest:"fixture"});
   vi.mocked(recordDeviceObservation).mockResolvedValue();
 });
@@ -69,5 +72,15 @@ it("exposes local schema validation as an unverified preview only", async () => 
   expect(await screen.findByText(/Local unverified preview only/)).toBeInTheDocument();expect(validateDeviceProfile).toHaveBeenCalledWith("test profile document");
 });
 it("browser preview never requests device evaluation or registry IPC", () => {
-  render(<Compatibility devices={[]} revision={0} desktop={false}/>);expect(getProfileRegistry).not.toHaveBeenCalled();expect(getDeviceCompatibility).not.toHaveBeenCalled();expect(screen.getByRole("combobox")).toBeDisabled();
+  render(<Compatibility devices={[]} revision={0} desktop={false}/>);expect(getProfileRegistry).not.toHaveBeenCalled();expect(getDeviceCompatibility).not.toHaveBeenCalled();expect(getDeviceAdapterMatches).not.toHaveBeenCalled();expect(screen.getByRole("combobox")).toBeDisabled();
+});
+
+it("renders adapter status without enabling a device action", async () => {
+  const result=adapter();result.selection="candidate";result.selectedAdapter=result.matches[0].adapter.id;result.connectionState="authentication_required";result.matches[0].status="exact";
+  vi.mocked(getDeviceAdapterMatches).mockResolvedValue(result);
+  render(<CompatibilityPanel deviceId="fixture-device" revision={1} desktop/>);
+  const status=await screen.findByRole("region",{name:"Device adapter status"});
+  expect(await within(status).findByText(/Authentication required: ssh key/)).toBeInTheDocument();
+  expect(within(status).getByText(/authenticated endpoint handshake/)).toBeInTheDocument();
+  expect(screen.queryByRole("button",{name:/apply/i})).not.toBeInTheDocument();
 });

@@ -1014,6 +1014,10 @@ h1 {
 .device-tags span { border-radius: 5px; background: var(--soft); color: var(--muted); padding: 4px 6px; font-size: 9px; }
 .device-card-actions { width: 100%; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 9px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
 .device-card-actions .text-button { text-align: right; }
+.adapter-summary { margin: 16px 0; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--soft); }
+.adapter-summary h3, .adapter-summary h4 { margin: 0 0 7px; }
+.adapter-summary article { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.adapter-summary p { margin: 6px 0; font-size: 11px; line-height: 1.55; }
 .device-empty { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 46px 20px; }
 .device-empty > svg { color: var(--muted); }
 .device-empty h2 { font-size: 16px; }

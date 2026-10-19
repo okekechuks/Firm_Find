@@ -42,6 +42,8 @@
     "allow-cancel-endpoint-probe",
     "allow-cancel-discovery",
     "allow-get-profile-registry",
+    "allow-list-available-adapters",
+    "allow-get-device-adapter-matches",
     "allow-get-device-compatibility",
     "allow-validate-device-profile",
     "allow-record-device-observation"

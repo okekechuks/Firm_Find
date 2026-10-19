@@ -1,7 +1,10 @@
 //! Declarative profiles cannot authorize operations or supply executable code.
 mod engine;
 mod json;
-pub use engine::{evaluate, gather_evidence, record_change, CompatibilityReport, EvidenceRecord};
+pub use engine::{
+    evaluate, gather_evidence, record_change, CompatibilityReport, EvidenceOrigin, EvidenceRecord,
+    Reliability, Verification,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
