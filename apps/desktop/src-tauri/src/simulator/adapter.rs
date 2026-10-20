@@ -10,6 +10,8 @@ pub(super) struct SimulatorAdapter {
     pub state: Arc<Mutex<Router>>,
     pub authority: Authority,
     pub resources: Arc<AtomicUsize>,
+    #[cfg(test)]
+    pub test_hooks: Arc<super::runtime::TestHooks>,
 }
 fn adapter_error(code: AdapterErrorCode, message: &str) -> AdapterError {
     AdapterError::new(
@@ -40,6 +42,8 @@ impl SimulatorAdapter {
         let delay = state.fault(stage);
         drop(state);
         if delay {
+            #[cfg(test)]
+            self.test_hooks.pause(super::runtime::TestPoint::Delay);
             loop {
                 control.checkpoint()?;
                 std::thread::sleep(std::time::Duration::from_millis(1));

@@ -1,4 +1,4 @@
-import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema } from "../types/library";
+import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema,importSchema } from "../types/library";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { jobSchema, libraryPageSchema, detailsSchema, selectionSchema, activitySchema, manifestExportSchema, type LibraryQuery } from "../types/library";
@@ -97,6 +97,7 @@ export async function discardFirmwareSelection(ticket:string) {requireDesktop();
 export async function startFirmwareImport(input:{ticket:string;description:string|null;associatedDeviceId:string|null}) {requireDesktop();return jobSchema.parse(await invoke("start_firmware_import",{input}));}
 export async function listFirmwareArtifacts(query:LibraryQuery) {requireDesktop();return libraryPageSchema.parse(await invoke("list_firmware_artifacts",{query}));}
 export async function getFirmwareArtifact(sha256:string) {requireDesktop();return detailsSchema.parse(await invoke("get_firmware_artifact",{sha256}));}
+export async function listFirmwareImportHistory() {requireDesktop();return importSchema.array().max(100).parse(await invoke("list_firmware_import_history"));}
 export async function verifyFirmwareIntegrity(sha256:string) {requireDesktop();return jobSchema.parse(await invoke("verify_firmware_integrity",{sha256}));}
 export async function exportArtifactManifest(sha256:string) {requireDesktop();return manifestExportSchema.parse(await invoke("export_artifact_manifest",{sha256}));}
 export async function listLibraryJobs() {requireDesktop();return jobSchema.array().max(100).parse(await invoke("list_library_jobs"));}

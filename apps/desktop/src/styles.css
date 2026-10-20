@@ -979,16 +979,6 @@ h1 {
   }
 }
 
-.inventory-summary {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 22px 24px;
-}
-.inventory-summary h2 { margin: 7px 0; }
-.inventory-summary p { max-width: 700px; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.inventory-monitor,
 .device-state {
   flex: none;
   border: 1px solid var(--line);
@@ -1067,7 +1057,6 @@ h1 {
   .device-detail-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
-  .inventory-summary { flex-direction: column; gap: 12px; }
   .device-toolbar > button { flex: 1; }
   .disconnected-toggle { flex: 1 0 100%; }
 }
@@ -1281,8 +1270,6 @@ input[role="switch"]:disabled { cursor:not-allowed;opacity:.4; }
 .extraction-unavailable h3 { font-size:13px; }
 .extraction-unavailable p { font-size:11px;color:var(--muted);line-height:1.8;margin-top:7px;max-width:650px; }
 .extraction-unavailable button { flex-shrink:0; }
-.inventory-summary { background:var(--surface);padding:22px; }
-.inventory-monitor { color:var(--muted); }
 .details dd { min-width:0;overflow-wrap:anywhere; }
 .confirm-dialog { margin:auto;width:min(490px,calc(100vw - 36px));padding:26px;border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);color:var(--ink);background:var(--surface);max-height:85dvh;overflow:auto; }
 .confirm-dialog::backdrop { background:#030b17b8;backdrop-filter:blur(4px); }

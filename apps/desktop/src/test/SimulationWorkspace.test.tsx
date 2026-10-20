@@ -44,6 +44,22 @@ it("shows truthful restore failure and reset requirement",async()=>{
 it("shows typed timeouts and refreshes the actual disconnected status",async()=>{
  vi.mocked(simulationStatus).mockResolvedValueOnce(inspectedFixture()).mockResolvedValue(simulationFixture());vi.mocked(simulationRequest).mockRejectedValue({code:"TIMEOUT",message:"Virtual read timed out.",retryable:true});render(<SimulationWorkspace/>);await userEvent.click(await screen.findByRole("button",{name:"Read all features"}));
  expect(await screen.findByRole("alert")).toHaveTextContent("TIMEOUT: Virtual read timed out.");expect(screen.queryByRole("button",{name:"Apply DNS to Simulator"})).not.toBeInTheDocument();
+ expect(screen.queryByText(/Running virtual operation/)).not.toBeInTheDocument();expect(screen.getByLabelText("Simulation scenario")).toBeEnabled();
+});
+it("GUI cancellation restores controls and ignores late success before another valid request",async()=>{
+ let complete!:(s:SimulationStatus)=>void;
+ vi.mocked(simulationStatus).mockResolvedValue(inspectedFixture());
+ vi.mocked(simulationRequest).mockReturnValueOnce(new Promise(resolve=>{complete=resolve;})).mockResolvedValue(simulationFixture({approvalId:"sim-after-cancel"}));
+ vi.mocked(simulationControl).mockResolvedValue(simulationFixture());
+ render(<SimulationWorkspace/>);await userEvent.click(await screen.findByRole("button",{name:"Read all features"}));
+ expect(screen.getByRole("button",{name:"Advance 1 second"})).toBeDisabled();expect(screen.getByLabelText("Simulation scenario")).toBeDisabled();
+ await userEvent.click(screen.getByRole("button",{name:"Cancel virtual operation"}));
+ expect(simulationControl).toHaveBeenCalledWith({kind:"cancel"});
+ expect(screen.queryByText(/Running virtual operation/)).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Advance 1 second"})).toBeEnabled();
+ await act(async()=>complete(changedFixture()));expect(screen.queryByText("Simulated DNS verified")).not.toBeInTheDocument();
+ await userEvent.click(screen.getByLabelText("Approve virtual endpoint handshake"));await userEvent.click(screen.getByRole("button",{name:"Approve virtual handshake"}));
+ expect(simulationRequest).toHaveBeenLastCalledWith(expect.anything(),{kind:"approve_handshake"});
+ expect(screen.queryByText(/Running virtual operation/)).not.toBeInTheDocument();
 });
 it("ignores pending results after navigation unmount and simulator re-entry",async()=>{
  let complete!:(s:SimulationStatus)=>void;vi.mocked(simulationStatus).mockResolvedValueOnce(inspectedFixture()).mockResolvedValue(simulationFixture({active:false,device:null}));vi.mocked(simulationRequest).mockReturnValue(new Promise(resolve=>{complete=resolve;}));

@@ -110,7 +110,7 @@ describe("desktop foundation", () => {
     await user.click(screen.getByRole("radio", { name: /Dark/ }));
     vi.mocked(getSnapshot).mockRejectedValue(new Error("Read unavailable after commit"));
     await user.click(screen.getByRole("button", { name: "Save preferences" }));
-    expect(await screen.findByText("Preferences saved to SQLite.")).toBeInTheDocument();
+    expect(screen.queryByText("Preferences saved to SQLite.")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Read unavailable after commit");
     expect(screen.getByRole("radio", { name: /Dark/ })).toBeChecked();
   });
@@ -129,7 +129,7 @@ describe("desktop foundation", () => {
     expect(screen.getByRole("radio", { name: /Dark/ })).toBeChecked();
     vi.mocked(getSnapshot).mockResolvedValue({ ...snapshot, settings: { theme: "dark" } });
     await user.click(screen.getByRole("button", { name: "Save preferences" }));
-    expect(await screen.findByText("Preferences saved to SQLite.")).toBeInTheDocument();
+    expect(screen.queryByText("Preferences saved to SQLite.")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -172,8 +172,8 @@ describe("desktop foundation", () => {
     });
     await user.click(screen.getByRole("button", { name: "Save preferences" }));
     expect(
-      await screen.findByText("Preferences saved to SQLite."),
-    ).toBeInTheDocument();
+      screen.queryByText("Preferences saved to SQLite."),
+    ).not.toBeInTheDocument();
     expect(saveSettings).toHaveBeenCalledWith({ theme: "dark" });
     expect(document.documentElement.dataset.theme).toBe("dark");
   });

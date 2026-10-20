@@ -165,6 +165,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             library::ipc::start_firmware_import,
             library::ipc::list_firmware_artifacts,
             library::ipc::get_firmware_artifact,
+            library::ipc::list_firmware_import_history,
             library::ipc::verify_firmware_integrity,
             library::ipc::cancel_library_job,
             library::ipc::list_library_jobs,

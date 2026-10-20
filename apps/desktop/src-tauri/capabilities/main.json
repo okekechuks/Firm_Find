@@ -23,6 +23,7 @@
     "allow-start-firmware-import",
     "allow-list-firmware-artifacts",
     "allow-get-firmware-artifact",
+    "allow-list-firmware-import-history",
     "allow-verify-firmware-integrity",
     "allow-cancel-library-job",
     "allow-list-library-jobs",

@@ -3,7 +3,6 @@ import { Cable, Network, Search, ShieldCheck, Usb, RefreshCw, X } from "lucide-r
 import { ManualRouters, type RouterDraft } from "./ManualRouters";
 import { CompatibilityPanel } from "./Compatibility";
 import { deviceStatus, extractionEligibility } from "../lib/device-status";
-import { useWorkspace } from "../lib/workspace-context";
 import { LockKeyhole } from "lucide-react";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
 
@@ -16,7 +15,6 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
   onRefresh: () => Promise<void>;
   onCancel?: () => Promise<void>;
 }) {
-  const workspace=useWorkspace();
   const [draft, setDraft] = useState<RouterDraft | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [advanced, setAdvanced] = useState(false);
@@ -42,13 +40,6 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
   const unavailable = Boolean(error || inventory?.status === "failed");
   return (
     <>
-      <section className="panel inventory-summary">
-        <div><h2>What Windows can see</h2>
-          <p>Windows observations, grouped by device identity.</p></div>
-        <span className="inventory-monitor" role="status">
-          {!desktop ? "Windows app required" : waiting ? "Reading inventory…" : inventory?.status === "failed" ? "Inventory needs attention" : workspace?.state?.preferences.autoRefresh===false ? "Automatic refresh paused" : inventory?.watching && !error ? "Live updates on" : "Periodic updates"}
-        </span>
-      </section>
       {!desktop ? <section className="panel device-empty"><Usb size={32}/><h2>Open the Windows app to discover devices</h2><p>Browser preview has no hardware inventory.</p></section> : <>
         {(error || (inventory?.warnings.length ?? 0) > 0) ? <div className="inventory-warning" role="alert">
           {error ? <p>{error}</p> : null}

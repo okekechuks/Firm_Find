@@ -74,16 +74,25 @@ export async function verifySimulator(client,{label,evidence,record}){
  for(let tick=0;tick<3;tick++){await click('Advance 1 second');await idle();}
  await connect();assert.equal((await status()).features.modem.service,'running');assert.equal((await status()).features.apn.value.apn,'native.lab');await shot('cellular-restart-recovered','[aria-label="Simulated APN"]');
  record(label+': virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback');
- const live=await status();await scenario('wrong_identity');const invalidated=await status();assert(invalidated.epoch>live.epoch);assert.equal(invalidated.activeConnections,0);assert.equal(invalidated.readAuthorized,false);assert.equal(invalidated.outcome,null);
+ const live=await status();await scenario('wrong_identity');const invalidated=await status();assert(invalidated.epoch>live.epoch);assert.equal(invalidated.activeConnections,0);assert.equal(invalidated.readAuthorized,false);assert.equal(invalidated.outcome,null);assert.equal(invalidated.device.model,'Wrong Virtual Device');
  await expectReject('simulation_request',{input:{target:live.device.id,endpoint:live.device.endpoint,epoch:live.epoch,revision:live.revision,action:{kind:'read_features'}}});
  await click('Approve virtual handshake');await until(async()=>!!(await status()).approvalId,'Faulted approval missing');await text('Simulation password','lab-only');await click('Connect virtual router');await until(()=>client.evaluate("document.querySelector('.simulation-workspace').textContent.includes('IDENTITY_CONFLICT')"),'Changed identity was not rejected');await idle();assert.equal((await status()).activeConnections,0);
  await scenario('healthy');await connect();
  record(label+': live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects');
+ await scenario('slow_read');await click('Read all features');
+ await until(()=>client.evaluate("Boolean([...document.querySelectorAll('.simulation-workspace button')].find(b=>b.textContent.trim()==='Cancel virtual operation'))"),'GUI Cancel control did not appear');
+ const cancelPoint=await client.evaluate("(()=>{const b=[...document.querySelectorAll('.simulation-workspace button')].find(b=>b.textContent.trim()==='Cancel virtual operation');b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
+ await client.send('Input.dispatchMouseEvent',{type:'mousePressed',...cancelPoint,button:'left',clickCount:1});
+ await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',...cancelPoint,button:'left',clickCount:1});
+ await idle();let cancelled=await status();assert.equal(cancelled.busy,false);assert.equal(cancelled.activeConnections,0);assert.equal(cancelled.readAuthorized,false);
+ assert(cancelled.events.some(e=>e.message.includes('Cancelled')),'GUI Cancel must cancel the native read, not let its timeout finish');
+ await shot('cancel-recovered');await scenario('healthy');await connect();const recoveredAfterCancel=await status();assert(recoveredAfterCancel.features.dns.value);
+ record(label+': real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads');
  await scenario('slow_read');await click('Read all features');await until(()=>client.evaluate("document.querySelector('.simulation-workspace').textContent.includes('TIMEOUT')"),'Bounded read timeout not shown');await idle();assert.equal((await status()).activeConnections,0);
  await scenario('healthy');await connect();await scenario('router_disconnected');assert.equal((await status()).activeConnections,0);await shot('disconnected');
  await click('Reset simulator');await idle();assert.equal((await status()).features,null);assert.equal((await status()).activeConnections,0);
  await click('Stop simulation');await until(async()=>!(await status()).active,'Simulation did not stop');await idle();
  assert.deepEqual((await invoke('get_discovery')).devices.map(d=>d.id).sort(),inventory);assert.equal((await invoke('list_firmware_artifacts',{query:{}})).total,artifacts);
- await writeFile(path.join(evidence,`${label}-simulation.json`),JSON.stringify({initial,final:await status(),images:path.relative(root,imageDir),physicalInventoryIds:inventory,artifactCount:artifacts},null,2));
+ await writeFile(path.join(evidence,`${label}-simulation.json`),JSON.stringify({initial,afterGuiCancel:cancelled,recoveredAfterCancel,final:await status(),images:path.relative(root,imageDir),physicalInventoryIds:inventory,artifactCount:artifacts},null,2));
  record(label+': timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged');
 }

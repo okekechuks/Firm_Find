@@ -18,6 +18,7 @@ fn main() {
             "start_firmware_import",
             "list_firmware_artifacts",
             "get_firmware_artifact",
+            "list_firmware_import_history",
             "verify_firmware_integrity",
             "cancel_library_job",
             "list_library_jobs",

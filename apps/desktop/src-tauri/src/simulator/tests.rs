@@ -1,5 +1,459 @@
 use super::*;
 use std::sync::Barrier;
+
+#[test]
+fn post_review_cancel_idle_releases_busy_and_allows_reads() {
+    let s = connected();
+    s.control(Control::Cancel).unwrap();
+    assert!(!s.runtime().unwrap().busy.load(Ordering::Acquire));
+    assert!(request(&s, Action::ReadFeatures)
+        .unwrap()
+        .features
+        .is_some());
+}
+
+#[test]
+fn post_review_scenario_reserves_busy_before_mutating_state() {
+    let s = service();
+    let r = s.runtime().unwrap();
+    let pause = r.test_hooks.arm(TestPoint::Scenario);
+    std::thread::scope(|scope| {
+        let worker = scope.spawn(|| {
+            s.control(Control::Scenario {
+                scenario: Scenario::Healthy,
+                repeat: false,
+            })
+        });
+        pause.entered();
+        let owned = r.busy.load(Ordering::Acquire);
+        drop(pause);
+        worker.join().unwrap().unwrap();
+        assert!(owned, "scenario must acquire busy before touching state");
+    });
+    assert!(!r.busy.load(Ordering::Acquire));
+}
+
+fn input(s: &SimulatorService, action: Action) -> Request {
+    let status = s.status().unwrap();
+    Request {
+        target: DEVICE_ID.into(),
+        endpoint: status.device.unwrap().endpoint,
+        epoch: status.epoch,
+        revision: status.revision,
+        action,
+    }
+}
+fn quiescent(s: &SimulatorService, connections: usize) {
+    let r = s.runtime().unwrap();
+    let status = s.status().unwrap();
+    assert!(!status.busy);
+    assert!(!r.busy.load(Ordering::Acquire));
+    assert!(lock(&r.cancellation).unwrap().is_none());
+    assert_eq!(status.active_connections, connections);
+    assert_eq!(r.resources.load(Ordering::Acquire), connections);
+}
+#[test]
+fn post_review_cancel_active_slow_read_then_reconnect_read_and_dns() {
+    let s = connected();
+    scenario(&s, Scenario::SlowRead);
+    let r = s.runtime().unwrap();
+    let read = input(&s, Action::ReadFeatures);
+    let delay = r.test_hooks.arm(TestPoint::Delay);
+    std::thread::scope(|scope| {
+        let worker = scope.spawn(|| s.request(read));
+        delay.entered();
+        let interrupt = r.test_hooks.arm(TestPoint::Interrupt);
+        let cancel = scope.spawn(|| s.control(Control::Cancel));
+        interrupt.entered();
+        drop(delay);
+        drop(interrupt);
+        assert_eq!(error(worker.join().unwrap()), ErrorCode::Cancelled);
+        cancel.join().unwrap().unwrap();
+    });
+    quiescent(&s, 0);
+    scenario(&s, Scenario::Healthy);
+    connect(&s);
+    assert!(request(&s, Action::ReadFeatures)
+        .unwrap()
+        .features
+        .is_some());
+    assert!(apply(&s).outcome.unwrap().verified);
+    request(&s, Action::Disconnect).unwrap();
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_repeated_cancel_then_valid_operation_and_cleanup() {
+    let s = connected();
+    for _ in 0..2 {
+        s.control(Control::Cancel).unwrap();
+        quiescent(&s, 1);
+    }
+    assert!(request(&s, Action::ReadFeatures).is_ok());
+    request(&s, Action::Disconnect).unwrap();
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_scenario_excludes_connection_and_other_scenarios() {
+    let s = service();
+    let approval = request(&s, Action::ApproveHandshake)
+        .unwrap()
+        .approval_id
+        .unwrap();
+    let connect_request = input(
+        &s,
+        Action::Connect {
+            approval_id: approval,
+            credential: "lab-only".into(),
+        },
+    );
+    let r = s.runtime().unwrap();
+    let pause = r.test_hooks.arm(TestPoint::Scenario);
+    std::thread::scope(|scope| {
+        let scenario = scope.spawn(|| {
+            s.control(Control::Scenario {
+                scenario: Scenario::Healthy,
+                repeat: false,
+            })
+        });
+        pause.entered();
+        assert_eq!(error(s.request(connect_request)), ErrorCode::Busy);
+        assert_eq!(
+            error(s.control(Control::Scenario {
+                scenario: Scenario::WrongIdentity,
+                repeat: false
+            })),
+            ErrorCode::Busy
+        );
+        assert!(
+            r.busy.load(Ordering::Acquire),
+            "rejected contender cannot release scenario ownership"
+        );
+        drop(pause);
+        scenario.join().unwrap().unwrap();
+    });
+    quiescent(&s, 0);
+    connect(&s);
+    request(&s, Action::Disconnect).unwrap();
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_scenario_excludes_dns_apply_and_stales_queued_results() {
+    let s = connected();
+    let preview = request(
+        &s,
+        Action::PreviewDns {
+            configuration: proposal("9.9.9.9"),
+        },
+    )
+    .unwrap()
+    .preview
+    .unwrap();
+    let apply = input(
+        &s,
+        Action::ApplyDns {
+            preview_id: preview.id,
+        },
+    );
+    let stale = input(&s, Action::ReadFeatures);
+    let r = s.runtime().unwrap();
+    let pause = r.test_hooks.arm(TestPoint::Scenario);
+    std::thread::scope(|scope| {
+        let change = scope.spawn(|| {
+            s.control(Control::Scenario {
+                scenario: Scenario::Healthy,
+                repeat: false,
+            })
+        });
+        pause.entered();
+        assert_eq!(error(s.request(apply)), ErrorCode::Busy);
+        assert!(r.busy.load(Ordering::Acquire));
+        drop(pause);
+        change.join().unwrap().unwrap();
+    });
+    assert_eq!(error(s.request(stale)), ErrorCode::Stale);
+    let status = s.status().unwrap();
+    assert!(status.preview.is_none() && status.outcome.is_none() && status.features.is_none());
+    assert_eq!(
+        lock(&r.state).unwrap().configuration.dns,
+        model::dns_fixture()
+    );
+    request(&s, Action::Disconnect).unwrap();
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_running_connection_or_dns_excludes_scenario_and_advance() {
+    for dns in [false, true] {
+        let s = if dns { connected() } else { service() };
+        let action = if dns {
+            let preview = request(
+                &s,
+                Action::PreviewDns {
+                    configuration: proposal("9.9.9.9"),
+                },
+            )
+            .unwrap()
+            .preview
+            .unwrap();
+            Action::ApplyDns {
+                preview_id: preview.id,
+            }
+        } else {
+            let approval = request(&s, Action::ApproveHandshake)
+                .unwrap()
+                .approval_id
+                .unwrap();
+            Action::Connect {
+                approval_id: approval,
+                credential: "lab-only".into(),
+            }
+        };
+        let operation = input(&s, action);
+        let r = s.runtime().unwrap();
+        let before = s.status().unwrap();
+        let pause = r.test_hooks.arm(TestPoint::Request);
+        std::thread::scope(|scope| {
+            let worker = scope.spawn(|| s.request(operation));
+            pause.entered();
+            assert_eq!(
+                error(s.control(Control::Scenario {
+                    scenario: Scenario::Healthy,
+                    repeat: false
+                })),
+                ErrorCode::Busy
+            );
+            assert_eq!(
+                error(s.control(Control::Advance {
+                    milliseconds: 31_000
+                })),
+                ErrorCode::Busy
+            );
+            assert!(r.busy.load(Ordering::Acquire));
+            assert_eq!(lock(&r.state).unwrap().clock, before.virtual_time);
+            drop(pause);
+            worker.join().unwrap().unwrap();
+        });
+        quiescent(&s, 1);
+        request(&s, Action::Disconnect).unwrap();
+        quiescent(&s, 0);
+    }
+}
+#[test]
+fn post_review_reset_or_stop_during_delayed_read_rejects_old_success() {
+    for stop in [false, true] {
+        let s = connected();
+        scenario(&s, Scenario::SlowRead);
+        let read = input(&s, Action::ReadFeatures);
+        let stale = input(&s, Action::ReadFeatures);
+        let r = s.runtime().unwrap();
+        let delay = r.test_hooks.arm(TestPoint::Delay);
+        std::thread::scope(|scope| {
+            let worker = scope.spawn(|| s.request(read));
+            delay.entered();
+            let interrupt = r.test_hooks.arm(TestPoint::Interrupt);
+            let control =
+                scope.spawn(|| s.control(if stop { Control::Stop } else { Control::Reset }));
+            interrupt.entered();
+            drop(delay);
+            drop(interrupt);
+            assert_eq!(error(worker.join().unwrap()), ErrorCode::Cancelled);
+            control.join().unwrap().unwrap();
+        });
+        assert_eq!(r.resources.load(Ordering::Acquire), 0);
+        assert!(!r.busy.load(Ordering::Acquire));
+        assert!(lock(&r.cancellation).unwrap().is_none());
+        assert_eq!(
+            error(r.perform(stale)),
+            if stop {
+                ErrorCode::Disabled
+            } else {
+                ErrorCode::Stale
+            }
+        );
+        if stop {
+            s.control(Control::Start).unwrap();
+        }
+        quiescent(&s, 0);
+        connect(&s);
+        assert!(request(&s, Action::ReadFeatures).is_ok());
+        request(&s, Action::Disconnect).unwrap();
+        quiescent(&s, 0);
+    }
+}
+#[test]
+fn post_review_cancel_wait_timeout_never_releases_another_owner() {
+    let s = connected();
+    let read = input(&s, Action::ReadFeatures);
+    let r = s.runtime().unwrap();
+    let pause = r.test_hooks.arm(TestPoint::Request);
+    std::thread::scope(|scope| {
+        let worker = scope.spawn(|| s.request(read));
+        pause.entered();
+        assert_eq!(error(r.begin(true, Duration::ZERO)), ErrorCode::Timeout);
+        assert!(r.busy.load(Ordering::Acquire));
+        assert!(lock(&r.cancellation)
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .is_cancelled());
+        assert_eq!(error(r.begin(false, Duration::ZERO)), ErrorCode::Busy);
+        drop(pause);
+        assert_eq!(error(worker.join().unwrap()), ErrorCode::Cancelled);
+    });
+    quiescent(&s, 0);
+    connect(&s);
+    request(&s, Action::Disconnect).unwrap();
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_virtual_expiry_boundary_revokes_reads_without_status_poll() {
+    let s = connected();
+    let r = s.runtime().unwrap();
+    s.control(Control::Advance {
+        milliseconds: 29_999,
+    })
+    .unwrap();
+    assert!(request(&s, Action::ReadFeatures).is_ok());
+    let read = input(&s, Action::ReadFeatures);
+    // Runtime controls reap expiry themselves; no intervening status IPC is required.
+    r.control(Control::Advance { milliseconds: 1 }).unwrap();
+    assert_eq!(error(r.perform(read)), ErrorCode::Unauthorized);
+    let status = s.status().unwrap();
+    assert!(!status.read_authorized && status.features.is_none());
+    quiescent(&s, 0);
+    connect(&s);
+    assert!(request(&s, Action::ReadFeatures).is_ok());
+    request(&s, Action::Disconnect).unwrap();
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_wrong_identity_summary_reports_actual_configuration() {
+    let s = service();
+    scenario(&s, Scenario::WrongIdentity);
+    assert_eq!(
+        s.status().unwrap().device.unwrap().model,
+        "Wrong Virtual Device"
+    );
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_feature_mutations_require_their_own_read_grants() {
+    for (operation, action) in [
+        (
+            AdapterOperation::ReadWifiLimit,
+            Action::SetWifi {
+                radio: "sim-radio-2g".into(),
+                limit: 12,
+            },
+        ),
+        (
+            AdapterOperation::ReadApn,
+            Action::SetApn {
+                source: ConfigurationSource::Manual,
+                apn: "own.lab".into(),
+                authentication: ApnAuthentication::None,
+                ip_family: IpFamily::Ipv4,
+            },
+        ),
+        (
+            AdapterOperation::ReadUssdCapability,
+            Action::UssdStart {
+                code: "*123#".into(),
+            },
+        ),
+    ] {
+        for authorized in [false, true] {
+            let s = connected();
+            let r = s.runtime().unwrap();
+            let d = r.data().unwrap();
+            let before = s.status().unwrap().revision;
+            let mut access = lock(&r.access).unwrap();
+            access.grant = Some(
+                r.manager
+                    .confirm_session_reads(
+                        access.session.unwrap(),
+                        &r.registry,
+                        &d.ctx(&r.profiles),
+                        vec![if authorized {
+                            operation
+                        } else {
+                            AdapterOperation::ReadDns
+                        }],
+                    )
+                    .unwrap(),
+            );
+            drop(access);
+            // Recreate the action for each grant; serialized IPC is the source of truth.
+            let action: Action = serde_json::from_value(match &action {
+                Action::SetWifi { .. } => serde_json::json!({"kind":"set_wifi","radio":"sim-radio-2g","limit":12}),
+                Action::SetApn { .. } => serde_json::json!({"kind":"set_apn","source":"manual","apn":"own.lab","authentication":"none","ipFamily":"ipv4"}),
+                _ => serde_json::json!({"kind":"ussd_start","code":"*123#"}),
+            }).unwrap();
+            let result = request(&s, action);
+            if authorized {
+                result.unwrap();
+            } else {
+                assert_eq!(error(result), ErrorCode::Unauthorized);
+                assert_eq!(lock(&r.state).unwrap().revision, before);
+                assert!(lock(&r.state).unwrap().ussd.is_none());
+            }
+            request(&s, Action::Disconnect).unwrap();
+            quiescent(&s, 0);
+        }
+    }
+}
+#[test]
+fn post_review_rejections_timeout_and_operation_unwind_release_resources() {
+    let s = connected();
+    assert_eq!(
+        error(s.control(Control::Advance {
+            milliseconds: 300_001
+        })),
+        ErrorCode::InvalidInput
+    );
+    quiescent(&s, 1);
+    let r = s.runtime().unwrap();
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _guard = r.begin(false, Duration::ZERO).unwrap();
+        panic!("controlled operation unwind");
+    }))
+    .is_err());
+    quiescent(&s, 1);
+    scenario(&s, Scenario::SlowRead);
+    assert_eq!(error(request(&s, Action::ReadFeatures)), ErrorCode::Timeout);
+    quiescent(&s, 0);
+    connect(&s);
+    request(&s, Action::Disconnect).unwrap();
+    quiescent(&s, 0);
+}
+#[test]
+fn post_review_simulation_ipc_cannot_select_production_physical_adapters() {
+    let s = service();
+    for endpoint in [
+        "http://192.168.100.1/",
+        "ssh://192.0.2.1",
+        "serial://COM3",
+        "usb://1286:4e31",
+    ] {
+        let mut forged = input(&s, Action::ApproveHandshake);
+        forged.endpoint = endpoint.into();
+        assert_eq!(error(s.request(forged)), ErrorCode::EndpointUntrusted);
+        quiescent(&s, 0);
+    }
+    for kind in [
+        "extract_firmware",
+        "flash_firmware",
+        "execute_ussd",
+        "apply_configuration",
+    ] {
+        assert!(serde_json::from_value::<Action>(serde_json::json!({"kind":kind})).is_err());
+    }
+    let normal = SimulatorService::new(false, "production".into());
+    assert_eq!(
+        error(normal.request(input(&s, Action::ApproveHandshake))),
+        ErrorCode::Disabled
+    );
+    quiescent(&s, 0);
+}
 #[test]
 fn live_identity_and_endpoint_changes_expire_sessions_and_old_snapshots() {
     for (sc, code) in [
@@ -299,6 +753,7 @@ fn physical_targets_provenance_and_malformed_ipc_are_rejected() {
         state: r.state.clone(),
         authority: r.authority.clone(),
         resources: r.resources.clone(),
+        test_hooks: r.test_hooks.clone(),
     };
     assert!(prod.register(adapter).is_err());
     assert!(s

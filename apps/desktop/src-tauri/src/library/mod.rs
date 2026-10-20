@@ -389,6 +389,9 @@ impl LibraryService {
     pub fn details(&self, hash: &str) -> Result<ArtifactDetails> {
         lock(&self.inner.repo)?.library_details(hash)
     }
+    pub fn import_history(&self) -> Result<Vec<FirmwareImport>> {
+        lock(&self.inner.repo)?.library_import_history()
+    }
     pub fn activity(&self) -> Result<Vec<ActivityEvent>> {
         lock(&self.inner.repo)?.library_activity()
     }

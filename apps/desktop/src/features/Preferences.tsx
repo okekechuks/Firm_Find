@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Monitor, Sun, Moon, Database, FolderOpen, Bell, RefreshCw, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { Monitor, Sun, Moon, Database, FolderOpen, Bell, RefreshCw, ArrowUpRight } from "lucide-react";
 import { errorMessage, openManagedFolder, saveDesktopPreferences, selectLibraryDirectory, relocateFirmwareLibrary } from "../lib/backend";
 import { useWorkspace } from "../lib/workspace-context";
 import { formatBytes } from "../lib/format";
@@ -23,7 +23,6 @@ export function Preferences({
   const [theme, setTheme] = useState<Settings["theme"]>(
     snapshot?.settings.theme ?? previewTheme,
   );
-  const [saved, setSaved] = useState(false);
   useEffect(() => {
     if (snapshot?.settings.theme) setTheme(snapshot.settings.theme);
   }, [snapshot?.settings.theme]);
@@ -57,7 +56,6 @@ export function Preferences({
                 checked={theme === value}
                 onChange={() => {
                   setTheme(value);
-                  setSaved(false);
                   if (!snapshot) onPreviewTheme(value);
                 }}
               />
@@ -68,18 +66,16 @@ export function Preferences({
           ))}
         </fieldset>
         <div className="preference-actions">
-          <span className="muted small" role="status">
-            {saved
-              ? "Preferences saved to SQLite."
-              : snapshot
-                ? "Settings are stored on this computer."
-                : "Browser preview only. Saving requires the desktop app."}
-          </span>
+          {!snapshot ? (
+            <span className="muted small" role="status">
+              Browser preview only. Saving requires the desktop app.
+            </span>
+          ) : null}
           <button
             className="primary-button"
             disabled={!snapshot || saving || theme === snapshot.settings.theme}
             onClick={async () => {
-              setSaved(await onSave({ theme }));
+              await onSave({ theme });
             }}
           >
             {saving ? "Saving…" : "Save preferences"}
@@ -104,7 +100,7 @@ function DesktopPreferencesPanel({ snapshot }: { snapshot: Snapshot | null }) {
   return <>
     <section className="panel preference-panel"><div className="panel-heading"><h2>Devices & notifications</h2><Bell size={21}/></div>
       {[{ key: "autoRefresh" as const, label: "Automatic device refresh", detail: "Update inventory when Windows reports hardware changes.", icon: RefreshCw }, { key: "notifyCompleted" as const, label: "Job completion notifications", detail: "Let me know when an operation finishes.", icon: Bell }, { key: "notifyFailed" as const, label: "Job failure notifications", detail: "Keep failures visible until I dismiss them.", icon: Bell }, { key: "notifyDevices" as const, label: "Device arrival and removal", detail: "Notify me when detected device candidates change.", icon: Bell }].map(({ key, label, detail, icon: Icon }) => <label className="setting-row" key={key}><Icon size={18}/><span><strong>{label}</strong><small>{detail}</small></span><input role="switch" type="checkbox" checked={draft[key]} disabled={!state || busy} onChange={e => { setDraft(v => ({ ...v, [key]: e.target.checked })); setNotice(null); }}/></label>)}
-      <div className="preference-actions"><span className="muted small">Manual Refresh stays available.</span><button className="primary-button" disabled={!dirty || busy} onClick={() => void persist()}>Save workspace preferences</button></div>
+      <div className="preference-actions"><button className="primary-button" disabled={!dirty || busy} onClick={() => void persist()}>Save workspace preferences</button></div>
       {notice ? <p role="status" className="inline-success">{notice}</p> : null}{error || workspace?.error ? <p role="alert" className="inline-error">{error ?? workspace?.error}</p> : null}
     </section>
     <section className="panel preference-panel"><div className="panel-heading"><h2>Storage & originals</h2><Database size={21}/></div>
@@ -113,7 +109,6 @@ function DesktopPreferencesPanel({ snapshot }: { snapshot: Snapshot | null }) {
       {state?.restartRequired ? <div className="inline-notice" role="status">Library copy is queued or ready. Check Overview for completion, then close and reopen OBTAINER to activate the new location. Previous storage is preserved.</div> : null}
       <dl className="details"><div><dt>Concurrent jobs</dt><dd>{state?.maxConcurrentJobs ?? 1} · Enforced by the backend</dd></div><div><dt>Workspace database</dt><dd className="mono">{snapshot?.dataDirectory ?? "Not connected"}</dd></div><div><dt>Database schema</dt><dd>{snapshot ? `Version ${snapshot.databaseVersion}` : "Not connected"}</dd></div></dl>
     </section>
-    <div className="safety-note"><ShieldCheck size={16}/><span>Local storage. No telemetry. Firmware extraction and device writes require separately verified support.</span></div>
     {plan ? <ConfirmDialog title="Copy Library to a new location?" confirmLabel="Copy and verify Library" busy={busy} onClose={() => setPlan(null)} onConfirm={() => void move()}><p>{plan.fileCount} stored files · {formatBytes(plan.bytes)}</p><dl className="details"><div><dt>From</dt><dd className="mono">{plan.source}</dd></div><div><dt>To</dt><dd className="mono">{plan.destination}</dd></div></dl><p>OBTAINER copies and verifies each registered blob, preserving metadata and the previous directory. After success, imports pause until you restart to use the new location. No existing destination is overwritten.</p>{error ? <p role="alert">{error}</p> : null}</ConfirmDialog> : null}
   </>;
 }

@@ -6,9 +6,9 @@ import {Jobs} from "../features/Jobs";
 import * as backend from "../lib/backend";
 import {artifact,details,empty,job,selection} from "./libraryFixtures";
 vi.mock("../lib/useLibraryFeed",()=>({useLibraryFeed:()=>0}));
-vi.mock("../lib/backend",async(original)=>({...await original<typeof import("../lib/backend")>(),listFirmwareArtifacts:vi.fn(),listLibraryJobs:vi.fn(),getLibraryActivity:vi.fn(),selectFirmwareFile:vi.fn(),discardFirmwareSelection:vi.fn(),startFirmwareImport:vi.fn(),cancelLibraryJob:vi.fn(),getFirmwareArtifact:vi.fn(),verifyFirmwareIntegrity:vi.fn(),exportArtifactManifest:vi.fn()}));
+vi.mock("../lib/backend",async(original)=>({...await original<typeof import("../lib/backend")>(),listFirmwareArtifacts:vi.fn(),listFirmwareImportHistory:vi.fn(),listLibraryJobs:vi.fn(),getLibraryActivity:vi.fn(),selectFirmwareFile:vi.fn(),discardFirmwareSelection:vi.fn(),startFirmwareImport:vi.fn(),cancelLibraryJob:vi.fn(),getFirmwareArtifact:vi.fn(),verifyFirmwareIntegrity:vi.fn(),exportArtifactManifest:vi.fn()}));
 beforeEach(()=>{
- vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue(empty);vi.mocked(backend.listLibraryJobs).mockResolvedValue([]);vi.mocked(backend.getLibraryActivity).mockResolvedValue([]);
+ vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue(empty);vi.mocked(backend.listFirmwareImportHistory).mockResolvedValue([]);vi.mocked(backend.listLibraryJobs).mockResolvedValue([]);vi.mocked(backend.getLibraryActivity).mockResolvedValue([]);
  vi.mocked(backend.selectFirmwareFile).mockResolvedValue(selection);vi.mocked(backend.discardFirmwareSelection).mockResolvedValue();vi.mocked(backend.getFirmwareArtifact).mockResolvedValue(details);
  vi.mocked(backend.startFirmwareImport).mockResolvedValue(job);vi.mocked(backend.verifyFirmwareIntegrity).mockResolvedValue({...job,kind:"integrity_verify"});vi.mocked(backend.exportArtifactManifest).mockResolvedValue({saved:true,activityRecorded:true,warning:null});
 });
@@ -24,8 +24,8 @@ it("requires confirmation and displays persisted progress and cancellation",asyn
 });
 it("renders backend success, duplicate occurrences and persisted artifact details",async()=>{
  const user=userEvent.setup();vi.mocked(backend.listLibraryJobs).mockResolvedValue([{...job,status:"completed",duplicate:true,progressBytes:1024,relatedArtifact:artifact.sha256,message:"Duplicate stored safely."}]);vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue({...empty,total:1,uniqueBytes:1024,artifacts:[{...artifact,sourceCount:2}]});
- vi.mocked(backend.getFirmwareArtifact).mockResolvedValue({...details,artifact:{...artifact,sourceCount:2},imports:[details.imports[0],{...details.imports[0],importId:"f".repeat(32),originalFilename:"alias.bin"}]});
- render(<FirmwareLibrary desktop/>);await user.click(await screen.findByRole("button",{name:/harmless.bin/}));const region=await screen.findByRole("region",{name:"Artifact details"});await waitFor(()=>expect(within(region).getByText(/SHA-256:/)).toHaveTextContent(artifact.sha256));expect(region).toHaveTextContent("unverified");expect(region).toHaveTextContent("2 import occurrences");expect(region).toHaveTextContent("alias.bin");expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+ const importRecords=[details.imports[0],{...details.imports[0],importId:"f".repeat(32),originalFilename:"alias.bin"}];vi.mocked(backend.getFirmwareArtifact).mockResolvedValue({...details,artifact:{...artifact,sourceCount:2},imports:importRecords});vi.mocked(backend.listFirmwareImportHistory).mockResolvedValue(importRecords);
+ render(<FirmwareLibrary desktop/>);await user.click(await screen.findByRole("button",{name:/harmless.bin/}));const region=await screen.findByRole("region",{name:"Artifact details"});await waitFor(()=>expect(within(region).getByText(/SHA-256:/)).toHaveTextContent(artifact.sha256));expect(region).toHaveTextContent("unverified");expect(region).toHaveTextContent("2 import occurrences");expect(region).not.toHaveTextContent("alias.bin");expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();render(<Jobs desktop/>);expect(await screen.findByText(/alias\.bin/)).toBeInTheDocument();
 });
 
 it("shows explicit backend errors and does not invent successful import entries",async()=>{

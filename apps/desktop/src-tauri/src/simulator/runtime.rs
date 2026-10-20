@@ -7,9 +7,68 @@ use super::{
 use crate::{adapters::*, discovery, profiles};
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
-    Arc, Mutex,
+    Arc, Condvar, Mutex,
 };
 use std::time::Duration;
+
+// One-shot test rendezvous; absent from both application binaries.
+#[cfg(test)]
+#[derive(Clone, Copy, PartialEq)]
+pub(super) enum TestPoint {
+    Scenario,
+    Request,
+    Delay,
+    Interrupt,
+}
+#[cfg(test)]
+type TestRendezvous = (
+    TestPoint,
+    std::sync::mpsc::SyncSender<()>,
+    std::sync::mpsc::Receiver<()>,
+);
+#[cfg(test)]
+#[derive(Default)]
+pub(super) struct TestHooks(Mutex<Option<TestRendezvous>>);
+#[cfg(test)]
+impl TestHooks {
+    fn arm(&self, point: TestPoint) -> TestPause {
+        let (entered_tx, entered_rx) = std::sync::mpsc::sync_channel(1);
+        let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
+        *self.0.lock().unwrap() = Some((point, entered_tx, release_rx));
+        TestPause(entered_rx, release_tx)
+    }
+    pub(super) fn pause(&self, point: TestPoint) {
+        let rendezvous = {
+            let mut hook = self.0.lock().unwrap();
+            if hook.as_ref().is_some_and(|h| h.0 == point) {
+                hook.take()
+            } else {
+                None
+            }
+        };
+        if let Some((_, entered, release)) = rendezvous {
+            entered.send(()).unwrap();
+            release.recv_timeout(Duration::from_secs(5)).unwrap();
+        }
+    }
+}
+#[cfg(test)]
+struct TestPause(
+    std::sync::mpsc::Receiver<()>,
+    std::sync::mpsc::SyncSender<()>,
+);
+#[cfg(test)]
+impl TestPause {
+    fn entered(&self) {
+        self.0.recv_timeout(Duration::from_secs(5)).unwrap();
+    }
+}
+#[cfg(test)]
+impl Drop for TestPause {
+    fn drop(&mut self) {
+        let _ = self.1.send(());
+    }
+}
 
 struct Pending {
     id: String,
@@ -22,10 +81,22 @@ struct Access {
     session: Option<u64>,
     grant: Option<AuthorizationGrant>,
 }
-struct ScenarioReservation<'a>(&'a AtomicBool);
-impl Drop for ScenarioReservation<'_> {
+struct OperationGuard<'a> {
+    runtime: &'a Runtime,
+    cancellation: Cancellation,
+}
+impl Drop for OperationGuard<'_> {
     fn drop(&mut self) {
-        self.0.store(false, Ordering::Release);
+        // Only a successful reservation constructs this guard. Synchronize token cleanup
+        // and release so an old owner can never clear a subsequent request's token/slot.
+        let mut slot = self
+            .runtime
+            .cancellation
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        *slot = None;
+        self.runtime.busy.store(false, Ordering::Release);
+        self.runtime.idle.notify_all();
     }
 }
 pub(super) struct Runtime {
@@ -37,7 +108,10 @@ pub(super) struct Runtime {
     access: Mutex<Access>,
     busy: AtomicBool,
     cancellation: Mutex<Option<Cancellation>>,
+    idle: Condvar,
     pub(super) resources: Arc<AtomicUsize>,
+    #[cfg(test)]
+    test_hooks: Arc<TestHooks>,
 }
 struct ContextData {
     device: discovery::Device,
@@ -70,11 +144,15 @@ impl Runtime {
         };
         let state = Arc::new(Mutex::new(Router::new(10_000_000)));
         let resources = Arc::new(AtomicUsize::new(0));
+        #[cfg(test)]
+        let test_hooks = Arc::new(TestHooks::default());
         let mut registry = Registry::simulator(authority.clone());
         registry.register(SimulatorAdapter {
             state: state.clone(),
             authority: authority.clone(),
             resources: resources.clone(),
+            #[cfg(test)]
+            test_hooks: test_hooks.clone(),
         })?;
         // This registry never enters Repository/install_registry or physical matching. Local
         // fictional specifications are authoritative only within this sealed virtual runtime.
@@ -114,7 +192,10 @@ impl Runtime {
             access: Mutex::new(Access::default()),
             busy: AtomicBool::new(false),
             cancellation: Mutex::new(None),
+            idle: Condvar::new(),
             resources,
+            #[cfg(test)]
+            test_hooks,
         })
     }
     fn data(&self) -> Result<ContextData> {
@@ -170,16 +251,15 @@ impl Runtime {
             simulated: true,
         }
     }
-    fn device(&self) -> VirtualDevice {
-        let identity = model::identity_fixture();
+    fn device(&self, identity: &AdapterIdentity) -> VirtualDevice {
         VirtualDevice {
             id: DEVICE_ID.into(),
-            manufacturer: identity.manufacturer,
-            model: identity.model,
-            hardware_revision: identity.hardware_revision,
-            firmware_family: identity.firmware_family,
-            firmware_version: identity.firmware_version,
-            operating_system: identity.operating_system,
+            manufacturer: identity.manufacturer.clone(),
+            model: identity.model.clone(),
+            hardware_revision: identity.hardware_revision.clone(),
+            firmware_family: identity.firmware_family.clone(),
+            firmware_version: identity.firmware_version.clone(),
+            operating_system: identity.operating_system.clone(),
             endpoint: self.authority.endpoint.clone(),
             interface_id: "sim-interface-001".into(),
             peer_pin: self.authority.pin.clone(),
@@ -200,7 +280,7 @@ impl Runtime {
             active_connections: self.resources.load(Ordering::Acquire),
             available: true,
             active: self.authority.enabled.load(Ordering::Acquire),
-            device: Some(self.device()),
+            device: Some(self.device(&s.configuration.identity)),
             epoch: self.authority.epoch.load(Ordering::Acquire),
             revision: s.revision,
             virtual_time: s.clock,
@@ -232,14 +312,59 @@ impl Runtime {
             busy: self.busy.load(Ordering::Acquire),
         })
     }
-    fn cancel(&self) -> Result<()> {
-        if let Some(c) = lock(&self.cancellation)?.as_ref() {
-            c.cancel();
+    fn begin(&self, interrupt: bool, timeout: Duration) -> Result<OperationGuard<'_>> {
+        let mut slot = lock(&self.cancellation)?;
+        if interrupt {
+            if let Some(token) = slot.as_ref() {
+                token.cancel();
+            }
+            #[cfg(test)]
+            self.test_hooks.pause(TestPoint::Interrupt);
+            let deadline = std::time::Instant::now() + timeout;
+            while self.busy.load(Ordering::Acquire) {
+                let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+                if remaining.is_zero() {
+                    return Err(fail(
+                        ErrorCode::Timeout,
+                        "Virtual cancellation did not finish within its bound.",
+                    ));
+                }
+                slot = self
+                    .idle
+                    .wait_timeout(slot, remaining)
+                    .map_err(|_| {
+                        fail(
+                            ErrorCode::Internal,
+                            "Simulation operation lock unavailable.",
+                        )
+                    })?
+                    .0;
+            }
         }
-        Ok(())
+        if self
+            .busy
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .is_err()
+        {
+            return Err(fail(
+                ErrorCode::Busy,
+                "A virtual operation is already running.",
+            ));
+        }
+        let cancellation = Cancellation::default();
+        *slot = Some(cancellation.clone());
+        Ok(OperationGuard {
+            runtime: self,
+            cancellation,
+        })
+    }
+    fn completed_status(&self) -> Result<Status> {
+        // Capture under the operation guard; no scenario/reset can replace this result.
+        let mut status = self.status()?;
+        status.busy = false;
+        Ok(status)
     }
     fn invalidate(&self) -> Result<()> {
-        self.cancel()?;
         let revision = self.authority.epoch.fetch_add(1, Ordering::AcqRel) + 1;
         {
             let mut state = lock(&self.state)?;
@@ -257,31 +382,23 @@ impl Runtime {
     }
     fn stop(&self) -> Result<()> {
         self.authority.enabled.store(false, Ordering::Release);
-        self.cancel()?;
+        let operation = self.begin(true, Duration::from_secs(1));
         self.manager.shutdown();
+        let _operation = operation?;
+        *lock(&self.access)? = Access::default();
         Ok(())
     }
-    fn control(&self, control: Control) -> Result<()> {
+    fn control(&self, control: Control) -> Result<Status> {
+        let _operation = self.begin(
+            matches!(&control, Control::Cancel | Control::Reset),
+            Duration::from_secs(1),
+        )?;
+        if !self.authority.enabled.load(Ordering::Acquire) {
+            return Err(fail(ErrorCode::Disabled, "Simulation runtime stopped."));
+        }
         match control {
-            Control::Cancel => {
-                self.cancel()?;
-                let deadline = std::time::Instant::now() + Duration::from_secs(1);
-                while self.busy.load(Ordering::Acquire) && std::time::Instant::now() < deadline {
-                    std::thread::sleep(Duration::from_millis(1));
-                }
-                if self
-                    .busy
-                    .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-                    .is_err()
-                {
-                    return Err(fail(
-                        ErrorCode::Timeout,
-                        "Virtual cancellation did not finish within its bound.",
-                    ));
-                }
-            }
+            Control::Cancel => {}
             Control::Reset => {
-                self.cancel()?;
                 self.authority.epoch.fetch_add(1, Ordering::AcqRel);
                 let mut s = lock(&self.state)?;
                 let clock = s.clock + 1;
@@ -295,13 +412,8 @@ impl Runtime {
                 *lock(&self.access)? = Access::default();
             }
             Control::Scenario { scenario, repeat } => {
-                if self.busy.load(Ordering::Acquire) {
-                    return Err(fail(
-                        ErrorCode::Busy,
-                        "Cancel the running virtual operation before changing scenarios.",
-                    ));
-                }
-                let _reservation = ScenarioReservation(&self.busy);
+                #[cfg(test)]
+                self.test_hooks.pause(TestPoint::Scenario);
                 let mut state = lock(&self.state)?;
                 let changed_identity = matches!(
                     scenario,
@@ -311,6 +423,11 @@ impl Runtime {
                     Scenario::WrongIdentity | Scenario::EndpointSubstitution
                 );
                 state.scenario(scenario, repeat);
+                // Even identity-preserving scenario changes invalidate queued requests,
+                // previews and cached success while retaining the authenticated session.
+                state.revision += 1;
+                state.preview = None;
+                state.outcome = None;
                 drop(state);
                 if scenario == Scenario::RouterDisconnected || changed_identity {
                     self.invalidate()?;
@@ -325,6 +442,7 @@ impl Runtime {
                 }
                 let mut s = lock(&self.state)?;
                 s.clock = s.clock.saturating_add(milliseconds);
+                s.features = None;
                 if s.reconnect_at.is_some_and(|t| s.clock >= t) {
                     s.available = true;
                     s.configuration.wifi_service = "running".into();
@@ -352,7 +470,7 @@ impl Runtime {
                 ))
             }
         };
-        Ok(())
+        self.completed_status()
     }
     fn read_dns(
         &self,
@@ -376,6 +494,46 @@ impl Runtime {
             .manager
             .read_dns(id, &self.registry, &d.ctx(&self.profiles), grant, c)?)
     }
+    fn require_feature_read(
+        &self,
+        a: &Access,
+        d: &ContextData,
+        c: &OperationControl,
+        operation: AdapterOperation,
+    ) -> Result<()> {
+        let id = a.session.ok_or_else(|| {
+            fail(
+                ErrorCode::Unauthorized,
+                "Connect and authorize reads first.",
+            )
+        })?;
+        let grant = a.grant.as_ref().ok_or_else(|| {
+            fail(
+                ErrorCode::Unauthorized,
+                "Separate read approval is required.",
+            )
+        })?;
+        let ctx = d.ctx(&self.profiles);
+        match operation {
+            AdapterOperation::ReadWifiLimit => {
+                self.manager
+                    .read_wifi_all(id, &self.registry, &ctx, grant, c)?;
+            }
+            AdapterOperation::ReadApn => {
+                self.manager.read_apn(id, &self.registry, &ctx, grant, c)?;
+            }
+            AdapterOperation::ReadUssdCapability => {
+                self.manager.read_ussd(id, &self.registry, &ctx, grant, c)?;
+            }
+            _ => {
+                return Err(fail(
+                    ErrorCode::Unsupported,
+                    "Unsupported virtual feature read.",
+                ))
+            }
+        }
+        Ok(())
+    }
     pub(super) fn perform(&self, input: Request) -> Result<Status> {
         if input.endpoint != self.authority.endpoint {
             return Err(fail(
@@ -392,26 +550,18 @@ impl Runtime {
         if !self.authority.enabled.load(Ordering::Acquire) {
             return Err(fail(ErrorCode::Disabled, "Simulation runtime stopped."));
         }
-        let mut token_slot = lock(&self.cancellation)?;
-        if self
-            .busy
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-            .is_err()
-        {
-            return Err(fail(
-                ErrorCode::Busy,
-                "A virtual operation is already running.",
-            ));
+        let operation = self.begin(false, Duration::ZERO)?;
+        if !self.authority.enabled.load(Ordering::Acquire) {
+            return Err(fail(ErrorCode::Disabled, "Simulation runtime stopped."));
         }
-        let cancellation = Cancellation::default();
-        *token_slot = Some(cancellation.clone());
-        drop(token_slot);
         let c = OperationControl::new(
-            cancellation,
+            operation.cancellation.clone(),
             Stage::Connection,
             AdapterOperation::AuthorizedIdentityProbe,
             Duration::from_millis(500),
         )?;
+        #[cfg(test)]
+        self.test_hooks.pause(TestPoint::Request);
         let result = self.perform_inner(input, &c);
         if result
             .as_ref()
@@ -430,10 +580,8 @@ impl Runtime {
                 state.event(&format!("Simulation operation rejected: {:?}", error.code));
             }
         }
-        *lock(&self.cancellation)? = None;
-        self.busy.store(false, Ordering::Release);
         result?;
-        self.status()
+        self.completed_status()
     }
     fn perform_inner(&self, input: Request, c: &OperationControl) -> Result<()> {
         let d = self.data()?;
@@ -637,7 +785,7 @@ impl Runtime {
                 self.restore(&snapshot_id, &d, c)?;
             }
             Action::SetWifi { radio, limit } => {
-                self.read_dns(&a, &d, c)?;
+                self.require_feature_read(&a, &d, c, AdapterOperation::ReadWifiLimit)?;
                 let mut s = lock(&self.state)?;
                 let wifi = s
                     .configuration
@@ -677,7 +825,7 @@ impl Runtime {
                 authentication,
                 ip_family,
             } => {
-                self.read_dns(&a, &d, c)?;
+                self.require_feature_read(&a, &d, c, AdapterOperation::ReadApn)?;
                 let mut s = lock(&self.state)?;
                 if let Some(e) = s.modem_error() {
                     return Err(e);
@@ -730,12 +878,14 @@ impl Runtime {
             action @ (Action::UssdStart { .. }
             | Action::UssdReply { .. }
             | Action::UssdCancel { .. }) => {
-                self.read_dns(&a, &d, c)?;
+                self.require_feature_read(&a, &d, c, AdapterOperation::ReadUssdCapability)?;
                 self.ussd(action)?;
             }
         }
         c.checkpoint()?;
-        if d.epoch != self.authority.epoch.load(Ordering::Acquire) {
+        if d.epoch != self.authority.epoch.load(Ordering::Acquire)
+            || !self.authority.enabled.load(Ordering::Acquire)
+        {
             return Err(fail(
                 ErrorCode::Stale,
                 "Virtual reset/disconnection invalidated this result.",
@@ -1094,7 +1244,7 @@ impl SimulatorService {
                     r.stop()?;
                 }
             }
-            c => self.runtime()?.control(c)?,
+            c => return self.runtime()?.control(c),
         };
         self.status()
     }

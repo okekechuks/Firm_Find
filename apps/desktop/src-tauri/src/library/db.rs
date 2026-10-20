@@ -390,6 +390,25 @@ impl Repository {
             checks,
         })
     }
+    pub fn library_import_history(&self) -> Result<Vec<FirmwareImport>> {
+        let mut s = self.connection.prepare("SELECT import_id,artifact_sha256,original_filename,imported_at,source_category,provenance_status,job_id FROM artifact_imports ORDER BY imported_at DESC,import_id DESC LIMIT 100")?;
+        let rows = s
+            .query_map([], |r| {
+                Ok(FirmwareImport {
+                    import_id: r.get(0)?,
+                    artifact_sha256: r.get(1)?,
+                    original_filename: r.get(2)?,
+                    imported_at: r.get(3)?,
+                    source_category: r.get(4)?,
+                    provenance_status: r.get(5)?,
+                    description: None,
+                    associated_device_id: None,
+                    job_id: r.get(6)?,
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(rows)
+    }
     pub fn library_activity(&self) -> Result<Vec<ActivityEvent>> {
         let mut s=self.connection.prepare("SELECT a.id,a.kind,a.message,a.created_at,l.job_id,l.artifact_sha256,COALESCE(l.severity,'info') FROM audit_events a LEFT JOIN activity_links l ON l.event_id=a.id ORDER BY a.id DESC LIMIT 100")?;
         let rows = s

@@ -68,6 +68,15 @@ pub async fn get_firmware_artifact(
         .map_err(worker_error)?
 }
 #[tauri::command]
+pub async fn list_firmware_import_history(
+    service: tauri::State<'_, LibraryService>,
+) -> Result<Vec<FirmwareImport>> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || service.import_history())
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
 pub async fn verify_firmware_integrity(
     sha256: String,
     service: tauri::State<'_, LibraryService>,
