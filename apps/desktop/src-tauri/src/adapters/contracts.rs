@@ -18,7 +18,11 @@ pub trait DeviceAdapter: Send + Sync {
 }
 
 /// No production transport implements this in Phase 5. Implementations must validate endpoint
-/// trust and check control between bounded IO calls. Credentials never enter command arguments.
+/// trust (including exact interface and peer pin) BEFORE releasing credentials, refuse redirects
+/// or interface fallback, authenticate, and check control between bounded IO calls. A bootstrap
+/// binding's profile fields are expectations, never proof of identity. This method permits only
+/// transport establishment/authentication; identity is the sole subsequent bootstrap request.
+/// Credentials never enter command arguments.
 pub trait ReadOnlyConnectionAdapter: Send + Sync {
     fn connect(
         &self,
@@ -29,6 +33,10 @@ pub trait ReadOnlyConnectionAdapter: Send + Sync {
 }
 
 pub trait AdapterConnection: Send {
+    /// No attestation means bootstrap cannot establish a trusted session.
+    fn endpoint_trust(&self) -> Option<EndpointTrust> {
+        None
+    }
     fn read_identity(
         &mut self,
         control: &OperationControl,

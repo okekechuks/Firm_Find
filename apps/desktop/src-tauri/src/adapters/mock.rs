@@ -17,6 +17,9 @@ pub enum Fault {
     CloseWait,
     Transport,
     IdentityMismatch,
+    EndpointSubstitution,
+    ManagementIdentityMismatch,
+    MissingTrust,
 }
 #[derive(Clone)]
 pub struct MockAdapter {
@@ -76,6 +79,7 @@ impl Drop for Resource {
 struct MockConnection {
     fixture: MockAdapter,
     resource: Option<Resource>,
+    trust: EndpointTrust,
 }
 impl ReadOnlyConnectionAdapter for MockAdapter {
     fn connect(
@@ -90,7 +94,10 @@ impl ReadOnlyConnectionAdapter for MockAdapter {
         if matches!(self.fault, Fault::ConnectWait) {
             self.wait(control)?;
         }
-        if !binding.simulated || binding.endpoint_identity != "FIXTURE-PIN" {
+        if !binding.simulated
+            || binding.endpoint_identity != "FIXTURE-PIN"
+            || binding.endpoint != "fixture://trusted-endpoint"
+        {
             return Err(failure(
                 AdapterErrorCode::EndpointUntrusted,
                 "Fixture endpoint fingerprint mismatch.",
@@ -110,10 +117,27 @@ impl ReadOnlyConnectionAdapter for MockAdapter {
         Ok(Box::new(MockConnection {
             fixture: self.clone(),
             resource: Some(resource),
+            trust: EndpointTrust {
+                endpoint: if matches!(self.fault, Fault::EndpointSubstitution) {
+                    "fixture://substituted-peer".into()
+                } else {
+                    binding.endpoint.clone()
+                },
+                interface_id: binding.interface_id.clone(),
+                endpoint_identity: binding.endpoint_identity.clone(),
+                simulated: true,
+            },
         }))
     }
 }
 impl AdapterConnection for MockConnection {
+    fn endpoint_trust(&self) -> Option<EndpointTrust> {
+        if matches!(self.fixture.fault, Fault::MissingTrust) {
+            None
+        } else {
+            Some(self.trust.clone())
+        }
+    }
     fn read_identity(&mut self, c: &OperationControl) -> Result<AdapterIdentity, AdapterError> {
         c.checkpoint()?;
         if matches!(self.fixture.fault, Fault::IdentityWait) {
@@ -137,6 +161,12 @@ impl AdapterConnection for MockConnection {
             }
             .into(),
             operating_system: "SIMULATED OpenWrt".into(),
+            management_identity: if matches!(self.fixture.fault, Fault::ManagementIdentityMismatch)
+            {
+                "different,board".into()
+            } else {
+                "tplink,archer-c7-v5".into()
+            },
             modem_identity: None,
             simulated: true,
         })

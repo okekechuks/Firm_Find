@@ -145,6 +145,7 @@ struct ManagedSession {
     binding: SessionBinding,
     _slot: Slot,
     authentication: AuthenticationState,
+    bootstrap: Option<super::bootstrap::BootstrapEvidence>,
 }
 impl Drop for ManagedSession {
     fn drop(&mut self) {
@@ -167,6 +168,7 @@ pub struct SessionManager {
     revision: AtomicU64,
 }
 impl SessionManager {
+    /// Reconnect an already verified target. Previously unknown targets use `connect_initial`.
     #[allow(clippy::too_many_arguments)] // Explicit independent trust inputs; no IPC entry point.
     pub fn connect(
         &self,
@@ -193,6 +195,46 @@ impl SessionManager {
             AdapterOperation::AuthorizedIdentityProbe,
             grant,
         )?;
+        self.connect_checked(registry, ctx, binding, secret, control, false)
+    }
+    /// Only for a backend flow holding an explicit, single-use handshake approval.
+    /// This does not grant configuration or capability reads and has no IPC entry point.
+    #[allow(clippy::too_many_arguments)]
+    pub fn connect_initial(
+        &self,
+        registry: &Registry,
+        ctx: &DeviceContext<'_>,
+        binding: SessionBinding,
+        approval: &HandshakeApproval,
+        secret: Secret,
+        control: &OperationControl,
+    ) -> Result<SessionStatus, AdapterError> {
+        self.reap_expired(ctx.now);
+        self.check_revision(ctx.revision)?;
+        control.checkpoint()?;
+        let deadline = approval.claim(registry, ctx, &binding)?;
+        let bounded = OperationControl {
+            deadline: control.deadline.min(deadline),
+            ..control.clone()
+        };
+        self.connect_checked(registry, ctx, binding, secret, &bounded, true)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn connect_checked(
+        &self,
+        registry: &Registry,
+        ctx: &DeviceContext<'_>,
+        mut binding: SessionBinding,
+        secret: Secret,
+        control: &OperationControl,
+        initial: bool,
+    ) -> Result<SessionStatus, AdapterError> {
+        if self.stopped.load(Ordering::Acquire) {
+            return Err(failure(
+                AdapterErrorCode::OperationCancelled,
+                "Adapter service is shut down.",
+            ));
+        }
         let previous = self
             .in_use
             .try_update(Ordering::AcqRel, Ordering::Acquire, |n| {
@@ -226,11 +268,44 @@ impl SessionManager {
             binding: binding.clone(),
             _slot: slot,
             authentication: authentication.state(),
+            bootstrap: None,
         };
+        if initial
+            && managed.connection.endpoint_trust()
+                != Some(EndpointTrust {
+                    endpoint: binding.endpoint.clone(),
+                    interface_id: binding.interface_id.clone(),
+                    endpoint_identity: binding.endpoint_identity.clone(),
+                    simulated: binding.simulated,
+                })
+        {
+            return Err(failure(
+                AdapterErrorCode::EndpointUntrusted,
+                "Endpoint trust must be verified before requesting identity.",
+            ));
+        }
         let identity = managed
             .connection
             .read_identity(&control.stage(Stage::Identity))?;
-        validate_identity(ctx, &binding, &identity)?;
+        if initial {
+            let verified = super::bootstrap::verify_handshake(
+                ctx,
+                &binding,
+                managed.connection.as_ref(),
+                &identity,
+            )?;
+            let verified_ctx = DeviceContext {
+                profile: &verified.report,
+                ..*ctx
+            };
+            validate_identity(&verified_ctx, &binding, &identity)?;
+            binding.evidence_digest = verified.report.input_digest.clone();
+            binding.expires_at = binding.expires_at.min(verified.report.expires_at);
+            managed.binding = binding.clone();
+            managed.bootstrap = Some(verified);
+        } else {
+            validate_identity(ctx, &binding, &identity)?;
+        }
         // Cancellation after handshake still destroys the new resource instead of publishing it.
         control.checkpoint()?;
         let id = self.next.fetch_add(1, Ordering::AcqRel) + 1;
@@ -254,6 +329,40 @@ impl SessionManager {
             authentication: AuthenticationState::Authenticated,
         })
     }
+    /// Separate explicit approval for established reads. A handshake receipt cannot be used here.
+    pub fn confirm_session_reads(
+        &self,
+        id: u64,
+        registry: &Registry,
+        ctx: &DeviceContext<'_>,
+        operations: Vec<AdapterOperation>,
+    ) -> Result<AuthorizationGrant, AdapterError> {
+        self.reap_expired(ctx.now);
+        self.check_revision(ctx.revision)?;
+        let sessions = self
+            .sessions
+            .lock()
+            .map_err(|_| AdapterError::internal("session lock"))?;
+        let session = sessions.get(&id).ok_or_else(|| {
+            failure(
+                AdapterErrorCode::SessionExpired,
+                "Session is absent or expired.",
+            )
+        })?;
+        let effective = match &session.bootstrap {
+            Some(e) => e.context(ctx)?,
+            None => DeviceContext { ..*ctx },
+        };
+        let grant = AuthorizationGrant::confirm_selected_target(
+            session.binding.clone(),
+            operations.clone(),
+            ctx.now,
+        )?;
+        for op in operations {
+            authorize(registry, &effective, &session.binding, op, &grant)?;
+        }
+        Ok(grant)
+    }
     #[allow(clippy::too_many_arguments)] // Shared session gate keeps every read under the same checks.
     fn run<T>(
         &self,
@@ -263,7 +372,11 @@ impl SessionManager {
         grant: &AuthorizationGrant,
         op: AdapterOperation,
         control: &OperationControl,
-        action: impl FnOnce(&mut dyn AdapterConnection, &OperationControl) -> Result<T, AdapterError>,
+        action: impl FnOnce(
+            &mut dyn AdapterConnection,
+            &OperationControl,
+            &DeviceContext<'_>,
+        ) -> Result<T, AdapterError>,
     ) -> Result<T, AdapterError> {
         let mut managed = self
             .sessions
@@ -278,8 +391,12 @@ impl SessionManager {
             })?;
         control.checkpoint()?;
         self.check_revision(ctx.revision)?;
-        authorize(registry, ctx, &managed.binding, op, grant)?;
-        let value = action(managed.connection.as_mut(), control)?;
+        let effective = match &managed.bootstrap {
+            Some(e) => e.context(ctx)?,
+            None => DeviceContext { ..*ctx },
+        };
+        authorize(registry, &effective, &managed.binding, op, grant)?;
+        let value = action(managed.connection.as_mut(), control, &effective)?;
         control.checkpoint()?;
         let mut sessions = self
             .sessions
@@ -310,7 +427,7 @@ impl SessionManager {
             grant,
             AdapterOperation::AuthorizedIdentityProbe,
             &control.stage(Stage::Identity),
-            |s, c| {
+            |s, c, ctx| {
                 let identity = s.read_identity(c)?;
                 let expected = registry.evaluate(ctx);
                 if identity.simulated
@@ -347,7 +464,7 @@ impl SessionManager {
             grant,
             AdapterOperation::InspectCapabilities,
             &control.stage(Stage::Capabilities),
-            |s, c| {
+            |s, c, _| {
                 let result = s.probe_capabilities(c)?;
                 if result.iter().any(|v| {
                     v.can_apply || v.can_plan || v.can_restore || v.operation.is_physical_write()
@@ -376,7 +493,7 @@ impl SessionManager {
             grant,
             AdapterOperation::ReadDns,
             &control.stage(Stage::Read),
-            |s, c| {
+            |s, c, _| {
                 s.dns()
                     .ok_or_else(|| unsupported(AdapterOperation::ReadDns))?
                     .read_dns(c)
@@ -398,7 +515,7 @@ impl SessionManager {
             grant,
             AdapterOperation::ReadApn,
             &control.stage(Stage::Read),
-            |s, c| {
+            |s, c, _| {
                 s.apn()
                     .ok_or_else(|| unsupported(AdapterOperation::ReadApn))?
                     .read_apn(c)
@@ -420,7 +537,7 @@ impl SessionManager {
             grant,
             AdapterOperation::ReadWifiLimit,
             &control.stage(Stage::Read),
-            |s, c| {
+            |s, c, _| {
                 s.wifi()
                     .ok_or_else(|| unsupported(AdapterOperation::ReadWifiLimit))?
                     .read_wifi_client_limit(c)
@@ -442,7 +559,7 @@ impl SessionManager {
             grant,
             AdapterOperation::ReadUssdCapability,
             &control.stage(Stage::Read),
-            |s, c| {
+            |s, c, _| {
                 s.ussd()
                     .ok_or_else(|| unsupported(AdapterOperation::ReadUssdCapability))?
                     .read_ussd_capability(c)
@@ -565,6 +682,14 @@ fn validate_identity_fields(
             &identity.firmware_version,
             &p.firmware_version_constraints,
         ) != Some(true)
+        || p.match_rules.iter().any(|rule| {
+            rule.purpose == crate::profiles::Purpose::Identity
+                && rule.attribute == crate::profiles::Attribute::ManagementIdentity
+                && !rule
+                    .values
+                    .iter()
+                    .any(|v| v.eq_ignore_ascii_case(&identity.management_identity))
+        })
     {
         return Err(failure(
             AdapterErrorCode::IdentityConflict,

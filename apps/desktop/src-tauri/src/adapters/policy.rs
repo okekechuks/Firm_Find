@@ -31,6 +31,8 @@ impl AuthorizationGrant {
         })
     }
 }
+/// Established-session policy. Never weaken this gate to bootstrap authentication;
+/// `HandshakeApproval` authorizes only the separate initial identity handshake.
 pub fn authorize(
     registry: &Registry,
     ctx: &DeviceContext<'_>,

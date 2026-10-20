@@ -230,8 +230,11 @@ async function verify(label, extended = false) {
     await writeFile(backendPath, originalBackend); changedBackend = undefined;
     await connected();
     record(label + ': loading state retains cached data');
-    // Start the component HMR proof from the restored module graph, after fault-injection imports settle.
-    await client.send('Page.reload'); await connected();
+    // Wait for restored exports without navigating away from in-flight Tauri callbacks.
+    // A forced Page.reload here races HMR-triggered feature reads and emits IPC fallback/
+    // orphan callback warnings even though the native operation succeeds.
+    await until(() => client.evaluate('import("/src/lib/backend.ts?t=" + Date.now()).then(module => !module.getSnapshot.toString().includes("__phase1FailSnapshot"))'), 'Restored backend module did not load');
+    await connected();
     await screen('settings', 'Settings');
     originalSource = await readFile(preferencePath, 'utf8');
     const anchor = '<h2>Appearance</h2>';

@@ -2,6 +2,82 @@
 
 Date: 19 October 2026, Africa/Lagos. **Phase 5 verdict: PASS. Phase 6 readiness: READY.** Phase 5 implementation and required qualification are complete. No Phase 6 implementation or physical router configuration operation was started.
 
+## Post-review authentication bootstrap correction — 20 October 2026
+
+The review identified a real bootstrap block. Previously `SessionManager::connect` called the established `authorize(...AuthorizedIdentityProbe...)` gate before the connector. That gate requires an exact VERIFIED profile and strong authenticated-management/supported-modem evidence for the bound endpoint/interface. The successful established-session fixtures already contain this evidence. A freshly discovered device with only Windows observations or user hints cannot pass; calling it an identity probe did not bypass the requirement.
+
+`cold_start_reproduces_established_gate_block_without_seeded_authentication` demonstrates this explicitly: no authenticated-management or modem evidence, no selected profile, established connect returns `IDENTITY_UNVERIFIED`, no connector resource/session remains. The established policy and all 29 original adapter tests are retained.
+
+### Corrected lifecycle
+
+1. Discovery/profile evaluation remains passive and unverified. The backend selects the exact endpoint, live nonvirtual Windows interface, adapter/version and an expected authoritative profile/version/hash. An expected profile constrains the later identity check; it does not verify this device. A peer pin must be selected independently of an untrusted HTTP response.
+2. An explicit user approval is represented by the opaque backend-only `HandshakeApproval::confirm_selected_target`. It binds the whole target, available evidence digest, discovery revision, expiry and simulation provenance. It is not serializable or cloneable, is single-use, lasts at most 30 seconds using a monotonic deadline and cannot carry arbitrary operations. Phase 7 must connect this constructor to its reviewed target/pin approval UI; Phase 5 adds no active IPC or approval screen.
+3. `SessionManager::connect_initial` validates current evidence, target/interface availability, trusted expected profile, unique compatible adapter and implementation/provenance. Protected hardware, disconnected/stale/ambiguous/conflicting devices are denied. Only transport setup/authentication and one identity request are allowed. No capability/configuration read occurs in this path.
+4. The connector contract requires exact interface/peer trust verification before credentials, bounded IO, and no redirect or interface fallback. After authenticated connect, the manager requires an exact `EndpointTrust` attestation before asking for identity. Missing attestation or substituted endpoint/interface/pin is rejected.
+5. Actual returned manufacturer/model, hardware revision, firmware family/version and board/management identity feed the existing profile engine. Only a unique VERIFIED result matching the expected authoritative profile publishes a session. Missing/wrong identity is denied. The resulting evidence exists only in session memory; starting reports, discovery records and SQLite are unchanged. Simulated evidence is explicitly labeled and cannot enter a physical session.
+6. `confirm_session_reads` is a separate explicit backend read-approval step. It derives its binding from private verified session state and invokes the retained established policy for every requested operation. Every read validates the starting device/evidence snapshot plus verified profile, endpoint/interface, adapter, revision, operation and expiry. A grant over the original unverified report cannot authorize an established read. Failed/stale/cancelled operations release the connection and concurrency slot.
+
+The successful controlled test `cold_start_authenticates_then_requires_separate_established_read_approval` starts with Windows/user-hint evidence only, authenticates through the existing `cfg(test)` connector, verifies its peer and actual identity, obtains a separate established grant, then successfully reads identity and capabilities. `cold_start_also_works_without_user_identity_hints` repeats authentication with an empty starting identity-evidence list. Neither success seeds authenticated evidence; authenticated records are generated only from the returned handshake identity. Both leave the original report unverified and release all resources on disconnect.
+
+### Files changed for this correction
+
+- `apps/desktop/src-tauri/src/adapters/bootstrap.rs` — single-use handshake approval, initial policy, endpoint/identity verification and session-local evidence.
+- `apps/desktop/src-tauri/src/adapters/lifecycle.rs` — separate initial connection/read approval, retained reconnect gate, current-evidence validation on reads and management-identity checks.
+- `apps/desktop/src-tauri/src/adapters/types.rs` — internal endpoint attestation and returned management identity.
+- `apps/desktop/src-tauri/src/adapters/contracts.rs` — endpoint attestation and precise bootstrap transport/authentication obligations.
+- `apps/desktop/src-tauri/src/adapters/mock.rs` — controlled test-only attestation and missing/substituted-peer/board-identity faults. No physical IO.
+- `apps/desktop/src-tauri/src/adapters/bootstrap_tests.rs` — 15 cold-start regression tests.
+- `apps/desktop/src-tauri/src/adapters/mod.rs` — module exports; `policy.rs` — established-policy documentation only.
+- `scripts/verify-foundation.mjs` — wait for restored fault-injection exports without a redundant forced navigation that races pending Tauri callbacks; retain the strict console gate.
+- `scripts/drive-folder-dialog.ps1` — select only visible owned dialogs/controls, wait for the confirmation button to enable and require the native picker to close before reporting success.
+- `docs/PHASE_5_IMPLEMENTATION.md`, `docs/PHASE_5_VERIFICATION.md`, `docs/PHASE_STATUS.md` — design and current evidence.
+
+No original established-session tests, profile registry/engine, discovery implementation, GUI, IPC permissions, dependencies, database schema or data location were replaced.
+
+### Correction checks
+
+Rust compilation used `CARGO_INCREMENTAL=0`. Storage regressions ran with approved normal Windows directory access to retain existing safe path leases. Commands/results are also recorded in `.tools/phase5-correction-{rust,frontend}-results.json`; per-command logs have matching prefixes.
+
+| Exact command | Actual result |
+| --- | --- |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all` | Exit 0; formatting applied. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline adapters:: -- --test-threads=4` | Exit 0, initial 42 adapter tests; two additional tests and missing-attestation coverage were added before final full qualification. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check` | Exit 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings` | Exit 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings` | Exit 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline` | Exit 0, 130 tests: all previous 115 plus 15 cold-start tests. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --features native-test-profile --locked --offline` | Exit 0, 130 tests; both executable test targets and doc tests pass. |
+| `node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit` | Exit 0. |
+| `npm.cmd run lint` | Exit 0. |
+| `npm.cmd test` | Exit 0, 99 tests / 11 files. |
+| `npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline` | Exit 0; production frontend and optimized ordinary Windows executable built. Rust release compilation 1m 52s. |
+| `npm.cmd run build:native-tests` | Exit 0; dedicated optimized test executable built, Rust release compilation 2m 04s. Ordinary executable SHA-256 preserved. |
+| `node --check scripts/verify-foundation.mjs` | Exit 0 after the native verifier correction; lint rerun also exits 0. |
+| PowerShell `Parser::ParseFile` on `scripts/drive-folder-dialog.ps1` | Exit 0, no parse errors after readiness/closure/visibility changes. |
+| `npm.cmd run test:gui -- --phase5` | Attempts exit 1, 1, then **0**; failures retained below. Final run **103 checkpoints**, zero console issues. |
+| `py scripts/probe-native-isolation.py .tools/phase5-correction-normal-before.json` | Exit 0; normal data captured read-only before changes. |
+| `py scripts/probe-native-isolation.py .tools/phase5-correction-normal-after.json .tools/phase5-correction-normal-before.json` | Exit 0; exact full byte/row/settings/vault equality after all attempts. |
+| `git diff --check` | Exit 0 after final source/documentation updates. |
+
+The 15 tests cover first authentication with/without hints; the old bootstrap denial; separate read approval and approval replay; bad credentials; endpoint/interface/pin/adapter/profile/evidence/revision substitution; absent/substituted trust attestation; wrong firmware family and board identity; cancellation before/during authentication; bounded connection/authentication/identity timeouts; wall-clock and monotonic approval expiry; invalid/down/virtual interface and physical/simulated provenance; protected/disconnected/ambiguous/conflicting devices; stale discovery, changed evidence, session expiry, shutdown/race cleanup; and rejection of configuration writes, firmware acquisition/build/installation and active USSD.
+
+The first native attempt exited 1 at the strict console gate: `.tools/foundation/2026-10-20T02-24-20.986Z/`. Its GUI/IPC, development/release restart, storage and normal-data equality checks passed, but two development warnings were captured: `IPC custom protocol failed, Tauri will now use the postMessage interface instead` and a missing callback after reload. Their timestamps align with the verifier's `Page.reload` immediately following restoration of temporary backend fault injection; the first stack is an in-flight Library read, followed by a callback in the replaced execution context. The verifier now waits for restored module exports and retains the page context before the component HMR proof. No warnings are filtered or ignored, and no product IPC fallback code was changed. Failed isolated run `9fa662d21f3ecd456736ad40df67bba9` and its diagnostic evidence are retained; normal data was byte/row-identical after that attempt.
+
+The second attempt (`.tools/foundation/2026-10-20T02-30-04.679Z/`, exit 1) captured **zero** console warnings/errors/exceptions in `console.json`, confirming the reload correction. It later timed out waiting for the second reviewed storage-copy plan in the retained GUI suite (`Reviewed storage plan missing`). The folder-picker driver had reported success merely when a native click was posted; it did not require an enabled confirmation button or dialog dismissal. It now scopes to visible owned dialogs/controls, waits for readiness and requires actual closure. Product storage code and its copy/restart assertions are unchanged. Failed isolated run `6bf7857977f6782cbd7f838d840a0e5c` is retained; normal-data equality passed again.
+
+Final native run: **exit 0, 103 checkpoints** in `.tools/foundation/2026-10-20T02-35-07.136Z/`. `console-issues.json` is empty; all 39 captured console entries are informational/debug, with no warnings/errors/unhandled exceptions. Actual development/recovery/optimized-release windows, React/Rust IPC, six destinations, passive adapter queries, disabled extraction/customization, HMR, interrupted startup, SQLite/settings persistence and retained library/backup/storage workflows pass. The folder picker now passes both cancellation and reviewed-copy interactions. Actual development and production adapter-status captures were visually inspected. These native runs verify retained production behavior; the new active cold-start connection is demonstrated only by the controlled unit-test connector, which is not compiled into either native executable.
+
+Exact native child commands recorded in final `results.json`:
+
+- `npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline`: exits **0, 1, 0**. The middle launch is intentionally terminated to verify interruption recovery.
+- `.\\target\\release\\obtainer-native-test.exe`: two launches, exits **0, 0**.
+
+Every owned app/WebView/Vite process and development listener stopped. Guarded cleanup exited 0 and removed only successful marked run `10782addffb4846a1f932138357ae87e`; diagnostic failed runs remain retained. Temporary backend/Preferences edits were restored, and the final Git inventory contains no product frontend changes. Current ordinary executable SHA-256: `EA1DC5AF55C408B17270E119066C7D066B6F814BF49DEEB21929FCB6F364B2C2`.
+
+Final independent normal-data comparison is exactly equal to `.tools/phase5-correction-normal-before.json`: schema 5, integrity `ok`, no FK violations, every DB/WAL byte/hash and table row, settings, saved router/profile IDs, vault files and logs/workspaces/reports unchanged. Entire-row SHA-256 remains `6c4c4640c029fc1d0bb91e24f07bac4e1f321dcf7222bddce886db5f42a27e91`; settings SHA-256 remains `70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97`. A read-only SQLite query also confirms `LT800/` and `MF69_AM802L_ZX_DD_N_241106_EU` remain `user_reported` / `user_supplied`. MG11 was absent in native discovery, so no new physical qualification is claimed. No router authentication/configuration request was made; native firmware regressions used generated harmless test binaries only.
+
+**Correction verdict: PASS. Phase 5: PASS. Phase 6: READY.** First authentication is now proven without preseeded authenticated evidence; established-session policy and all previous regressions pass. Firmware extraction/build/installation, configuration writes, restore and active USSD remain disabled. No full simulator, physical OpenWrt adapter, active IPC, GUI redesign, database migration or data-directory change was introduced.
+
 ## Implementation and source audit
 
 The [implementation report](PHASE_5_IMPLEMENTATION.md) contains the audit map, architecture, matching/policy/authentication/lifecycle design, threat model, extension guide and limitations. Work remains in the existing repository, branch `main`, starting HEAD `f7a450a0b48647e0cad01d1af24f297917ba9080`. No commit, history reset or repository relocation was requested or performed. The initial continuation inherited uncommitted Phase 5 changes and hardened them in place.

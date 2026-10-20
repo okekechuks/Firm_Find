@@ -328,8 +328,19 @@ pub struct AdapterIdentity {
     pub hardware_revision: String,
     pub firmware_version: String,
     pub firmware_family: String,
+    pub management_identity: String,
     pub operating_system: String,
     pub modem_identity: Option<String>,
+    pub simulated: bool,
+}
+
+/// Connector attestation after transport trust verification, before identity can become evidence.
+/// Internal only; a frontend address or successful HTTP response cannot create this value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EndpointTrust {
+    pub endpoint: String,
+    pub interface_id: String,
+    pub endpoint_identity: String,
     pub simulated: bool,
 }
 
