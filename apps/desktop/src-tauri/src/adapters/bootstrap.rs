@@ -135,11 +135,13 @@ fn authorize_initial(
         ));
     }
     // A current, linked Windows interface is required even when router identity is unknown.
-    if !ctx
-        .device
-        .networks
-        .iter()
-        .any(|n| n.id == b.interface_id && n.link_up && !n.virtual_interface)
+    let virtual_target = registry.simulation_target(ctx, b);
+    if !virtual_target
+        && !ctx
+            .device
+            .networks
+            .iter()
+            .any(|n| n.id == b.interface_id && n.link_up && !n.virtual_interface)
     {
         return Err(failure(
             AdapterErrorCode::EndpointUntrusted,
@@ -185,8 +187,13 @@ fn authorize_initial(
                         .iter()
                         .any(|v| v.eq_ignore_ascii_case(f))
                 }))
-            && d.transports.contains(&Transport::Network)
-            && ctx.device.transports.iter().any(|t| t == "network")
+            && if virtual_target {
+                d.implementation_status == AdapterImplementationStatus::Simulator
+                    && d.transports == [Transport::Simulation]
+            } else {
+                d.transports.contains(&Transport::Network)
+                    && ctx.device.transports.iter().any(|t| t == "network")
+            }
     };
     let descriptors = registry.descriptors();
     let viable: Vec<_> = descriptors.iter().filter(|d| compatible(d)).collect();
@@ -205,7 +212,9 @@ fn authorize_initial(
     }
     if !matches!(
         d.implementation_status,
-        AdapterImplementationStatus::BuiltIn | AdapterImplementationStatus::TestOnly
+        AdapterImplementationStatus::BuiltIn
+            | AdapterImplementationStatus::TestOnly
+            | AdapterImplementationStatus::Simulator
     ) {
         return Err(failure(
             AdapterErrorCode::OperationNotImplemented,
@@ -222,7 +231,13 @@ fn authorize_initial(
             "Authenticated identity handshake is unavailable.",
         ));
     }
-    if b.simulated != (d.implementation_status == AdapterImplementationStatus::TestOnly) {
+    if b.simulated
+        != matches!(
+            d.implementation_status,
+            AdapterImplementationStatus::TestOnly | AdapterImplementationStatus::Simulator
+        )
+        || (d.implementation_status == AdapterImplementationStatus::Simulator && !virtual_target)
+    {
         return Err(failure(
             AdapterErrorCode::EndpointUntrusted,
             "Simulated and physical provenance differ.",

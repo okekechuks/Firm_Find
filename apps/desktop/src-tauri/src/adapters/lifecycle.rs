@@ -436,7 +436,11 @@ impl SessionManager {
                         .iter()
                         .find(|m| Some(&m.adapter.id) == expected.selected_adapter.as_ref())
                         .is_some_and(|m| {
-                            m.adapter.implementation_status == AdapterImplementationStatus::TestOnly
+                            matches!(
+                                m.adapter.implementation_status,
+                                AdapterImplementationStatus::TestOnly
+                                    | AdapterImplementationStatus::Simulator
+                            )
                         })
                 {
                     return Err(failure(
@@ -519,6 +523,28 @@ impl SessionManager {
                 s.apn()
                     .ok_or_else(|| unsupported(AdapterOperation::ReadApn))?
                     .read_apn(c)
+            },
+        )
+    }
+    pub fn read_wifi_all(
+        &self,
+        id: u64,
+        registry: &Registry,
+        ctx: &DeviceContext<'_>,
+        grant: &AuthorizationGrant,
+        control: &OperationControl,
+    ) -> Result<Vec<WifiClientLimitConfiguration>, AdapterError> {
+        self.run(
+            id,
+            registry,
+            ctx,
+            grant,
+            AdapterOperation::ReadWifiLimit,
+            &control.stage(Stage::Read),
+            |s, c, _| {
+                s.wifi()
+                    .ok_or_else(|| unsupported(AdapterOperation::ReadWifiLimit))?
+                    .read_wifi_configurations(c)
             },
         )
     }

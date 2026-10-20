@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-simulation-control"
+description = "Enables the simulation_control command without any pre-configured scope."
+commands.allow = ["simulation_control"]
+
+[[permission]]
+identifier = "deny-simulation-control"
+description = "Denies the simulation_control command without any pre-configured scope."
+commands.deny = ["simulation_control"]

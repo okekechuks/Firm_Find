@@ -1,6 +1,9 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "simulation_status",
+            "simulation_control",
+            "simulation_request",
             "get_desktop_state",
             "save_desktop_preferences",
             "list_firmware_backups",

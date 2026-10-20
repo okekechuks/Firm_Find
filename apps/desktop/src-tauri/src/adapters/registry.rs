@@ -12,6 +12,7 @@ use std::{
 pub struct Registry {
     adapters: BTreeMap<String, (AdapterDescriptor, Arc<dyn DeviceAdapter>)>,
     allow_test: bool,
+    simulation: Option<crate::simulator::Authority>,
 }
 fn valid_id(id: &str) -> bool {
     !id.is_empty()
@@ -21,6 +22,21 @@ fn valid_id(id: &str) -> bool {
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b".-_".contains(&b))
 }
 impl Registry {
+    pub(crate) fn simulator(authority: crate::simulator::Authority) -> Self {
+        Self {
+            simulation: Some(authority),
+            ..Self::default()
+        }
+    }
+    pub(crate) fn simulation_target(
+        &self,
+        ctx: &DeviceContext<'_>,
+        binding: &SessionBinding,
+    ) -> bool {
+        self.simulation
+            .as_ref()
+            .is_some_and(|s| s.allows(ctx, binding))
+    }
     pub fn production() -> Result<Self, AdapterError> {
         let mut r = Self::default();
         r.register(OpenWrtContractAdapter)?;
@@ -42,7 +58,7 @@ impl Registry {
             || !text(&d.name)
             || crate::profiles::version(&d.version).is_none()
             || d.transports.is_empty()
-            || d.transports.len() > 3
+            || d.transports.len() > 4
             || d.operations.len() > 20
             || !unique(d.transports.iter().map(|v| format!("{v:?}")).collect())
             || !unique(d.operations.iter().map(|v| format!("{v:?}")).collect())
@@ -59,6 +75,14 @@ impl Registry {
             || d.limitations.len() > 32
             || (d.implementation_status == AdapterImplementationStatus::TestOnly
                 && !self.allow_test)
+            || (d.implementation_status == AdapterImplementationStatus::Simulator
+                && self.simulation.is_none())
+            || (self.simulation.is_some()
+                && d.implementation_status != AdapterImplementationStatus::Simulator)
+            || (d.transports.contains(&Transport::Simulation)
+                != (d.implementation_status == AdapterImplementationStatus::Simulator))
+            || (d.implementation_status == AdapterImplementationStatus::Simulator
+                && (d.transports != [Transport::Simulation] || a.connector().is_none()))
             || (d.implementation_status == AdapterImplementationStatus::Declared
                 && a.connector().is_some())
             || (d.implementation_status == AdapterImplementationStatus::BuiltIn
@@ -236,6 +260,7 @@ fn match_descriptor(d: &AdapterDescriptor, ctx: &DeviceContext<'_>) -> AdapterMa
                 Transport::Usb => "usb",
                 Transport::Serial => "serial",
                 Transport::Network => "network",
+                Transport::Simulation => "simulation",
             }
         })
     }) {

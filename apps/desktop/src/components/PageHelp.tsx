@@ -9,7 +9,7 @@ const help: Record<string, string[]> = {
   jobs: ["Logs retains real operations, completed jobs, cancellations, warnings and application events across restarts.", "Search descriptions or IDs. Filter by category, severity and status, or change the date order.", "Select an event to inspect its timestamp, associated artifact, job outcome and available recovery information.", "The latest 100 jobs and 100 events are shown. Full saved history is retained locally; this view does not delete it."],
   settings: ["Choose Light, Dark or System and save preferences. System follows your Windows color preference.", "Automatic device refresh responds to hardware changes. Turning it off still allows a manual Refresh.", "Library storage is managed by OBTAINER. A directory change must copy and verify existing files before switching; the current path remains visible.", "Backups use their own managed per-user folder. Open Folder opens the actual managed directory.", "Completion and failure notifications apply to real jobs. The single backend worker enforces safe concurrency."],
 };
-export function PageHelp({ page }: { page: Page }) {
+export function PageHelp({ page,simulation=false }: { page: Page;simulation?:boolean }) {
   const [open, setOpen] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -34,6 +34,6 @@ export function PageHelp({ page }: { page: Page }) {
   }, [open]);
   return <div className="page-help" ref={host}>
     <button ref={trigger} className={`icon-button help-trigger${open ? " selected" : ""}`} aria-label="How to use this page" aria-expanded={open} aria-controls={id} onClick={() => setOpen(v => !v)}><Info size={19}/></button>
-    {open ? <section id={id} role="dialog" aria-labelledby={`${id}-title`} className="help-popover"><div className="section-heading"><h2 id={`${id}-title`}>How to use this page</h2><button className="icon-button" ref={close} aria-label="Close page help" onClick={() => { setOpen(false); trigger.current?.focus(); }}><X size={17}/></button></div><ol>{(help[page === "compatibility" ? "devices" : page] ?? help.firmware).map(step => <li key={step}>{step}</li>)}</ol></section> : null}
+    {open ? <section id={id} role="dialog" aria-labelledby={`${id}-title`} className="help-popover"><div className="section-heading"><h2 id={`${id}-title`}>How to use this page</h2><button className="icon-button" ref={close} aria-label="Close page help" onClick={() => { setOpen(false); trigger.current?.focus(); }}><X size={17}/></button></div><ol>{(help[page === "compatibility" ? "devices" : page] ?? help.firmware).map(step => <li key={step}>{step}</li>)}{simulation&&page==="devices"?<><li>Simulation Mode is a separate virtual router. Start it explicitly, approve its endpoint handshake and use the fictional password lab-only. Then authorize feature reads separately.</li><li>DNS changes need a preview before Apply to Simulator. Inspect independent configuration, service and resolver results; restore a virtual snapshot or reset after failures.</li><li>Scenarios and virtual time affect only simulator memory. Stopping/restarting the app resets virtual state. No real device, SIM, network settings or firmware is modified.</li></>:null}</ol></section> : null}
   </div>;
 }

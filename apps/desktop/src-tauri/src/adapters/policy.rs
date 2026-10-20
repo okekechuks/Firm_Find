@@ -145,7 +145,12 @@ pub fn authorize(
         ));
     }
     if binding.simulated
-        != (m.adapter.implementation_status == AdapterImplementationStatus::TestOnly)
+        != matches!(
+            m.adapter.implementation_status,
+            AdapterImplementationStatus::TestOnly | AdapterImplementationStatus::Simulator
+        )
+        || (m.adapter.implementation_status == AdapterImplementationStatus::Simulator
+            && !registry.simulation_target(ctx, binding))
     {
         return Err(failure(
             AdapterErrorCode::EndpointUntrusted,

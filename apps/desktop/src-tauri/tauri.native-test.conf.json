@@ -1,5 +1,6 @@
 {
   "productName": "OBTAINER Native Test",
   "identifier": "com.obtainer.desktop.native-test",
+  "app": {"security": {"capabilities": ["main", "simulator"]}},
   "bundle": { "active": false }
 }

@@ -6,6 +6,7 @@ pub mod domain;
 pub mod library;
 mod native_test;
 pub mod profiles;
+pub mod simulator;
 pub mod storage;
 
 use commands::AppState;
@@ -14,12 +15,19 @@ use tauri::Manager;
 
 pub fn run() -> tauri::Result<()> {
     native_test::reject_overrides(false)?;
+    if std::env::args_os().skip(1).any(|a| a == "--simulator") {
+        return Err(std::io::Error::other(
+            "Simulation requires the dedicated isolated native-test executable.",
+        )
+        .into());
+    }
     run_profile(None)
 }
 
 struct NativeProfile {
     root: std::path::PathBuf,
     id: String,
+    simulator: bool,
     _owner: Box<dyn std::any::Any + Send + Sync>,
 }
 
@@ -33,7 +41,8 @@ pub fn run_native_test() -> tauri::Result<()> {
         println!("{{\"removed\":true,\"runId\":\"{id}\"}}");
         return Ok(());
     }
-    if !args.is_empty() {
+    let simulator = args == ["--simulator"];
+    if !args.is_empty() && !simulator {
         return Err(std::io::Error::other(
             "Unsupported native-test arguments; paths are never accepted.",
         )
@@ -43,6 +52,7 @@ pub fn run_native_test() -> tauri::Result<()> {
     run_profile(Some(NativeProfile {
         root: run.root.clone(),
         id: run.id.clone(),
+        simulator,
         _owner: Box::new(run),
     }))
 }
@@ -68,6 +78,8 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
     }
     tauri::Builder::default()
         .setup(move |app| {
+            let simulation_enabled = profile.as_ref().is_some_and(|p| p.simulator);
+            let simulation_owner = profile.as_ref().map(|p| p.id.clone()).unwrap_or_default();
             let directory = profile
                 .as_ref()
                 .map(|p| p.root.join("data"))
@@ -76,6 +88,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
                 run_id: p.id.clone(),
                 discovery_source: "windows_observed".into(),
                 simulated_adapters: false,
+                simulation_available: if simulation_enabled { Some(true) } else { None },
             });
             if let Some(profile) = profile {
                 app.manage(profile);
@@ -98,6 +111,10 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             app.manage(profiles);
             app.manage(adapters::Registry::production().map_err(std::io::Error::other)?);
             app.manage(adapters::SessionManager::default());
+            app.manage(Arc::new(simulator::SimulatorService::new(
+                simulation_enabled,
+                simulation_owner,
+            )));
             let repository = Arc::new(Mutex::new(repository));
             let events = app.handle().clone();
             let max = std::env::var("OBTAINER_IMPORT_MAX_BYTES")
@@ -131,6 +148,9 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            simulator::ipc::simulation_status,
+            simulator::ipc::simulation_control,
+            simulator::ipc::simulation_request,
             library::ipc::get_desktop_state,
             library::ipc::save_desktop_preferences,
             library::ipc::list_firmware_backups,
@@ -171,6 +191,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
         .build(context)?
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<Arc<simulator::SimulatorService>>().shutdown();
                 app.state::<adapters::SessionManager>().shutdown();
                 app.state::<library::LibraryService>().stop();
                 app.state::<discovery::DiscoveryService>().shutdown();

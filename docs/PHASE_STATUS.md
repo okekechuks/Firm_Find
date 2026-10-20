@@ -2,7 +2,15 @@
 
 Updated: **20 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
-**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4: COMPLETE (PASS). Phase 4.1: COMPLETE (PASS). GUI desktop foundation: COMPLETE (PASS). Phase 5: COMPLETE (PASS). Phase 6 readiness: READY.** Latest results: [Phase 5 verification](PHASE_5_VERIFICATION.md), [adapter implementation](PHASE_5_IMPLEMENTATION.md), [GUI redesign verification](GUI_REDESIGN_VERIFICATION.md), [GUI evidence](evidence/gui-2026-10-19.txt), [Phase 4.1 verification](PHASE_4_1_VERIFICATION.md), [evidence transcript](evidence/phase-4-1-2026-10-17.txt) and [isolated native testing](NATIVE_TESTING.md). Historical [Phase 4 verification](PHASE_4_VERIFICATION.md), [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md), profiles and discovery evidence remain retained.
+**Phase 0: ACCEPTED (PASS). Phase 1: COMPLETE. Phase 2: COMPLETE (PASS). Phase 3: COMPLETE (PASS). Phase 3.1: COMPLETE (PASS). Phase 4: COMPLETE (PASS). Phase 4.1: COMPLETE (PASS). GUI desktop foundation: COMPLETE (PASS). Phase 5: COMPLETE (PASS). Phase 6: COMPLETE (PASS). Phase 7 readiness: READY.** Latest results: [Phase 6 verification](PHASE_6_VERIFICATION.md), [simulator implementation](PHASE_6_IMPLEMENTATION.md), [architecture](SIMULATOR_ARCHITECTURE.md), [Phase 6 evidence](evidence/phase-6-2026-10-20.txt) and [isolated native testing](NATIVE_TESTING.md). Accepted [Phase 5 verification](PHASE_5_VERIFICATION.md), [adapter implementation](PHASE_5_IMPLEMENTATION.md), [GUI redesign verification](GUI_REDESIGN_VERIFICATION.md), [Phase 4.1 verification](PHASE_4_1_VERIFICATION.md), [Phase 4 verification](PHASE_4_VERIFICATION.md) and [Phase 3/3.1 verification](PHASE_3_VERIFICATION.md) remain retained.
+
+## Phase 6 router and modem simulator
+
+**COMPLETE (PASS).** Explicit isolated development/release activation exposes one fictional stateful router inside Connected Devices with a persistent Simulation Mode label. The six destinations, physical device grid/details, Windows discovery, profiles, library/jobs and settings remain intact. Phase 5 cold-start authentication, endpoint/identity validation, separate read authorization, read contracts and resource cleanup are reused. Backend-private provenance scopes virtual mutations; physical writes, extraction, flashing and live USSD stay disabled.
+
+DNS read/edit/validation/preview/snapshot/apply/readback/independent verification/restore passes through actual React/Rust controls, including mismatch and failed rollback/reset-required results. Two-radio Wi-Fi limits, synthetic APN/modem/operator/SIM states and interactive scripted USSD are state-backed. Deterministic fault scenarios cover stale authority, endpoint/identity conflict, bounded timeout/cancellation, service/resolver/modem failures, disconnection and recovery. Live identity changes revoke existing grants/cached results; cellular restart recovers only after scheduled virtual time.
+
+Final qualification: **111 frontend tests, 151 Rust tests in each profile, 127 native checkpoints**, TypeScript, lint, formatting, both Clippy profiles and both optimized Windows builds pass. Native development/recovery/release windows, React/IPC, six-page navigation, themes/help/HMR, retained generated-binary storage regressions and process cleanup pass; console issues are empty. **42 final actual simulator screenshots** are linked in the report. Full normal database/WAL/rows/settings/IDs/vault/other-files fingerprints equal the pre-change capture; no storage migration or physical router request occurred. MG11 was absent and its saved user-reported firmware/UNKNOWN feature status remains unchanged. Virtual state is ephemeral and modeled; durable configuration transactions and physical OpenWrt qualification remain later work. **Phase 7: READY, not started.**
 
 ## Phase 5 adapter framework
 
@@ -139,13 +147,13 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 | 4: Storage/jobs/library | Complete (PASS) | Schema 4, safe native import, streamed SHA-256 vault, deduplication, integrity/history, bounded persistent jobs, cancellation/recovery, manifests, backend library queries and real UI. 53 frontend/69 Rust/64 native checks pass. | No critical blocker. Broad filesystem/maximum-size/installer qualification remains unverified; see Phase 4 report. |
 | GUI redesign: desktop foundation | Complete (PASS) | Six blue sections, shared real jobs, backup/restore, storage-copy restart, persisted preferences, 84 frontend/85 Rust/91 native checks and screenshots. Additive schema 5 qualified in isolation. | Device acquisition/rebuild unavailable; no fresh MG11 qualification. No critical tested GUI blocker. |
 | 5: Adapters | Complete (PASS) | Typed optional interfaces, validated deterministic registry, existing evidence/profile integration, separate bounded cold-start approval and established read policy, in-memory secrets, trusted simulated handshake, cancellation/deadlines/cleanup, strict IPC and bounded GUI status. 99 frontend/130 Rust per profile/103 native checkpoints pass. | No critical Phase 5 blocker. Physical transports remain Phase 7; full simulator Phase 6. |
-| 6: Simulator | Not started | Discovery fixtures exist; no interactive router/modem simulator. | Stateful local simulator, four feature reads, authentication, fault injection, desktop connection. |
-| 7: OpenWrt read-only | Not started | No authenticated router management sessions. | Verified interface/version research, trusted endpoint, reads/probes, and selected hardware evidence. |
-| 8: Backup/transactions | Not started | No configuration write APIs. | Snapshots, previews, approvals, durable execution, verification, reconnect, rollback/recovery and failure tests. |
-| 9: DNS MVP | Not started | Feature name/status only. | Complete simulator DNS transaction; separate upstream/LAN semantics; authorized hardware validation. |
-| 10: Wi-Fi limits | Not started | Feature name/status only. | Radio/SSID/range UI, verified driver mapping/enforcement, interruption and restoration tests. |
-| 11: APN | Not started | Feature name/status only. | Operator evidence/source, auto/manual UI, adapter, credentials, reconnection, SIM/error cases and recovery. |
-| 12: USSD backend | Not started | Feature name/status only. | Session state machine, simulated modem, supported adapter, authorization, validation/timeouts/cancellation. |
+| 6: Simulator | Complete (PASS) | Explicit isolated stateful router/modem, Phase 5 authentication/read contracts, DNS vertical slice, Wi-Fi/APN/USSD, deterministic faults; 111 frontend/151 Rust per profile/127 native checks and 42 final screenshots. | No critical Phase 6 blocker. State is virtual and ephemeral; no physical qualification. |
+| 7: OpenWrt read-only | Not started (READY) | Simulator-qualified cold authentication, trust/identity/read gates and feature contracts. | Verified interface/version research, physical trusted connector, reads/probes, and selected hardware evidence. |
+| 8: Backup/transactions | Not started | Simulator-only configuration snapshots/previews/apply/verify/restore and deterministic failure/recovery tests. | Durable journal, production backups, crash recovery, physical authorization and transaction engine. |
+| 9: DNS MVP | Not started | Complete simulator DNS demonstration with separate upstream/LAN sources and actual state validation/readback. | Durable production transaction integration and authorized hardware validation. |
+| 10: Wi-Fi limits | Not started | Two virtual radios/BSS records, client counts/ranges/limits and interruption/recovery. | Production radio/SSID UI, verified driver mapping/enforcement and hardware restoration tests. |
+| 11: APN | Not started | Synthetic automatic/manual APN, IP family/authentication, modem/SIM/operator faults and cellular recovery. | Actual operator evidence, adapter/credentials/reconnection and hardware qualification. |
+| 12: USSD backend | Not started | Scripted virtual session state machine, follow-up/busy/rate limits/expiry/cancellation; no carrier transport. | Physical modem adapter, trusted authorization and supported-hardware qualification. |
 | 13: Router-local USSD | Not started | No router-side packages. | Authenticated router-hosted service/page, security tests, compatible hardware, operation with desktop closed. |
 | 14: Studio integration | Not started | Existing shell and planned-screen placeholders. | Connected four-feature studio, shared transaction UX and end-to-end verification. |
 | 15: OpenWrt builds | Not started | Builder placeholder and worker notes. | Worker, supported targets, packages/overlays, provenance/logs/manifests and validated artifacts. |
@@ -156,10 +164,10 @@ No unresolved Phase 0 requirement is BLOCKED or FAILED. Raw failed attempts are 
 
 ## Next execution order
 
-1. Phase 5 framework is verified. Begin Phase 6's explicitly isolated router/modem simulator when requested; reuse these contracts and policy gates.
+1. Phase 6 is verified. Phase 7 is READY for separately requested physical OpenWrt read-only work; do not start physical writes.
 2. Keep unknown support until exact device/version/profile evidence supports a decision. Current MG11 model is user-supplied.
 3. Continue broader hardware qualification as suitable devices become available.
-4. Reuse the completed durable library/jobs and adapter framework for Phase 6's local simulator; physical read-only OpenWrt qualification remains Phase 7.
-5. Implement simulator transactions before authorized hardware configuration changes in later phases.
+4. Reuse completed library/jobs, adapter framework and simulator fault/state model for later durable transaction qualification.
+5. Complete durable transaction and authorized hardware validation before production configuration changes.
 
-This tracker records completed Phases 0–5, targeted hardening and GUI foundation work while retaining historical evidence. Phase 6 and physical device customization have not begun.
+This tracker records completed Phases 0–6, targeted hardening and GUI foundation work while retaining historical evidence. Physical OpenWrt communication and device customization have not begun.

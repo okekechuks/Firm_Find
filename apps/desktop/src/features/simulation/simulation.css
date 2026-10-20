@@ -1,0 +1,22 @@
+.simulation-workspace { margin-bottom:28px; min-width:0; }
+.simulation-workspace .panel { padding:24px; margin:16px 0; min-width:0; }
+.simulation-banner { padding:16px 20px; margin:0 0 18px; border:1px solid var(--accent); border-radius:10px; background:var(--surface); color:var(--ink); position:sticky;top:12px;z-index:8;box-shadow:0 4px 18px #0002; }
+.simulation-banner strong { color:var(--accent);font-size:15px;letter-spacing:.06em; }
+.simulation-banner p { margin:7px 0 0;font-size:13px; }
+.simulation-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start; }
+.simulation-workspace label { display:grid;gap:7px;font-size:13px;margin:12px 0;min-width:0; }
+.simulation-workspace input:not([type=checkbox]),.simulation-workspace select { color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px;font:inherit;min-width:0;width:100%;box-sizing:border-box; }
+.simulation-workspace fieldset { border:1px solid var(--line);border-radius:8px;min-width:0;padding:14px; }
+.simulation-workspace legend { font-weight:600;padding:0 6px; }
+.simulation-actions { display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0; }
+.simulation-workspace .checkbox-label { display:flex;align-items:center;gap:10px; }
+.simulation-workspace details,.simulation-workspace article { margin:16px 0;overflow-wrap:anywhere; }
+.simulation-workspace summary { cursor:pointer; }
+.simulation-values { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;font-size:13px; }
+.simulation-values div { min-width:0; }.simulation-values dt { color:var(--muted); }.simulation-values dd { margin:6px 0;overflow-wrap:anywhere; }
+.simulation-endpoint { display:block;color:var(--accent);overflow-wrap:anywhere; }
+.simulation-preview,.simulation-outcome { padding:18px;margin-top:20px;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere; }
+.simulation-outcome.unverified { border-color:#d3a251; }.simulation-outcome.verified { border-color:var(--accent); }
+.simulation-workspace table { table-layout:fixed; }.simulation-workspace td { overflow-wrap:anywhere; }
+.simulation-workspace button:disabled { cursor:not-allowed;opacity:.5; }
+@media(max-width:1000px){.simulation-grid,.simulation-values {grid-template-columns:minmax(0,1fr);} .simulation-workspace .panel {padding:18px;}}

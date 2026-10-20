@@ -42,6 +42,7 @@ pub enum AdapterImplementationStatus {
     Declared,
     Unavailable,
     TestOnly,
+    Simulator,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -50,6 +51,7 @@ pub enum Transport {
     Usb,
     Serial,
     Network,
+    Simulation,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -270,7 +272,7 @@ pub struct WifiClientLimitConfiguration {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DnsConfiguration {
     pub upstream_ipv4: Vec<String>,
     pub upstream_ipv6: Vec<String>,

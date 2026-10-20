@@ -20,6 +20,8 @@ Device refresh, saved appearance, hot reload and restart recovery work. GUI impl
 
 The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) retain the supplied development sequence and existing project structure.
 
+Phase 6 adds an explicitly isolated **Simulation Mode** for a fictional router. Run `npm.cmd run dev:simulator`, then use Connected Devices to start the virtual lab. You can inspect DNS, Wi-Fi, APN and USSD, preview and test virtual DNS changes, and practice recovery from modeled failures. Virtual changes never affect connected hardware. Simulator settings reset when the app restarts. See [simulator verification](docs/PHASE_6_VERIFICATION.md) for current test status.
+
 ## What OBTAINER aims to do
 
 - Find connected devices and explain what is known about their identity and compatibility.

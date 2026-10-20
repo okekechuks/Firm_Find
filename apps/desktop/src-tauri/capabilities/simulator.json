@@ -1,0 +1,8 @@
+{
+  "$schema":"../gen/schemas/desktop-schema.json",
+  "identifier":"simulator",
+  "description":"Isolated native-test executable only; runtime additionally requires explicit --simulator activation.",
+  "windows":["main"],
+  "platforms":["windows"],
+  "permissions":["allow-simulation-status","allow-simulation-control","allow-simulation-request"]
+}

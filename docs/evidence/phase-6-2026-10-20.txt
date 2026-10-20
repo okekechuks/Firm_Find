@@ -1,0 +1,470 @@
+OBTAINER Phase 6 final executed evidence
+20 October 2026, Africa/Lagos
+Baseline HEAD: 0c579fafe790fc154c79fd72097dd63f3b08640a (clean)
+Verdict: PASS; Phase 7 READY, not started
+
+FINAL COMMAND RESULTS
+phase6-rust-final-results.json
+[
+  {
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check",
+    "exit_code": 0,
+    "log": ".tools/phase6-rust-final-0.log"
+  },
+  {
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings",
+    "exit_code": 0,
+    "log": ".tools/phase6-rust-final-1.log"
+  },
+  {
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings",
+    "exit_code": 0,
+    "log": ".tools/phase6-rust-final-2.log"
+  },
+  {
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline",
+    "exit_code": 0,
+    "log": ".tools/phase6-rust-final-3.log"
+  },
+  {
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --features native-test-profile --locked --offline",
+    "exit_code": 0,
+    "log": ".tools/phase6-rust-final-4.log"
+  }
+]
+
+phase6-frontend-final-results.json
+[
+  {
+    "command": "node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit",
+    "exit_code": 0,
+    "log": ".tools/phase6-frontend-final-0.log"
+  },
+  {
+    "command": "npm.cmd run lint",
+    "exit_code": 0,
+    "log": ".tools/phase6-frontend-final-1.log"
+  },
+  {
+    "command": "npm.cmd test",
+    "exit_code": 0,
+    "log": ".tools/phase6-frontend-final-2.log"
+  }
+]
+
+phase6-production-build-final.json
+{
+  "command": "npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline",
+  "exit_code": 0,
+  "sha256": "29D814CBC1E827C9B898874A24A26FC6F30FB1BC23A2446165B54030753FC938"
+}
+
+phase6-native-build-final.json
+{
+  "command": "npm.cmd run build:native-tests",
+  "exit_code": 0,
+  "ordinary_sha256": "29D814CBC1E827C9B898874A24A26FC6F30FB1BC23A2446165B54030753FC938"
+}
+
+phase6-normal-simulator-guard-final.json
+{
+  "command": "Start-Process target/release/obtainer.exe --simulator -WindowStyle Hidden -PassThru -Wait",
+  "exit_code": 1,
+  "expected": 1
+}
+
+phase6-native-verification-hardened.json
+{
+  "command": "npm.cmd run test:simulator",
+  "exit_code": 0
+}
+
+phase6-data-preservation.json
+{
+  "command": "py scripts/probe-native-isolation.py .tools/phase6-normal-after.json .tools/phase6-normal-before.json",
+  "exit_code": 0
+}
+
+151 Rust tests pass per profile; 111 frontend tests / 13 files pass.
+Formatting, both Clippy profiles, typecheck, lint and script syntax checks pass.
+Normal --simulator exit 1 is the expected refusal. Direct GUI shell probe was replaced with Start-Process -Wait to observe the true exit.
+Cargo progress on stderr is displayed by Windows PowerShell as NativeCommandError records; actual final build exit codes are 0.
+
+NATIVE CHECKPOINTS: 127
+Raw evidence: .tools/foundation/2026-10-20T11-01-41.374Z
+PASS: {"name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"}
+PASS: {"name": "ordinary production executable rejects test activation before opening data"}
+PASS: {"name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"}
+PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+PASS: {"name": "active test ownership prevents cleanup"}
+PASS: {"name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "6569e7b84184434230cc74a12e516313", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6569e7b84184434230cc74a12e516313\\data"}
+PASS: {"name": "dev-reopen: native window, React and real SQLite IPC", "url": "http://127.0.0.1:1420/", "pid": 22428, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6569e7b84184434230cc74a12e516313\\data", "theme": "system"}
+PASS: {"name": "dev-reopen: exactly six primary navigation destinations"}
+PASS: {"name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support", "records": 50, "watching": true, "warnings": []}
+PASS: {"name": "dev-reopen: real adapter registry IPC, strict request validation and absent write/execution endpoints"}
+PASS: {"name": "dev-reopen: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection", "devices": 12, "mg11Connected": false}
+PASS: {"name": "dev-reopen: actual native React adapter status, protected/unsupported display and disabled extraction"}
+PASS: {"name": "dev-reopen: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented"}
+PASS: {"name": "dev-reopen: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"}
+PASS: {"name": "dev-reopen: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"}
+PASS: {"name": "dev-reopen: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"}
+PASS: {"name": "dev-reopen: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"}
+PASS: {"name": "dev-reopen: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"}
+PASS: {"name": "dev-reopen: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"}
+PASS: {"name": "dev-reopen: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"}
+PASS: {"name": "dev-reopen: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"}
+PASS: {"name": "dev-reopen: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"}
+PASS: {"name": "dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "80815dc86d40f01efbedde437d676fd6", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+PASS: {"name": "dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 2}
+PASS: {"name": "dev-reopen: actual streamed integrity verification and history", "checks": 3}
+PASS: {"name": "dev-reopen: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+PASS: {"name": "dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact", "bytesObserved": 2097152, "totalBytes": 268435456, "elapsedMs": 2761, "copyThroughputMiBPerSecond": 19.23076923076923, "memory": {"WorkingSet64": 95965184, "PeakWorkingSet64": 97472512, "PrivateMemorySize64": 24682496}}
+PASS: {"name": "dev-reopen: persisted job and activity screens render after restart"}
+PASS: {"name": "dev-reopen: dashboard and Library reflect committed counts and no active work", "artifacts": 1}
+PASS: {"name": "isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences"}
+PASS: {"name": "isolated native corruption and missing-blob detection; source reimport restores generated bytes without touching normal vault"}
+PASS: {"name": "isolated native database failure after artifact publication: failed job, retained orphan, verified reuse on retry"}
+PASS: {"name": "isolated native manifest remains saved when activity transaction fails; React displays separate warning"}
+PASS: {"name": "dev-reopen: same-value settings write/read preserved original preferences"}
+PASS: {"name": "dev-reopen: injected read error and real IPC retry recovery"}
+PASS: {"name": "dev-reopen: loading state retains cached data"}
+PASS: {"name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"}
+PASS: {"name": "dev-reopen: temporary HMR edit restored"}
+PASS: {"name": "dev-reopen: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed"}
+PASS: {"name": "dev-reopen: all six help popovers stay in bounds, take focus, close on real Escape and return focus"}
+PASS: {"name": "dev-reopen: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help"}
+PASS: {"name": "dev-reopen: actual Windows selection/classification and disabled extraction; no extraction operation invented"}
+PASS: {"name": "dev-reopen: recorded firmware tags and four disabled capability-aware customization controls"}
+PASS: {"name": "dev-reopen: real 256 MiB progress survives navigation; cancellation clears Overview and retains Logs"}
+PASS: {"name": "dev-reopen: native verified backup and _DEFAULT restore; cancelled confirmation preserves original; actual completion toast"}
+PASS: {"name": "dev-reopen: file-specific confirmation, reversible removal and verified recovery; bytes/history preserved"}
+PASS: {"name": "dev-reopen: timestamped persisted Logs and completed-status filtering"}
+PASS: {"name": "dev-reopen: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off"}
+PASS: {"name": "isolated native verification observed running before graceful application shutdown", "jobId": "f32b76457506044a503d1c42a1381b67"}
+PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+PASS: {"name": "graceful shutdown cancelled active verification; restart preserved terminal job and usable artifact"}
+PASS: {"name": "Phase 4: actual copying job recorded before forced termination", "jobId": "7343edc5d5b20095b358f715f995ca10"}
+PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+PASS: {"name": "interrupted owned development launch and released resources", "backendRenderedBeforeInterrupt": true}
+PASS: {"name": "dev-recovery: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "6569e7b84184434230cc74a12e516313", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6569e7b84184434230cc74a12e516313\\data"}
+PASS: {"name": "dev-recovery: native window, React and real SQLite IPC", "url": "http://127.0.0.1:1420/", "pid": 14972, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6569e7b84184434230cc74a12e516313\\data", "theme": "system"}
+PASS: {"name": "dev-recovery: exactly six primary navigation destinations"}
+PASS: {"name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support", "records": 50, "watching": true, "warnings": []}
+PASS: {"name": "dev-recovery: real adapter registry IPC, strict request validation and absent write/execution endpoints"}
+PASS: {"name": "dev-recovery: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection", "devices": 12, "mg11Connected": false}
+PASS: {"name": "dev-recovery: actual native React adapter status, protected/unsupported display and disabled extraction"}
+PASS: {"name": "dev-recovery: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented"}
+PASS: {"name": "dev-recovery: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"}
+PASS: {"name": "dev-recovery: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"}
+PASS: {"name": "dev-recovery: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"}
+PASS: {"name": "dev-recovery: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"}
+PASS: {"name": "dev-recovery: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"}
+PASS: {"name": "dev-recovery: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"}
+PASS: {"name": "dev-recovery: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"}
+PASS: {"name": "dev-recovery: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"}
+PASS: {"name": "dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn"}
+PASS: {"name": "dev-recovery: interrupted copy recovered as failed, known staging removed, no false success", "jobId": "7343edc5d5b20095b358f715f995ca10"}
+PASS: {"name": "dev-recovery: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"}
+PASS: {"name": "dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "17414385a3c863a22164d81dfcabfea2", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+PASS: {"name": "dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 7}
+PASS: {"name": "dev-recovery: actual streamed integrity verification and history", "checks": 11}
+PASS: {"name": "dev-recovery: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+PASS: {"name": "dev-recovery: persisted job and activity screens render after restart"}
+PASS: {"name": "dev-recovery: dashboard and Library reflect committed counts and no active work", "artifacts": 3}
+PASS: {"name": "dev-recovery: same-value settings write/read preserved original preferences"}
+PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+PASS: {"name": "production: isolated database/vault/logs and WebView profile; explicit test banner", "runId": "6569e7b84184434230cc74a12e516313", "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6569e7b84184434230cc74a12e516313\\data"}
+PASS: {"name": "production: native window, React and real SQLite IPC", "url": "http://tauri.localhost/", "pid": 13272, "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6569e7b84184434230cc74a12e516313\\data", "theme": "system"}
+PASS: {"name": "production: exactly six primary navigation destinations"}
+PASS: {"name": "production: discovery, three refreshes, unique IDs, unknown feature support", "records": 50, "watching": true, "warnings": []}
+PASS: {"name": "production: real adapter registry IPC, strict request validation and absent write/execution endpoints"}
+PASS: {"name": "production: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection", "devices": 12, "mg11Connected": false}
+PASS: {"name": "production: actual native React adapter status, protected/unsupported display and disabled extraction"}
+PASS: {"name": "production: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented"}
+PASS: {"name": "production: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"}
+PASS: {"name": "production: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"}
+PASS: {"name": "production: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"}
+PASS: {"name": "production: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"}
+PASS: {"name": "production: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"}
+PASS: {"name": "production: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"}
+PASS: {"name": "production: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"}
+PASS: {"name": "production: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"}
+PASS: {"name": "production: repeated startup keeps interrupted job terminal without rerunning it"}
+PASS: {"name": "production: existing artifact/import history available before any new import; stale verified label withdrawn"}
+PASS: {"name": "production: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"}
+PASS: {"name": "production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved", "jobId": "33bd1030827a4b7c908b180e03062677", "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264", "size": 1048576}
+PASS: {"name": "production: same bytes under another name deduplicate; import occurrences and unverified provenance persist", "sourceCount": 9}
+PASS: {"name": "production: actual streamed integrity verification and history", "checks": 14}
+PASS: {"name": "production: actual native save dialog and unsigned metadata-only manifest", "manifestSchemaVersion": 1}
+PASS: {"name": "production: persisted job and activity screens render after restart"}
+PASS: {"name": "production: dashboard and Library reflect committed counts and no active work", "artifacts": 3}
+PASS: {"name": "production: same-value settings write/read preserved original preferences"}
+PASS: {"name": "production: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed"}
+PASS: {"name": "production: all six help popovers stay in bounds, take focus, close on real Escape and return focus"}
+PASS: {"name": "production: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help"}
+PASS: {"name": "production: actual Windows selection/classification and disabled extraction; no extraction operation invented"}
+PASS: {"name": "production: recorded firmware tags and four disabled capability-aware customization controls"}
+PASS: {"name": "production: native verified backup and _DEFAULT restore; cancelled confirmation preserves original; actual completion toast"}
+PASS: {"name": "production: file-specific confirmation, reversible removal and verified recovery; bytes/history preserved"}
+PASS: {"name": "production: timestamped persisted Logs and completed-status filtering"}
+PASS: {"name": "production: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off"}
+PASS: {"name": "production: real folder picker, plan cancellation, verified storage copy and restart gate; old Library preserved"}
+PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+PASS: {"name": "production restart: copied Library active, artifacts/provenance/counts/settings retained, backup path unchanged and old vault preserved"}
+PASS: {"name": "production restart: actual integrity job reads and verifies bytes from relocated Library"}
+PASS: {"name": "shutdown left no app, owned WebView process, Vite process or development listener"}
+PASS: {"name": "no captured native console warnings or unhandled exceptions"}
+PASS: {"name": "cleanup rejects mismatched marker/run ID and retains test data"}
+PASS: {"name": "cleanup retains unknown staging without deleting files"}
+PASS: {"name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"}
+PASS: {"name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"}
+PASS: {"name": "owned isolated run cleaned after all processes stopped", "runId": "6569e7b84184434230cc74a12e516313"}
+
+NATIVE CHILD COMMANDS
+[
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator",
+    "kind": "dev",
+    "exitCode": 1
+  },
+  {
+    "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator",
+    "kind": "dev",
+    "exitCode": 0
+  },
+  {
+    "command": ".\\target\\release\\obtainer-native-test.exe --simulator",
+    "kind": "release",
+    "exitCode": 0
+  },
+  {
+    "command": ".\\target\\release\\obtainer-native-test.exe --simulator",
+    "kind": "release",
+    "exitCode": 0
+  }
+]
+
+CONSOLE ISSUES
+[]
+CLEANUP
+{
+  "status": 0,
+  "stdout": "{\"removed\":true,\"runId\":\"6569e7b84184434230cc74a12e516313\"}\n",
+  "stderr": ""
+}
+
+NORMAL DATA: Complete equality with phase6-normal-before.json; read-only comparison exit 0.
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "schema": 5,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": [],
+  "table_counts": {
+    "activity_links": 74,
+    "artifact_details": 1,
+    "artifact_imports": 20,
+    "artifact_presentation": 0,
+    "audit_events": 220,
+    "compatibility_evaluations": 3,
+    "desktop_preferences": 1,
+    "device_identity_observations": 2,
+    "devices": 160,
+    "discovery_metadata": 160,
+    "firmware_artifacts": 1,
+    "firmware_backups": 0,
+    "integrity_checks": 30,
+    "job_details": 34,
+    "jobs": 34,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "all_rows_sha256": "6c4c4640c029fc1d0bb91e24f07bac4e1f321dcf7222bddce886db5f42a27e91",
+  "settings_sha256": "70ca50b9ab62d27cbc6340ed90d7ebab7596b61ac8875a63e86219af831f4d97",
+  "database_files": {
+    "obtainer.db": {
+      "bytes": 299008,
+      "sha256": "b3d00cba067dde53dd3a4dc01d0a56e1f325396a1122a25964d5061be518d980"
+    },
+    "obtainer.db-wal": {
+      "bytes": 4124152,
+      "sha256": "d8cfeda286cc6b1acc7caa563ba19bb43ed68e673753e9ea51f2759dff3f6710"
+    }
+  }
+}
+
+EXACT CHANGED-FILE INVENTORY
+README.md
+apps/desktop/src-tauri/build.rs
+apps/desktop/src-tauri/capabilities/simulator.json
+apps/desktop/src-tauri/permissions/autogenerated/simulation_control.toml
+apps/desktop/src-tauri/permissions/autogenerated/simulation_request.toml
+apps/desktop/src-tauri/permissions/autogenerated/simulation_status.toml
+apps/desktop/src-tauri/src/adapters/bootstrap.rs
+apps/desktop/src-tauri/src/adapters/contracts.rs
+apps/desktop/src-tauri/src/adapters/lifecycle.rs
+apps/desktop/src-tauri/src/adapters/policy.rs
+apps/desktop/src-tauri/src/adapters/registry.rs
+apps/desktop/src-tauri/src/adapters/types.rs
+apps/desktop/src-tauri/src/domain.rs
+apps/desktop/src-tauri/src/lib.rs
+apps/desktop/src-tauri/src/simulator/adapter.rs
+apps/desktop/src-tauri/src/simulator/ipc.rs
+apps/desktop/src-tauri/src/simulator/mod.rs
+apps/desktop/src-tauri/src/simulator/model.rs
+apps/desktop/src-tauri/src/simulator/runtime.rs
+apps/desktop/src-tauri/src/simulator/tests.rs
+apps/desktop/src-tauri/src/simulator/types.rs
+apps/desktop/src-tauri/tauri.native-test.conf.json
+apps/desktop/src/app/App.tsx
+apps/desktop/src/components/PageHelp.tsx
+apps/desktop/src/features/simulation/DnsSimulator.tsx
+apps/desktop/src/features/simulation/SimulationWorkspace.tsx
+apps/desktop/src/features/simulation/simulation.css
+apps/desktop/src/lib/simulator.ts
+apps/desktop/src/test/SimulationWorkspace.test.tsx
+apps/desktop/src/test/simulatorBackend.test.ts
+apps/desktop/src/test/simulatorFixtures.ts
+apps/desktop/src/types/adapters.ts
+apps/desktop/src/types/contracts.ts
+apps/desktop/src/types/simulator.ts
+docs/NATIVE_TESTING.md
+docs/PHASE_6_IMPLEMENTATION.md
+docs/PHASE_6_VERIFICATION.md
+docs/PHASE_STATUS.md
+docs/SIMULATOR_ARCHITECTURE.md
+docs/evidence/phase-6-2026-10-20.txt
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-apn-modem.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-connected-device.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-device-selection.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-disconnected.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-dns-apply-result.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-dns-before.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-dns-preview.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-dns-restore-failure.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-dns-restored.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-dns-verification-failure.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-feature-status.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-ussd-session.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-recovery-wifi-configuration.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-apn-modem.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-connected-device.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-device-selection.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-disconnected.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-dns-apply-result.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-dns-before.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-dns-preview.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-dns-restore-failure.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-dns-restored.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-dns-verification-failure.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-feature-status.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-ussd-session.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/dev-reopen-wifi-configuration.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-apn-modem.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-connected-device.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-device-selection.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-disconnected.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-dns-apply-result.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-dns-before.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-dns-preview.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-dns-restore-failure.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-dns-restored.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-dns-verification-failure.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-feature-status.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-ussd-session.png
+docs/images/phase6-415cb43912f99a73a841e48e2b4b0ddb/production-wifi-configuration.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-apn-modem.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-cellular-restart-recovered.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-connected-device.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-device-selection.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-disconnected.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-dns-apply-result.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-dns-before.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-dns-preview.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-dns-restore-failure.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-dns-restored.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-dns-verification-failure.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-feature-status.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-ussd-session.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-recovery-wifi-configuration.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-apn-modem.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-cellular-restart-recovered.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-connected-device.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-device-selection.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-disconnected.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-dns-apply-result.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-dns-before.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-dns-preview.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-dns-restore-failure.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-dns-restored.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-dns-verification-failure.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-feature-status.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-ussd-session.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/dev-reopen-wifi-configuration.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-apn-modem.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-cellular-restart-recovered.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-connected-device.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-device-selection.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-disconnected.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-dns-apply-result.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-dns-before.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-dns-preview.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-dns-restore-failure.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-dns-restored.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-dns-verification-failure.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-feature-status.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-ussd-session.png
+docs/images/phase6-6569e7b84184434230cc74a12e516313/production-wifi-configuration.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-apn-modem.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-connected-device.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-device-selection.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-disconnected.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-dns-apply-result.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-dns-before.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-dns-preview.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-dns-restore-failure.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-dns-restored.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-dns-verification-failure.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-feature-status.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-ussd-session.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-recovery-wifi-configuration.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-apn-modem.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-connected-device.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-device-selection.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-disconnected.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-dns-apply-result.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-dns-before.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-dns-preview.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-dns-restore-failure.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-dns-restored.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-dns-verification-failure.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-feature-status.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-ussd-session.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/dev-reopen-wifi-configuration.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-apn-modem.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-connected-device.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-device-selection.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-disconnected.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-dns-apply-result.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-dns-before.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-dns-preview.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-dns-restore-failure.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-dns-restored.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-dns-verification-failure.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-feature-status.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-ussd-session.png
+docs/images/phase6-cc91772d65d951e45affac113f78d008/production-wifi-configuration.png
+package.json
+scripts/dev-simulator.mjs
+scripts/verify-foundation.mjs
+scripts/verify-simulator.mjs
+tests/fixtures/simulator/virtual-router.json

@@ -51,6 +51,8 @@ pub struct NativeTestInfo {
     pub run_id: String,
     pub discovery_source: String,
     pub simulated_adapters: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub simulation_available: Option<bool>,
 }
 
 #[derive(Debug, Clone, Copy)]

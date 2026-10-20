@@ -11,11 +11,11 @@ export const adapterOperationSchema = z.enum([
 export const authenticationMethodSchema = z.enum(["none","password","ssh_key","challenge_response","session_token","documented_vendor"]);
 export const adapterDescriptorSchema = z.object({
   id,name:text,version:z.string().regex(/^\d+\.\d+\.\d+$/),
-  implementationStatus:z.enum(["built_in","declared","unavailable","test_only"]),
+  implementationStatus:z.enum(["built_in","declared","unavailable","test_only","simulator"]),
   transports:z.array(z.enum(["usb","serial","network"])).min(1).max(3),authentication:authenticationMethodSchema,
   operations:z.array(adapterOperationSchema).max(20),dependencies:z.array(text).max(32),limitations:z.array(text).max(32),
   profileIds:z.array(id).max(64),firmwareFamilies:z.array(text).max(64),
-}).strict().refine(d=>d.implementationStatus!=="test_only","Test adapter cannot appear in physical-device IPC.");
+}).strict().refine(d=>!["test_only","simulator"].includes(d.implementationStatus),"Test or simulator adapter cannot appear in physical-device IPC.");
 export const adapterCapabilitySchema=z.object({
   operation:adapterOperationSchema,exists:z.boolean(),canRead:z.boolean(),canPlan:z.literal(false),canApply:z.literal(false),
   canVerify:z.boolean(),canRestore:z.literal(false),authenticationRequired:z.boolean(),reason:text,

@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "profileId": "obtainer.virtual-router-lab",
+  "profileVersion": "1.0.0",
+  "manufacturer": "OBTAINER",
+  "model": "Virtual Router Lab",
+  "modelAliases": [],
+  "deviceCategory": [
+    "unknown_network_device"
+  ],
+  "hardwareRevisions": [
+    "SIM-1"
+  ],
+  "firmwareFamilies": [
+    "Simulated OpenWrt-like"
+  ],
+  "firmwareVersionConstraints": {
+    "scheme": "opaque_exact",
+    "exact": [
+      "SIM-0.1"
+    ],
+    "minInclusive": null,
+    "maxExclusive": null
+  },
+  "matchRules": [
+    {
+      "attribute": "management_identity",
+      "values": [
+        "obtainer,virtual-router-lab"
+      ],
+      "purpose": "identity",
+      "explanation": "Fictional simulator identity only; never physical-device evidence."
+    }
+  ],
+  "managementInterfaces": [],
+  "modemInformation": {
+    "integratedModem": true,
+    "manufacturers": [
+      "OBTAINER"
+    ],
+    "models": [
+      "Virtual Modem"
+    ],
+    "interfaces": [],
+    "notes": "Fictional state machine. No SIM, carrier or hardware access."
+  },
+  "capabilities": {
+    "dns": {
+      "assessment": "SUPPORTED",
+      "reason": "Modeled fictional simulator behavior only.",
+      "requirements": [
+        "REQUIRES_AUTHENTICATION"
+      ],
+      "evidenceSources": [
+        "simulation"
+      ],
+      "subCapabilities": {
+        "upstream": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "lanIpv4": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "lanIpv6": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "forwarding": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "persistence": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        }
+      },
+      "verifiedRange": null
+    },
+    "wifiUserLimit": {
+      "assessment": "SUPPORTED",
+      "reason": "Modeled fictional simulator behavior only.",
+      "requirements": [
+        "REQUIRES_AUTHENTICATION"
+      ],
+      "evidenceSources": [
+        "simulation"
+      ],
+      "subCapabilities": {
+        "accessPoint": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "managedBss": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "clientLimit": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "validRange": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "persistence": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "reload": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "managementRisk": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        }
+      },
+      "verifiedRange": null
+    },
+    "apn": {
+      "assessment": "SUPPORTED",
+      "reason": "Modeled fictional simulator behavior only.",
+      "requirements": [
+        "REQUIRES_AUTHENTICATION"
+      ],
+      "evidenceSources": [
+        "simulation"
+      ],
+      "subCapabilities": {
+        "modemPresent": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "managementInterface": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "readCurrent": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "manual": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "automatic": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "operatorIdentity": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "reconnect": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        }
+      },
+      "verifiedRange": null
+    },
+    "ussd": {
+      "assessment": "SUPPORTED",
+      "reason": "Modeled fictional simulator behavior only.",
+      "requirements": [
+        "REQUIRES_AUTHENTICATION"
+      ],
+      "evidenceSources": [
+        "simulation"
+      ],
+      "subCapabilities": {
+        "modemPresent": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "modemIdentity": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "interface": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "oneShot": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "interactive": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "responseHandling": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "cancellation": {
+          "assessment": "SUPPORTED",
+          "reason": "Virtual fixture behavior only.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "routerService": {
+          "assessment": "UNSUPPORTED",
+          "reason": "Router-local service is not modeled in Phase 6; it belongs to Phase 13.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        },
+        "routerWebUi": {
+          "assessment": "UNSUPPORTED",
+          "reason": "No router-hosted administration page is implemented by this simulator.",
+          "evidenceSources": [
+            "simulation"
+          ]
+        }
+      },
+      "verifiedRange": null
+    }
+  },
+  "knownLimitations": [
+    "Simulation only. No physical-device qualification or production recovery claim."
+  ],
+  "evidenceSources": [
+    {
+      "id": "simulation",
+      "category": "local_unverified",
+      "reference": "local:docs/SIMULATOR_ARCHITECTURE.md",
+      "summary": "Local fictional specification; never physical hardware evidence."
+    }
+  ],
+  "lastReviewed": "2026-10-20",
+  "provenance": {
+    "author": "OBTAINER simulator",
+    "category": "local_unverified",
+    "notes": "Authoritative only inside sealed simulator registry; not hardware evidence."
+  }
+}

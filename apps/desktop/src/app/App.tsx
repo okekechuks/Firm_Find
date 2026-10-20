@@ -20,6 +20,7 @@ import { FirmwareLibrary } from "../features/FirmwareLibrary";
 import { Jobs } from "../features/Jobs";
 import { ViewBoundary } from "../components/ViewBoundary";
 import { Devices } from "../features/Devices";
+import { SimulationWorkspace } from "../features/simulation/SimulationWorkspace";
 import { Compatibility } from "../features/Compatibility";
 import { useDeviceInventory } from "../lib/useDeviceInventory";
 
@@ -124,13 +125,13 @@ export function App() {
       </aside>
       <div className="main-shell"><header className="topbar"><div className="backend-status"><Circle size={6} fill="currentColor"/><span>{!desktop ? "Browser preview" : loading ? snapshot ? "Refreshing workspace" : "Connecting to workspace" : error || !snapshot ? "Backend unavailable" : "Desktop connected"}</span></div></header>
         <main id="content" tabIndex={-1}>
-          {snapshot?.testProfile ? <div className="connection-notice native-test-notice" role="status" data-test-run-id={snapshot.testProfile.runId}>ISOLATED NATIVE TEST · {snapshot.testProfile.runId}. Separate test data. Discovery shows Windows observations; no simulated adapters or verified device support.</div> : null}
-          <div className="page-heading"><h1>{destination.label}</h1><div className="page-actions"><button className="icon-button workspace-refresh refresh-button" onClick={() => void refresh()} disabled={loading} aria-label="Refresh workspace" title="Refresh workspace"><RefreshCw size={17} className={loading ? "spin" : undefined}/></button><PageHelp key={page} page={page}/></div></div>
+          {snapshot?.testProfile ? <div className="connection-notice native-test-notice" role="status" data-test-run-id={snapshot.testProfile.runId}>{snapshot.testProfile.simulationAvailable?"SIMULATION MODE · ISOLATED NATIVE TEST":"ISOLATED NATIVE TEST"} · {snapshot.testProfile.runId}. {snapshot.testProfile.simulationAvailable?"This is a virtual router. Changes made here do not affect connected physical devices.":"Separate test data. Discovery shows Windows observations; no simulated adapters or verified device support."}</div> : null}
+          <div className="page-heading"><h1>{destination.label}</h1><div className="page-actions"><button className="icon-button workspace-refresh refresh-button" onClick={() => void refresh()} disabled={loading} aria-label="Refresh workspace" title="Refresh workspace"><RefreshCw size={17} className={loading ? "spin" : undefined}/></button><PageHelp key={page} page={page} simulation={snapshot?.testProfile?.simulationAvailable===true}/></div></div>
           {error || saveError ? <div className="connection-notice" role={desktop ? "alert" : "status"}><TriangleAlert size={18}/><div><strong>{desktop ? saveError && !error ? "Preferences could not be saved" : "Workspace connection failed" : "You’re viewing the interface preview"}</strong><p>{desktop ? error ?? saveError : "Live device inventory and saved data are available in the Windows app."}</p></div>{desktop && error ? <button className="text-button" onClick={() => void refresh()}>Retry</button> : null}</div> : null}
           {loading && !snapshot ? <div className="loading-state" role="status">Connecting to local workspace…</div> : null}
           <ViewBoundary key={page}>
             {page === "dashboard" ? <Dashboard snapshot={snapshot} navigate={navigate} inventory={inventory.inventory}/>
-              : page === "devices" ? <Devices inventory={inventory.inventory} desktop={desktop} error={inventory.error} refreshing={inventory.refreshing} onRefresh={inventory.refresh} onCancel={inventory.cancel}/>
+              : page === "devices" ? <>{snapshot?.testProfile?.simulationAvailable?<SimulationWorkspace/>:null}<Devices inventory={inventory.inventory} desktop={desktop} error={inventory.error} refreshing={inventory.refreshing} onRefresh={inventory.refresh} onCancel={inventory.cancel}/></>
               : page === "compatibility" ? <Compatibility devices={inventory.inventory?.devices ?? []} revision={inventory.inventory?.revision ?? 0} desktop={desktop}/>
               : page === "firmware" ? <FirmwareLibrary desktop={desktop}/>
               : page === "backups" ? <Backups desktop={desktop}/>

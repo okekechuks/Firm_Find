@@ -64,6 +64,12 @@ pub trait ApnReader {
     fn read_apn(&mut self, control: &OperationControl) -> Result<ApnConfiguration, AdapterError>;
 }
 pub trait WifiClientLimitReader {
+    fn read_wifi_configurations(
+        &mut self,
+        control: &OperationControl,
+    ) -> Result<Vec<WifiClientLimitConfiguration>, AdapterError> {
+        self.read_wifi_client_limit(control).map(|v| vec![v])
+    }
     fn read_wifi_client_limit(
         &mut self,
         control: &OperationControl,
