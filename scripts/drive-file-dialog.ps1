@@ -27,6 +27,8 @@ public static class ObtainerDialog {
  [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowEx(IntPtr p,IntPtr after,string cls,string title);
  [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr h,int msg,IntPtr w,string text);
  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h,int msg,IntPtr w,IntPtr l);
+ [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
+ [DllImport("user32.dll")] public static extern bool IsWindowEnabled(IntPtr h);
 }
 '@
 $deadline=[DateTime]::UtcNow.AddSeconds(20)
@@ -66,6 +68,14 @@ if($filenameHandle -ne [IntPtr]::Zero){
  [void][ObtainerDialog]::SendMessage($filenameHandle,0x000C,[IntPtr]::Zero,$SelectedPath)
 }elseif($null -eq $edit){throw ('Native filename control did not become ready. '+[ObtainerDialog]::Children($handle))}
 $button=[ObtainerDialog]::FindControl($handle,1,'Button')
-if($button -ne [IntPtr]::Zero){$invoked=[ObtainerDialog]::PostMessage($button,0x00F5,[IntPtr]::Zero,[IntPtr]::Zero)}else{$invoked=[ObtainerDialog]::PostMessage($handle,0x0111,[IntPtr]1,[IntPtr]::Zero)}
+$openDeadline=[DateTime]::UtcNow.AddSeconds(10)
+while($button -ne [IntPtr]::Zero -and -not [ObtainerDialog]::IsWindowEnabled($button) -and [DateTime]::UtcNow -lt $openDeadline){Start-Sleep -Milliseconds 50}
+if($button -ne [IntPtr]::Zero -and -not [ObtainerDialog]::IsWindowEnabled($button)){throw 'Owned native Open/Save button did not become enabled'}
+# Send the owned dialog its default IDOK command; acknowledge closure rather than
+# treating a queued child-button click as proof of a completed selection.
+$invoked=[ObtainerDialog]::PostMessage($handle,0x0111,[IntPtr]1,$button)
 if(-not $invoked){throw 'Native Open/Save could not be invoked'}
-Write-Output 'Native filename entered and Open/Save invoked.'
+$closeDeadline=[DateTime]::UtcNow.AddSeconds(10)
+while([ObtainerDialog]::IsWindow($handle) -and [DateTime]::UtcNow -lt $closeDeadline){Start-Sleep -Milliseconds 50}
+if([ObtainerDialog]::IsWindow($handle)){throw ('Owned native file dialog remained open after IDOK. '+[ObtainerDialog]::Children($handle))}
+Write-Output 'Native filename entered and owned Open/Save dialog closed.'

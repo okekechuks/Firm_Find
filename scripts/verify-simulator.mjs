@@ -75,6 +75,7 @@ export async function verifySimulator(client,{label,evidence,record}){
  await connect();assert.equal((await status()).features.modem.service,'running');assert.equal((await status()).features.apn.value.apn,'native.lab');await shot('cellular-restart-recovered','[aria-label="Simulated APN"]');
  record(label+': virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback');
  const live=await status();await scenario('wrong_identity');const invalidated=await status();assert(invalidated.epoch>live.epoch);assert.equal(invalidated.activeConnections,0);assert.equal(invalidated.readAuthorized,false);assert.equal(invalidated.outcome,null);assert.equal(invalidated.device.model,'Wrong Virtual Device');
+ assert(await client.evaluate("document.querySelector('select[aria-label=\"Virtual device\"] option').textContent.includes('Wrong Virtual Device')"));await shot('wrong-identity');
  await expectReject('simulation_request',{input:{target:live.device.id,endpoint:live.device.endpoint,epoch:live.epoch,revision:live.revision,action:{kind:'read_features'}}});
  await click('Approve virtual handshake');await until(async()=>!!(await status()).approvalId,'Faulted approval missing');await text('Simulation password','lab-only');await click('Connect virtual router');await until(()=>client.evaluate("document.querySelector('.simulation-workspace').textContent.includes('IDENTITY_CONFLICT')"),'Changed identity was not rejected');await idle();assert.equal((await status()).activeConnections,0);
  await scenario('healthy');await connect();

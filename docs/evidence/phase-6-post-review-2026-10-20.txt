@@ -1,0 +1,517 @@
+OBTAINER Phase 6 post-review correction evidence
+Date: 20 October 2026, Africa/Lagos
+Phase 6 correction verdict: PASS. Phase 7 readiness: READY; not started.
+Initial red command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --lib post_review_ --locked --offline
+Initial red exit: 101. Both original busy defects reproduced.
+
+warning: `obtainer` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 41.74s
+     Running unittests src\lib.rs (target\debug\deps\obtainer_lib-d971641d75ed87cb.exe)
+
+running 2 tests
+test simulator::runtime::tests::post_review_scenario_reserves_busy_before_mutating_state ... FAILED
+test simulator::runtime::tests::post_review_cancel_idle_releases_busy_and_allows_reads ... FAILED
+
+failures:
+
+---- simulator::runtime::tests::post_review_scenario_reserves_busy_before_mutating_state stdout ----
+
+thread 'simulator::runtime::tests::post_review_scenario_reserves_busy_before_mutating_state' (19480) panicked at apps\desktop\src-tauri\src\simulator\tests.rs:26:9:
+scenario must acquire busy before touching state
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- simulator::runtime::tests::post_review_cancel_idle_releases_busy_and_allows_reads stdout ----
+
+thread 'simulator::runtime::tests::post_review_cancel_idle_releases_busy_and_allows_reads' (9776) panicked at apps\desktop\src-tauri\src\simulator\tests.rs:8:5:
+assertion failed: !s.runtime().unwrap().busy.load(Ordering::Acquire)
+
+
+failures:
+    simulator::runtime::tests::post_review_cancel_idle_releases_busy_and_allows_reads
+    simulator::runtime::tests::post_review_scenario_reserves_busy_before_mutating_state
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 151 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`
+
+Initial sandbox failures and formatting/Clippy command results:
+[
+    {
+        "exitCode":  101,
+        "command":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline",
+        "name":  "rust-default",
+        "log":  ".tools\\phase6-correction-rust-default.log"
+    },
+    {
+        "exitCode":  101,
+        "command":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --features native-test-profile --locked --offline",
+        "name":  "rust-native",
+        "log":  ".tools\\phase6-correction-rust-native.log"
+    },
+    {
+        "exitCode":  0,
+        "command":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check",
+        "name":  "fmt",
+        "log":  ".tools\\phase6-correction-fmt.log"
+    },
+    {
+        "exitCode":  0,
+        "command":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings",
+        "name":  "clippy-default",
+        "log":  ".tools\\phase6-correction-clippy-default.log"
+    },
+    {
+        "exitCode":  0,
+        "command":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings",
+        "name":  "clippy-native",
+        "log":  ".tools\\phase6-correction-clippy-native.log"
+    }
+]
+
+Full Rust reruns with normal Windows access:
+[
+    {
+        "profile":  "default",
+        "exitCode":  0,
+        "command":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline",
+        "log":  ".tools\\phase6-correction-rust-default-windows.log"
+    },
+    {
+        "profile":  "native",
+        "exitCode":  0,
+        "command":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline --features native-test-profile",
+        "log":  ".tools\\phase6-correction-rust-native-windows.log"
+    }
+]
+
+Rust default actual totals:
+test result: ok. 165 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.58s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Rust native actual totals:
+test result: ok. 165 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.60s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Frontend final command: npm.cmd test
+
+> obtainer-workspace@0.1.0 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.1.0 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/apps/desktop
+
+
+ Test Files  13 passed (13)
+      Tests  113 passed (113)
+   Start at  13:40:29
+   Duration  35.05s (transform 2.24s, setup 8.25s, import 5.93s, tests 23.56s, environment 25.70s)
+
+
+TypeScript final command: node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit; exit 0
+Lint final command: npm.cmd run lint; exit 0
+
+> obtainer-workspace@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+Final Windows release build command outcomes:
+[
+    {
+        "exitCode":  0,
+        "command":  "npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline",
+        "log":  ".tools/phase6-correction-build-production-final.log"
+    },
+    {
+        "exitCode":  0,
+        "command":  "npm.cmd run build:native-tests",
+        "log":  ".tools/phase6-correction-build-native-final.log"
+    }
+]
+
+Ordinary executable activation refusal (no test/data overrides):
+{
+  "binary": "C:\\Users\\chuka\\OneDrive\\Documents\\Firm_Find\\target\\release\\obtainer.exe",
+  "args": [
+    "--simulator"
+  ],
+  "exitCode": 1,
+  "stdout": "",
+  "stderr": "OBTAINER could not start: Simulation requires the dedicated isolated native-test executable.\n"
+}
+Initial native failure: frontend rejected actual Wrong Virtual Device summary (corrected explicit fixture schema).
+{
+  "message": "Enabled simulation button missing: Approve virtual handshake",
+  "stack": "Error: Enabled simulation button missing: Approve virtual handshake\n    at until (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-simulator.mjs:6:172)\n    at async click (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-simulator.mjs:11:28)\n    at async verifySimulator (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-simulator.mjs:79:2)\n    at async verify (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:196:40)\n    at async file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:325:19"
+}
+Next native failure: file-picker helper reported click before actual closure (corrected owned IDOK and closure acknowledgement).
+{
+  "message": "Native file selection did not produce React confirmation",
+  "stack": "Error: Native file selection did not produce React confirmation\n    at until (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-firmware.mjs:21:172)\n    at async choose (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-firmware.mjs:28:2)\n    at async importFile (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-firmware.mjs:31:95)\n    at async verifyFirmware (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-firmware.mjs:52:14)\n    at async verify (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:202:42)\n    at async file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/scripts/verify-foundation.mjs:325:19"
+}
+One retry was not executed due to automatic approval review usage limit; resumed command went through the same approval path successfully.
+Focused native development rerun: exit 0, 34 checkpoints.
+{
+    "command":  "node scripts/verify-foundation.mjs --phase5 --phase6 --gui-preview",
+    "exitCode":  0
+}
+
+Final complete native suite parent result:
+{
+    "exitCode":  0,
+    "command":  "npm.cmd run test:simulator",
+    "log":  ".tools/phase6-correction-native-qualified.log"
+}
+
+Final native checkpoints: 130
+Actual child commands and exits (deliberate interruption exit 1 is expected):
+[
+    {
+        "command":  "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator",
+        "kind":  "dev",
+        "exitCode":  0
+    },
+    {
+        "command":  "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator",
+        "kind":  "dev",
+        "exitCode":  1
+    },
+    {
+        "command":  "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator",
+        "kind":  "dev",
+        "exitCode":  0
+    },
+    {
+        "command":  ".\\target\\release\\obtainer-native-test.exe --simulator",
+        "kind":  "release",
+        "exitCode":  0
+    },
+    {
+        "command":  ".\\target\\release\\obtainer-native-test.exe --simulator",
+        "kind":  "release",
+        "exitCode":  0
+    }
+]
+Full successful native transcript:
+
+> obtainer-workspace@0.1.0 test:simulator
+> node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui --phase5 --phase6
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\foundation\2026-10-20T14-52-11.917Z
+PASS: normal schema/settings/artifact/job/profile/router/vault baseline captured read-only {}
+PASS: ordinary production executable rejects test activation before opening data {}
+PASS: native-test executable rejects missing/unsafe run IDs and arbitrary data paths {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: active test ownership prevents cleanup {}
+PASS: dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"64f7f648ac5ed40c13c69c9ddca71d10","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\64f7f648ac5ed40c13c69c9ddca71d10\\data"}
+PASS: dev-reopen: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/","pid":12156,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\64f7f648ac5ed40c13c69c9ddca71d10\\data","theme":"system"}
+PASS: dev-reopen: exactly six primary navigation destinations {}
+PASS: dev-reopen: discovery, three refreshes, unique IDs, unknown feature support {"records":50,"watching":true,"warnings":[]}
+PASS: dev-reopen: real adapter registry IPC, strict request validation and absent write/execution endpoints {}
+PASS: dev-reopen: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection {"devices":12,"mg11Connected":false}
+PASS: dev-reopen: actual native React adapter status, protected/unsupported display and disabled extraction {}
+PASS: dev-reopen: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented {}
+PASS: dev-reopen: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged {}
+PASS: dev-reopen: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads {}
+PASS: dev-reopen: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes {}
+PASS: dev-reopen: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result {}
+PASS: dev-reopen: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch {}
+PASS: dev-reopen: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback {}
+PASS: dev-reopen: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects {}
+PASS: dev-reopen: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads {}
+PASS: dev-reopen: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged {}
+PASS: dev-reopen: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved {}
+PASS: dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved {"jobId":"4e5ed74a9719fdb280b8dcfbc333c357","sha256":"c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264","size":1048576}
+PASS: dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist {"sourceCount":2}
+PASS: dev-reopen: actual streamed integrity verification and history {"checks":3}
+PASS: dev-reopen: actual native save dialog and unsigned metadata-only manifest {"manifestSchemaVersion":1}
+PASS: dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact {"bytesObserved":2097152,"totalBytes":268435456,"elapsedMs":2208,"copyThroughputMiBPerSecond":17.241379310344826,"memory":{"WorkingSet64":87064576,"PeakWorkingSet64":90722304,"PrivateMemorySize64":23875584}}
+PASS: dev-reopen: persisted job and activity screens render after restart {}
+PASS: dev-reopen: dashboard and Library reflect committed counts and no active work {"artifacts":1}
+PASS: isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences {}
+PASS: isolated native corruption and missing-blob detection; source reimport restores generated bytes without touching normal vault {}
+PASS: isolated native database failure after artifact publication: failed job, retained orphan, verified reuse on retry {}
+PASS: isolated native manifest remains saved when activity transaction fails; React displays separate warning {}
+PASS: dev-reopen: same-value settings write/read preserved original preferences {}
+PASS: dev-reopen: injected read error and real IPC retry recovery {}
+PASS: dev-reopen: loading state retains cached data {}
+PASS: dev-reopen: React hot reload with unchanged app/Vite PIDs {}
+PASS: dev-reopen: temporary HMR edit restored {}
+PASS: dev-reopen: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed {}
+PASS: dev-reopen: all six help popovers stay in bounds, take focus, close on real Escape and return focus {}
+PASS: dev-reopen: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help {}
+PASS: dev-reopen: actual Windows selection/classification and disabled extraction; no extraction operation invented {}
+PASS: dev-reopen: recorded firmware tags and four disabled capability-aware customization controls {}
+PASS: dev-reopen: real 256 MiB progress survives navigation; cancellation clears Overview and retains Logs {}
+PASS: dev-reopen: native verified backup and _DEFAULT restore; cancelled confirmation preserves original; actual completion toast {}
+PASS: dev-reopen: file-specific confirmation, reversible removal and verified recovery; bytes/history preserved {}
+PASS: dev-reopen: timestamped persisted Logs and completed-status filtering {}
+PASS: dev-reopen: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off {}
+PASS: isolated native verification observed running before graceful application shutdown {"jobId":"f62fb545ee2e5ee3f2898b603bb00409"}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: graceful shutdown cancelled active verification; restart preserved terminal job and usable artifact {}
+PASS: Phase 4: actual copying job recorded before forced termination {"jobId":"dc47b08b4dd9199d986b525538fb831e"}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: interrupted owned development launch and released resources {"backendRenderedBeforeInterrupt":true}
+PASS: dev-recovery: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"64f7f648ac5ed40c13c69c9ddca71d10","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\64f7f648ac5ed40c13c69c9ddca71d10\\data"}
+PASS: dev-recovery: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/","pid":15484,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\64f7f648ac5ed40c13c69c9ddca71d10\\data","theme":"system"}
+PASS: dev-recovery: exactly six primary navigation destinations {}
+PASS: dev-recovery: discovery, three refreshes, unique IDs, unknown feature support {"records":50,"watching":true,"warnings":[]}
+PASS: dev-recovery: real adapter registry IPC, strict request validation and absent write/execution endpoints {}
+PASS: dev-recovery: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection {"devices":12,"mg11Connected":false}
+PASS: dev-recovery: actual native React adapter status, protected/unsupported display and disabled extraction {}
+PASS: dev-recovery: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented {}
+PASS: dev-recovery: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged {}
+PASS: dev-recovery: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads {}
+PASS: dev-recovery: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes {}
+PASS: dev-recovery: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result {}
+PASS: dev-recovery: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch {}
+PASS: dev-recovery: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback {}
+PASS: dev-recovery: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects {}
+PASS: dev-recovery: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads {}
+PASS: dev-recovery: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged {}
+PASS: dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn {}
+PASS: dev-recovery: interrupted copy recovered as failed, known staging removed, no false success {"jobId":"dc47b08b4dd9199d986b525538fb831e"}
+PASS: dev-recovery: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved {}
+PASS: dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved {"jobId":"a303f04ef29047c6e094b4b4127e8a79","sha256":"c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264","size":1048576}
+PASS: dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist {"sourceCount":7}
+PASS: dev-recovery: actual streamed integrity verification and history {"checks":11}
+PASS: dev-recovery: actual native save dialog and unsigned metadata-only manifest {"manifestSchemaVersion":1}
+PASS: dev-recovery: persisted job and activity screens render after restart {}
+PASS: dev-recovery: dashboard and Library reflect committed counts and no active work {"artifacts":3}
+PASS: dev-recovery: same-value settings write/read preserved original preferences {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: production: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"64f7f648ac5ed40c13c69c9ddca71d10","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\64f7f648ac5ed40c13c69c9ddca71d10\\data"}
+PASS: production: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":6152,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\64f7f648ac5ed40c13c69c9ddca71d10\\data","theme":"system"}
+PASS: production: exactly six primary navigation destinations {}
+PASS: production: discovery, three refreshes, unique IDs, unknown feature support {"records":50,"watching":true,"warnings":[]}
+PASS: production: real adapter registry IPC, strict request validation and absent write/execution endpoints {}
+PASS: production: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection {"devices":12,"mg11Connected":false}
+PASS: production: actual native React adapter status, protected/unsupported display and disabled extraction {}
+PASS: production: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented {}
+PASS: production: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged {}
+PASS: production: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads {}
+PASS: production: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes {}
+PASS: production: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result {}
+PASS: production: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch {}
+PASS: production: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback {}
+PASS: production: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects {}
+PASS: production: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads {}
+PASS: production: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged {}
+PASS: production: repeated startup keeps interrupted job terminal without rerunning it {}
+PASS: production: existing artifact/import history available before any new import; stale verified label withdrawn {}
+PASS: production: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved {}
+PASS: production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved {"jobId":"5c348e912a8df10c3b64eebfe1b1bd29","sha256":"c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264","size":1048576}
+PASS: production: same bytes under another name deduplicate; import occurrences and unverified provenance persist {"sourceCount":9}
+PASS: production: actual streamed integrity verification and history {"checks":14}
+PASS: production: actual native save dialog and unsigned metadata-only manifest {"manifestSchemaVersion":1}
+PASS: production: persisted job and activity screens render after restart {}
+PASS: production: dashboard and Library reflect committed counts and no active work {"artifacts":3}
+PASS: production: same-value settings write/read preserved original preferences {}
+PASS: production: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed {}
+PASS: production: all six help popovers stay in bounds, take focus, close on real Escape and return focus {}
+PASS: production: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help {}
+PASS: production: actual Windows selection/classification and disabled extraction; no extraction operation invented {}
+PASS: production: recorded firmware tags and four disabled capability-aware customization controls {}
+PASS: production: native verified backup and _DEFAULT restore; cancelled confirmation preserves original; actual completion toast {}
+PASS: production: file-specific confirmation, reversible removal and verified recovery; bytes/history preserved {}
+PASS: production: timestamped persisted Logs and completed-status filtering {}
+PASS: production: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off {}
+PASS: production: real folder picker, plan cancellation, verified storage copy and restart gate; old Library preserved {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: production restart: copied Library active, artifacts/provenance/counts/settings retained, backup path unchanged and old vault preserved {}
+PASS: production restart: actual integrity job reads and verifies bytes from relocated Library {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+PASS: cleanup rejects mismatched marker/run ID and retains test data {}
+PASS: cleanup retains unknown staging without deleting files {}
+PASS: cleanup refuses reparse traversal; unrelated sentinel remains unchanged {}
+PASS: normal database rows/file hashes and vault blobs unchanged after isolated native suite {}
+PASS: owned isolated run cleaned after all processes stopped {"runId":"64f7f648ac5ed40c13c69c9ddca71d10"}
+
+Independent IPC evidence after real GUI Cancel and subsequent successful reads:
+[
+    {
+        "mode":  "dev-reopen",
+        "cancelBusy":  false,
+        "cancelConnections":  0,
+        "readAuthorizedAfterCancel":  false,
+        "reconnected":  "connected_read_only",
+        "dns":  [
+                    "1.1.1.1",
+                    "8.8.8.8"
+                ],
+        "finalActive":  false,
+        "finalConnections":  0
+    },
+    {
+        "mode":  "dev-recovery",
+        "cancelBusy":  false,
+        "cancelConnections":  0,
+        "readAuthorizedAfterCancel":  false,
+        "reconnected":  "connected_read_only",
+        "dns":  [
+                    "1.1.1.1",
+                    "8.8.8.8"
+                ],
+        "finalActive":  false,
+        "finalConnections":  0
+    },
+    {
+        "mode":  "production",
+        "cancelBusy":  false,
+        "cancelConnections":  0,
+        "readAuthorizedAfterCancel":  false,
+        "reconnected":  "connected_read_only",
+        "dns":  [
+                    "1.1.1.1",
+                    "8.8.8.8"
+                ],
+        "finalActive":  false,
+        "finalConnections":  0
+    }
+]
+Final console issues:
+[]
+Final owned-profile cleanup after process shutdown:
+{
+  "status": 0,
+  "stdout": "{\"removed\":true,\"runId\":\"64f7f648ac5ed40c13c69c9ddca71d10\"}\n",
+  "stderr": ""
+}
+Final normal-data probe: py scripts/probe-native-isolation.py .tools/phase6-correction-normal-after.json .tools/phase6-correction-normal-before.json; exit 0; complete equality.
+{
+    "schema":  5,
+    "integrity":  [
+                      [
+                          "ok"
+                      ]
+                  ],
+    "foreignKeys":  [
+
+                    ],
+    "allRowsSha256":  "45d5a9f68b114512e6067327586198513af83d8403faea8cf29a3f399791e868",
+    "settingsSha256":  "b53a94def78900fd485d168459d6342e8ad0eab83c4164f7b07f74630e423b99",
+    "counts":  {
+                   "activity_links":  76,
+                   "artifact_details":  1,
+                   "artifact_imports":  20,
+                   "artifact_presentation":  0,
+                   "audit_events":  226,
+                   "compatibility_evaluations":  3,
+                   "desktop_preferences":  1,
+                   "device_identity_observations":  2,
+                   "devices":  181,
+                   "discovery_metadata":  181,
+                   "firmware_artifacts":  1,
+                   "firmware_backups":  0,
+                   "integrity_checks":  31,
+                   "job_details":  35,
+                   "jobs":  35,
+                   "manual_routers":  1,
+                   "profile_versions":  2,
+                   "settings":  1
+               }
+}
+Verified simulator sources (hashes matched after qualification):
+[
+    {
+        "sha256":  "564406182676611D8DEB713100A1A84F7BECC7F6FEA981128D639A73E2E58D4A",
+        "path":  "apps/desktop/src-tauri/src/simulator/runtime.rs"
+    },
+    {
+        "sha256":  "AEF59420254D49130E35ABA0873E0607572516EA817FCD07C5DAFAE90069308C",
+        "path":  "apps/desktop/src-tauri/src/simulator/adapter.rs"
+    },
+    {
+        "sha256":  "512C1C0E0AF484E4C0E694C65D421515A713F61C7B2CBA5A3742527C76C0B5A1",
+        "path":  "apps/desktop/src-tauri/src/simulator/tests.rs"
+    },
+    {
+        "sha256":  "1332374E3871BC3114593C60CE6097A1290ECE87D2504C3B3773AC24171AC76C",
+        "path":  "apps/desktop/src/features/simulation/SimulationWorkspace.tsx"
+    },
+    {
+        "sha256":  "D1A61DAAEDC3BCF6E3B670A4143D1804F11B5BC75AEC329EFE4CAFEF2B32B8F8",
+        "path":  "apps/desktop/src/types/simulator.ts"
+    },
+    {
+        "sha256":  "C616ED8D3B50ACC73DDF2D2A199CFAC676681CB7E4766D27E3673626113D3198",
+        "path":  "apps/desktop/src/test/SimulationWorkspace.test.tsx"
+    },
+    {
+        "sha256":  "A085A04DDB64FB2B0FF71F6E0AB181716ADAEA060D4E2238679A331CC4F0D31E",
+        "path":  "apps/desktop/src/test/simulatorBackend.test.ts"
+    },
+    {
+        "sha256":  "74DF727E68DACC88FFC740B3294E11BB751DBBCBAE883FE512B7B81F46EA20EA",
+        "path":  "scripts/verify-simulator.mjs"
+    }
+]
+
+Final executable hashes:
+[
+    {
+        "Path":  "C:\\Users\\chuka\\OneDrive\\Documents\\Firm_Find\\target\\release\\obtainer.exe",
+        "Hash":  "3DB472E6FCF5F1B4CA6BF89AFB187723AFF946A9BD1FDA6BE5205231CF091C87"
+    },
+    {
+        "Path":  "C:\\Users\\chuka\\OneDrive\\Documents\\Firm_Find\\target\\release\\obtainer-native-test.exe",
+        "Hash":  "68A8302DC5330690E92B62C4232B215010C9EC288CAD851802A3B71199434C68"
+    }
+]
+Final simulator captures, 48 actual PNGs:
+dev-recovery-apn-modem.png
+dev-recovery-cancel-recovered.png
+dev-recovery-cellular-restart-recovered.png
+dev-recovery-connected-device.png
+dev-recovery-device-selection.png
+dev-recovery-disconnected.png
+dev-recovery-dns-apply-result.png
+dev-recovery-dns-before.png
+dev-recovery-dns-preview.png
+dev-recovery-dns-restored.png
+dev-recovery-dns-restore-failure.png
+dev-recovery-dns-verification-failure.png
+dev-recovery-feature-status.png
+dev-recovery-ussd-session.png
+dev-recovery-wifi-configuration.png
+dev-recovery-wrong-identity.png
+dev-reopen-apn-modem.png
+dev-reopen-cancel-recovered.png
+dev-reopen-cellular-restart-recovered.png
+dev-reopen-connected-device.png
+dev-reopen-device-selection.png
+dev-reopen-disconnected.png
+dev-reopen-dns-apply-result.png
+dev-reopen-dns-before.png
+dev-reopen-dns-preview.png
+dev-reopen-dns-restored.png
+dev-reopen-dns-restore-failure.png
+dev-reopen-dns-verification-failure.png
+dev-reopen-feature-status.png
+dev-reopen-ussd-session.png
+dev-reopen-wifi-configuration.png
+dev-reopen-wrong-identity.png
+production-apn-modem.png
+production-cancel-recovered.png
+production-cellular-restart-recovered.png
+production-connected-device.png
+production-device-selection.png
+production-disconnected.png
+production-dns-apply-result.png
+production-dns-before.png
+production-dns-preview.png
+production-dns-restored.png
+production-dns-restore-failure.png
+production-dns-verification-failure.png
+production-feature-status.png
+production-ussd-session.png
+production-wifi-configuration.png
+production-wrong-identity.png
+Visually inspected production Cancel recovery, feature status and Wrong Identity, plus development cancellation/wrong-identity views.
+Physical adapters, extraction, configuration writes, flashing and live USSD remain disabled; no Phase 7 implementation.

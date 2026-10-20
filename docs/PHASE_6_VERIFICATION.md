@@ -1,5 +1,129 @@
 # Phase 6 verification
 
+## 20 October 2026 post-review concurrency correction
+
+**Phase 6 correction verdict: PASS. Phase 7 readiness: READY; not started.** Both reproduced ownership defects and the confirmed integration defects are corrected. Final checks pass: **165 Rust tests in each profile, 113 frontend tests, 130 native checkpoints, both optimized Windows executable builds**, formatting, Clippy, TypeScript and lint. The original acceptance record below is retained as historical evidence. Existing settings/device UI and import-history changes were present at the start and were preserved. Commit `5b54ff6` appeared during verification and was left intact; verified simulator source hashes still match the final files.
+
+### Reproduction before the fix
+
+`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --lib post_review_ --locked --offline` exited **101: 0 passed, 2 failed** against the original implementation. Evidence: `.tools/phase6-correction-red.log`.
+
+- `post_review_cancel_idle_releases_busy_and_allows_reads` found `busy == true` after an idle Cancel.
+- `post_review_scenario_reserves_busy_before_mutating_state` paused scenario selection immediately before state mutation and found that it did not own `busy`.
+
+The second test uses a one-shot channel rendezvous, not a sleep to provoke a race. Test hooks compile only under `cfg(test)` and are absent from both Windows application binaries.
+
+### Ownership and control behavior
+
+`runtime.rs::OperationGuard` replaces the unmatched Cancel acquisition and `ScenarioReservation`. `Runtime::begin` acquires the shared slot with compare-exchange while holding the cancellation-token mutex. Only a constructed guard releases the slot. Its destructor clears its token and releases `busy` under that same mutex, then notifies condition-variable waiters. Errors, early returns and unwinding therefore cannot release another owner's slot or strand their own slot.
+
+| Entry point | Behavior under contention |
+| --- | --- |
+| Requests, Scenario, Advance | Try the same exclusive guard. Return `BUSY` without changing state or releasing the owner when occupied. |
+| Cancel | Signal the token registered at entry, then wait at most one second for exclusive ownership. Idle Cancel is a successful scoped no-op; repeated Cancel is safe. A wait timeout leaves the current owner's token/slot intact. It does not cancel a later owner that overtakes the waiter. |
+| Reset | Cancel and drain the current request before restoring the fixture and advancing generation. If the bounded wait fails, no reset state is published. |
+| Stop | Disable authority immediately, cancel/drain, shut down the session manager and clear access. A pending request cannot reinsert a valid session; restart owns a different endpoint. |
+
+Short Scenario/Advance controls complete atomically under their guard; a concurrent interrupt waits for them. Scenario changes advance configuration revision and clear cached features, previews and outcomes, so queued old requests and previews are rejected. Identity/endpoint/disconnection changes also revoke session authority and advance generation. Successful snapshots are captured before the operation guard is released; responses carry revision/generation, and the frontend suppresses superseded replies.
+
+### Additional correctness findings
+
+- Advance now rejects during an operation. The GUI disables Advance while waiting. At idle it updates virtual service/USSD timers, clears cached feature observations and reconciles session expiry before returning. Reads succeed at 29,999 ms and are denied at the 30,000 ms boundary without requiring a separate status poll.
+- Device summaries use the mutable router identity. Wrong Identity displays `Wrong Virtual Device`; the expected bootstrap profile remains unchanged and rejects it. The frontend accepts only the two explicit fictional model names, rejects model/scenario contradictions and refuses a supposedly connected/authorized wrong identity.
+- Wi-Fi, APN and scripted USSD actions now call their corresponding Phase 5 read gate before touching virtual state. DNS-only approval cannot authorize these features. A grant for the correct feature does not need unrelated DNS approval. No physical write operation was added to Phase 5.
+- Cancellation and timeout refresh actual backend status, restore controls and suppress late success. New frontend coverage checks cancellation followed by another valid request and timeout recovery.
+
+An idle authenticated session intentionally retains one virtual connection between requests. Each operation still releases its busy slot and token. Cancellation/timeout that invalidates a session, disconnect, reset and stop return connection count to zero; tests distinguish retained authenticated sessions from leaked operation resources.
+
+### Current executed checks
+
+| Exact command | Actual result |
+| --- | --- |
+| `py scripts/probe-native-isolation.py .tools/phase6-correction-normal-before.json` | Exit 0; read-only normal-data baseline, schema 5, integrity `ok`, no foreign-key violations. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all` | Exit 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --lib simulator:: --locked --offline` | Exit 0; **35 simulator tests**, including the original 21 and 14 new correction regressions. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline` | Initial sandbox run: exit 101, 138 passed / 27 existing Windows directory-lease permission failures. Normal Windows-access rerun: exit 0, **165 passed**. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline --features native-test-profile` | Same initial 138/27 sandbox result; normal Windows-access rerun: exit 0, **165 passed**, including executable/doc-test targets. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all --check` | Exit 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings` | Exit 0. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings` | Exit 0. |
+| `node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit` | Exit 0 after the frontend schema correction. |
+| `npm.cmd run lint` | Exit 0. |
+| `npm.cmd test` | Exit 0, **113 tests / 13 files** after the schema correction; original tests retained. |
+| `npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline` | Final exit 0 after the frontend schema correction; frontend production build and optimized ordinary executable pass. Rust compilation 1m 47s. |
+| `npm.cmd run build:native-tests` | Final exit 0; optimized native-test executable, Rust compilation 1m 52s; ordinary executable hash preserved. |
+| `node .tools/phase6-correction-activation.mjs` | Exit 0; ordinary release with `--simulator`, without test/data overrides, refuses activation with actual exit 1 before opening data. |
+| `node scripts/verify-foundation.mjs --phase5 --phase6 --gui-preview` | Exit 0 after the schema correction; real native development window/React/IPC, adapter regressions, GUI Cancel/reconnect/read, HMR and cleanup pass. Console issues `[]`; normal data unchanged. |
+| `npm.cmd run test:simulator` | Final exit 0, **130 checkpoints** across native development, interrupted-launch recovery, optimized production and storage-copy restart. Earlier failed attempts remain recorded below. |
+| `py scripts/probe-native-isolation.py .tools/phase6-correction-normal-after.json .tools/phase6-correction-normal-before.json` | Exit 0; complete normal database/WAL/rows/settings/saved-device/vault/other-file equality. |
+| `node --check scripts/verify-simulator.mjs` | Exit 0. File-picker helper also passed PowerShell parser validation and actual native Open/Save tests. |
+| `git diff --check` | Final exit 0; Windows line-ending conversion notices are separate from whitespace errors. |
+
+Rust commands use `CARGO_INCREMENTAL=0`. Permission failures were `Directory lease failed at "C:\Users\chuka": Access is denied. (os error 5)` in existing safe-path tests. No application path protection was relaxed; those same tests passed with normal Windows directory access. Per-command logs/results are `.tools/phase6-correction-*`; initial failure logs remain retained.
+
+The first native run (`.tools/foundation/2026-10-20T12-37-15.801Z/`) exposed a real integration defect after correcting the summary: frontend validation still required literal `Virtual Router Lab`. It rejected `Wrong Virtual Device`, leaving the prior connected view visible; the verifier then reported `Enabled simulation button missing: Approve virtual handshake`. The explicit virtual-model union and contradiction checks correct this. The failed run and its screenshot/UI/error evidence are retained. Its normal-data before/after comparison passed.
+
+The next full run (`.tools/foundation/2026-10-20T12-47-03.032Z/`) passed the simulator, including real GUI Cancel/reconnect/read, then failed `Native file selection did not produce React confirmation`. Its captured UI remained in `Selecting…`; the test helper had treated a queued child-button click as completed selection. `scripts/drive-file-dialog.ps1` now waits for the owned button to become enabled, sends the owned dialog its default IDOK command, and requires actual dialog closure before reporting success. This changes verification automation only. Its PowerShell syntax check passes. Failed-run files and normal-data equality evidence remain retained.
+
+One retry was not executed because automatic approval review reached its usage limit; this was an approval-service failure, not a test/application result. After the user resumed work, the same elevated verification path was approved and resumed. No approval bypass was used.
+
+Focused native rerun `.tools/foundation/2026-10-20T12-41-29.917Z/` passed **34 checkpoints** with isolated ID `aafccbc16eec063aad03af05e22a8224`. Real CDP mouse input clicked Cancel during Slow Read; backend recorded `Cancelled`, `busy:false`, zero connections and no read grant. Scenario selection, fresh handshake/authentication/read approval and successful adapter feature reads followed. JSON records both cancellation and subsequent successful state. The actual cancellation screenshot was visually inspected. Owned processes stopped before marker-validated cleanup.
+
+Final build logs/results are `.tools/phase6-correction-build-{production,native}-final.log` and `.tools/phase6-correction-build-final-results.json`. Ordinary executable SHA-256 is `3DB472E6FCF5F1B4CA6BF89AFB187723AFF946A9BD1FDA6BE5205231CF091C87`. Both release checks intentionally use executable builds; MSI/NSIS installer bundling is not part of this correction. The earlier WiX `light.exe` installer failure was not changed or represented as passing. Cargo progress on stderr appears as PowerShell `NativeCommandError` formatting in redirected logs; actual process exit codes are recorded separately and are zero.
+
+### Final native qualification and data preservation
+
+Final successful run: `.tools/foundation/2026-10-20T14-52-11.917Z/`, isolated ID `64f7f648ac5ed40c13c69c9ddca71d10`. Parent command exit is 0; `results.json` has **130 passing checkpoints**, `console-issues.json` is `[]`, and `cleanup.json` records status 0 after all owned application/WebView/Vite processes stopped. Full output and result are `.tools/phase6-correction-native-qualified.log` and `.tools/phase6-correction-native-qualified-result.json`. The reviewable [correction evidence transcript](evidence/phase-6-post-review-2026-10-20.txt) retains the successful checkpoints and command outcomes.
+
+| Native child command | Actual exits |
+| --- | --- |
+| `npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator` | 0 initial development; 1 deliberately interrupted launch; 0 recovered development. The intentional termination is expected. |
+| `.\target\release\obtainer-native-test.exe --simulator` | 0 optimized production; 0 production storage-copy restart. |
+
+In **all three simulator sessions** (`dev-reopen`, `dev-recovery`, `production`), actual mouse input clicked the rendered Cancel button during Slow Read. Independent Rust status recorded cancellation, `busy:false`, zero connections and no read grant. Scenario selection, fresh authentication/read approval and another successful feature read then completed. Each `*-simulation.json` preserves `afterGuiCancel` and `recoveredAfterCancel` as well as final stopped state. The separate timeout path also recovered without stranding resources.
+
+Retained adapter, six-destination GUI, actual IPC, HMR, unknown physical capability, disabled extraction, settings/restart and storage regressions passed. These include native generated-binary imports, identical queued 256 MiB sources, cancellation/interruption recovery, corruption/missing-blob detection, database/audit failures and retries, backup/restore, removal/recovery, reviewed storage copy/restart and integrity checks from the copied vault. No real MiFi firmware was selected. Native screenshots and DOM assertions establish rendering; terminal startup is not treated as proof of a working GUI.
+
+There are **48 final actual captures**, 16 per simulator session, under [the final image directory](images/phase6-64f7f648ac5ed40c13c69c9ddca71d10/). Added captures show cancellation recovery and the actual Wrong Identity summary. Visually inspected [production cancellation recovery](images/phase6-64f7f648ac5ed40c13c69c9ddca71d10/production-cancel-recovered.png), [production feature state](images/phase6-64f7f648ac5ed40c13c69c9ddca71d10/production-feature-status.png), [production wrong identity](images/phase6-64f7f648ac5ed40c13c69c9ddca71d10/production-wrong-identity.png) and the development wrong-identity/cancellation views. They show the rendered six-page blue desktop, mode banner, correct model and appropriate disconnected/connected controls. Earlier-attempt captures remain under their own run IDs.
+
+The independent final probe exactly equals `.tools/phase6-correction-normal-before.json`, including bytes/hashes of SQLite and WAL, all rows, preferences, saved router/profile IDs, firmware vault and logs/workspaces/reports files. The resumed run's baseline also equals the original correction baseline. Normal storage remains `%LOCALAPPDATA%\OBTAINER`, schema **5**, integrity **`ok`**, no foreign-key violations:
+
+- All rows SHA-256: `45d5a9f68b114512e6067327586198513af83d8403faea8cf29a3f399791e868`.
+- Settings SHA-256: `b53a94def78900fd485d168459d6342e8ad0eab83c4164f7b07f74630e423b99`.
+- Counts remain **181 device rows, one saved manual router, two profile versions, one firmware artifact, 20 import occurrences and 35 jobs**.
+- No storage migration, normal-data cleanup, physical configuration change, extraction, flashing or live USSD occurred. MG11 was absent during native qualification; no new physical support claim is made, and its saved evidence is unchanged.
+
+Native-test executable SHA-256 recorded after qualification: `68A8302DC5330690E92B62C4232B215010C9EC288CAD851802A3B71199434C68`. Ordinary release hash still matches the value verified by the build script. All eight recorded simulator/verification source hashes match the tested files; HMR instrumentation was restored. There is no unresolved critical correction blocker.
+
+New Rust coverage uses controlled channel barriers for scenario/request/fault/interrupt ordering: idle and active cancellation, repeated cancellation, connection and DNS contention in both directions, competing scenarios, reset/stop during a delayed read, cancellation wait timeout without owner release, exact expiry, stale request/cache rejection, wrong summary, independent feature grants, unwind cleanup and physical namespace/action rejection. New frontend tests cover late cancellation success and the strict wrong-identity response contract.
+
+Noncritical GUI improvement, deferred: a distinct “Cancelling…” label could make repeated clicks clearer. Repeated cancellation is handled safely by the backend; no redesign is required for this correction.
+
+### Correction file inventory
+
+```text
+apps/desktop/src-tauri/src/simulator/runtime.rs
+apps/desktop/src-tauri/src/simulator/adapter.rs       (test-only synchronization)
+apps/desktop/src-tauri/src/simulator/tests.rs
+apps/desktop/src/features/simulation/SimulationWorkspace.tsx
+apps/desktop/src/types/simulator.ts
+apps/desktop/src/test/SimulationWorkspace.test.tsx
+apps/desktop/src/test/simulatorBackend.test.ts
+scripts/verify-simulator.mjs
+scripts/drive-file-dialog.ps1                       (native verification helper)
+docs/PHASE_6_VERIFICATION.md
+docs/PHASE_STATUS.md
+docs/evidence/phase-6-post-review-2026-10-20.txt
+docs/images/phase6-64f7f648ac5ed40c13c69c9ddca71d10/*.png
+docs/images/phase6-8059fe5e77ad81398878daf255b13e7a/*.png  (first failed run)
+docs/images/phase6-7365dd76bfe1cb5e97fe88474c3d6ac6/*.png  (file-picker failure)
+docs/images/phase6-aafccbc16eec063aad03af05e22a8224/*.png  (focused native rerun)
+```
+
+No production transport, configuration write, firmware extraction, flashing or live USSD implementation was enabled. Phase 7 has not started.
+
+## Original Phase 6 acceptance record
+
 Date: 20 October 2026, Africa/Lagos. **Phase 6: COMPLETE (PASS). Phase 7 readiness: READY.** All mandatory simulator acceptance gates passed against actual source, both Windows build profiles and native React/Rust execution. Phase 7 implementation has not started.
 
 Implemented source and boundaries are described in [implementation](PHASE_6_IMPLEMENTATION.md) and [architecture](SIMULATOR_ARCHITECTURE.md). The original 130 Rust and 99 frontend tests were retained. Before changes, normal data was captured read-only with `py scripts/probe-native-isolation.py .tools/phase6-normal-before.json` (exit 0). Starting Git worktree was clean; no reset, history rewrite, repository migration or normal-data cleanup occurred.
