@@ -11,7 +11,7 @@ const rangeSchema = z.object({min: z.number().int().positive(), max: z.number().
 const subSchema = z.object({assessment: assessmentSchema, reason: z.string(), evidenceSources: strings}).strict();
 const featureSpecSchema = z.object({assessment: assessmentSchema, reason: z.string(), requirements: z.array(readinessSchema), evidenceSources: strings, subCapabilities: z.record(z.string(), subSchema), verifiedRange: rangeSchema}).strict();
 export const profileSchema = z.object({
-  schemaVersion: z.literal(1), profileId: z.string(), profileVersion: z.string(), manufacturer: z.string(), model: z.string(), modelAliases: strings, deviceCategory: strings,
+  schemaVersion: z.union([z.literal(1), z.literal(2)]), inspectionOnly: z.literal(true).optional(), profileId: z.string(), profileVersion: z.string(), manufacturer: z.string(), model: z.string(), modelAliases: strings, deviceCategory: strings,
   hardwareRevisions: strings, firmwareFamilies: strings,
   firmwareVersionConstraints: z.object({scheme: z.enum(["numeric_triplet", "opaque_exact"]).optional(), exact: strings, minInclusive: z.string().nullable(), maxExclusive: z.string().nullable()}).strict(),
   matchRules: z.array(z.object({attribute: attributeSchema, values: strings, purpose: z.enum(["identity", "corroboration", "candidate_hint"]), explanation: z.string()}).strict()),
@@ -20,7 +20,15 @@ export const profileSchema = z.object({
   capabilities: z.object({dns: featureSpecSchema, wifiUserLimit: featureSpecSchema, apn: featureSpecSchema, ussd: featureSpecSchema}).strict(),
   knownLimitations: strings, evidenceSources: z.array(z.object({id: z.string(), category: sourceCategorySchema, reference: z.string(), summary: z.string()}).strict()),
   lastReviewed: z.string(), provenance: z.object({author: z.string(), category: sourceCategorySchema, notes: z.string()}).strict(),
-}).strict();
+}).strict().superRefine((profile, context) => {
+  if ((profile.schemaVersion === 1 && profile.inspectionOnly !== undefined) || (profile.schemaVersion === 2 && profile.inspectionOnly !== true)) {
+    context.addIssue({code: "custom", message: "Inspection-only scope requires explicit schema version 2."});
+  }
+  if (profile.schemaVersion === 2 && Object.values(profile.capabilities).some(feature =>
+    feature.assessment !== "UNKNOWN" || Object.values(feature.subCapabilities).some(sub => sub.assessment !== "UNKNOWN"))) {
+    context.addIssue({code: "custom", message: "Inspection-only profiles cannot claim hardware feature support."});
+  }
+});
 export const registryEntrySchema = z.object({profile: profileSchema, origin: z.string(), authoritative: z.boolean(), contentHash: z.string()});
 export const registrySchema = z.object({profiles: z.array(registryEntrySchema), diagnostics: strings, digest: z.string()});
 const evidenceSchema = z.object({

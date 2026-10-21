@@ -5,6 +5,7 @@ pub mod discovery;
 pub mod domain;
 pub mod library;
 mod native_test;
+pub mod openwrt;
 pub mod profiles;
 pub mod simulator;
 pub mod storage;
@@ -15,7 +16,10 @@ use tauri::Manager;
 
 pub fn run() -> tauri::Result<()> {
     native_test::reject_overrides(false)?;
-    if std::env::args_os().skip(1).any(|a| a == "--simulator") {
+    if std::env::args_os()
+        .skip(1)
+        .any(|a| a == "--simulator" || a == "--openwrt-lab")
+    {
         return Err(std::io::Error::other(
             "Simulation requires the dedicated isolated native-test executable.",
         )
@@ -28,6 +32,7 @@ struct NativeProfile {
     root: std::path::PathBuf,
     id: String,
     simulator: bool,
+    openwrt_lab: bool,
     _owner: Box<dyn std::any::Any + Send + Sync>,
 }
 
@@ -41,8 +46,13 @@ pub fn run_native_test() -> tauri::Result<()> {
         println!("{{\"removed\":true,\"runId\":\"{id}\"}}");
         return Ok(());
     }
-    let simulator = args == ["--simulator"];
-    if !args.is_empty() && !simulator {
+    let simulator = args.iter().any(|arg| arg == "--simulator");
+    let openwrt_lab = args.iter().any(|arg| arg == "--openwrt-lab");
+    if args
+        .iter()
+        .any(|arg| arg != "--simulator" && arg != "--openwrt-lab")
+        || args.iter().collect::<std::collections::BTreeSet<_>>().len() != args.len()
+    {
         return Err(std::io::Error::other(
             "Unsupported native-test arguments; paths are never accepted.",
         )
@@ -53,6 +63,7 @@ pub fn run_native_test() -> tauri::Result<()> {
         root: run.root.clone(),
         id: run.id.clone(),
         simulator,
+        openwrt_lab,
         _owner: Box::new(run),
     }))
 }
@@ -79,6 +90,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
     tauri::Builder::default()
         .setup(move |app| {
             let simulation_enabled = profile.as_ref().is_some_and(|p| p.simulator);
+            let openwrt_lab_enabled = profile.as_ref().is_some_and(|p| p.openwrt_lab);
             let simulation_owner = profile.as_ref().map(|p| p.id.clone()).unwrap_or_default();
             let directory = profile
                 .as_ref()
@@ -108,7 +120,22 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             let mut repository = storage::Repository::open(&directory.join("obtainer.db"))?;
             let mut profiles = profiles::Registry::bundled();
             repository.install_registry(&mut profiles)?;
+            #[cfg(feature = "native-test-profile")]
+            if openwrt_lab_enabled {
+                profiles =
+                    openwrt::runtime::lab_profiles(profiles).map_err(std::io::Error::other)?;
+            }
+            let _ = openwrt_lab_enabled;
             app.manage(profiles);
+            #[cfg(feature = "native-test-profile")]
+            let openwrt_service = if openwrt_lab_enabled {
+                openwrt::runtime::Service::native_lab()
+            } else {
+                openwrt::runtime::Service::default()
+            };
+            #[cfg(not(feature = "native-test-profile"))]
+            let openwrt_service = openwrt::runtime::Service::default();
+            app.manage(Arc::new(openwrt_service));
             app.manage(adapters::Registry::production().map_err(std::io::Error::other)?);
             app.manage(adapters::SessionManager::default());
             app.manage(Arc::new(simulator::SimulatorService::new(
@@ -148,6 +175,13 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            openwrt::ipc::openwrt_status,
+            openwrt::ipc::openwrt_observe,
+            openwrt::ipc::openwrt_connect,
+            openwrt::ipc::openwrt_approve_reads,
+            openwrt::ipc::openwrt_inspect,
+            openwrt::ipc::openwrt_cancel,
+            openwrt::ipc::openwrt_disconnect,
             simulator::ipc::simulation_status,
             simulator::ipc::simulation_control,
             simulator::ipc::simulation_request,
@@ -192,6 +226,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
         .build(context)?
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<Arc<openwrt::runtime::Service>>().shutdown();
                 app.state::<Arc<simulator::SimulatorService>>().shutdown();
                 app.state::<adapters::SessionManager>().shutdown();
                 app.state::<library::LibraryService>().stop();

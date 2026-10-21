@@ -9,6 +9,13 @@
     "windows"
   ],
   "permissions": [
+    "allow-openwrt-status",
+    "allow-openwrt-observe",
+    "allow-openwrt-connect",
+    "allow-openwrt-approve-reads",
+    "allow-openwrt-inspect",
+    "allow-openwrt-cancel",
+    "allow-openwrt-disconnect",
     "allow-get-desktop-state",
     "allow-save-desktop-preferences",
     "allow-list-firmware-backups",

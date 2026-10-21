@@ -19,9 +19,15 @@ export async function assertOwned(profile,file=profile.root) {
 }
 export function cleanupProcess(profile,env) {return spawnSync(profile.binary,['--cleanup-native-test-run'],{env,windowsHide:true,encoding:'utf8'});}
 export function verifyActivationGuards(workspace,profile,env,record){
-  const run=(binary,variables)=>{const result=spawnSync(binary,[],{env:variables,windowsHide:true,encoding:'utf8',timeout:15000});assert(!result.error,`Activation probe could not launch ${binary}: ${result.error}`);return result;};
+  const run=(binary,variables,args=[])=>{const result=spawnSync(binary,args,{env:variables,windowsHide:true,encoding:'utf8',timeout:15000});assert(!result.error,`Activation probe could not launch ${binary}: ${result.error}`);return result;};
   assert.equal(run(path.join(workspace,'target/release/obtainer.exe'),env).status,1);
   record('ordinary production executable rejects test activation before opening data');
+  if(process.argv.includes('--phase7')){
+    const normal={...env};delete normal.OBTAINER_NATIVE_TEST_RUN_ID;
+    assert.equal(run(path.join(workspace,'target/release/obtainer.exe'),normal,['--openwrt-lab']).status,1);
+    assert.equal(run(profile.binary,env,['--openwrt-lab','--openwrt-lab']).status,1);
+    record('ordinary production rejects OpenWrt lab activation; isolated binary rejects duplicate lab flags before data access');
+  }
   const missing={...env};delete missing.OBTAINER_NATIVE_TEST_RUN_ID;assert.equal(run(profile.binary,missing).status,1);
   assert.equal(run(profile.binary,{...env,OBTAINER_NATIVE_TEST_RUN_ID:'../OBTAINER'}).status,1);
   assert.equal(run(profile.binary,{...env,OBTAINER_DATA_DIR:profile.root}).status,1);

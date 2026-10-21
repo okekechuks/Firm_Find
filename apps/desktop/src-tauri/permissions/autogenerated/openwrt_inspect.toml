@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-openwrt-inspect"
+description = "Enables the openwrt_inspect command without any pre-configured scope."
+commands.allow = ["openwrt_inspect"]
+
+[[permission]]
+identifier = "deny-openwrt-inspect"
+description = "Denies the openwrt_inspect command without any pre-configured scope."
+commands.deny = ["openwrt_inspect"]

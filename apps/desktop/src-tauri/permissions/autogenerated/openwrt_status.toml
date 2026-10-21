@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-openwrt-status"
+description = "Enables the openwrt_status command without any pre-configured scope."
+commands.allow = ["openwrt_status"]
+
+[[permission]]
+identifier = "deny-openwrt-status"
+description = "Denies the openwrt_status command without any pre-configured scope."
+commands.deny = ["openwrt_status"]

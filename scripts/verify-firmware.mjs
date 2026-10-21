@@ -46,7 +46,7 @@ export async function verifyFirmware(client,{label,pid,record,evidence}){
   record(label+': existing artifact/import history available before any new import; stale verified label withdrawn');
  }
  if(interruptedId){const j=await invoke('get_library_job',{id:interruptedId});assert.equal(j.status,'failed');assert.equal(j.errorCode,'INTERRUPTED');assert.equal(await stat(path.join(snapshot.dataDirectory,'vault/staging',interruptedId+'.part')).then(()=>true,()=>false),false);record(label+': interrupted copy recovered as failed, known staging removed, no false success',{jobId:interruptedId});recoveredInterrupted={id:j.id,finishedAt:j.finishedAt};interruptedId=undefined;}
- const registry=await invoke('get_profile_registry');assert.equal(registry.profiles.length,2);assert.deepEqual(registry.diagnostics,[]);
+ const registry=await invoke('get_profile_registry');assert.equal(registry.profiles.filter(p=>p.origin!=='owned_openwrt_os_lab').length,2);assert.equal(registry.profiles.filter(p=>p.origin==='owned_openwrt_os_lab').length,process.argv.includes('--phase7')?1:0);assert.deepEqual(registry.diagnostics,[]);
  const discovery=await invoke('get_discovery');if(discovery.devices.length){const r=await invoke('get_device_compatibility',{deviceId:discovery.devices[0].id});assert(Object.values(r.features).every(f=>f.assessment==='UNKNOWN'&&!f.canApply));}
  record(label+': schema 5 and existing Phase 3.1 profile/compatibility IPC preserved');
  const first=await importFile(client,pid,'obtainer-generated-phase4.bin');const a=await terminal(client,first.id);assert.equal(a.status,'completed');assert.equal(a.relatedArtifact,hash);assert.equal(a.progressBytes,bytes.length);

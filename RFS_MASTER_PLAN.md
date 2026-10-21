@@ -18,12 +18,13 @@ The three delivery modes are:
 | B: Supported builds | Produce an OpenWrt image for an exact supported target with selected packages and overlays. | After configuration workflows work. Builds remain separate artifacts. |
 | C: OEM feasibility | Inspect imported proprietary images and investigate documented device-specific configuration routes. | Later, without blocking Mode A. Report restrictions and unsupported features. |
 
-The firmware library starts with local imports. Full firmware acquisition remains an optional, separately validated adapter capability. A configuration snapshot must never be presented as a firmware dump. Firmware installation is outside this phase plan; generated images require separately verified installation guidance. Generic flashing, signature bypass, SIM unlocking, and IMEI modification are outside the supplied scope.
+The firmware library starts with local imports. The owner's Phase 7 requirements explicitly retain official acquisition, supported physical extraction, firmware customization, rebuilding, qualified installation, verification and recovery as permanent project goals. A configuration snapshot must never be presented as a firmware dump. Phase 7 remains inspection-only while the dedicated executable engines and device-specific gates are pending. See the proposed [firmware pipeline amendment](docs/FIRMWARE_PIPELINE_ROADMAP.md), which adds explicit acquisition/extraction and installation milestones without renumbering existing phases; placement is subject to owner approval. Generic unsupported flashing, signature bypass, SIM unlocking and IMEI modification remain outside scope.
 
 ## Planning documents
 
 - [Source guideline](docs/reference/RFS_DEVELOPMENT_GUIDELINE.md): the supplied reference, preserved unchanged. Embedded prompts remain reference material; live user requests define execution scope.
 - [Implementation roadmap](docs/IMPLEMENTATION_ROADMAP.md): phases 0–19, dependencies, deliverables, and exit gates.
+- [Firmware pipeline amendment](docs/FIRMWARE_PIPELINE_ROADMAP.md): proposed acquisition/extraction and qualified installation gates, with existing Phases 15–17 retained.
 - [Phase status](docs/PHASE_STATUS.md): actual implementation state and remaining work against the revised requirements.
 - [Architecture](docs/ARCHITECTURE.md): current implementation, to be updated during implementation.
 - [Verification evidence](docs/VERIFICATION.md): recorded commands and results; historical results are not new verification.

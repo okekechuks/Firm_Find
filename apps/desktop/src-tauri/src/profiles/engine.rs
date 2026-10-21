@@ -344,6 +344,14 @@ fn match_profile(
             Purpose::Identity,
         ),
     ];
+    if p.inspection_only {
+        rules.retain(|(attribute, _, _)| {
+            !matches!(
+                attribute,
+                Attribute::Manufacturer | Attribute::HardwareRevision
+            )
+        });
+    }
     rules.extend(
         p.match_rules
             .iter()
@@ -489,7 +497,11 @@ fn match_profile(
         reasons.push("Observation, experimental and imported profiles cannot grant authoritative capability support.".into());
     }
     if confidence == MatchConfidence::Verified {
-        reasons.push("Fresh verified identity, exact hardware revision and constrained firmware match the curated profile.".into());
+        reasons.push(if p.inspection_only {
+            "Authenticated model, board/build identity and exact OS release match the inspection-only profile. Hardware revision and feature support remain unknown."
+        } else {
+            "Fresh verified identity, exact hardware revision and constrained firmware match the curated profile."
+        }.into());
     }
     CandidateMatch {
         profile_id: p.profile_id.clone(),

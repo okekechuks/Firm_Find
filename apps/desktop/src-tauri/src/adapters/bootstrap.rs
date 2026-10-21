@@ -137,6 +137,8 @@ fn authorize_initial(
     // A current, linked Windows interface is required even when router identity is unknown.
     let virtual_target = registry.simulation_target(ctx, b);
     if !virtual_target
+        && !registry.openwrt_lab_target(ctx, b)
+        && !registry.selected_remote_target(ctx, b)
         && !ctx
             .device
             .networks
@@ -147,6 +149,26 @@ fn authorize_initial(
             AdapterErrorCode::EndpointUntrusted,
             "Selected interface is absent, down or virtual.",
         ));
+    }
+    // Unknown OpenWrt identity may authorize exactly one pinned authentication/board query.
+    // Empty profile constraints never authorize an established read. The authenticated result
+    // is evaluated by the existing engine before a separate read approval can be issued.
+    if identity_only_binding(b) {
+        let descriptor = registry.adapter(&b.adapter_id)?.descriptor();
+        if descriptor.implementation_status != AdapterImplementationStatus::BuiltIn
+            || descriptor.version != b.adapter_version
+            || descriptor.authentication != AuthenticationMethod::SshKey
+            || !descriptor
+                .operations
+                .contains(&AdapterOperation::AuthorizedIdentityProbe)
+            || b.simulated
+        {
+            return Err(failure(
+                AdapterErrorCode::AdapterNotCompatible,
+                "Identity-only bootstrap requires the implemented pinned OpenWrt connector.",
+            ));
+        }
+        return Ok(());
     }
     let profile = ctx
         .profiles
@@ -246,6 +268,14 @@ fn authorize_initial(
     Ok(())
 }
 
+pub(super) fn identity_only_binding(binding: &SessionBinding) -> bool {
+    binding.adapter_id == "openwrt-readonly-contract"
+        && !binding.simulated
+        && binding.profile_id.is_empty()
+        && binding.profile_version.is_empty()
+        && binding.profile_hash.is_empty()
+}
+
 pub(super) struct BootstrapEvidence {
     device: crate::discovery::Device,
     initial_digest: String,
@@ -300,10 +330,14 @@ pub(super) fn verify_handshake(
         (Attribute::FirmwareVersion, &identity.firmware_version),
         (Attribute::ManagementIdentity, &identity.management_identity),
     ];
-    if fields
-        .iter()
-        .any(|(_, v)| v.trim().is_empty() || v.len() > 256 || v.chars().any(char::is_control))
-        || ctx.profile.evidence.len() > 250
+    let identity_only = identity_only_binding(b);
+    if fields.iter().any(|(a, v)| {
+        (v.trim().is_empty()
+            && !(identity_only
+                && matches!(a, Attribute::Manufacturer | Attribute::HardwareRevision)))
+            || v.len() > 256
+            || v.chars().any(char::is_control)
+    }) || ctx.profile.evidence.len() > 250
     {
         return Err(failure(
             AdapterErrorCode::IdentityUnverified,
@@ -312,6 +346,9 @@ pub(super) fn verify_handshake(
     }
     let mut evidence = ctx.profile.evidence.clone();
     for (attribute, value) in fields {
+        if value.is_empty() {
+            continue;
+        }
         evidence.push(EvidenceRecord {
             id: format!("handshake-{}-{attribute:?}", b.adapter_id),
             subject_id: b.device_id.clone(),
@@ -330,13 +367,33 @@ pub(super) fn verify_handshake(
             interface_id: Some(b.interface_id.clone()),
             endpoint: Some(b.endpoint.clone()),
             reference: None,
-            hardware_applicability: Some(identity.hardware_revision.clone()),
+            hardware_applicability: (!identity.hardware_revision.is_empty())
+                .then(|| identity.hardware_revision.clone()),
             firmware_applicability: Some(identity.firmware_version.clone()),
             conflicts: vec![],
             stale: false,
         });
     }
     let report = profiles::evaluate(ctx.profiles, ctx.device, evidence, ctx.now, ctx.revision);
+    if identity_only {
+        if !identity.firmware_family.eq_ignore_ascii_case("OpenWrt")
+            || matches!(
+                report.confidence,
+                MatchConfidence::Ambiguous | MatchConfidence::Conflicting
+            )
+            || !report.conflicts.is_empty()
+        {
+            return Err(failure(
+                AdapterErrorCode::IdentityConflict,
+                "Authenticated OpenWrt identity is conflicting or ambiguous.",
+            ));
+        }
+        return Ok(BootstrapEvidence {
+            device: ctx.device.clone(),
+            initial_digest: ctx.profile.input_digest.clone(),
+            report,
+        });
+    }
     if report.confidence != MatchConfidence::Verified
         || report.selected_profile.as_deref() != Some(&b.profile_id)
         || report.profile_version.as_deref() != Some(&b.profile_version)

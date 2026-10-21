@@ -22,6 +22,8 @@ The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROAD
 
 Phase 6 adds an explicitly isolated **Simulation Mode** for a fictional router. Run `npm.cmd run dev:simulator`, then use Connected Devices to start the virtual lab. You can inspect DNS, Wi-Fi, APN and USSD, preview and test virtual DNS changes, and practice recovery from modeled failures. Virtual changes never affect connected hardware. Simulator settings reset when the app restarts. See [simulator verification](docs/PHASE_6_VERIFICATION.md) for current test status.
 
+**Phase 7 adds a secure OpenWrt identity check and an inspection window.** It requires a router already running OpenWrt, existing key access and an independently checked server fingerprint. Configuration inspection and firmware-feasibility screens passed tests against a genuine OpenWrt virtual machine. Physical router support is still pending: the normal app cannot read settings from an unqualified device, and a regular proprietary MiFi does not qualify. Feasibility results explain possible firmware routes and missing requirements; they do not extract, rebuild or install firmware. See [Phase 7 results](docs/PHASE_7_VERIFICATION.md).
+
 ## What OBTAINER aims to do
 
 - Find connected devices and explain what is known about their identity and compatibility.
@@ -33,7 +35,7 @@ Phase 6 adds an explicitly isolated **Simulation Mode** for a fictional router. 
 - Preview changes, save the previous configuration, verify results, and restore settings where supported.
 - Keep firmware files and their history; later inspect proprietary files or build for explicitly supported OpenWrt devices.
 
-Discovery, compatibility review and local file storage are available now. Reading and changing device settings, firmware extraction and installation remain future goals. Device changes will require verified support and a safe recovery path.
+Discovery, compatibility review, local file storage and approved OpenWrt identity checks are available now. Physical settings access still needs a qualified device profile; changing settings, firmware extraction and installation remain future goals. Device changes will require verified support and a safe recovery path.
 
 ## Project structure
 

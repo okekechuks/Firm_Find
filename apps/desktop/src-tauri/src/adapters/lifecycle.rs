@@ -51,6 +51,9 @@ impl Cancellation {
     pub fn is_cancelled(&self) -> bool {
         self.0.load(Ordering::Acquire)
     }
+    pub(crate) fn same_instance(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
 }
 #[derive(Clone, Copy, Debug)]
 pub enum Stage {
@@ -146,6 +149,7 @@ struct ManagedSession {
     _slot: Slot,
     authentication: AuthenticationState,
     bootstrap: Option<super::bootstrap::BootstrapEvidence>,
+    identity: Option<AdapterIdentity>,
 }
 impl Drop for ManagedSession {
     fn drop(&mut self) {
@@ -269,6 +273,7 @@ impl SessionManager {
             _slot: slot,
             authentication: authentication.state(),
             bootstrap: None,
+            identity: None,
         };
         if initial
             && managed.connection.endpoint_trust()
@@ -298,7 +303,22 @@ impl SessionManager {
                 profile: &verified.report,
                 ..*ctx
             };
-            validate_identity(&verified_ctx, &binding, &identity)?;
+            if super::bootstrap::identity_only_binding(&binding) {
+                if verified.report.confidence == crate::profiles::MatchConfidence::Verified {
+                    binding.profile_id =
+                        verified.report.selected_profile.clone().unwrap_or_default();
+                    binding.profile_version =
+                        verified.report.profile_version.clone().unwrap_or_default();
+                    binding.profile_hash = verified
+                        .report
+                        .profile_content_hash
+                        .clone()
+                        .unwrap_or_default();
+                    validate_identity(&verified_ctx, &binding, &identity)?;
+                }
+            } else {
+                validate_identity(&verified_ctx, &binding, &identity)?;
+            }
             binding.evidence_digest = verified.report.input_digest.clone();
             binding.expires_at = binding.expires_at.min(verified.report.expires_at);
             managed.binding = binding.clone();
@@ -306,6 +326,7 @@ impl SessionManager {
         } else {
             validate_identity(ctx, &binding, &identity)?;
         }
+        managed.identity = Some(identity);
         // Cancellation after handshake still destroys the new resource instead of publishing it.
         control.checkpoint()?;
         let id = self.next.fetch_add(1, Ordering::AcqRel) + 1;
@@ -323,11 +344,59 @@ impl SessionManager {
         sessions.insert(id, managed);
         Ok(SessionStatus {
             id: id.to_string(),
-            state: ConnectionState::ConnectedReadOnly,
+            state: if binding.profile_id.is_empty() {
+                ConnectionState::AuthorizationRequired
+            } else {
+                ConnectionState::ConnectedReadOnly
+            },
             simulated: binding.simulated,
             expires_at: binding.expires_at,
             authentication: AuthenticationState::Authenticated,
         })
+    }
+    /// Return only the already authenticated identity and evaluation; performs no remote read.
+    pub fn authenticated_snapshot(
+        &self,
+        id: u64,
+    ) -> Result<(AdapterIdentity, crate::profiles::CompatibilityReport), AdapterError> {
+        let sessions = self
+            .sessions
+            .lock()
+            .map_err(|_| AdapterError::internal("session lock"))?;
+        let session = sessions
+            .get(&id)
+            .ok_or_else(|| failure(AdapterErrorCode::SessionExpired, "Session is absent."))?;
+        let evidence = session.bootstrap.as_ref().ok_or_else(|| {
+            failure(
+                AdapterErrorCode::IdentityUnverified,
+                "Bootstrap evidence is absent.",
+            )
+        })?;
+        Ok((
+            session
+                .identity
+                .clone()
+                .ok_or_else(|| AdapterError::internal("identity"))?,
+            evidence.report.clone(),
+        ))
+    }
+    pub fn inspect_openwrt(
+        &self,
+        id: u64,
+        registry: &Registry,
+        ctx: &DeviceContext<'_>,
+        grant: &AuthorizationGrant,
+        control: &OperationControl,
+    ) -> Result<crate::openwrt::adapter::Inspection, AdapterError> {
+        self.run(
+            id,
+            registry,
+            ctx,
+            grant,
+            AdapterOperation::ReadConfiguration,
+            control,
+            |connection, control, _| connection.inspect_openwrt(control),
+        )
     }
     /// Separate explicit approval for established reads. A handshake receipt cannot be used here.
     pub fn confirm_session_reads(
@@ -396,8 +465,23 @@ impl SessionManager {
             None => DeviceContext { ..*ctx },
         };
         authorize(registry, &effective, &managed.binding, op, grant)?;
-        let value = action(managed.connection.as_mut(), control, &effective)?;
-        control.checkpoint()?;
+        let started = Instant::now();
+        let expiry = managed
+            .binding
+            .expires_at
+            .min(grant.expires_at())
+            .min(effective.profile.expires_at);
+        let bounded = bounded_read(control, expiry, ctx.now);
+        bounded.checkpoint()?;
+        let value = action(managed.connection.as_mut(), &bounded, &effective)?;
+        bounded.checkpoint()?;
+        let fresh = DeviceContext {
+            now: ctx
+                .now
+                .saturating_add(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX)),
+            ..effective
+        };
+        authorize(registry, &fresh, &managed.binding, op, grant)?;
         let mut sessions = self
             .sessions
             .lock()
@@ -659,6 +743,14 @@ impl SessionManager {
         }
     }
 }
+fn bounded_read(control: &OperationControl, expiry: u64, now: u64) -> OperationControl {
+    OperationControl {
+        deadline: control
+            .deadline
+            .min(Instant::now() + Duration::from_millis(expiry.saturating_sub(now))),
+        ..control.clone()
+    }
+}
 fn validate_identity(
     ctx: &DeviceContext<'_>,
     binding: &SessionBinding,
@@ -691,7 +783,7 @@ fn validate_identity_fields(
             )
         })?;
     let p = &profile.profile;
-    if !p.manufacturer.eq_ignore_ascii_case(&identity.manufacturer)
+    if (!p.inspection_only && !p.manufacturer.eq_ignore_ascii_case(&identity.manufacturer))
         || !p
             .firmware_families
             .iter()
@@ -700,10 +792,11 @@ fn validate_identity_fields(
             || p.model_aliases
                 .iter()
                 .any(|s| s.eq_ignore_ascii_case(&identity.model)))
-        || !p
-            .hardware_revisions
-            .iter()
-            .any(|s| s.eq_ignore_ascii_case(&identity.hardware_revision))
+        || (!p.inspection_only
+            && !p
+                .hardware_revisions
+                .iter()
+                .any(|s| s.eq_ignore_ascii_case(&identity.hardware_revision)))
         || crate::profiles::version_allowed(
             &identity.firmware_version,
             &p.firmware_version_constraints,
@@ -732,4 +825,34 @@ pub fn unsupported(operation: AdapterOperation) -> AdapterError {
         false,
         "Review adapter capabilities.",
     )
+}
+#[cfg(test)]
+mod read_deadline_tests {
+    use super::*;
+    #[test]
+    fn established_reads_use_earliest_authority_expiry_and_never_extend_caller_budget() {
+        let control = OperationControl::new(
+            Cancellation::default(),
+            Stage::Read,
+            AdapterOperation::ReadConfiguration,
+            Duration::from_secs(60),
+        )
+        .unwrap();
+        let start = Instant::now();
+        let deadline = bounded_read(&control, 1200, 1000).deadline;
+        assert!(deadline <= start + Duration::from_millis(201));
+        let expired = bounded_read(&control, 1000, 1000);
+        assert!(expired.checkpoint().is_err());
+        let shorter = OperationControl::new(
+            Cancellation::default(),
+            Stage::Read,
+            AdapterOperation::ReadConfiguration,
+            Duration::from_millis(1),
+        )
+        .unwrap();
+        assert_eq!(
+            bounded_read(&shorter, 10_000, 1000).deadline,
+            shorter.deadline
+        );
+    }
 }

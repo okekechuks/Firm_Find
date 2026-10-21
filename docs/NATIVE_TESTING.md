@@ -78,3 +78,25 @@ After the normal and dedicated native releases are built, run `npm.cmd run test:
 No extraction or build adapter is simulated. The extraction screenshot explicitly shows the unavailable state. A connected MG11 is optional for GUI acceptance; add the separate `--phase3` hardware regression only when the device is available. Normal-data probes, marker/path/ownership checks, failure retention and guarded cleanup remain mandatory.
 
 `npm.cmd run test:foundation -- --gui-preview --gui --phase4` runs a development-only diagnostic with generated files. HMR verification reloads the restored backend module graph after fault injection, then proves a component edit and restoration without another page reload or changed app/Vite PIDs. Do not run builds/tests or edit watched frontend/Rust files while native verification is active.
+
+## Genuine OpenWrt OS qualification
+
+Phase 7 adds `npm.cmd run test:openwrt`, retaining the GUI, adapter, simulator and generated-file regressions. It requires the existing QEMU/Ubuntu WSL lab described in [Phase 7 verification](PHASE_7_VERIFICATION.md), both Windows executables already built, and the checksum-verified image under ignored `.tools/phase7-vm/`. This is a genuine OpenWrt OS test, not physical hardware qualification.
+
+Keep the VM launcher running in an owned foreground session:
+
+```powershell
+wsl -d Ubuntu -- python3 -u /mnt/c/Users/chuka/OneDrive/Documents/Firm_Find/scripts/openwrt-test-vm.py serve
+```
+
+The script starts a fresh disposable overlay, or resumes the retained immutable base after verifying its checksum. It refuses a duplicate VM. Generated credentials apply only to that guest. The fixed lab endpoint is loopback `127.0.0.1:22270`; restricted QEMU networking cannot contact physical routers. Independent trust comes from the guest serial-console fingerprint in `console-identity.log`, not the network observation.
+
+The dedicated native executable alone accepts `--openwrt-lab`, with a valid isolated run. Normal production rejects that flag before opening data. The exact VM OS profile stays in memory and does not become physical support in SQLite. The harness drives the native key picker, separate authentication/read approvals, real SSH UCI/ubus inspection, firmware feasibility and actual GUI Cancel/retry. No caller-selected host, private-key path or command can be supplied to simulation IPC.
+
+After all checks, stop only the owned guest:
+
+```powershell
+wsl -d Ubuntu -- python3 /mnt/c/Users/chuka/OneDrive/Documents/Firm_Find/scripts/openwrt-test-vm.py stop
+```
+
+Shutdown checks the recorded process command line, exact owned disk and serial socket. VM images, failed logs and verification evidence are retained. No normal application data is cleaned.

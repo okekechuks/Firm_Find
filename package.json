@@ -9,6 +9,7 @@
   "scripts": {
     "dev:simulator": "node scripts/dev-simulator.mjs",
     "test:simulator": "node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui --phase5 --phase6",
+    "test:openwrt": "node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui --phase5 --phase6 --phase7",
     "dev": "npm run dev --workspace @obtainer/desktop",
     "build": "npm run build --workspace @obtainer/desktop",
     "preview": "npm run preview --workspace @obtainer/desktop",

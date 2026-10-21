@@ -13,6 +13,8 @@ pub struct Registry {
     adapters: BTreeMap<String, (AdapterDescriptor, Arc<dyn DeviceAdapter>)>,
     allow_test: bool,
     simulation: Option<crate::simulator::Authority>,
+    openwrt_lab: bool,
+    selected_remote: Option<(String, String)>,
 }
 fn valid_id(id: &str) -> bool {
     !id.is_empty()
@@ -39,8 +41,51 @@ impl Registry {
     }
     pub fn production() -> Result<Self, AdapterError> {
         let mut r = Self::default();
-        r.register(OpenWrtContractAdapter)?;
+        r.register(crate::openwrt::adapter::OpenWrtAdapter::default())?;
         Ok(r)
+    }
+    pub(crate) fn for_openwrt(
+        adapter: crate::openwrt::adapter::OpenWrtAdapter,
+        lab: bool,
+        remote: Option<(String, String)>,
+    ) -> Result<Self, AdapterError> {
+        let mut registry = Self {
+            openwrt_lab: lab,
+            selected_remote: remote,
+            ..Self::default()
+        };
+        registry.register(adapter)?;
+        Ok(registry)
+    }
+    pub(crate) fn selected_remote_target(
+        &self,
+        ctx: &DeviceContext<'_>,
+        binding: &SessionBinding,
+    ) -> bool {
+        self.selected_remote
+            .as_ref()
+            .is_some_and(|(id, interface)| {
+                id == &ctx.device.id
+                    && id == &binding.device_id
+                    && interface == &binding.interface_id
+            })
+            && ctx.device.networks.is_empty()
+            && ctx.device.interfaces.is_empty()
+            && binding.adapter_id == "openwrt-readonly-contract"
+            && !binding.simulated
+    }
+    pub(crate) fn openwrt_lab_target(
+        &self,
+        ctx: &DeviceContext<'_>,
+        binding: &SessionBinding,
+    ) -> bool {
+        self.openwrt_lab
+            && cfg!(feature = "native-test-profile")
+            && !binding.simulated
+            && binding.device_id == crate::openwrt::runtime::LAB_TARGET
+            && ctx.device.id == binding.device_id
+            && binding.interface_id == "owned-openwrt-qemu-loopback"
+            && binding.endpoint == "ssh://127.0.0.1:22270"
     }
     #[cfg(test)]
     pub(crate) fn test_registry() -> Self {
@@ -380,16 +425,5 @@ fn match_descriptor(d: &AdapterDescriptor, ctx: &DeviceContext<'_>) -> AdapterMa
         missing_evidence: missing,
         capabilities,
         features,
-    }
-}
-struct OpenWrtContractAdapter;
-impl DeviceAdapter for OpenWrtContractAdapter {
-    fn descriptor(&self) -> AdapterDescriptor {
-        AdapterDescriptor{id:"openwrt-readonly-contract".into(),name:"OpenWrt read-only contract".into(),version:"0.1.0".into(),
-            implementation_status:AdapterImplementationStatus::Declared,transports:vec![Transport::Network],authentication:AuthenticationMethod::SshKey,
-            operations:vec![AdapterOperation::AuthorizedIdentityProbe,AdapterOperation::InspectCapabilities,AdapterOperation::ReadConfiguration],
-            dependencies:vec!["Reviewed authenticated OpenWrt transport (Phase 7)".into()],
-            limitations:vec!["No physical handshake, configuration access, extraction or device changes in Phase 5.".into()],
-            profile_ids:vec![],firmware_families:vec!["OpenWrt".into()]}
     }
 }

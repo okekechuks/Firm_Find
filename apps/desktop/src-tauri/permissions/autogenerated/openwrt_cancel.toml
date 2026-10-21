@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-openwrt-cancel"
+description = "Enables the openwrt_cancel command without any pre-configured scope."
+commands.allow = ["openwrt_cancel"]
+
+[[permission]]
+identifier = "deny-openwrt-cancel"
+description = "Denies the openwrt_cancel command without any pre-configured scope."
+commands.deny = ["openwrt_cancel"]

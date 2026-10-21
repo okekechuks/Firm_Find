@@ -118,6 +118,104 @@ fn clean(manager: &SessionManager, mock: &MockAdapter) {
 }
 const SECRET: &[u8] = b"test-only-credential";
 
+struct UnknownOpenWrt;
+impl DeviceAdapter for UnknownOpenWrt {
+    fn descriptor(&self) -> AdapterDescriptor {
+        crate::openwrt::adapter::OpenWrtAdapter::default().descriptor()
+    }
+    fn connector(&self) -> Option<&dyn ReadOnlyConnectionAdapter> {
+        Some(self)
+    }
+}
+impl ReadOnlyConnectionAdapter for UnknownOpenWrt {
+    fn connect(
+        &self,
+        binding: &SessionBinding,
+        _: &Secret,
+        control: &OperationControl,
+    ) -> Result<Box<dyn AdapterConnection>, AdapterError> {
+        control.checkpoint()?;
+        Ok(Box::new(UnknownOpenWrtConnection(binding.clone())))
+    }
+}
+struct UnknownOpenWrtConnection(SessionBinding);
+impl AdapterConnection for UnknownOpenWrtConnection {
+    fn endpoint_trust(&self) -> Option<EndpointTrust> {
+        Some(EndpointTrust {
+            endpoint: self.0.endpoint.clone(),
+            interface_id: self.0.interface_id.clone(),
+            endpoint_identity: self.0.endpoint_identity.clone(),
+            simulated: false,
+        })
+    }
+    fn read_identity(
+        &mut self,
+        control: &OperationControl,
+    ) -> Result<AdapterIdentity, AdapterError> {
+        control.checkpoint()?;
+        Ok(AdapterIdentity {
+            manufacturer: String::new(),
+            model: "Previously unknown controlled OpenWrt board".into(),
+            hardware_revision: String::new(),
+            firmware_version: "25.12.6".into(),
+            firmware_family: "OpenWrt".into(),
+            management_identity: "unknown-board|x86/64|controlled-build".into(),
+            operating_system: "OpenWrt".into(),
+            modem_identity: None,
+            simulated: false,
+        })
+    }
+    fn probe_capabilities(
+        &mut self,
+        _: &OperationControl,
+    ) -> Result<Vec<AdapterCapability>, AdapterError> {
+        Err(unsupported(AdapterOperation::InspectCapabilities))
+    }
+    fn close(&mut self, _: &OperationControl) -> Result<(), AdapterError> {
+        Ok(())
+    }
+}
+#[test]
+fn identity_only_openwrt_cold_start_needs_no_preknown_profile_or_invented_hardware() {
+    let mut f = Cold::new(&MockAdapter::new("cold"));
+    f.registry = Registry::test_registry();
+    f.registry.register(UnknownOpenWrt).unwrap();
+    f.binding.adapter_id = "openwrt-readonly-contract".into();
+    f.binding.adapter_version = "0.2.0".into();
+    f.binding.profile_id.clear();
+    f.binding.profile_version.clear();
+    f.binding.profile_hash.clear();
+    f.binding.simulated = false;
+    let manager = SessionManager::default();
+    let session = f
+        .connect(&manager, &f.approve(), SECRET, &control())
+        .unwrap();
+    assert_eq!(session.state, ConnectionState::AuthorizationRequired);
+    let id = session.id.parse().unwrap();
+    let (identity, report) = manager.authenticated_snapshot(id).unwrap();
+    assert!(identity.manufacturer.is_empty());
+    assert!(identity.hardware_revision.is_empty());
+    assert!(report.selected_profile.is_none());
+    assert!(!report.evidence.iter().any(|e| matches!(
+        e.attribute,
+        Attribute::Manufacturer | Attribute::HardwareRevision
+    )));
+    assert!(report
+        .evidence
+        .iter()
+        .any(|e| e.source == EvidenceOrigin::AuthenticatedManagement));
+    assert!(manager
+        .confirm_session_reads(
+            id,
+            &f.registry,
+            &f.ctx(),
+            vec![AdapterOperation::ReadConfiguration]
+        )
+        .is_err());
+    manager.disconnect(id).unwrap();
+    assert_eq!(manager.active_count(), 0);
+}
+
 #[test]
 fn cold_start_requires_live_selected_interface_and_matching_provenance() {
     let mock = MockAdapter::new("cold");

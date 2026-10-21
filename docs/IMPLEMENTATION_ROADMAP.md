@@ -4,6 +4,8 @@ Revision: 15 October 2026. This roadmap uses the new guideline's phase numbers. 
 
 Planning deliverables do not implement the features below. Each phase closes only after its relevant frontend, Rust backend, persistence, tests, and runtime evidence are connected.
 
+The owner's Phase 7 firmware objective is preserved in the proposed [firmware pipeline amendment](FIRMWARE_PIPELINE_ROADMAP.md): exact compatible acquisition, supported physical extraction, analysis/customization, rebuilding, qualified installation, verification and recovery remain permanent product goals. Explicit acquisition/extraction and installation milestones are proposed subject to owner approval, without renumbering phases 0–19. Existing accepted evidence remains unchanged.
+
 ## Phase 0 — Repository and environment audit
 
 **Deliver:** Evidence-backed source inventory, Windows environment versions, Git/user-change protection, executed checks, native launch/IPC/persistence evidence, data-location inventory, naming assessment, migration recommendation, and `PHASE_0_AUDIT.md`. Retain the existing root npm/Cargo workspaces and `apps/desktop/` layout unless a verified need justifies a further move.
@@ -62,7 +64,7 @@ Planning deliverables do not implement the features below. Each phase closes onl
 
 **Depends on:** 3, 5–6; requires an explicitly selected compatible device for hardware acceptance.
 
-**Deliver:** Research current official interfaces; select a narrow firmware/version target. Implement authorized SSH or authenticated RPC, trusted endpoint identity, protected credentials, firmware/hardware identification, configuration reads, and per-feature probing. Read cellular/modem information only where the actual device exposes it.
+**Deliver:** Research current official interfaces; select a narrow firmware/version target. Implement authorized SSH or authenticated RPC, trusted endpoint identity, protected credentials, firmware/hardware identification, configuration reads, and per-feature probing. Read cellular/modem information only where the actual device exposes it. Produce evidence-based firmware acquisition/extraction, image/layout, build, installation and recovery feasibility; metadata must not masquerade as binary artifacts or executable support. See [firmware feasibility](PHASE_7_FIRMWARE_FEASIBILITY.md) and the proposed [pipeline gates](FIRMWARE_PIPELINE_ROADMAP.md).
 
 **Exit gate:** Recorded inspection on the selected device, authentication/host-identity failure coverage, and evidence that no persistent configuration changed. Unavailable features remain disabled. If hardware is absent, report hardware acceptance pending and continue phase 8 against the simulator.
 
@@ -128,7 +130,7 @@ Planning deliverables do not implement the features below. Each phase closes onl
 
 **Deliver:** Bounded official Image Builder/build-system integration for exact targets, hardware revisions, release versions, packages, and overlays. Retain logs, tool/input provenance, manifests, hashes, and separate output artifacts in the library.
 
-**Exit gate:** A known supported target produces a validated, traceable artifact. Unsupported revisions and incompatible packages are rejected. Cancellation/resource limits and secret handling are tested. Image generation does not establish installation safety; no automatic flashing is introduced.
+**Exit gate:** A known supported target produces a validated, traceable artifact. Unsupported revisions and incompatible packages are rejected. Cancellation/resource limits and secret handling are tested. Image generation does not establish installation safety; qualified installation remains a separate proposed [firmware pipeline milestone](FIRMWARE_PIPELINE_ROADMAP.md), requiring exact compatibility, protected backups, approval, post-restart verification and recovery evidence.
 
 ## Phase 16 — Proprietary firmware feasibility
 
@@ -142,7 +144,7 @@ Planning deliverables do not implement the features below. Each phase closes onl
 
 **Depends on:** Relevant implemented features; accumulate evidence from phase 7 onward.
 
-**Deliver:** Reproducible matrix by model, revision, firmware, management protocol, modem/driver, and individual feature. Record reads, backup, authorized writes, persistence, interruption, verification, restoration, and recovery results.
+**Deliver:** Reproducible matrix by model, revision, firmware, management protocol, modem/driver, and individual feature. Record reads, backup, authorized writes, persistence, interruption, verification, restoration, and recovery results. Include firmware acquisition/extraction coverage, build compatibility and qualified installation/recovery evidence from the proposed [pipeline amendment](FIRMWARE_PIPELINE_ROADMAP.md); no simulation result substitutes for physical qualification.
 
 **Exit gate:** Every advertised supported combination has feature-specific evidence. Untested combinations stay unknown or restricted. Hardware absence blocks only its validation; simulator results do not count as physical-device proof. At least one real OpenWrt configuration path and a compatible router/modem USSD combination satisfy the guideline's full-project gate.
 

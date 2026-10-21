@@ -1,0 +1,92 @@
+OBTAINER Phase 7 final evidence — 20 October 2026
+
+Software PASS. Physical hardware PENDING. Phase 8 READY FOR SIMULATOR ONLY.
+No Phase 8 implementation. No physical router contacted or configured.
+
+Genuine target: OpenWrt 25.12.6 r33311-981c978eff x86/64, QEMU TCG under Ubuntu 26.04 WSL.
+Model: QEMU Ubuntu 26.04 PC (i440FX + PIIX, 1996)
+Board: qemu-ubuntu-26-04-pc-i440fx-piix-1996
+Image archive published/computed SHA256:
+f8538784d0288b4133a99ac2a68443e4922ffde6343e80df56a5882364b9d499
+Windows transport: Git OpenSSH 10.2p1, existing guest-only key, strict per-execution Ed25519 pin.
+Trust independently read from owned guest serial console; network observation alone grants no trust.
+Guest has no physical radio/modem. Manufacturer/hardware revision remain unknown.
+
+Final commands (repository root; Rust wrapper with CARGO_INCREMENTAL=0):
+node node_modules/typescript/bin/tsc --project apps/desktop/tsconfig.json --noEmit
+  exit 0
+npm.cmd run lint
+  exit 0
+npm.cmd test
+  exit 0; 130 tests / 15 files
+npm.cmd run build
+  exit 0; 1628 Vite modules
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all -- --check
+  exit 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings
+  exit 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings
+  exit 0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --lib --locked --offline
+  exit 0; 192 passed, 1 genuine-environment test ignored
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --lib --features native-test-profile --locked --offline
+  exit 0; 193 passed, 2 genuine-environment tests ignored
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --lib genuine_openwrt_ --features native-test-profile --locked --offline -- --ignored --nocapture
+  exit 0; 2 passed, 193 filtered; actual Windows SSH and full bootstrap/separate approval/inspection
+npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline
+  exit 0; optimized ordinary exe, 1m 45s native compilation
+npm.cmd run build:native-tests
+  exit 0; optimized dedicated native-test exe, 1m 24s; ordinary executable hash unchanged
+npm.cmd run test:openwrt
+  exit 0; 137 native checkpoints; console issues 0
+  expands: node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui --phase5 --phase6 --phase7
+py scripts/probe-native-isolation.py .tools/phase7-normal-after.json .tools/phase7-normal-before.json
+  exit 0; normal DB/WAL/rows/settings/IDs/vault/other files exactly unchanged
+wsl -d Ubuntu -- python3 /mnt/c/Users/chuka/OneDrive/Documents/Firm_Find/scripts/openwrt-test-vm.py stop
+  exit 0; owned foreground VM subsequently exited 0; no owned listeners remain on 22270/1420/9223
+git diff --check
+  exit 0
+
+Native commands and 137 actual checkpoint records:
+docs/evidence/phase-7-native-2026-10-20.json
+Genuine authenticated inspection:
+docs/evidence/phase-7-openwrt-inspection-2026-10-20.json
+Nine native OpenWrt screenshots:
+docs/images/phase7-6a257c665117915e94683c4fb652450e/
+Forty-eight retained simulator regression screenshots:
+docs/images/phase6-6a257c665117915e94683c4fb652450e/
+Raw owned evidence:
+.tools/foundation/2026-10-20T21-00-28.236Z/
+
+Native dev/recovery/release: native window, React, IPC, keypicker, separate pin/auth/read approvals,
+genuine UCI/ubus queries, four feature observations, non-executable firmware feasibility, GUI Cancel/retry.
+All six pages/HMR/help/resize/themes/settings, adapter denies, simulator state/fault/cleanup,
+generated-binary imports/verification/jobs/backups/restores/removal and isolated storage restart passed.
+Deliberately interrupted middle dev launch exit 1 is expected; recovery and other launches exit 0.
+All owned app/WebView/Vite processes stopped; guarded isolated run cleanup succeeded.
+
+Normal schema 5; integrity ok; FK violations 0.
+Rows SHA256: 45d5a9f68b114512e6067327586198513af83d8403faea8cf29a3f399791e868
+Settings SHA256: b53a94def78900fd485d168459d6342e8ad0eab83c4164f7b07f74630e423b99
+Counts: 181 devices, 1 saved router, 2 profiles, 2 user-reported observations, 1 artifact,
+20 imports, 35 jobs, 31 checks, 226 audit events.
+Saved MG11 opaque software remains user-reported and unverified. No lab profile persisted normally.
+Production SHA256: B253C46444B575CAD002EF63BB22026CE9C70DC859BD357C85362D84A67D10FE
+Native-test SHA256: 2509EEBC4A97BD73C57DE801AEF62B8037ECE376FB679B9BE505225D91A95CEC
+
+Initial failures are retained and explained in docs/PHASE_7_VERIFICATION.md:
+Windows 9.5 keyscan negotiation; guest br-lan startup; SSH path quoting; background WSL lifetime;
+obsolete declared-adapter assertions; strict lab profile source/origin/sorting; timeout-test category;
+rustfmt and Clippy test-module ordering. Final suites passed after these corrections.
+
+Boundary: no production physically qualified schema-2 read target yet. Identity-only approved handshake is available;
+unqualified device configuration reads deny. Proprietary regular MiFi remains unsupported.
+No extraction, customized image build, installation, recovery, physical write or live USSD occurred.
+
+21 October export-tooling follow-up:
+node scripts/generate-profile-schema.mjs initially exited 1: Unsupported contract kind ZodEffects.
+Corrected generator now emits separate schema-v1.json/schema-v2.json; command exit 0.
+Schema 1 byte-identical SHA256: A025695108C0EABAF8EAEC4FE187D698FAE63A7F93FE5B758BF7B24E500BFE63.
+Output assertions passed for version 1 exclusion, version 2 required inspectionOnly=true,
+UNKNOWN direct/sub-feature assessments and null verified ranges. npm.cmd run lint exit 0.
+Only tooling/docs changed after native qualification; application source and binaries unchanged.

@@ -1,6 +1,7 @@
 import { verifyGUI, verifyGUIRestart, configureGUIEvidence } from "./verify-gui.mjs";
 import { verifyAdapters } from "./verify-adapters.mjs";
 import { verifySimulator } from "./verify-simulator.mjs";
+import { verifyOpenWrt } from "./verify-openwrt.mjs";
 // Exercises the actual Windows Tauri dev command and release executable through native WebView2.
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
@@ -65,7 +66,10 @@ async function clean() {
 }
 function start(kind) {
   let command = kind === 'dev' ? 'npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline' : '.\\target\\release\\obtainer-native-test.exe';
-  if(process.argv.includes('--phase6'))command+=kind==='dev'?' -- --simulator':' --simulator';
+  const appFlags=[];
+  if(process.argv.includes('--phase6'))appFlags.push('--simulator');
+  if(process.argv.includes('--phase7'))appFlags.push('--openwrt-lab');
+  if(appFlags.length)command+=(kind==='dev'?' -- ':' ')+appFlags.join(' ');
   commands.push({ command, kind });
   const process_ = spawn('powershell.exe', ['-NoProfile', '-Command', command], {
     cwd: root, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
@@ -194,6 +198,7 @@ async function verify(label, extended = false) {
   record(label + ': discovery, three refreshes, unique IDs, unknown feature support', { records: discovery.devices.length, watching: discovery.watching, warnings: discovery.warnings });
   if(process.argv.includes('--phase5'))await verifyAdapters(client,{label,evidence,record});
   if(process.argv.includes('--phase6'))await verifySimulator(client,{label,evidence,record});
+  if(process.argv.includes('--phase7'))await verifyOpenWrt(client,{label,evidence,record,pid:state.apps[0].id});
   if (process.argv.includes('--phase2')) {
     const index = process.argv.indexOf('--router');
     await verifyDiscovery(client, {label, evidence, record, routerAddress: index >= 0 ? process.argv[index + 1] : undefined, hotplug: process.argv.includes('--hotplug')});

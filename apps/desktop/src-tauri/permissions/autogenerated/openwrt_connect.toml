@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-openwrt-connect"
+description = "Enables the openwrt_connect command without any pre-configured scope."
+commands.allow = ["openwrt_connect"]
+
+[[permission]]
+identifier = "deny-openwrt-connect"
+description = "Denies the openwrt_connect command without any pre-configured scope."
+commands.deny = ["openwrt_connect"]

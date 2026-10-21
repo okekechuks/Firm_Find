@@ -5,6 +5,7 @@ import { CompatibilityPanel } from "./Compatibility";
 import { deviceStatus, extractionEligibility } from "../lib/device-status";
 import { LockKeyhole } from "lucide-react";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
+import { OpenWrtInspection } from "./openwrt/OpenWrtInspection";
 
 const labels = {usb: "USB", serial: "Serial", network: "Network"};
 export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCancel }: {
@@ -17,6 +18,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
 }) {
   const [draft, setDraft] = useState<RouterDraft | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
+  const [openWrtOpen, setOpenWrtOpen] = useState(false);
   const [advanced, setAdvanced] = useState(false);
   const [query, setQuery] = useState("");
   const [transport, setTransport] = useState("all");
@@ -55,6 +57,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
           {refreshing && onCancel ? <button className="secondary-button" onClick={() => void onCancel()}>Cancel refresh</button> : null}
           <button className="primary-button" onClick={() => {setDraft({address: "", interfaceId: null}); setManualOpen(true);}}>Add Router</button>
           <button className="secondary-button" onClick={() => setManualOpen(true)}>Manage saved connections</button>
+          <button className="secondary-button" onClick={() => setOpenWrtOpen(true)}>Inspect OpenWrt router</button>
         </div>
         {inventory?.cancelled ? <p role="status">Discovery cancelled or superseded. Last successful inventory retained; refresh to try again.</p> : null}
         <label className="disconnected-toggle"><input type="checkbox" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)}/>Show advanced Windows diagnostics and unrelated devices</label>
@@ -65,6 +68,7 @@ export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCa
         {infoDevice ? <DeviceDetails device={infoDevice} onClose={() => setInfoId(null)} onGateway={(address, interfaceId) => {setDraft({address, interfaceId}); setManualOpen(true); setInfoId(null);}}/> : null}
         {selected ? <CompatibilityPanel key={selected.id} deviceId={selected.id} revision={inventory?.revision ?? 0} desktop={desktop}/> : null}
         <ManualRouters devices={devices} draft={draft} open={manualOpen} onClose={() => {setDraft(null); setManualOpen(false);}} onDraftClose={() => setDraft(null)}/>
+        {openWrtOpen ? <OpenWrtInspection devices={devices} onClose={() => setOpenWrtOpen(false)}/> : null}
       </>}
       <div className="safety-note"><ShieldCheck size={17}/><span>Detection does not establish firmware access. Network checks require your action and ownership confirmation. Gateway identity and ownership remain unverified.</span></div>
     </>

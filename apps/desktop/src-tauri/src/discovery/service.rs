@@ -242,6 +242,9 @@ fn scan_and_reply(
     if let Some(adapters) = app.try_state::<crate::adapters::SessionManager>() {
         adapters.observe_discovery(snapshot);
     }
+    if let Some(openwrt) = app.try_state::<Arc<crate::openwrt::runtime::Service>>() {
+        openwrt.observe_discovery(snapshot);
+    }
     // Events contain a revision only, never hardware identifiers.
     let _ = app.emit("discovery-changed", snapshot.revision);
     for (run, reply) in replies {

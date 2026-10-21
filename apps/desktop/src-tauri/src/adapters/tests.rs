@@ -276,7 +276,7 @@ fn descriptors_validate_duplicate_ids_versions_bounds_and_production_test_isolat
         .unwrap()
         .descriptors()
         .iter()
-        .all(|d| d.implementation_status == AdapterImplementationStatus::Declared));
+        .all(|d| d.implementation_status == AdapterImplementationStatus::BuiltIn));
 }
 #[test]
 fn exact_profile_matches_without_claiming_a_management_connection() {
@@ -291,7 +291,10 @@ fn exact_profile_matches_without_claiming_a_management_connection() {
         .all(|f| !f.can_write && !f.can_read && !f.can_verify && !f.can_rollback));
     let production = Registry::production().unwrap().evaluate(&f.ctx());
     assert_eq!(production.matches[0].status, AdapterMatchStatus::Exact);
-    assert_eq!(production.connection_state, ConnectionState::Unsupported);
+    assert_eq!(
+        production.connection_state,
+        ConnectionState::AuthorizationRequired
+    );
 }
 #[test]
 fn unknown_labels_usb_and_http_success_cannot_grant_matching_authority() {

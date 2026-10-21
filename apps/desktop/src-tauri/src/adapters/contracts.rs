@@ -33,6 +33,12 @@ pub trait ReadOnlyConnectionAdapter: Send + Sync {
 }
 
 pub trait AdapterConnection: Send {
+    fn inspect_openwrt(
+        &mut self,
+        _control: &OperationControl,
+    ) -> Result<crate::openwrt::adapter::Inspection, AdapterError> {
+        Err(unsupported(AdapterOperation::ReadConfiguration))
+    }
     /// No attestation means bootstrap cannot establish a trusted session.
     fn endpoint_trust(&self) -> Option<EndpointTrust> {
         None

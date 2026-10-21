@@ -13,9 +13,10 @@ export async function verifyProfiles(client, {label, evidence, record}) {
     while (Date.now()<deadline) { if (await check()) return; await new Promise((r) => setTimeout(r,150)); }
     throw new Error(message);
   };
-  const registry=await invoke('get_profile_registry');assert.equal(registry.profiles.length,2);assert.deepEqual(registry.diagnostics,[]);
+  const registry=await invoke('get_profile_registry');assert.equal(registry.profiles.filter(p=>p.origin!=='owned_openwrt_os_lab').length,2);assert.equal(registry.profiles.filter(p=>p.origin==='owned_openwrt_os_lab').length,process.argv.includes('--phase7')?1:0);assert.deepEqual(registry.diagnostics,[]);
   const observation=registry.profiles.find((p) => p.profile.profileId === 'observed.comfi-mg11');assert.equal(observation.authoritative,false);
-  const valid=await invoke('validate_device_profile',{document:JSON.stringify(registry.profiles[1].profile)});assert.equal(valid.authoritative,false);assert.equal(valid.origin,'local_unverified');
+  const reference=registry.profiles.find(p=>p.profile.profileId==='tplink.archer-c7-v5.openwrt-23-05-5');assert(reference);
+  const valid=await invoke('validate_device_profile',{document:JSON.stringify(reference.profile)});assert.equal(valid.authoritative,false);assert.equal(valid.origin,'local_unverified');
   assert.equal(valid.profile.firmwareVersionConstraints.scheme,undefined,'Legacy numeric profile serialization changed');
   const opaque={...valid.profile,profileId:'fixture.opaque-preview',firmwareVersionConstraints:{scheme:'opaque_exact',exact:['MF69_AM802L_ZX_DD_N_241106_EU'],minInclusive:null,maxExclusive:null}};
   const preview=await invoke('validate_device_profile',{document:JSON.stringify(opaque)});
@@ -57,7 +58,7 @@ export async function verifyProfiles(client, {label, evidence, record}) {
     await until(() => evaluate("document.querySelector('.reported-evidence input')?.value==='' && !document.querySelector('.reported-evidence button').disabled"),'Reported evidence save/evaluation did not finish');
   }
   const report=await invoke('get_device_compatibility',{deviceId:device.id});
-  assert.equal(report.engineVersion,'1.0.1','Native build must use hardened engine');
+  assert.equal(report.engineVersion,'1.1.0','Native build must use hardened engine');
   assert.equal(report.confidence,'CANDIDATE');assert.equal(report.selectedProfile,null);assert.equal(report.features.wifiUserLimit.verifiedRange,null);
   for (const f of Object.values(report.features)) {assert.equal(f.assessment,'UNKNOWN');assert.equal(f.canApply,false);assert.equal(f.adapterImplemented,false);assert(f.readiness.includes('NOT_IMPLEMENTED'));}
   const reported=report.evidence.filter((e) => ['LT800/','MF69_AM802L_ZX_DD_N_241106_EU'].includes(e.value));assert.equal(reported.length,2);

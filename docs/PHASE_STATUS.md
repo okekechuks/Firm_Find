@@ -1,6 +1,18 @@
 # OBTAINER phase status
 
-Updated: **20 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
+Updated: **21 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
+
+## Phase 7 — software PASS; hardware PENDING
+
+Existing OpenWrt contract now uses strict pinned SSH, existing key authentication, identity-only bootstrap and separate single-use read approval. Eight fixed UCI/ubus/partition-metadata queries, typed observations, firmware-feasibility reports and a Connected Devices inspection dialog preserve the existing six-page app. Schema 1 is retained; schema 2 permits exact OS-only inspection without inventing manufacturer/revision or granting feature/write support. Expiry, discovery invalidation, all-host-address exclusion, failure cleanup, picker admission/cancellation and stale publication were hardened during review. [Implementation](PHASE_7_IMPLEMENTATION.md) and [verification](PHASE_7_VERIFICATION.md) record the exact scope.
+
+**Final checks:** 130 frontend tests, 192 standard Rust tests, 193 native-profile Rust tests, 2 explicitly executed genuine OpenWrt OS tests and 137 native checkpoints pass. TypeScript, lint, formatting, both Clippy profiles, frontend production build and both optimized Windows executables pass. Actual native development/recovery/release GUI, independent console pin, key dialog, separate approvals, real SSH reads, GUI Cancel/retry, HMR and retained simulator/storage regressions pass; console issues are empty. Full normal DB/WAL/rows/settings/saved-device/vault fingerprints remain identical. Owned native processes and QEMU stopped. [Native evidence](evidence/phase-7-native-2026-10-20.json), [genuine inspection](evidence/phase-7-openwrt-inspection-2026-10-20.json) and screenshots are linked in the report.
+
+**Physical hardware: PENDING.** Genuine target was checksum-verified OpenWrt 25.12.6 x86/64, build r33311-981c978eff, in a restricted QEMU guest. It has no physical radio/modem qualification. Owner has only a regular proprietary MiFi; no request or configuration change was made to it. The exact inspection profile is sealed inside native-test mode. Ordinary production can perform approved pinned identity inspection but has no qualified physical read target yet; unknown targets cannot receive configuration authority. Extraction, rebuilding, installation, recovery, physical writes and live USSD remain unimplemented/disabled. [Research](PHASE_7_OPENWRT_RESEARCH.md), [feasibility](PHASE_7_FIRMWARE_FEASIBILITY.md), [hardware qualification](PHASE_7_HARDWARE_QUALIFICATION.md) and [future firmware pipeline](FIRMWARE_PIPELINE_ROADMAP.md) retain the remaining goals.
+
+**Phase 8 readiness: READY FOR SIMULATOR ONLY.** Phase 8 has not started. The prior phase acceptance entries below retain their original historical counts and readiness statements.
+
+Final export-tooling follow-up: schema generation now handles the refined frontend contract and emits separate schema-1/schema-2 documents. Schema 1 remains byte-identical; version/scope/UNKNOWN assertions and lint pass. No runtime source or executable changed after native qualification.
 
 **Phase 6 post-review correction: PASS. Phase 7: READY, not started.** Both busy-flag defects were reproduced with failing tests and corrected with scoped operation ownership. Final results: **165 Rust tests per profile, 113 frontend tests, 130 native checkpoints**, both optimized Windows executable builds and formatting/Clippy/TypeScript/lint pass. Actual GUI Cancel followed by reconnect/read passes in development, recovery and production. Normal database/WAL/settings/saved-device/vault fingerprints remain identical. [Current correction report](PHASE_6_VERIFICATION.md) records all fixes, initial failures, commands and [evidence](evidence/phase-6-post-review-2026-10-20.txt).
 

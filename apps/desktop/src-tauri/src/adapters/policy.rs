@@ -9,6 +9,9 @@ pub struct AuthorizationGrant {
     expires_at: u64,
 }
 impl AuthorizationGrant {
+    pub(crate) fn expires_at(&self) -> u64 {
+        self.expires_at
+    }
     pub fn confirm_selected_target(
         binding: SessionBinding,
         operations: Vec<AdapterOperation>,
@@ -68,6 +71,24 @@ pub fn authorize(
         ));
     }
     let p = ctx.profile;
+    if ctx
+        .profiles
+        .by_id(&binding.profile_id, Some(&binding.profile_version))
+        .is_some_and(|entry| entry.profile.inspection_only)
+        && !matches!(
+            op,
+            AdapterOperation::AuthorizedIdentityProbe
+                | AdapterOperation::InspectCapabilities
+                | AdapterOperation::ReadConfiguration
+                | AdapterOperation::ReadDns
+                | AdapterOperation::ReadApn
+                | AdapterOperation::ReadWifiLimit
+                | AdapterOperation::ReadUssdCapability
+        )
+    {
+        return Err(failure(AdapterErrorCode::OperationNotAuthorized,
+            "An OS inspection profile grants no hardware support, backup, transaction or write authority."));
+    }
     if binding.device_id != ctx.device.id
         || binding.discovery_revision != ctx.revision
         || p.discovery_revision != ctx.revision

@@ -64,6 +64,133 @@ fn mutate(document: &str, f: impl FnOnce(&mut serde_json::Value)) -> String {
     serde_json::to_string(&value).unwrap()
 }
 
+fn os_inspection_profile() -> String {
+    mutate(CURATED, |p| {
+        p["schemaVersion"] = 2.into();
+        p["inspectionOnly"] = true.into();
+        p["profileId"] = "openwrt.os-inspection-test".into();
+        p["manufacturer"] = "".into();
+        p["hardwareRevisions"] = serde_json::json!([]);
+        p["matchRules"][0]["values"] = serde_json::json!(["board|x86/64|build"]);
+        for (_, feature) in p["capabilities"].as_object_mut().unwrap() {
+            feature["assessment"] = "UNKNOWN".into();
+            feature["verifiedRange"] = serde_json::Value::Null;
+            for (_, sub) in feature["subCapabilities"].as_object_mut().unwrap() {
+                sub["assessment"] = "UNKNOWN".into();
+            }
+        }
+    })
+}
+
+#[test]
+fn inspection_profile_cannot_upgrade_hardware_or_legacy_schema_authority() {
+    let document = os_inspection_profile();
+    assert!(validate(&document).unwrap().inspection_only);
+    assert!(validate(&mutate(&document, |p| p["schemaVersion"] = 1.into())).is_err());
+    assert!(validate(&mutate(&document, |p| p["inspectionOnly"] = false.into())).is_err());
+    assert!(validate(&mutate(&document, |p| p["manufacturer"] = "Invented".into())).is_err());
+    assert!(validate(&mutate(&document, |p| p["capabilities"]["dns"]
+        ["assessment"] =
+        "SUPPORTED".into()))
+    .is_err());
+    assert!(
+        validate(&mutate(&document, |p| p["capabilities"]["wifiUserLimit"]
+            ["subCapabilities"]["clientLimit"]["assessment"] =
+            "SUPPORTED".into()))
+        .is_err()
+    );
+    assert!(
+        validate(&mutate(&document, |p| p["matchRules"][0]["values"] =
+            serde_json::json!(["OpenWrt"])))
+        .is_err()
+    );
+    let legacy = validate(CURATED).unwrap();
+    assert!(!legacy.inspection_only);
+    assert!(
+        serde_json::to_value(legacy)
+            .unwrap()
+            .get("inspectionOnly")
+            .is_none(),
+        "Legacy content serialization stays unchanged"
+    );
+}
+
+#[test]
+fn authenticated_os_profile_has_unknown_features_and_requires_exact_build_identity() {
+    let document = os_inspection_profile();
+    let registry = Registry::load(vec![(&document, "bundled", true)]);
+    let d = device();
+    let mut evidence = strong(&d);
+    evidence.retain(|e| {
+        !matches!(
+            e.attribute,
+            Attribute::Manufacturer | Attribute::HardwareRevision
+        )
+    });
+    evidence
+        .iter_mut()
+        .find(|e| e.attribute == Attribute::ManagementIdentity)
+        .unwrap()
+        .value = "board|x86/64|build".into();
+    let report = evaluate(&registry, &d, evidence.clone(), NOW, 1);
+    assert_eq!(report.confidence, MatchConfidence::Verified);
+    assert!(report
+        .features
+        .values()
+        .all(|f| f.assessment == Assessment::Unknown && !f.can_apply));
+    evidence
+        .iter_mut()
+        .find(|e| e.attribute == Attribute::ManagementIdentity)
+        .unwrap()
+        .value = "board|wrong-target|build".into();
+    assert!(evaluate(&registry, &d, evidence, NOW, 1)
+        .selected_profile
+        .is_none());
+}
+
+#[test]
+fn os_inspection_profile_still_requires_trusted_evidence_and_registry_origin() {
+    let document = os_inspection_profile();
+    let d = device();
+    let mut evidence = strong(&d);
+    evidence.retain(|e| {
+        !matches!(
+            e.attribute,
+            Attribute::Manufacturer | Attribute::HardwareRevision
+        )
+    });
+    evidence
+        .iter_mut()
+        .find(|e| e.attribute == Attribute::ManagementIdentity)
+        .unwrap()
+        .value = "board|x86/64|build".into();
+    let imported = Registry::load(vec![(&document, "imported", true)]);
+    assert_ne!(
+        evaluate(&imported, &d, evidence.clone(), NOW, 1).confidence,
+        MatchConfidence::Verified
+    );
+    for e in &mut evidence {
+        e.source = EvidenceOrigin::UserSupplied;
+        e.verification = Verification::UserReported;
+    }
+    let bundled = Registry::load(vec![(&document, "bundled", true)]);
+    assert_ne!(
+        evaluate(&bundled, &d, evidence, NOW, 1).confidence,
+        MatchConfidence::Verified
+    );
+    let mut missing_hardware = strong(&d);
+    missing_hardware.retain(|e| {
+        !matches!(
+            e.attribute,
+            Attribute::Manufacturer | Attribute::HardwareRevision
+        )
+    });
+    assert_ne!(
+        evaluate(&super::tests::registry(), &d, missing_hardware, NOW, 1).confidence,
+        MatchConfidence::Verified
+    );
+}
+
 #[test]
 fn bundled_profiles_validate_and_ids_are_deterministic() {
     let a = Registry::bundled();

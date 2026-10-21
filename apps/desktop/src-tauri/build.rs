@@ -1,6 +1,13 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "openwrt_status",
+            "openwrt_observe",
+            "openwrt_connect",
+            "openwrt_approve_reads",
+            "openwrt_inspect",
+            "openwrt_cancel",
+            "openwrt_disconnect",
             "simulation_status",
             "simulation_control",
             "simulation_request",

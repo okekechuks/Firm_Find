@@ -11,7 +11,8 @@ export async function verifyAdapters(client,{label,evidence,record}){
   };
   const query=(deviceId,targetKind="discovered")=>invoke("get_device_adapter_matches",{input:{deviceId,targetKind}});
   const descriptors=await invoke("list_available_adapters");
-  assert.equal(descriptors.length,1);assert.equal(descriptors[0].implementationStatus,"declared");
+  assert.equal(descriptors.length,1);assert.equal(descriptors[0].id,"openwrt-readonly-contract");assert.equal(descriptors[0].implementationStatus,"built_in");
+  assert(!descriptors[0].operations.some(op=>['modify_configuration','flash_firmware','send_ussd'].includes(op)));
   assert(!descriptors.some(d=>d.implementationStatus==="test_only"));
   for(const args of [{input:{deviceId:"../unsafe"}},{input:{deviceId:"A".repeat(64)}},{input:{deviceId:"0".repeat(64),authorized:true}}]){
     await assert.rejects(()=>invoke("get_device_adapter_matches",args));

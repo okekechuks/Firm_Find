@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const MAX_PROFILE_BYTES: usize = 65536;
-pub const ENGINE_VERSION: &str = "1.0.1";
+pub const ENGINE_VERSION: &str = "1.1.0";
 pub const EVIDENCE_TTL_MS: u64 = 300_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -242,6 +242,9 @@ pub fn sub_keys(feature: &str) -> &'static [&'static str] {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Profile {
     pub schema_version: u32,
+    /// Schema 2 is narrowly reserved for authenticated OS inspection, never hardware support.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub inspection_only: bool,
     pub profile_id: String,
     pub profile_version: String,
     pub manufacturer: String,
@@ -259,6 +262,9 @@ pub struct Profile {
     pub evidence_sources: Vec<EvidenceSource>,
     pub last_reviewed: String,
     pub provenance: Provenance,
+}
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -397,9 +403,12 @@ pub fn validate(document: &str) -> Result<Profile, ProfileError> {
     // Deserialize original bytes as well: serde rejects duplicate struct fields.
     let p: Profile = serde_json::from_str(document)
         .map_err(|e| invalid(format!("Profile schema rejected: {e}")))?;
-    if p.schema_version != 1 {
+    if !matches!(
+        (p.schema_version, p.inspection_only),
+        (1, false) | (2, true)
+    ) {
         return Err(invalid(
-            "Unsupported profile schema. Only schemaVersion 1 is accepted.",
+            "Schema 1 requires hardware identity; schema 2 requires explicit inspectionOnly scope.",
         ));
     }
     if p.profile_id.is_empty()
@@ -412,7 +421,7 @@ pub fn validate(document: &str) -> Result<Profile, ProfileError> {
     {
         return Err(invalid("Profile ID or content version is invalid."));
     }
-    if p.manufacturer.trim().is_empty()
+    if (!p.inspection_only && p.manufacturer.trim().is_empty())
         || p.model.trim().is_empty()
         || p.device_category.is_empty()
         || p.match_rules.is_empty()
@@ -464,6 +473,32 @@ pub fn validate(document: &str) -> Result<Profile, ProfileError> {
         return Err(invalid("lastReviewed must be a valid calendar date."));
     }
     validate_firmware_constraint(&p.firmware_version_constraints)?;
+    if p.inspection_only
+        && (!p.manufacturer.is_empty()
+            || !p.hardware_revisions.is_empty()
+            || p.firmware_families != ["OpenWrt"]
+            || p.firmware_version_constraints.exact.len() != 1
+            || p.firmware_version_constraints.min_inclusive.is_some()
+            || p.firmware_version_constraints.max_exclusive.is_some()
+            || !p.match_rules.iter().any(|r| {
+                r.attribute == Attribute::ManagementIdentity
+                    && r.purpose == Purpose::Identity
+                    && r.values.len() == 1
+                    && {
+                        let fields: Vec<_> = r.values[0].split('|').collect();
+                        fields.len() == 3 && fields.iter().all(|v| !v.trim().is_empty())
+                    }
+            })
+            || p.capabilities.entries().iter().any(|(_, f)| {
+                f.assessment != Assessment::Unknown
+                    || f.verified_range.is_some()
+                    || f.sub_capabilities
+                        .values()
+                        .any(|s| s.assessment != Assessment::Unknown)
+            }))
+    {
+        return Err(invalid("Inspection-only profiles require an exact OS/build/board contract and UNKNOWN hardware features; they cannot assert manufacturer or hardware revision."));
+    }
     let mut source_ids = BTreeSet::new();
     for source in &p.evidence_sources {
         if source.id.is_empty() || !source_ids.insert(source.id.clone()) {
