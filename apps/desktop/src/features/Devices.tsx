@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Search, Usb, RefreshCw, X, LockKeyhole } from "lucide-react";
 import { deviceStatus } from "../lib/device-status";
-import { cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
+import { approveFirmwareRouteProbe, cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
 import type { AcquisitionReport } from "../types/acquisition";
 
@@ -66,6 +66,7 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
   const [interfaceId, setInterfaceId] = useState(networks.length === 1 ? networks[0].id : "");
   const [endpoint, setEndpoint] = useState(networks.length === 1 && networks[0].gateways.length === 1 ? `http://${networks[0].gateways[0].includes(":") ? `[${networks[0].gateways[0]}]` : networks[0].gateways[0]}/` : "");
   const [authorized, setAuthorized] = useState(false);
+  const [advancedEndpoint, setAdvancedEndpoint] = useState(false);
   const [exporting, setExporting] = useState(false);
   useEffect(() => {
     const element = dialog.current;
@@ -76,7 +77,7 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
   useEffect(() => {
     const requests=generation; requests.current++; setState("idle"); setMessage(""); setReport(null);
     return () => {requests.current++; void cancelFirmwareRouteDiscovery(device.id).catch(() => {});};
-  }, [revision, device.connected, device.id, endpoint, interfaceId, authorized]);
+  }, [revision, device.connected, device.id, endpoint, interfaceId, authorized, advancedEndpoint]);
   useEffect(() => {
     if (!report) return;
     const timer = setTimeout(() => {setReport(null); setMessage("Result expired. Check current compatibility again.");}, Math.max(0,report.expiresAt-Date.now()));
@@ -86,7 +87,12 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
     const run = ++generation.current;
     setState("checking"); setMessage(""); setReport(null);
     try {
-      const result = await discoverFirmwareRoutes({deviceId:device.id,endpoint:endpoint || null,interfaceId:interfaceId || null,authorized});
+      const input = {deviceId:device.id,endpoint:endpoint || null,interfaceId:interfaceId || null,approvalToken:null as string|null,advancedEndpoint};
+      if (authorized) {
+        input.approvalToken = await approveFirmwareRouteProbe(input);
+        if (run !== generation.current) return;
+      }
+      const result = await discoverFirmwareRoutes(input);
       if (run !== generation.current) return;
       if (result.deviceId !== device.id || result.discoveryRevision !== revision || result.expiresAt <= Date.now()) throw new Error("Device information changed. Refresh devices and try again.");
       setReport(result); setState("done");
@@ -111,7 +117,8 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       <p>Windows name: {device.displayName}. USB: {device.vendorId || "Unknown"} / {device.productId || "Unknown"}.</p>
       <label>Management interface<select value={interfaceId} onChange={e => {setInterfaceId(e.target.value);setAuthorized(false);}}><option value="">Select interface</option>{networks.map(n => <option key={n.id} value={n.id}>{n.displayName}</option>)}</select></label>
       <label>Management address<input value={endpoint} maxLength={2048} onChange={e => {setEndpoint(e.target.value);setAuthorized(false);}} placeholder="http://192.168.100.1/"/></label>
-      <label><input type="checkbox" checked={authorized} disabled={!endpoint || !interfaceId} onChange={e => setAuthorized(e.target.checked)}/>I own or administer this endpoint and allow one read-only root-page check.</label>
+      <label><input type="checkbox" checked={advancedEndpoint} onChange={e => {setAdvancedEndpoint(e.target.checked);setAuthorized(false);}}/>Advanced: allow a different local endpoint</label>
+      <label><input type="checkbox" checked={authorized} disabled={!endpoint || !interfaceId} onChange={e => setAuthorized(e.target.checked)}/>I own or administer this endpoint and allow a read-only root check and recognized-family static version check.</label>
       <p className="muted small">Without approval, Check Compatibility evaluates local evidence and registered acquisition routes only.</p>
     </details>
     {report ? <section className="acquisition-results" aria-label="Firmware acquisition routes">
@@ -119,8 +126,13 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       <p>Identity: {report.identity.confidence}. Verified model: {report.identity.verifiedModel || "Unknown"}. Hardware revision: {report.identity.verifiedHardwareRevision || "Unknown"}. Firmware: {report.identity.verifiedFirmware || "Unknown"}.</p>
       {report.identity.reportedModel ? <p>User-reported model: {report.identity.reportedModel} (unverified).</p> : null}
       <p>Management family: {report.protocols.map(p => p.family.replaceAll("_"," ")).join(", ") || "Not established"}. {report.probe.attempted ? `Read-only endpoint check: ${report.probe.code.replaceAll("_"," ")}${report.probe.httpStatus ? ` (HTTP ${report.probe.httpStatus})` : ""}.` : "No network request made."}</p>
+      {report.identity.evidence?.filter(e => e.attribute === "firmware_version" && (e.verification === "observed" || e.verification === "user_reported")).map(e => <p key={`${e.id}-${e.source}`}>{e.verification === "observed" ? "Endpoint-observed version" : "User-reported firmware"}: {e.value} (unverified).</p>)}
+      {report.probe.code === "subnet_conflict" ? <p role="status">{report.probe.message}</p> : null}
+      {report.probe.metadataTruncated ? <p className="muted small">Metadata limited to first 16 KiB.</p> : null}
+      {report.probe.advancedEndpoint ? <p>Advanced local endpoint approved.</p> : null}
+      <dl aria-label="Compatibility summary">{["deviceDetected","exactIdentity","managementApi","officialImage","deviceExport"].map(key => report.capabilities[key] ? <div key={key}><dt>{key.replace(/([a-z])([A-Z])/g,"$1 $2")}: {report.capabilities[key].state.replaceAll("_"," ")}</dt><dd>{report.capabilities[key].reason}</dd></div> : null)}</dl>
       {report.candidates.map(route => <details key={route.strategy}><summary>{route.name}: {route.capability.state.replaceAll("_"," ")}</summary><p>{route.capability.reason}</p><p className="muted small">Required: {route.capability.missingRequirements.join("; ")}</p></details>)}
-      <details><summary>Independent capabilities</summary><dl>{Object.entries(report.capabilities).map(([key,value]) => <div key={key}><dt>{key.replace(/([a-z])([A-Z])/g,"$1 $2")}: {value.state.replaceAll("_"," ")}</dt><dd>{value.reason}</dd></div>)}</dl></details>
+      <details><summary>Independent capabilities</summary><dl>{Object.entries(report.capabilities).filter(([key]) => !["deviceDetected","exactIdentity","managementApi","officialImage","deviceExport"].includes(key)).map(([key,value]) => <div key={key}><dt>{key.replace(/([a-z])([A-Z])/g,"$1 $2")}: {value.state.replaceAll("_"," ")}</dt><dd>{value.reason}</dd></div>)}</dl></details>
       <button className="secondary-button" disabled={exporting} onClick={() => void exportReport()}>{exporting ? "Exporting…" : "Export Diagnostics"}</button>
     </section> : null}
     {message ? <p role={state === "error" ? "alert" : "status"}>{message}</p> : null}

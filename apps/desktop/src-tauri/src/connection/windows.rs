@@ -195,6 +195,26 @@ fn probe_kind(
     token: &AtomicBool,
     root: bool,
 ) -> (EndpointResult, Option<Vec<u8>>) {
+    probe_path(target, scope, networks, token, root, "/")
+}
+
+pub(super) fn probe_version(
+    target: &Target,
+    scope: Option<&str>,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+) -> (EndpointResult, Option<Vec<u8>>) {
+    probe_path(target, scope, networks, token, true, "/version_num.txt")
+}
+
+fn probe_path(
+    target: &Target,
+    scope: Option<&str>,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+    root: bool,
+    path: &str,
+) -> (EndpointResult, Option<Vec<u8>>) {
     let start = Instant::now();
     let work = || -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
         cancelled(token)?;
@@ -212,6 +232,11 @@ fn probe_kind(
         let (ip, network) = choices.first().copied().ok_or_else(|| {
             reason.unwrap_or_else(|| EndpointResult::failure("no_route", "No route to router."))
         })?;
+        if root {
+            if let Some(conflict) = subnet_conflict(ip, network, networks) {
+                return Err(conflict);
+            }
+        }
         if root
             && networks
                 .iter()
@@ -268,7 +293,7 @@ fn probe_kind(
         } else {
             ip.to_string()
         };
-        let (mut result, body) = request(target, &pinned, token, root)?;
+        let (mut result, body) = request_path(target, &pinned, token, root, path)?;
         result.resolved_address = Some(pinned);
         Ok((result, body))
     };
@@ -440,11 +465,21 @@ pub(super) fn head(
     request(target, pinned, token, false).map(|(result, _)| result)
 }
 
+#[cfg(test)]
 fn request(
     target: &Target,
     pinned: &str,
     token: &AtomicBool,
     root: bool,
+) -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
+    request_path(target, pinned, token, root, "/")
+}
+fn request_path(
+    target: &Target,
+    pinned: &str,
+    token: &AtomicBool,
+    root: bool,
+    path: &str,
 ) -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
     cancelled(token)?;
     let session = Handle::checked(unsafe {
@@ -467,7 +502,7 @@ fn request(
         WinHttpOpenRequest(
             connection.0,
             wide(if root { "GET" } else { "HEAD" }).as_ptr(),
-            wide("/").as_ptr(),
+            wide(path).as_ptr(),
             ptr::null(),
             ptr::null(),
             ptr::null(),
@@ -760,6 +795,47 @@ mod tests {
             }
             server.join().unwrap();
         }
+    }
+    #[test]
+    fn static_version_request_is_fixed_credential_free_and_bounded() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut buffer = [0; 4096];
+            let count = stream.read(&mut buffer).unwrap();
+            let sent = String::from_utf8_lossy(&buffer[..count]);
+            assert!(sent.starts_with("GET /version_num.txt HTTP/1.1"));
+            assert!(!sent.to_ascii_lowercase().contains("authorization:"));
+            assert!(!sent.to_ascii_lowercase().contains("cookie:"));
+            let body = "<firmware_version>REL_MRVL_UAPXC_v2.6.0</firmware_version>";
+            stream
+                .write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
+        });
+        let target = Target {
+            url: String::new(),
+            host: "localhost".into(),
+            port,
+            secure: false,
+        };
+        let (result, body) = request_path(
+            &target,
+            "127.0.0.1",
+            &AtomicBool::new(false),
+            true,
+            "/version_num.txt",
+        )
+        .unwrap();
+        assert_eq!(result.status, Some(200));
+        assert!(body.unwrap().starts_with(b"<firmware_version>"));
+        server.join().unwrap();
     }
     #[test]
     fn review_hostname_resolution_supports_localhost() {

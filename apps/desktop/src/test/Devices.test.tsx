@@ -4,14 +4,14 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { Devices } from "../features/Devices";
 import type { DiscoverySnapshot } from "../types/contracts";
 
-const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), export: vi.fn()}));
-vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export}));
+const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn()}));
+vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export}));
 function result() {
   return {deviceId:"a".repeat(64),discoveryRevision:4,expiresAt:Date.now()+60000,canObtain:false,identity:{confidence:"unverified",verifiedModel:null,verifiedHardwareRevision:null,verifiedFirmware:null,reportedModel:"Test MiFi"},protocols:[],probe:{attempted:false,code:"not_approved",httpStatus:null},candidates:[{strategy:"official_image",name:"Official firmware image",capability:{state:"unknown",reason:"No qualified source registered.",missingRequirements:["Exact hardware revision"]}}],capabilities:{}};
 }
 beforeEach(() => {
   vi.clearAllMocks();
-  checks.routes.mockResolvedValue(result());checks.cancel.mockResolvedValue(undefined);checks.export.mockResolvedValue(true);
+  checks.approve.mockResolvedValue("c".repeat(32)); checks.routes.mockResolvedValue(result());checks.cancel.mockResolvedValue(undefined);checks.export.mockResolvedValue(true);
 });
 
 const unverifiedFeature = {
@@ -73,7 +73,7 @@ it("discovers backend routes without falsely marking a detected device incompati
   expect(screen.queryByText("Cannot locate firmware")).not.toBeInTheDocument();
   expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   expect(screen.getByRole("button", {name:"Obtain Firmware"})).toBeDisabled();
-  expect(checks.routes).toHaveBeenCalledWith(expect.objectContaining({deviceId:inventory.devices[0].id,authorized:false}));
+  expect(checks.routes).toHaveBeenCalledWith(expect.objectContaining({deviceId:inventory.devices[0].id,approvalToken:null,advancedEndpoint:false}));
   expect(screen.getByRole("article",{name:/Test MiFi:/})).toHaveClass("device-warning");
   expect(screen.getByText(/Official firmware image: unknown/)).toBeInTheDocument();
   await user.click(screen.getByRole("button",{name:"Export Diagnostics"}));
@@ -101,7 +101,7 @@ it("requires explicit endpoint approval and forwards only the selected target", 
   const approval=screen.getByRole("checkbox",{name:/I own or administer this endpoint/});
   expect(approval).not.toBeChecked();await user.click(approval);
   await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
-  expect(checks.routes).toHaveBeenCalledWith({deviceId:"a".repeat(64),endpoint:"http://192.0.2.1/",interfaceId:"fixture-adapter",authorized:true});
+  expect(checks.routes).toHaveBeenCalledWith({deviceId:"a".repeat(64),endpoint:"http://192.0.2.1/",interfaceId:"fixture-adapter",approvalToken:"c".repeat(32),advancedEndpoint:false});
   await user.clear(screen.getByRole("textbox",{name:"Management address"}));
   expect(approval).not.toBeChecked();expect(screen.queryByRole("region",{name:"Firmware acquisition routes"})).not.toBeInTheDocument();
 });
@@ -169,4 +169,18 @@ it("keeps manual and OpenWrt controls out of the discovery toolbar", () => {
   render(<Devices {...props}/>);
   for (const name of ["Add Router", "Manage saved connections", "Inspect OpenWrt router"])
     expect(screen.queryByRole("button", {name})).not.toBeInTheDocument();
+});
+
+it("shows bounded metadata as a fact and preserves separately sourced firmware versions", async () => {
+  const r=result();checks.routes.mockResolvedValueOnce({...r,probe:{...r.probe,metadataTruncated:true},identity:{...r.identity,evidence:[{id:"one",source:"endpoint_response",attribute:"firmware_version",verification:"observed",value:"REL_MRVL_UAPXC_v2.6.0"},{id:"two",source:"user_supplied",attribute:"firmware_version",verification:"user_reported",value:"MF69_AM802L_ZX_DD_N_241106_EU"}]}});
+  const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  expect(await screen.findByText("Metadata limited to first 16 KiB.")).toBeInTheDocument();
+  expect(screen.getByText(/Endpoint-observed version: REL_MRVL/)).toBeInTheDocument();expect(screen.getByText(/User-reported firmware: MF69/)).toBeInTheDocument();expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it("does not dispatch discovery after native approval is declined", async()=>{
+  checks.approve.mockRejectedValueOnce(new Error("Endpoint check not approved."));const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByText("Device observations and management endpoint"));await user.click(screen.getByRole("checkbox",{name:/I own or administer/}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));expect(await screen.findByRole("alert")).toHaveTextContent("Endpoint check not approved.");expect(checks.routes).not.toHaveBeenCalled();expect(screen.getByRole("button",{name:"Check Compatibility"})).toBeEnabled();
+});
+it("shows five summary stages and collapses remaining unavailable capabilities", async()=>{
+  const r=result();checks.routes.mockResolvedValueOnce({...r,capabilities:Object.fromEntries(["deviceDetected","exactIdentity","managementApi","officialImage","deviceExport","installation"].map(key=>[key,{state:key==="deviceDetected"?"observed":"not_implemented",reason:"No implementation",evidence:[],missingRequirements:[],executable:false}]))});const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));const summary=await screen.findByLabelText("Compatibility summary");expect(summary.querySelectorAll("dt")).toHaveLength(5);expect(screen.getByText("Independent capabilities").closest("details")).not.toHaveAttribute("open");expect(summary).toHaveTextContent("device Detected: observed");
 });

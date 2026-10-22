@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-approve-firmware-route-probe"
+description = "Enables the approve_firmware_route_probe command without any pre-configured scope."
+commands.allow = ["approve_firmware_route_probe"]
+
+[[permission]]
+identifier = "deny-approve-firmware-route-probe"
+description = "Denies the approve_firmware_route_probe command without any pre-configured scope."
+commands.deny = ["approve_firmware_route_probe"]

@@ -180,6 +180,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            acquisition::ipc::approve_firmware_route_probe,
             acquisition::ipc::discover_firmware_routes,
             acquisition::ipc::cancel_firmware_route_discovery,
             acquisition::ipc::export_acquisition_diagnostics,

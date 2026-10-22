@@ -130,3 +130,5 @@ export async function openManagedFolder(target:"library"|"backups"|"artifact",id
 export async function selectLibraryDirectory(){requireDesktop();return storagePlanSchema.nullable().parse(await invoke("select_library_directory"));}
 export async function relocateFirmwareLibrary(ticket:string){requireDesktop();return jobSchema.parse(await invoke("relocate_firmware_library",{ticket,confirmed:true}));}
 export async function recoverDefaultLibrary(){requireDesktop();await invoke("recover_default_library",{confirmed:true});}
+
+export async function approveFirmwareRouteProbe(input:AcquisitionRequest) {requireDesktop();return z.string().regex(/^[a-f0-9]{32}$/).parse(await invoke("approve_firmware_route_probe",{input}));}

@@ -448,3 +448,29 @@ pub fn prepare_saved(
 
 #[cfg(test)]
 mod tests;
+
+pub(crate) fn subnet_conflict(
+    ip: IpAddr,
+    selected: &NetworkAdapter,
+    networks: &[NetworkAdapter],
+) -> Option<Box<EndpointResult>> {
+    networks.iter().find(|n| n.id!=selected.id && n.link_up && !n.virtual_interface && on_link(ip,n)).map(|other| EndpointResult::failure("subnet_conflict",&format!("Another network uses the same address range ({}). Disconnect it or change the MiFi's LAN range.",other.display_name.chars().filter(|c| !c.is_control()).take(120).collect::<String>())))
+}
+/// Fixed static metadata path, never supplied by the caller.
+pub(crate) fn version_metadata(
+    target: &Target,
+    interface: &str,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+) -> (EndpointResult, Option<Vec<u8>>) {
+    #[cfg(windows)]
+    return windows::probe_version(target, Some(interface), networks, token);
+    #[cfg(not(windows))]
+    {
+        let _ = (target, interface, networks, token);
+        (
+            *EndpointResult::failure("unsupported_platform", "Windows required."),
+            None,
+        )
+    }
+}

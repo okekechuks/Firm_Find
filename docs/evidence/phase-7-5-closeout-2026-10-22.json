@@ -1,0 +1,208 @@
+{
+  "date": "2026-10-22",
+  "startCommit": "cd0d9af7aa40b93ac364cd2015e50ad8d77fe98c",
+  "initialRegressions": {
+    "A1-A6": {
+      "exitCode": 101,
+      "failed": 6
+    }
+  },
+  "finalTests": {
+    "standardRust": {
+      "passed": 231,
+      "ignored": 1,
+      "exitCode": 0,
+      "testThreads": 1
+    },
+    "isolatedRust": {
+      "passed": 232,
+      "ignored": 2,
+      "exitCode": 0
+    },
+    "frontend": {
+      "passed": 145,
+      "files": 17,
+      "exitCode": 0
+    }
+  },
+  "nativeRuns": [
+    {
+      "command": "node scripts/verify-foundation.mjs --release-only --device-gui",
+      "exitCode": 0,
+      "checkpoints": 20,
+      "consoleIssues": [],
+      "normalDataEqual": true,
+      "results": [
+        {
+          "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+        },
+        {
+          "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+        },
+        {
+          "name": "ordinary production executable rejects test activation before opening data"
+        },
+        {
+          "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "production: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "83f9563d9ec5db3a6e28b92a45fd1fa7",
+          "dataDirectory": "<isolated-profiles>\\83f9563d9ec5db3a6e28b92a45fd1fa7\\data"
+        },
+        {
+          "name": "production: native window, React and real SQLite IPC",
+          "url": "http://tauri.localhost/",
+          "pid": 18620,
+          "dataDirectory": "<isolated-profiles>\\83f9563d9ec5db3a6e28b92a45fd1fa7\\data",
+          "theme": "system"
+        },
+        {
+          "name": "production: exactly six primary navigation destinations"
+        },
+        {
+          "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 51,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "production: actual native diagnostics save, backend redaction and no overwrite; no network approval fabricated"
+        },
+        {
+          "name": "production: real native endpoint approval rejected with No; React recovers without network request or report"
+        },
+        {
+          "name": "production: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "production: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "no captured native console warnings or unhandled exceptions"
+        },
+        {
+          "name": "cleanup rejects mismatched marker/run ID and retains test data"
+        },
+        {
+          "name": "cleanup retains unknown staging without deleting files"
+        },
+        {
+          "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+        },
+        {
+          "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+        },
+        {
+          "name": "owned isolated run cleaned after all processes stopped",
+          "runId": "83f9563d9ec5db3a6e28b92a45fd1fa7"
+        }
+      ]
+    },
+    {
+      "command": "node scripts/verify-foundation.mjs --gui-preview --device-gui",
+      "exitCode": 0,
+      "checkpoints": 23,
+      "consoleIssues": [],
+      "normalDataEqual": true,
+      "results": [
+        {
+          "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+        },
+        {
+          "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+        },
+        {
+          "name": "ordinary production executable rejects test activation before opening data"
+        },
+        {
+          "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "active test ownership prevents cleanup"
+        },
+        {
+          "name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "b368c2a8069240d8ecfe36f8a7f9e2bc",
+          "dataDirectory": "<isolated-profiles>\\b368c2a8069240d8ecfe36f8a7f9e2bc\\data"
+        },
+        {
+          "name": "dev-reopen: native window, React and real SQLite IPC",
+          "url": "http://127.0.0.1:1420/",
+          "pid": 25488,
+          "dataDirectory": "<isolated-profiles>\\b368c2a8069240d8ecfe36f8a7f9e2bc\\data",
+          "theme": "system"
+        },
+        {
+          "name": "dev-reopen: exactly six primary navigation destinations"
+        },
+        {
+          "name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 51,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "dev-reopen: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "dev-reopen: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"
+        },
+        {
+          "name": "dev-reopen: temporary HMR edit restored"
+        },
+        {
+          "name": "dev-reopen: injected read error and real IPC retry recovery"
+        },
+        {
+          "name": "dev-reopen: loading state retains cached data"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "no captured native console warnings or unhandled exceptions"
+        },
+        {
+          "name": "cleanup rejects mismatched marker/run ID and retains test data"
+        },
+        {
+          "name": "cleanup retains unknown staging without deleting files"
+        },
+        {
+          "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+        },
+        {
+          "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+        },
+        {
+          "name": "owned isolated run cleaned after all processes stopped",
+          "runId": "b368c2a8069240d8ecfe36f8a7f9e2bc"
+        }
+      ]
+    }
+  ],
+  "preservation": {
+    "equal": true,
+    "command": "py scripts/probe-native-isolation.py .tools/phase7-5-closeout/normal-final.json .tools/phase7-5-closeout/normal-before.json",
+    "exitCode": 0,
+    "baselineSha256": "646fcec43d1fbd159d0f08bc9aef62e0214d9b2a8ae7a7e97d81ea3207311649",
+    "finalSha256": "646fcec43d1fbd159d0f08bc9aef62e0214d9b2a8ae7a7e97d81ea3207311649"
+  },
+  "hardwareRequests": 0,
+  "acquiredArtifacts": 0,
+  "sprintB": "NOT_STARTED_REVIEW_GATE",
+  "phase8": "NOT_STARTED"
+}

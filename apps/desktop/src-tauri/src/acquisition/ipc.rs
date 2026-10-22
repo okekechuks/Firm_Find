@@ -19,6 +19,10 @@ pub async fn discover_firmware_routes(
         .find(|d| d.id == input.device_id)
         .cloned()
         .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
+    if let Some(receipt) = input.approval_token.as_deref() {
+        let binding = approval::binding(&device, snapshot.revision, &input)?;
+        service.1.claim(receipt, &binding)?;
+    }
     service
         .0
         .lock()
@@ -42,12 +46,21 @@ pub async fn discover_firmware_routes(
                 .map_err(|_| error("DATABASE_UNAVAILABLE", "Identity evidence unavailable."))?,
         );
         drop(repo);
-        let report = discover(
+        let all_networks: Vec<_> = snapshot
+            .devices
+            .iter()
+            .flat_map(|d| d.networks.clone())
+            .map(|n| (n.id.clone(), n))
+            .collect::<BTreeMap<_, _>>()
+            .into_values()
+            .collect();
+        let report = discover_on_networks(
             &device,
             evidence,
             snapshot.revision,
             &input,
             &lease.cancelled,
+            &all_networks,
         )?;
         if lease.cancelled.load(Ordering::Acquire) {
             return Err(error("CANCELLED", "Route discovery cancelled."));
@@ -145,4 +158,66 @@ pub async fn export_acquisition_diagnostics(
     })
     .await
     .map_err(|_| error("WORKER_FAILED", "Export worker unavailable."))?
+}
+
+/// Native confirmation cannot be fabricated by a caller-controlled webview boolean.
+#[tauri::command]
+pub async fn approve_firmware_route_probe(
+    input: DiscoveryRequest,
+    app: tauri::AppHandle,
+    discovery: tauri::State<'_, DiscoveryService>,
+    service: tauri::State<'_, Service>,
+) -> Result<String, DiscoveryError> {
+    let snapshot = discovery
+        .snapshot()
+        .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
+    let device = snapshot
+        .devices
+        .iter()
+        .find(|d| d.id == input.device_id)
+        .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
+    let binding = approval::binding(device, snapshot.revision, &input)?;
+    use tauri::Manager;
+    let owner = app
+        .get_webview_window("main")
+        .and_then(|w| w.hwnd().ok())
+        .map(|h| h.0 as isize)
+        .unwrap_or(0);
+    let message=format!("Approve one bounded, read-only check?\n\nDevice: {}\nInterface: {}\nEndpoint: {}\nAdvanced endpoint: {}\n\nGET / and, only for a recognized ASR family, GET /version_num.txt. No login or device changes.",device.display_name,input.interface_id.as_deref().unwrap_or(""),input.endpoint.as_deref().unwrap_or(""),input.advanced_endpoint);
+    let approved = tauri::async_runtime::spawn_blocking(move || {
+        #[cfg(windows)]
+        {
+            use windows_sys::Win32::UI::WindowsAndMessaging::*;
+            let text: Vec<u16> = message.encode_utf16().chain(Some(0)).collect();
+            let title: Vec<u16> = "OBTAINER - approve read-only check"
+                .encode_utf16()
+                .chain(Some(0))
+                .collect();
+            unsafe {
+                MessageBoxW(
+                    owner as _,
+                    text.as_ptr(),
+                    title.as_ptr(),
+                    MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION,
+                ) == IDYES
+            }
+        }
+        #[cfg(not(windows))]
+        {
+            let _ = (owner, message);
+            false
+        }
+    })
+    .await
+    .map_err(|_| error("WORKER_FAILED", "Approval unavailable."))?;
+    if !approved {
+        return Err(error("CANCELLED", "Endpoint check not approved."));
+    }
+    let current = discovery
+        .snapshot()
+        .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
+    if current.revision != snapshot.revision {
+        return Err(error("STALE_RESULT", "Device changed. Approve again."));
+    }
+    service.1.issue(binding)
 }

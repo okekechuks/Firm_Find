@@ -1,6 +1,8 @@
 # Stock-device family recognition
 
-Sprint A collects only owner-approved root-page metadata, capped at 16 KiB. Only allowlisted title/server signals leave the parser; scripts are not evaluated and returned page text is not logged or persisted. Signals may suggest E-LINK/OEM, OpenWrt, Huawei, ZTE, D-Link or VIDA. These are candidate labels, not verified protocols or OEM attribution. No Goform, HiLink, VIDA or firmware-export API is called or claimed implemented.
+Sprint A close-out collects native-approved root metadata, capped at 16 KiB. Candidate recognition requires at least two independent signals. ASR/Duster XML needs two of the static references `js/base/xml_helper.js`, `js/base/ajax_calls.js`, `images/asr_logo.png`; E-LINK title is a brand hint only. OpenWrt requires both OpenWrt title and uhttpd header. Huawei, ZTE, D-Link and VIDA title substrings no longer select a family. Scripts are never evaluated; raw response text is never logged or persisted. Candidates are not verified identity, management API or firmware-export support.
+
+For an ASR/Duster XML candidate only, the same single-use native approval permits one extra `GET /version_num.txt`. The strict static version parser creates `endpoint_response`, `observed`, `observed` evidence bound to endpoint/interface, retained only in the bounded cached report. The value never fills `verifiedFirmware`. User-reported firmware remains a separate evidence item. No authenticated vendor API, Goform, HiLink, login, export, upgrade or reset endpoint is implemented here.
 
 USB VID/PID and Windows names remain observations. User labels/software remain user reports. Exact identity requires fresh, consistent, trusted evidence tied to one endpoint/interface; conflicts, expiration and substitution remove identity authority. Host NIC transport is kept separate from its remote router identity. No IMEI/SIM identifiers or credentials are requested.
 

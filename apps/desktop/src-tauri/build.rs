@@ -1,6 +1,7 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "approve_firmware_route_probe",
             "discover_firmware_routes",
             "cancel_firmware_route_discovery",
             "export_acquisition_diagnostics",

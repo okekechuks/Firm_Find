@@ -8,17 +8,17 @@ const report=()=>({schemaVersion:1,deviceId:id,discoveryRevision:3,evaluatedAt:D
 beforeEach(()=>{vi.resetAllMocks();vi.mocked(isTauri).mockReturnValue(true);});
 it("uses the route-discovery IPC contract without creating implicit endpoint approval",async()=>{
   vi.mocked(invoke).mockResolvedValue(report());
-  await discoverFirmwareRoutes({deviceId:id,endpoint:null,interfaceId:null,authorized:false});
-  expect(invoke).toHaveBeenCalledWith("discover_firmware_routes",{input:{deviceId:id,endpoint:null,interfaceId:null,authorized:false}});
+  await discoverFirmwareRoutes({deviceId:id,endpoint:null,interfaceId:null,approvalToken:null,advancedEndpoint:false});
+  expect(invoke).toHaveBeenCalledWith("discover_firmware_routes",{input:{deviceId:id,endpoint:null,interfaceId:null,approvalToken:null,advancedEndpoint:false}});
 });
 it("rejects cross-device responses and fabricated acquisition enablement",async()=>{
   vi.mocked(invoke).mockResolvedValueOnce({...report(),deviceId:"b".repeat(64)});
-  await expect(discoverFirmwareRoutes({deviceId:id,endpoint:null,interfaceId:null,authorized:false})).rejects.toThrow(/another target/);
+  await expect(discoverFirmwareRoutes({deviceId:id,endpoint:null,interfaceId:null,approvalToken:null,advancedEndpoint:false})).rejects.toThrow(/another target/);
   expect(acquisitionReportSchema.safeParse({...report(),canObtain:true}).success).toBe(false);
   expect(acquisitionReportSchema.safeParse({...report(),capabilities:{physicalRead:{state:"available_verified",reason:"claimed",evidence:[],missingRequirements:[],executable:true}}}).success).toBe(false);
 });
 it("rejects browser preview hardware calls",async()=>{
   vi.mocked(isTauri).mockReturnValue(false);
-  await expect(discoverFirmwareRoutes({deviceId:id,endpoint:null,interfaceId:null,authorized:true})).rejects.toThrow(/Windows app/);
+  await expect(discoverFirmwareRoutes({deviceId:id,endpoint:null,interfaceId:null,approvalToken:"a".repeat(32),advancedEndpoint:false})).rejects.toThrow(/Windows app/);
   expect(invoke).not.toHaveBeenCalled();
 });

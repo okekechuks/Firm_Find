@@ -9,11 +9,16 @@ use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicBool, Ordering},
 };
+mod approval;
 pub mod ipc;
 mod strategies;
+use approval::Approvals;
 pub use strategies::AcquisitionStrategyRegistry;
 #[derive(Default)]
-pub struct Service(pub std::sync::Mutex<BTreeMap<String, AcquisitionCapabilityReport>>);
+pub struct Service(
+    pub std::sync::Mutex<BTreeMap<String, AcquisitionCapabilityReport>>,
+    Approvals,
+);
 
 pub type IdentityEvidence = EvidenceRecord;
 
@@ -21,6 +26,8 @@ pub type IdentityEvidence = EvidenceRecord;
 #[serde(rename_all = "snake_case")]
 pub enum CapabilityState {
     NotChecked,
+    Observed,
+    NotImplemented,
     Unknown,
     Candidate,
     RequiresAuthentication,
@@ -130,6 +137,10 @@ pub struct ProbeSummary {
     pub code: String,
     pub http_status: Option<u16>,
     pub metadata_truncated: bool,
+    #[serde(default)]
+    pub advanced_endpoint: bool,
+    #[serde(default)]
+    pub message: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -138,7 +149,9 @@ pub struct DiscoveryRequest {
     pub device_id: String,
     pub endpoint: Option<String>,
     pub interface_id: Option<String>,
-    pub authorized: bool,
+    pub approval_token: Option<String>,
+    #[serde(default)]
+    pub advanced_endpoint: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -159,19 +172,41 @@ pub fn recognize(body: &[u8], server: Option<&str>) -> Vec<VendorProtocolCandida
         .map(|(title, _)| title.trim())
         .unwrap_or("");
     let server = server.unwrap_or("").to_ascii_lowercase();
-    let signals = [
-        ("e_link_oem", title.contains("e-link")),
-        ("openwrt", title.contains("openwrt") || server == "uhttpd"),
-        ("huawei_candidate", title.contains("huawei")),
-        ("zte_candidate", title.contains("zte")),
-        ("d_link_candidate", title.contains("d-link")),
-        ("vida_oem", title.contains("vida")),
+    let asr = [
+        "js/base/xml_helper.js",
+        "js/base/ajax_calls.js",
+        "images/asr_logo.png",
     ];
-    signals.into_iter().filter(|(_, found)| *found).map(|(family, _)| VendorProtocolCandidate {
-        family: family.into(), confidence: CapabilityState::Candidate,
-        evidence: vec!["Allowlisted root-page title/server signal; unauthenticated observation".into()],
-        limitations: "Candidate family only. No exact model, management API, credentials or firmware export established.".into(),
-    }).collect()
+    let asr_signals: Vec<_> = asr.into_iter().filter(|v| page.contains(v)).collect();
+    let openwrt = title.contains("openwrt") && server == "uhttpd";
+    let mut candidates = vec![];
+    if asr_signals.len() >= 2 {
+        candidates.push(VendorProtocolCandidate {
+            family: "asr_duster_xml".into(),
+            confidence: CapabilityState::Candidate,
+            evidence: asr_signals
+                .iter()
+                .map(|s| format!("Root static reference: {s}"))
+                .chain(
+                    title
+                        .contains("e-link")
+                        .then(|| "Brand hint: e_link_oem".into()),
+                )
+                .collect(),
+            limitations:
+                "Unauthenticated candidate only; no verified device identity or API/export support."
+                    .into(),
+        });
+    }
+    if openwrt {
+        candidates.push(VendorProtocolCandidate {
+            family: "openwrt".into(),
+            confidence: CapabilityState::Candidate,
+            evidence: vec!["OpenWrt title".into(), "uhttpd server header".into()],
+            limitations: "Candidate only; no exact identity or export support.".into(),
+        });
+    }
+    candidates
 }
 
 fn identity(
@@ -263,12 +298,24 @@ fn identity(
     }
 }
 
-pub fn discover(
+#[cfg(test)]
+fn discover(
     device: &Device,
     evidence: Vec<IdentityEvidence>,
     revision: u64,
     input: &DiscoveryRequest,
     token: &AtomicBool,
+) -> Result<AcquisitionCapabilityReport, DiscoveryError> {
+    discover_on_networks(device, evidence, revision, input, token, &device.networks)
+}
+
+pub(super) fn discover_on_networks(
+    device: &Device,
+    mut evidence: Vec<IdentityEvidence>,
+    revision: u64,
+    input: &DiscoveryRequest,
+    token: &AtomicBool,
+    all_networks: &[crate::discovery::NetworkAdapter],
 ) -> Result<AcquisitionCapabilityReport, DiscoveryError> {
     if !device.connected {
         return Err(error(
@@ -341,9 +388,11 @@ pub fn discover(
         code: "not_approved".into(),
         http_status: None,
         metadata_truncated: false,
+        advanced_endpoint: false,
+        message: String::new(),
     };
     let mut protocols = vec![];
-    if input.authorized {
+    if input.approval_token.is_some() {
         let endpoint = input
             .endpoint
             .as_deref()
@@ -372,18 +421,33 @@ pub fn discover(
             })?;
         fingerprint.endpoint = Some(target.url.clone());
         fingerprint.interface_id = Some(network.id.clone());
-        let (result, body) = connection::root_metadata(&target, interface, &device.networks, token);
+        let (result, body) = connection::root_metadata(&target, interface, all_networks, token);
         probe = ProbeSummary {
             attempted: true,
             code: result.code,
             http_status: result.status,
             metadata_truncated: body.as_ref().is_some_and(|b| b.len() == 16384),
+            advanced_endpoint: input.advanced_endpoint,
+            message: result.message.clone(),
         };
         if result.status.is_some_and(|s| (200..300).contains(&s)) {
             protocols = recognize(
                 body.as_deref().unwrap_or_default(),
                 result.server.as_deref(),
             );
+        }
+        if protocols.iter().any(|p| p.family == "asr_duster_xml") && !token.load(Ordering::Acquire)
+        {
+            let (version_result, version_body) =
+                connection::version_metadata(&target, interface, all_networks, token);
+            if version_result.status == Some(200) {
+                if let Some(e) = version_body
+                    .as_deref()
+                    .and_then(|b| version_evidence(device, &target.url, interface, b))
+                {
+                    evidence.push(e);
+                }
+            }
         }
     }
     if token.load(Ordering::Acquire) {
@@ -412,7 +476,14 @@ fn assess(
     // A host interface's saved identity is never the identity of its remote gateway.
     let identity = identity(
         if fingerprint.target_kind == "local_endpoint" {
-            vec![]
+            evidence
+                .into_iter()
+                .filter(|e| {
+                    e.source == EvidenceOrigin::EndpointResponse
+                        && e.endpoint == fingerprint.endpoint
+                        && e.interface_id == fingerprint.interface_id
+                })
+                .collect()
         } else {
             evidence
         },
@@ -422,7 +493,7 @@ fn assess(
     );
     let candidates = AcquisitionStrategyRegistry::default().evaluate(&identity);
     let mut capabilities = BTreeMap::new();
-    capabilities.insert("deviceDetected".into(), capability(CapabilityState::CompletedVerified, "Windows currently observes the device or selected network transport. This does not verify retail identity.", &[]));
+    capabilities.insert("deviceDetected".into(), capability(CapabilityState::Observed, "Windows currently observes the device or selected network transport. This does not verify retail identity.", &[]));
     capabilities.insert(
         "exactIdentity".into(),
         capability(
@@ -472,8 +543,8 @@ fn assess(
         capabilities.insert(
             key.into(),
             capability(
-                CapabilityState::Unknown,
-                "Not independently qualified by this discovery. No operation is enabled.",
+                CapabilityState::NotImplemented,
+                "No implementation is available for this operation. No operation is enabled.",
                 &["Reviewed implementation and operation-specific evidence"],
             ),
         );
@@ -496,8 +567,43 @@ fn assess(
 
 /// Deliberately omit all raw evidence, device IDs, endpoint/interface addresses and peer text.
 pub fn diagnostics(report: &AcquisitionCapabilityReport) -> serde_json::Value {
-    serde_json::json!({"schemaVersion":1,"engine":"7.5A-C-sprint-a","evaluatedAt":report.evaluated_at,"usbVid":report.fingerprint.usb_vid,"usbPid":report.fingerprint.usb_pid,"transports":report.fingerprint.transports,"identityConfidence":report.identity.confidence,"evidenceCounts":report.identity.evidence.len(),"protocolCandidates":report.protocols.iter().map(|p| &p.family).collect::<Vec<_>>(),"probe":report.probe,"strategies":report.candidates,"canObtain":false})
+    serde_json::json!({"schemaVersion":1,"engine":"7.5A-C-sprint-a","evaluatedAt":report.evaluated_at,"usbVid":report.fingerprint.usb_vid,"usbPid":report.fingerprint.usb_pid,"transports":report.fingerprint.transports,"identityConfidence":report.identity.confidence,"evidenceCounts":report.identity.evidence.len(),"protocolCandidates":report.protocols.iter().map(|p| &p.family).collect::<Vec<_>>(),"probe":{"attempted":report.probe.attempted,"code":report.probe.code,"httpStatus":report.probe.http_status,"metadataTruncated":report.probe.metadata_truncated,"advancedEndpoint":report.probe.advanced_endpoint},"strategies":report.candidates,"canObtain":false})
 }
 
 #[cfg(test)]
 mod tests;
+
+fn version_evidence(
+    device: &Device,
+    endpoint: &str,
+    interface: &str,
+    body: &[u8],
+) -> Option<EvidenceRecord> {
+    let text = std::str::from_utf8(body).ok()?.trim();
+    let value = text
+        .strip_prefix("<firmware_version>")?
+        .strip_suffix("</firmware_version>")?;
+    if value.is_empty()
+        || value.len() > 128
+        || !value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"._-/".contains(&b))
+    {
+        return None;
+    }
+    let mut e = EvidenceRecord::user_reported(
+        device.id.clone(),
+        Attribute::FirmwareVersion,
+        value.into(),
+        connection::now(),
+    )
+    .ok()?;
+    e.source = EvidenceOrigin::EndpointResponse;
+    e.verification = Verification::Observed;
+    e.reliability = Reliability::Observed;
+    e.collection_method = "GET /version_num.txt (static unauthenticated file)".into();
+    e.endpoint = Some(endpoint.into());
+    e.interface_id = Some(interface.into());
+    e.reference = Some("/version_num.txt".into());
+    Some(e)
+}

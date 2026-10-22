@@ -9,6 +9,7 @@
     "windows"
   ],
   "permissions": [
+    "allow-approve-firmware-route-probe",
     "allow-discover-firmware-routes",
     "allow-cancel-firmware-route-discovery",
     "allow-export-acquisition-diagnostics",

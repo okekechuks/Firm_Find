@@ -63,6 +63,10 @@ fn discovery_commands_are_registered_in_the_production_acl() {
         serde_json::from_str(include_str!("../../capabilities/main.json")).unwrap();
     let permissions = acl["permissions"].as_array().unwrap();
     for (command, permission) in [
+        (
+            "approve_firmware_route_probe",
+            "allow-approve-firmware-route-probe",
+        ),
         ("discover_firmware_routes", "allow-discover-firmware-routes"),
         (
             "cancel_firmware_route_discovery",
@@ -98,7 +102,7 @@ fn cancelled_or_superseded_route_lease_cannot_publish_or_release_its_successor()
     let after = service.begin("route").unwrap();
     assert_eq!(after.if_current(|| 11), Some(11));
 }
-fn device() -> Device {
+pub(super) fn device() -> Device {
     crate::discovery::replay_fixture(include_str!("../../fixtures/discovery-lifecycle.json"))
         .unwrap()[1]
         .devices[0]
@@ -109,7 +113,8 @@ fn input(d: &Device) -> DiscoveryRequest {
         device_id: d.id.clone(),
         endpoint: None,
         interface_id: None,
-        authorized: false,
+        approval_token: None,
+        advanced_endpoint: false,
     }
 }
 fn record(d: &Device, attribute: Attribute, value: &str, now: u64) -> EvidenceRecord {
@@ -150,17 +155,17 @@ fn mg11_no_longer_hits_a_hardcoded_global_failure() {
     assert_eq!(r.capabilities.len(), 16);
     assert_eq!(
         r.capabilities["deviceDetected"].state,
-        CapabilityState::CompletedVerified
+        CapabilityState::Observed
     );
 }
 #[test]
 fn root_family_signals_never_verify_model_or_export() {
     let families = recognize(
-        b"<title>E-LINK Wireless Router</title><script>model='MG11';password='secret'</script>",
+        include_bytes!("../../fixtures/asr-root-redacted.html"),
         None,
     );
     assert_eq!(families.len(), 1);
-    assert_eq!(families[0].family, "e_link_oem");
+    assert_eq!(families[0].family, "asr_duster_xml");
     assert_eq!(families[0].confidence, CapabilityState::Candidate);
     assert!(recognize(b"<script>Huawei ZTE VIDA D-Link</script>", None).is_empty());
     assert_eq!(
@@ -224,7 +229,7 @@ fn public_endpoint_disconnect_protected_device_and_cancel_are_rejected() {
     let mut d = device();
     let token = AtomicBool::new(false);
     let mut request = input(&d);
-    request.authorized = true;
+    request.approval_token = Some("test".into());
     request.endpoint = Some("https://8.8.8.8/".into());
     request.interface_id = Some("network".into());
     assert_eq!(
@@ -259,7 +264,7 @@ fn public_endpoint_disconnect_protected_device_and_cancel_are_rejected() {
 fn missing_interface_and_mismatched_subject_cannot_probe() {
     let d = device();
     let mut request = input(&d);
-    request.authorized = true;
+    request.approval_token = Some("test".into());
     request.endpoint = Some("http://192.168.100.1/".into());
     assert_eq!(
         discover(&d, vec![], 4, &request, &AtomicBool::new(false))
@@ -292,4 +297,129 @@ fn diagnostics_exclude_endpoint_ids_and_all_raw_peer_and_owner_text() {
     assert!(!json.contains("private owner label"));
     assert!(!json.contains("endpoint"));
     assert!(!json.contains(&d.display_name));
+}
+
+#[test]
+fn a1_legacy_boolean_cannot_authorize_network() {
+    assert!(serde_json::from_value::<DiscoveryRequest>(
+        serde_json::json!({"deviceId":"a","endpoint":null,"interfaceId":null,"authorized":true})
+    )
+    .is_err());
+}
+#[test]
+fn a2_title_only_is_not_a_protocol_family() {
+    assert!(recognize(
+        b"<title>ZTE Wireless Router</title><p>unrelated page</p>",
+        None
+    )
+    .is_empty());
+    assert!(recognize(b"<title>E-LINK Wireless Router</title>", None).is_empty());
+}
+#[test]
+fn a3_static_version_is_observed_not_authoritative() {
+    let d = device();
+    let e = version_evidence(
+        &d,
+        "http://192.168.100.1/",
+        "usb",
+        b"<firmware_version>REL_MRVL_UAPXC_v2.6.0</firmware_version>",
+    )
+    .unwrap();
+    assert_eq!(e.source, EvidenceOrigin::EndpointResponse);
+    assert_eq!(e.verification, Verification::Observed);
+    assert_eq!(e.reliability, Reliability::Observed);
+    assert!(identity(vec![e], connection::now(), None, None)
+        .verified_firmware
+        .is_none());
+}
+#[test]
+fn a4_collision_names_other_interface() {
+    let mut first = crate::discovery::NetworkAdapter {
+        id: "usb".into(),
+        display_name: "USB".into(),
+        link_up: true,
+        ..Default::default()
+    };
+    first.prefixes.push(crate::discovery::AddressPrefix {
+        address: "192.168.100.10".into(),
+        length: 24,
+    });
+    let mut second = first.clone();
+    second.id = "wifi".into();
+    second.display_name = "Wi-Fi".into();
+    assert_eq!(
+        connection::subnet_conflict(
+            "192.168.100.1".parse().unwrap(),
+            &first,
+            &[first.clone(), second]
+        )
+        .unwrap()
+        .code,
+        "subnet_conflict"
+    );
+}
+#[test]
+fn a5_observation_and_unimplemented_are_distinct() {
+    let d = device();
+    let r = discover(&d, vec![], 4, &input(&d), &AtomicBool::new(false)).unwrap();
+    assert_eq!(
+        serde_json::to_value(r.capabilities["deviceDetected"].state).unwrap(),
+        "observed"
+    );
+    assert_eq!(
+        serde_json::to_value(r.capabilities["installation"].state).unwrap(),
+        "not_implemented"
+    );
+}
+#[test]
+fn a6_signals_after_metadata_cap_are_ignored() {
+    let mut page = vec![b' '; 16384];
+    page.extend_from_slice(b"<title>OpenWrt</title>");
+    assert!(recognize(&page, Some("uhttpd")).is_empty());
+}
+
+#[test]
+fn a3_malformed_static_version_cannot_supply_identity() {
+    let d = device();
+    for b in [
+        b"<firmware_version></firmware_version>".as_slice(),
+        b"<firmware_version><script>unsafe</script></firmware_version>",
+        b"unstructured",
+    ] {
+        assert!(version_evidence(&d, "http://192.168.100.1/", "usb", b).is_none());
+    }
+    let observed = version_evidence(
+        &d,
+        "http://192.168.100.1/",
+        "usb",
+        b"<firmware_version>REL_MRVL_UAPXC_v2.6.0</firmware_version>",
+    )
+    .unwrap();
+    let reported = EvidenceRecord::user_reported(
+        d.id.clone(),
+        Attribute::FirmwareVersion,
+        "MF69_AM802L_ZX_DD_N_241106_EU".into(),
+        connection::now(),
+    )
+    .unwrap();
+    let r = discover(
+        &d,
+        vec![observed, reported],
+        4,
+        &input(&d),
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    assert_eq!(r.identity.evidence.len(), 2);
+    assert!(r.identity.verified_firmware.is_none());
+    assert!(!r.can_obtain);
+}
+
+#[test]
+fn collision_diagnostics_do_not_export_interface_names() {
+    let d = device();
+    let mut report = discover(&d, vec![], 4, &input(&d), &AtomicBool::new(false)).unwrap();
+    report.probe.code = "subnet_conflict".into();
+    report.probe.message = "Another network: private owner's interface".into();
+    assert!(!diagnostics(&report).to_string().contains("private owner"));
 }

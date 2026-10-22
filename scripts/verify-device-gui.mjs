@@ -31,7 +31,7 @@ export async function verifyDeviceGUI(client, {label, record, screenshot,pid,pro
   if(await evaluate('!!document.querySelector(".acquisition-results")')) {
     assert.equal(await evaluate('document.querySelector(".acquisition-results").textContent.includes("No network request made.")'),true);
     assert.equal(await evaluate('document.querySelectorAll(".acquisition-results > details").length'),6);
-    const report=await evaluate(`window.__TAURI_INTERNALS__.invoke('get_discovery').then(async snapshot=>{const device=snapshot.devices.find(d=>d.connected&&['router_mifi_candidate','usb_modem_candidate'].includes(d.category));if(!device)return null;return window.__TAURI_INTERNALS__.invoke('discover_firmware_routes',{input:{deviceId:device.id,endpoint:null,interfaceId:null,authorized:false}});})`);
+    const report=await evaluate(`window.__TAURI_INTERNALS__.invoke('get_discovery').then(async snapshot=>{const device=snapshot.devices.find(d=>d.connected&&['router_mifi_candidate','usb_modem_candidate'].includes(d.category));if(!device)return null;return window.__TAURI_INTERNALS__.invoke('discover_firmware_routes',{input:{deviceId:device.id,endpoint:null,interfaceId:null,approvalToken:null,advancedEndpoint:false}});})`);
     if(report){assert.equal(report.probe.attempted,false);assert.equal(report.canObtain,false);assert.equal(report.candidates.length,5);assert(report.candidates.every(c=>!c.capability.executable));record(label+': current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes');}
   }
   await screenshot(label+'-device-network-summary');
@@ -50,6 +50,15 @@ export async function verifyDeviceGUI(client, {label, record, screenshot,pid,pro
     assert.deepEqual(await readFile(destination),original);
     record('production: actual native diagnostics save, backend redaction and no overwrite; no network approval fabricated');
   }
+  if(label==='production' && await evaluate('!!document.querySelector(".device-summary-dialog input[placeholder]").value')) {
+    await evaluate('document.querySelector(".device-summary-dialog > details").open=true; [...document.querySelectorAll(".device-summary-dialog label")].find(l=>l.textContent.includes("I own or administer")).querySelector("input").click()');
+    await evaluate('[...document.querySelectorAll(".device-summary-dialog button")].find(b=>b.textContent==="Check Compatibility").click()');
+    execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.resolve('scripts/reject-route-approval.ps1'),'-OwnerPid',String(pid)],{windowsHide:true,timeout:20000});
+    await until(()=>evaluate('document.querySelector(".device-summary-dialog").textContent.includes("Endpoint check not approved.")'),'Native approval cancellation did not reach React');
+    assert.equal(await evaluate('!!document.querySelector(".acquisition-results")'),false);
+    await screenshot('production-route-approval-rejected');
+    record('production: real native endpoint approval rejected with No; React recovers without network request or report');
+  }
   await evaluate('document.querySelector(".device-summary-dialog .icon-button").click()');
   record(label+': compact native cards, backend route-discovery popup, no false acquisition success');
   if(label==='production' && process.argv.includes('--acquisition-mg11')) {
@@ -60,8 +69,9 @@ export async function verifyDeviceGUI(client, {label, record, screenshot,pid,pro
     await until(()=>evaluate('!!document.querySelector(".device-summary-dialog[open]")'),'H01 popup missing');
     await evaluate('document.querySelector(".device-summary-dialog > details").open=true');
     assert.equal(await evaluate('document.querySelector(".device-summary-dialog input[placeholder]").value'),'http://192.168.100.1/');
-    await evaluate('document.querySelector(".device-summary-dialog input[type=checkbox]").click()');
+    await evaluate('[...document.querySelectorAll(".device-summary-dialog label")].find(l=>l.textContent.includes("I own or administer")).querySelector("input").click()');
     await evaluate('[...document.querySelectorAll(".device-summary-dialog button")].find(b=>b.textContent==="Check Compatibility").click()');
+    record('H01 awaiting owner confirmation in native approve-read dialog; hardware check cannot proceed silently');
     await until(()=>evaluate('!!document.querySelector(".acquisition-results")'),'Owner-authorized H01 root probe failed');
     const text=await evaluate('document.querySelector(".acquisition-results").innerText');
     assert(text.includes('Identity: unverified'));assert(text.includes('No currently qualified acquisition method'));
