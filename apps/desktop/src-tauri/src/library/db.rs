@@ -326,7 +326,7 @@ impl Repository {
             [],
             |r| r.get(0),
         )?;
-        let sql=format!("SELECT a.sha256,a.size_bytes,d.storage_status,d.integrity_status,d.first_imported_at,d.last_verified_at,d.format,(SELECT COUNT(*) FROM artifact_imports i WHERE i.artifact_sha256=a.sha256),COALESCE((SELECT display_name FROM artifact_presentation p WHERE p.sha256=a.sha256),(SELECT original_filename FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'Legacy artifact'),COALESCE((SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'unknown'),COALESCE((SELECT kind FROM artifact_presentation p WHERE p.sha256=a.sha256),CASE (SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1) WHEN 'user_import' THEN 'imported_original' WHEN 'official_vendor_download' THEN 'imported_original' WHEN 'authorized_device_acquisition' THEN 'extracted' WHEN 'generated_build' THEN 'build_output' ELSE 'unknown' END) FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition} ORDER BY {order} LIMIT 25 OFFSET {}",page*25);
+        let sql=format!("SELECT a.sha256,a.size_bytes,d.storage_status,d.integrity_status,d.first_imported_at,d.last_verified_at,d.format,(SELECT COUNT(*) FROM artifact_imports i WHERE i.artifact_sha256=a.sha256),COALESCE((SELECT display_name FROM artifact_presentation p WHERE p.sha256=a.sha256),(SELECT original_filename FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'Legacy artifact'),COALESCE((SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'unknown'),COALESCE((SELECT kind FROM artifact_presentation p WHERE p.sha256=a.sha256),CASE (SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1) WHEN 'user_import' THEN 'imported_original' WHEN 'official_vendor_download' THEN 'imported_original' WHEN 'authorized_device_acquisition' THEN 'extracted' WHEN 'generated_build' THEN 'build_output' ELSE 'unknown' END),(SELECT associated_device_id FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND i.associated_device_id IS NOT NULL ORDER BY imported_at DESC,import_id DESC LIMIT 1) FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition} ORDER BY {order} LIMIT 25 OFFSET {}",page*25);
         let mut s = self.connection.prepare(&sql)?;
         let artifacts = s
             .query_map(values, |r| {
@@ -342,6 +342,7 @@ impl Repository {
                     original_filename: r.get(8)?,
                     source_category: r.get(9)?,
                     kind: r.get(10)?,
+                    associated_device_id: r.get(11)?,
                 })
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;

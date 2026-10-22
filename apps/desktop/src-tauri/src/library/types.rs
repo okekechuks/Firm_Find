@@ -146,6 +146,7 @@ pub struct FirmwareArtifact {
     pub kind: String,
     pub original_filename: String,
     pub source_category: String,
+    pub associated_device_id: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
