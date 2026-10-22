@@ -1,0 +1,86 @@
+{
+  "data_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER",
+  "vault_root": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER\\vault",
+  "schema": 5,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": [],
+  "table_counts": {
+    "activity_links": 76,
+    "artifact_details": 1,
+    "artifact_imports": 20,
+    "artifact_presentation": 0,
+    "audit_events": 226,
+    "compatibility_evaluations": 3,
+    "desktop_preferences": 1,
+    "device_identity_observations": 2,
+    "devices": 181,
+    "discovery_metadata": 181,
+    "firmware_artifacts": 1,
+    "firmware_backups": 0,
+    "integrity_checks": 31,
+    "job_details": 35,
+    "jobs": 35,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "all_rows_sha256": "45d5a9f68b114512e6067327586198513af83d8403faea8cf29a3f399791e868",
+  "settings_sha256": "b53a94def78900fd485d168459d6342e8ad0eab83c4164f7b07f74630e423b99",
+  "saved_router_ids": [
+    "b61f3765b1807d02d05f1c6e0236967025f51e671ebc062c70fe62c90dcdb147"
+  ],
+  "profile_ids": [
+    "observed.comfi-mg11",
+    "tplink.archer-c7-v5.openwrt-23-05-5"
+  ],
+  "database_files": {
+    "obtainer.db": {
+      "bytes": 389120,
+      "sha256": "e13b67692c9a87229ed1a92a052ca520d7cc938c28150334fd37d565deb17c2f"
+    },
+    "obtainer.db-wal": {
+      "bytes": 4132392,
+      "sha256": "2c9cf6b54c79564c419c3f7e5ea86899449e0239d78fe3f8f52342d8b1448011"
+    }
+  },
+  "vault_files": {
+    "sha256\\c9\\c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264.bin": {
+      "bytes": 1048576,
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264"
+    }
+  },
+  "other_directories": {
+    "logs": {
+      "obtainer.jsonl.2026-10-14": {
+        "bytes": 1015,
+        "sha256": "a25eff6ecdcafc443c11a5b874e91c0d35221716c0a8036ac50c60db030504ae"
+      },
+      "obtainer.jsonl.2026-10-15": {
+        "bytes": 580,
+        "sha256": "cb9efc4942e1352d9d5a501937dd2f326136e4d8ce3d91b4a7d7c6ace43c7b2b"
+      },
+      "obtainer.jsonl.2026-10-16": {
+        "bytes": 6090,
+        "sha256": "2636f36ae2de216f81ddad11f2a415f5a6ac9ffbda1123403a7cb784ae31c884"
+      },
+      "obtainer.jsonl.2026-10-17": {
+        "bytes": 435,
+        "sha256": "fc72e1a7234159ba5a69ac5f9c692cb4a26e5fbdbe333bbc6ee15b10872ce811"
+      },
+      "obtainer.jsonl.2026-10-19": {
+        "bytes": 290,
+        "sha256": "7e0492d58fc7902f0cbd68a9b129e2b274721bb5bcb7eba6b3c5e7a82da07dde"
+      },
+      "obtainer.jsonl.2026-10-20": {
+        "bytes": 145,
+        "sha256": "08258123113552a6a0838b0327b2c6337c44760cebf2656207cf6f0f2c998b8c"
+      }
+    },
+    "workspaces": {},
+    "reports": {}
+  }
+}

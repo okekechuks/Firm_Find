@@ -422,6 +422,7 @@ pub fn assemble(inventory: Inventory, now: u64) -> Vec<Device> {
 
 impl DiscoverySnapshot {
     pub fn reconcile(&mut self, inventory: Inventory, now: u64) {
+        let before = authority_inventory(&self.devices);
         let mut next: BTreeMap<_, _> = assemble(inventory, now)
             .into_iter()
             .map(|device| (device.id.clone(), device))
@@ -454,7 +455,10 @@ impl DiscoverySnapshot {
             .filter(|device| device.connected)
             .count();
         self.devices.truncate(connected + 512);
-        self.revision += 1;
+        // Revision binds authorization to topology/evidence, not the scan clock.
+        if self.revision == 0 || before != authority_inventory(&self.devices) {
+            self.revision += 1;
+        }
         self.scanned_at = Some(now);
         self.status = if self.warnings.is_empty() {
             DiscoveryStatus::Ready
@@ -462,6 +466,20 @@ impl DiscoverySnapshot {
             DiscoveryStatus::Degraded
         };
     }
+}
+
+fn authority_inventory(devices: &[Device]) -> BTreeMap<String, Device> {
+    devices
+        .iter()
+        .cloned()
+        .map(|mut device| {
+            device.last_seen_at = 0;
+            for evidence in &mut device.identity.observations {
+                evidence.observed_at = 0;
+            }
+            (device.id.clone(), device)
+        })
+        .collect()
 }
 
 #[derive(Debug, Deserialize)]

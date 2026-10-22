@@ -1202,6 +1202,39 @@ mod tests {
             select(&saved, &snapshot, profiles::Registry::bundled(), vec![]).is_err(),
             "PC IP on another NIC must be rejected"
         );
+        for interface_type in [6, 71] {
+            // Ethernet and Wi-Fi reach the remote router, never become it.
+            let mut snapshot = snapshot.clone();
+            snapshot.devices[0].networks[0].interface_type = interface_type;
+            let remote = SavedRouter {
+                address: "http://192.168.20.1/".into(),
+                ..saved.clone()
+            };
+            let selected =
+                select(&remote, &snapshot, profiles::Registry::bundled(), vec![]).unwrap();
+            assert!(!crate::adapters::protected(&selected.device));
+            assert!(selected.device.interfaces.is_empty());
+            assert_eq!(
+                selected.device.category,
+                discovery::identity::Category::NetworkGatewayCandidate
+            );
+            snapshot.devices[0].last_seen_at += 30_000;
+            snapshot.scanned_at = Some(connection::now());
+            let rescanned =
+                select(&remote, &snapshot, profiles::Registry::bundled(), vec![]).unwrap();
+            assert!(selected.same(&rescanned));
+            let service = Service::default();
+            service.state.lock().unwrap().selected = Some(selected);
+            service.observe_discovery(&snapshot);
+            assert_eq!(
+                service.generation.load(Ordering::Acquire),
+                0,
+                "unchanged scan must not invalidate remote scope"
+            );
+            snapshot.revision += 1;
+            service.observe_discovery(&snapshot);
+            assert_eq!(service.status().unwrap().state, "disconnected");
+        }
     }
     #[test]
     #[cfg(feature = "native-test-profile")]

@@ -1,5 +1,7 @@
 # Phase 7 verification
 
+**21 October independent review correction:** see [the correction report](POST_REVIEW_CORRECTIONS.md) for retained-session reads, stable discovery authorization revisions, saved remote endpoint routing, Windows hostname resolution, unavailable Library startup, directory leases, restore deduplication, exact hash lookup and the smaller IPC/polling/refresh corrections. This supplements the original Phase 7 evidence below; physical hardware qualification remains pending.
+
 Runtime qualification: 20 October 2026; schema-export follow-up: 21 October 2026, Africa/Lagos. **Software verdict: PASS. Hardware verdict: PENDING. Phase 8 readiness: READY FOR SIMULATOR ONLY.** This report distinguishes implemented source, controlled OS interoperability and physical hardware qualification.
 
 ## Scope and preserved baseline

@@ -70,18 +70,18 @@ impl DiscoveryService {
     }
 
     pub fn refresh_request(&self) -> Result<Receiver<DiscoverySnapshot>, &'static str> {
-        let epoch = {
-            let mut generation = self
-                .generation
-                .lock()
-                .map_err(|_| "Discovery generation unavailable")?;
-            *generation += 1;
-            *generation
-        };
+        // Commit admission and generation together. Rejected requests cannot
+        // invalidate an already admitted scan.
+        let mut generation = self
+            .generation
+            .lock()
+            .map_err(|_| "Discovery generation unavailable")?;
+        let epoch = *generation + 1;
         let (reply, receiver) = mpsc::channel();
         self.sender
             .try_send(Signal::Refresh(epoch, reply))
             .map_err(|_| "Discovery is busy. Wait a moment and refresh again.")?;
+        *generation = epoch;
         Ok(receiver)
     }
 
@@ -261,4 +261,27 @@ fn mark_failed(snapshot: &mut DiscoverySnapshot, warning: &str, detail: &str) {
     snapshot.status = DiscoveryStatus::Failed;
     snapshot.revision += 1;
     snapshot.warnings.push(warning.into());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn review_rejected_refresh_does_not_cancel_admitted_scan() {
+        let (sender, receiver) = mpsc::sync_channel(1);
+        sender.try_send(Signal::Changed).unwrap();
+        let service = DiscoveryService {
+            sender,
+            snapshot: Arc::new(Mutex::new(DiscoverySnapshot::default())),
+            stopped: Arc::new(AtomicBool::new(false)),
+            worker: Mutex::new(None),
+            generation: Arc::new(Mutex::new(42)),
+        };
+        assert!(service.refresh_request().is_err());
+        assert_eq!(*service.generation.lock().unwrap(), 42);
+        receiver.recv().unwrap();
+        let _reply = service.refresh_request().unwrap();
+        assert_eq!(*service.generation.lock().unwrap(), 43);
+        assert!(matches!(receiver.recv().unwrap(), Signal::Refresh(43, _)));
+    }
 }

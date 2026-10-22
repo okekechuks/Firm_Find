@@ -55,8 +55,29 @@ fn resolve(host: &str) -> Result<Vec<IpAddr>, Box<EndpointResult>> {
         tv_sec: 1,
         tv_usec: 0,
     };
+    struct DnsEvent(WSAEVENT);
+    impl Drop for DnsEvent {
+        fn drop(&mut self) {
+            unsafe {
+                WSACloseEvent(self.0);
+            }
+        }
+    }
+    let event = DnsEvent(unsafe { WSACreateEvent() });
+    if event.0 == WSA_INVALID_EVENT {
+        return Err(EndpointResult::failure(
+            "dns_error",
+            "Windows could not create a name-resolution event.",
+        ));
+    }
+    let event_handle = event.0 as windows_sys::Win32::Foundation::HANDLE;
+    let mut overlapped = windows_sys::Win32::System::IO::OVERLAPPED {
+        hEvent: event_handle,
+        ..Default::default()
+    };
+    let mut cancel_handle = ptr::null_mut();
     let mut result = ptr::null_mut();
-    let code = unsafe {
+    let mut code = unsafe {
         GetAddrInfoExW(
             host.as_ptr(),
             ptr::null(),
@@ -65,11 +86,25 @@ fn resolve(host: &str) -> Result<Vec<IpAddr>, Box<EndpointResult>> {
             &hints,
             &mut result,
             &timeout,
-            ptr::null(),
+            ptr::addr_of_mut!(overlapped),
             None,
-            ptr::null_mut(),
+            &mut cancel_handle,
         )
     };
+    if code == WSA_IO_PENDING {
+        let wait = unsafe { WSAWaitForMultipleEvents(1, &event_handle, 1, 1500, 0) };
+        if wait != WSA_WAIT_EVENT_0 as u32 {
+            unsafe {
+                GetAddrInfoExCancel(&cancel_handle);
+                // Cancellation completes asynchronously. Keep every borrowed buffer
+                // and OVERLAPPED alive until Windows acknowledges completion.
+                WSAWaitForMultipleEvents(1, &event_handle, 1, u32::MAX, 0);
+            }
+            code = WSAETIMEDOUT;
+        } else {
+            code = unsafe { GetAddrInfoExOverlappedResult(&overlapped) };
+        }
+    }
     struct Answers(*mut ADDRINFOEXW);
     impl Drop for Answers {
         fn drop(&mut self) {
@@ -537,6 +572,18 @@ pub(super) fn head(
 mod tests {
     use super::*;
     use std::io::{Read, Write};
+    #[test]
+    fn review_hostname_resolution_supports_localhost() {
+        // Resolution must finish, then the existing endpoint policy rejects loopback.
+        assert_eq!(
+            resolve("localhost").unwrap_err().code,
+            "target_out_of_scope"
+        );
+        assert_eq!(
+            resolve("192.168.100.1").unwrap(),
+            vec!["192.168.100.1".parse::<IpAddr>().unwrap()]
+        );
+    }
     #[test]
     fn local_http_checks_auth_redirect_unknown_and_timeout_without_credentials() {
         for (response, expected) in [

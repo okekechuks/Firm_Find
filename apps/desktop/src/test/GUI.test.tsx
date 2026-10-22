@@ -91,3 +91,10 @@ it("filters persisted Logs and exposes structured recovery details",async()=>{
 it("does not emit historical-completion notifications on startup",async()=>{
  vi.mocked(backend.listLibraryJobs).mockResolvedValue([{...job,status:"completed",createdAt:1}]);render(<WorkspaceProvider desktop><div>Ready</div></WorkspaceProvider>);await waitFor(()=>expect(backend.listLibraryJobs).toHaveBeenCalled());expect(screen.queryByText(/Firmware import complete/)).not.toBeInTheDocument();
 });
+it("keeps the workspace visible when relocated Library storage is unavailable",async()=>{
+ vi.mocked(backend.getDesktopState).mockResolvedValue({...desktopState,libraryAvailable:false});
+ render(<WorkspaceProvider desktop><div>Workspace remains usable</div></WorkspaceProvider>);
+ expect(await screen.findByRole("alert")).toHaveTextContent("Library storage is unavailable");
+ expect(screen.getByText("Workspace remains usable")).toBeInTheDocument();
+ expect(backend.relocateFirmwareLibrary).not.toHaveBeenCalled();
+});

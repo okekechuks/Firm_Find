@@ -2,6 +2,14 @@
 
 Updated: **21 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
+## Independent review corrections — 21 October
+
+**Software corrections: PASS. Physical OpenWrt qualification: still PENDING.** [Correction report](POST_REVIEW_CORRECTIONS.md) records the eight reported findings and five smaller findings, reproduction failures, design decisions and exact checks. Session retention, unchanged discovery revisions, asynchronous Windows hostname resolution, unavailable relocated-Library startup, effective directory leases, non-destructive backup deduplication, exact hash lookup, readiness deduplication, asynchronous simulator status, idle polling and rejected-refresh cancellation are corrected. The existing Phase 7 remote Ethernet/Wi-Fi selection path was retained and its regression extended; host NIC protection remains enforced.
+
+**Current regression results:** 132 frontend tests, 199 standard Rust tests, 200 native-profile Rust tests, both explicitly run genuine OpenWrt OS tests and 147 native checkpoints pass. TypeScript, lint, formatting, both Clippy profiles, frontend production build and both Windows release builds pass. Actual development/recovery/production windows, GUI Cancel/retry, missing-SIM error followed by DNS preview on the same session, pinned SSH, HMR, backup restore, absent relocated storage and reconnection are verified. [Native evidence](evidence/post-review-native-2026-10-21.json) retains results; [console capture](evidence/post-review-console-2026-10-21.json) is empty. Ordinary database/WAL/settings/saved-device/vault preservation is checked against the pre-correction baseline.
+
+No new phase started. Proprietary MG11 software remains user-reported, all four physical feature assessments remain UNKNOWN, and physical extraction/configuration/flashing/live USSD remain disabled. Earlier phase entries below retain their historical counts.
+
 ## Phase 7 — software PASS; hardware PENDING
 
 Existing OpenWrt contract now uses strict pinned SSH, existing key authentication, identity-only bootstrap and separate single-use read approval. Eight fixed UCI/ubus/partition-metadata queries, typed observations, firmware-feasibility reports and a Connected Devices inspection dialog preserve the existing six-page app. Schema 1 is retained; schema 2 permits exact OS-only inspection without inventing manufacturer/revision or granting feature/write support. Expiry, discovery invalidation, all-host-address exclusion, failure cleanup, picker admission/cancellation and stale publication were hardened during review. [Implementation](PHASE_7_IMPLEMENTATION.md) and [verification](PHASE_7_VERIFICATION.md) record the exact scope.

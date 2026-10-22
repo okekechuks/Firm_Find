@@ -70,10 +70,15 @@ export async function verifySimulator(client,{label,evidence,record}){
  await text('Scripted USSD code','*123#');await click('Send scripted USSD');await until(async()=>(await status()).ussd?.state==='active','Scripted USSD menu missing');await idle();await text('USSD menu reply','1');await click('Send menu reply');await until(async()=>(await status()).ussd?.state==='completed','Scripted USSD response missing');await idle();await shot('ussd-session','[aria-label="Simulated USSD"]');assert((await status()).ussd.text.includes('fictional balance'));
  record(label+': real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch');
  await scenario('cellular_restart');await click('Read all features');await until(async()=>(await status()).features?.modem.service==='restarting','Virtual cellular restart not observed');await idle();
- assert.equal((await status()).features.apn.error.code,'DATA_CONNECTION_FAILED');assert.equal((await status()).readAuthorized,false);
+ assert.equal((await status()).features.apn.error.code,'DATA_CONNECTION_FAILED');assert.equal((await status()).readAuthorized,true);
  for(let tick=0;tick<3;tick++){await click('Advance 1 second');await idle();}
- await connect();assert.equal((await status()).features.modem.service,'running');assert.equal((await status()).features.apn.value.apn,'native.lab');await shot('cellular-restart-recovered','[aria-label="Simulated APN"]');
+ await click('Read all features');await until(async()=>(await status()).features?.modem.service==='running','Recovered modem feature read absent');await idle();assert.equal((await status()).readAuthorized,true);assert.equal((await status()).activeConnections,1);assert.equal((await status()).features.apn.value.apn,'native.lab');await shot('cellular-restart-recovered','[aria-label="Simulated APN"]');
  record(label+': virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback');
+ await scenario('sim_missing');await click('Read all features');await until(async()=>(await status()).features?.apn.error?.code==='SIM_MISSING','Missing SIM result absent');await idle();
+ assert.equal((await status()).readAuthorized,true);assert.equal((await status()).activeConnections,1);
+ await preview('9.9.9.9');await shot('missing-sim-dns-preview');
+ record(label+': missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds');
+ await scenario('healthy');await click('Read all features');await idle();
  const live=await status();await scenario('wrong_identity');const invalidated=await status();assert(invalidated.epoch>live.epoch);assert.equal(invalidated.activeConnections,0);assert.equal(invalidated.readAuthorized,false);assert.equal(invalidated.outcome,null);assert.equal(invalidated.device.model,'Wrong Virtual Device');
  assert(await client.evaluate("document.querySelector('select[aria-label=\"Virtual device\"] option').textContent.includes('Wrong Virtual Device')"));await shot('wrong-identity');
  await expectReject('simulation_request',{input:{target:live.device.id,endpoint:live.device.endpoint,epoch:live.epoch,revision:live.revision,action:{kind:'read_features'}}});

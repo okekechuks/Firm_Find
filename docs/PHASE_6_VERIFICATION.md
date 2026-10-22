@@ -1,5 +1,7 @@
 # Phase 6 verification
 
+21 October follow-up: [independent review corrections](POST_REVIEW_CORRECTIONS.md) cover missing-SIM/APN read failures preserving authentication, subsequent GUI DNS preview, asynchronous status IPC and retained concurrency regressions. Original acceptance evidence below is historical.
+
 ## 20 October 2026 post-review concurrency correction
 
 **Phase 6 correction verdict: PASS. Phase 7 readiness: READY; not started.** Both reproduced ownership defects and the confirmed integration defects are corrected. Final checks pass: **165 Rust tests in each profile, 113 frontend tests, 130 native checkpoints, both optimized Windows executable builds**, formatting, Clippy, TypeScript and lint. The original acceptance record below is retained as historical evidence. Existing settings/device UI and import-history changes were present at the start and were preserved. Commit `5b54ff6` appeared during verification and was left intact; verified simulator source hashes still match the final files.

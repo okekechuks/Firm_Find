@@ -1,5 +1,7 @@
 # Phase 5 verification
 
+21 October follow-up: [independent review corrections](POST_REVIEW_CORRECTIONS.md) document retained sessions after unavailable-feature reads, stable discovery revisions and the existing Phase 7 remote-endpoint route. Security failures still invalidate sessions. Original acceptance evidence below is historical.
+
 Date: 19 October 2026, Africa/Lagos. **Phase 5 verdict: PASS. Phase 6 readiness: READY.** Phase 5 implementation and required qualification are complete. No Phase 6 implementation or physical router configuration operation was started.
 
 ## Post-review authentication bootstrap correction — 20 October 2026

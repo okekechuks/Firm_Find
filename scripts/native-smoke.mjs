@@ -136,7 +136,7 @@ try {
     for (const feature of Object.values(device.capabilities.features)) assert.equal(feature.state, 'UNKNOWN');
   }
   await click('.device-toolbar button');
-  await until(async () => (await invoke('get_discovery')).revision > discovery.revision, 'Device inventory refresh did not complete');
+  await until(async () => (await invoke('get_discovery')).scannedAt > discovery.scannedAt, 'Device inventory refresh did not complete');
   console.log(`PASS: native Windows inventory and refresh (${discovery.devices.length} records; feature support remains unverified)`);
   if (auditOnly) {
     console.log(`AUDIT discovery: ${JSON.stringify({

@@ -1343,6 +1343,27 @@ fn modem_failure_scenarios_return_real_errors() {
             .apn;
         assert_eq!(apn.error.unwrap().code, code);
         assert!(apn.value.is_none());
+        let status = s.status().unwrap();
+        assert!(
+            status.read_authorized,
+            "feature failure must preserve read authorization: {sc:?}"
+        );
+        assert!(
+            request(&s, Action::ReadFeatures).is_ok(),
+            "subsequent read after {sc:?}"
+        );
+        assert!(
+            request(
+                &s,
+                Action::PreviewDns {
+                    configuration: proposal("9.9.9.9")
+                }
+            )
+            .unwrap()
+            .preview
+            .is_some(),
+            "DNS preview remains usable after {sc:?}"
+        );
     }
 }
 #[test]

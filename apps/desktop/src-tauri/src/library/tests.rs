@@ -44,6 +44,117 @@ fn completed(service: &LibraryService, path: &Path) -> JobRecord {
 }
 
 #[test]
+fn review_restore_existing_artifact_preserves_its_name_and_kind() {
+    let (d, _, s) = setup();
+    let original = completed(
+        &s,
+        &source(d.path(), "original.bin", b"harmless restore fixture"),
+    );
+    let hash = original.related_artifact.unwrap();
+    assert_eq!(
+        wait(&s, &s.create_backup(&hash).unwrap().id).status,
+        JobStatus::Completed
+    );
+    let backup = s.backups().unwrap().remove(0);
+    assert_eq!(
+        wait(&s, &s.restore_backup(&backup.id, true).unwrap().id).status,
+        JobStatus::Completed
+    );
+    let details = s.details(&hash).unwrap();
+    assert_eq!(details.artifact.original_filename, "original.bin");
+    assert_eq!(details.artifact.kind, "imported_original");
+    assert_eq!(details.artifact.source_count, 2);
+}
+
+#[test]
+fn review_hash_lookup_never_selects_a_filename_match() {
+    let (d, repo, s) = setup();
+    let original = completed(&s, &source(d.path(), "first.bin", b"first harmless blob"));
+    let hash = original.related_artifact.unwrap();
+    let decoy = completed(
+        &s,
+        &source(
+            d.path(),
+            &format!("contains-{hash}.bin"),
+            b"different harmless blob",
+        ),
+    );
+    repo.lock()
+        .unwrap()
+        .connection
+        .execute(
+            "UPDATE artifact_details SET first_imported_at=first_imported_at+1000 WHERE sha256=?1",
+            [decoy.related_artifact.unwrap()],
+        )
+        .unwrap();
+    assert_eq!(s.details(&hash).unwrap().artifact.sha256, hash);
+}
+
+#[test]
+fn review_missing_configured_library_keeps_startup_and_metadata() {
+    let (d, repo, s) = setup();
+    let original = completed(
+        &s,
+        &source(d.path(), "retained.bin", b"harmless retained bytes"),
+    );
+    let hash = original.related_artifact.unwrap();
+    let details = s.details(&hash).unwrap();
+    let root = s.inner.root.clone();
+    s.stop();
+    drop(s);
+    let unavailable = d.path().join("disconnected-volume").join("library");
+    {
+        let repository = repo.lock().unwrap();
+        let mut preferences = repository.desktop_preferences().unwrap();
+        preferences.library_directory = Some(unavailable.to_string_lossy().into_owned());
+        repository
+            .connection
+            .execute(
+                "UPDATE desktop_preferences SET value=?1 WHERE id=1",
+                [serde_json::to_string(&preferences).unwrap()],
+            )
+            .unwrap();
+    }
+    let reopened =
+        LibraryService::start(repo.clone(), root, DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    assert!(!unavailable.exists(), "must not recreate relocated storage");
+    assert_eq!(
+        serde_json::to_value(reopened.details(&hash).unwrap()).unwrap(),
+        serde_json::to_value(details).unwrap()
+    );
+    assert_eq!(
+        reopened
+            .select_path(&d.path().join("anything.bin"))
+            .unwrap_err()
+            .code,
+        "LIBRARY_UNAVAILABLE"
+    );
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .desktop_preferences()
+            .unwrap()
+            .library_directory
+            .unwrap(),
+        unavailable.to_string_lossy()
+    );
+    reopened.stop();
+}
+
+#[cfg(windows)]
+#[test]
+fn review_directory_lease_blocks_rename_until_released() {
+    let d = tempfile::tempdir().unwrap();
+    let original = d.path().join("leased");
+    fs::create_dir(&original).unwrap();
+    let guards = guard_directories(&original).unwrap();
+    let renamed = d.path().join("renamed");
+    assert!(fs::rename(&original, &renamed).is_err());
+    drop(guards);
+    fs::rename(&original, &renamed).unwrap();
+}
+
+#[test]
 fn stream_hashes_empty_small_and_large_with_bounded_reads() {
     struct Bounded<R>(R);
     impl<R: Read> Read for Bounded<R> {

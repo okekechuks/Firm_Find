@@ -589,6 +589,14 @@ fn unsupported_feature_reads_and_backup_never_report_success() {
             )),
         };
         assert_eq!(result, AdapterErrorCode::OperationUnsupported);
+        assert_eq!(
+            m.active_count(),
+            1,
+            "unsupported feature must not log out the session"
+        );
+        assert!(m
+            .read_identity(id, &f.registry, &f.ctx(), &f.grant(), &control())
+            .is_ok());
         m.shutdown();
         assert_eq!(mock.resources.load(Ordering::Acquire), 0);
     }

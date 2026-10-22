@@ -1,8 +1,11 @@
 use super::{types::*, SimulatorService};
 use std::sync::Arc;
 #[tauri::command]
-pub fn simulation_status(service: tauri::State<'_, Arc<SimulatorService>>) -> Result<Status> {
-    service.status()
+pub async fn simulation_status(service: tauri::State<'_, Arc<SimulatorService>>) -> Result<Status> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || service.status())
+        .await
+        .map_err(|_| fail(ErrorCode::Internal, "Simulation status task failed."))?
 }
 #[tauri::command]
 pub async fn simulation_control(

@@ -8,10 +8,10 @@ import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
 import { verifyProfiles } from './verify-profiles.mjs';
 import { configureFirmwareTestRun, verifyFirmware, interruptFirmwareImport, verifyFirmwareHardening, startShutdownVerification } from './verify-firmware.mjs';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, realpath, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createTestProfile, probeNormal, cleanupProcess, verifyCleanupGuards, verifyActivationGuards } from './native-test-profile.mjs';
+import { createTestProfile, probeNormal, cleanupProcess, verifyCleanupGuards, verifyActivationGuards, assertOwned } from './native-test-profile.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const attach = process.argv.includes('--attach-dev');
@@ -188,9 +188,9 @@ async function verify(label, extended = false) {
   }
   for (let count = 0; count < 3; count += 1) {
     await until(() => client.evaluate("!document.querySelector('.device-toolbar button').disabled"), 'Refresh button did not enable');
-    const revision = (await invoke('get_discovery')).revision;
+    const scannedAt = (await invoke('get_discovery')).scannedAt;
     await click('.device-toolbar button');
-    await until(async () => (await invoke('get_discovery')).revision > revision, 'Native refresh did not advance revision');
+    await until(async () => (await invoke('get_discovery')).scannedAt > scannedAt, 'Native refresh did not complete a new scan');
     const next = await invoke('get_discovery');
     assert.equal(new Set(next.devices.map((item) => item.id)).size, next.devices.length);
     assert.notEqual(next.status, 'failed');
@@ -280,6 +280,46 @@ async function closeWindow() {
   assert.equal(powershell(`$app=Get-Process -Id ${state.apps[0].id}; $app.CloseMainWindow()`).toLowerCase(), 'true');
   await clean();
 }
+async function verifyUnavailableLibrary() {
+  // Only the marked test profile's generated-byte Library is moved, after shutdown.
+  const directory = path.join(profile.root, 'fixtures/gui-library-parent/OBTAINER-Library');
+  const held = directory + '-offline-fixture';
+  await assertOwned(profile, directory); await assertOwned(profile, held);
+  const relative = path.relative(await realpath(profile.root), await realpath(directory));
+  assert(relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+  assert(!(await lstat(directory)).isSymbolicLink());
+  const before = JSON.parse(await readFile(path.join(evidence, 'gui-reopened-storage.json'), 'utf8'));
+  await rename(directory, held);
+  try {
+    start('release'); await connect(); await connected();
+    const state = await invoke('get_desktop_state');
+    assert.equal(state.libraryAvailable, false);
+    assert.equal(path.normalize(state.libraryDirectory), path.normalize(directory));
+    assert.deepEqual(state.preferences, before.preferences);
+    await until(() => client.evaluate("[...document.querySelectorAll('[role=alert]')].some(e=>e.textContent.includes('Library storage is unavailable'))"), 'Unavailable Library alert did not render');
+    const placement = await client.evaluate("(() => { const a=document.querySelector('.toast-stack [role=alert]').getBoundingClientRect(); const sidebar=document.querySelector('.sidebar').getBoundingClientRect(); return {left:a.left,right:a.right,top:a.top,bottom:a.bottom,sidebarRight:sidebar.right,width:innerWidth,height:innerHeight}; })()");
+    assert(placement.left >= placement.sidebarRight && placement.right <= placement.width && placement.top >= 0 && placement.bottom <= placement.height, 'Unavailable Library alert must stay visible outside the sidebar');
+    const migration = JSON.parse(await readFile(path.join(evidence, 'gui-storage-migration.json'), 'utf8'));
+    const page = await invoke('list_firmware_artifacts', {query:{}});
+    assert.deepEqual(page.artifacts.map(a=>({sha256:a.sha256,sizeBytes:a.sizeBytes,kind:a.kind,sourceCount:a.sourceCount})), migration.artifacts);
+    assert(page.artifacts.every(a=>a.storageStatus==='present'), 'Absent volume must not mark individual blobs missing');
+    // Catch inside the WebView: the CDP helper wraps uncaught rejections in Error
+    // and intentionally does not preserve the IPC error object's code property.
+    const denial = await client.evaluate(`window.__TAURI_INTERNALS__.invoke('verify_firmware_integrity', {sha256:${JSON.stringify(page.artifacts[0].sha256)}}).then(()=>null,error=>error.code)`);
+    assert.equal(denial, 'LIBRARY_UNAVAILABLE', 'Unavailable storage must reject new file jobs');
+    await screenshot('production-library-unavailable');
+    await closeWindow();
+    await assert.rejects(lstat(directory), {code:'ENOENT'});
+    record('production restart: unavailable relocated Library keeps native window, React/IPC, records and settings; file jobs rejected and missing root not recreated');
+  } finally {
+    if (processes().apps.length) await closeWindow(); else await clean();
+    await assertOwned(profile, held); await rename(held, directory);
+  }
+  start('release'); await connect(); await connected();
+  assert.equal((await invoke('get_desktop_state')).libraryAvailable, true);
+  await verifyGUIRestart(client,{profile,evidence,record}); await closeWindow();
+  record('production restart: restored test Library reacquires leases and verifies bytes without switching storage directories');
+}
 async function chooseAppearance(theme) {
   await screen('settings', 'Settings');
   await click(`input[name="theme"][value="${theme}"]`);
@@ -337,7 +377,7 @@ try {
     record('interrupted owned development launch and released resources', { backendRenderedBeforeInterrupt });
     start('dev'); await verify('dev-recovery'); await closeWindow();
     start('release'); await verify('production'); await closeWindow();
-    if(process.argv.includes('--gui')){start('release');await connect();await connected();await verifyGUIRestart(client,{profile,evidence,record});await screenshot('production-relocated');await closeWindow();}
+    if(process.argv.includes('--gui')){start('release');await connect();await connected();await verifyGUIRestart(client,{profile,evidence,record});await screenshot('production-relocated');await closeWindow();await verifyUnavailableLibrary();}
   }
   const issues = consoleEvents.filter((event) => event.method === 'Runtime.exceptionThrown' ||
     ['warning', 'error'].includes(event.params?.entry?.level) ||

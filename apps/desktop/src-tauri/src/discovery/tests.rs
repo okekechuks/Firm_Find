@@ -3,6 +3,23 @@ use super::*;
 const FIXTURE: &str = include_str!("../../fixtures/discovery-lifecycle.json");
 
 #[test]
+fn review_unchanged_scan_preserves_authorization_revision() {
+    let frames: Vec<ReplayFrame> = serde_json::from_str(FIXTURE).unwrap();
+    let inventory = frames[1].inventory.clone();
+    let mut snapshot = DiscoverySnapshot::default();
+    snapshot.reconcile(inventory.clone(), 1);
+    let revision = snapshot.revision;
+    snapshot.reconcile(inventory, 2);
+    assert_eq!(snapshot.revision, revision);
+    assert_eq!(snapshot.scanned_at, Some(2));
+    snapshot.reconcile(Inventory::default(), 3);
+    assert!(
+        snapshot.revision > revision,
+        "removal must revoke authority"
+    );
+}
+
+#[test]
 fn composite_correlation_deduplication_and_capabilities() {
     let snapshots = replay_fixture(FIXTURE).unwrap();
     let arrival = &snapshots[1];

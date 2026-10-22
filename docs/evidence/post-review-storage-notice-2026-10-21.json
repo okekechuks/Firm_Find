@@ -1,0 +1,49 @@
+{
+  "verdict": "PASS",
+  "runId": "9b147dc00fd9e7e33c28c6110a59cab0",
+  "windowHandle": 12650068,
+  "state": {
+    "libraryAvailable": false,
+    "preferences": {
+      "autoRefresh": true,
+      "notifyCompleted": true,
+      "notifyFailed": true,
+      "notifyDevices": false,
+      "libraryDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\9b147dc00fd9e7e33c28c6110a59cab0\\fixtures\\gui-library-parent\\OBTAINER-Library"
+    },
+    "libraryDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\9b147dc00fd9e7e33c28c6110a59cab0\\fixtures\\gui-library-parent\\OBTAINER-Library",
+    "backupDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\9b147dc00fd9e7e33c28c6110a59cab0\\data\\backups",
+    "restartRequired": false,
+    "libraryBytes": 270532608,
+    "backupBytes": 2097152,
+    "extracted": 0,
+    "customized": 0,
+    "maxConcurrentJobs": 1
+  },
+  "geometry": {
+    "alert": {
+      "x": 871,
+      "y": 723.9375,
+      "width": 370,
+      "height": 92.0625,
+      "top": 723.9375,
+      "right": 1241,
+      "bottom": 816,
+      "left": 871
+    },
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "width": 232,
+      "height": 840,
+      "top": 0,
+      "right": 232,
+      "bottom": 840,
+      "left": 0
+    },
+    "width": 1280,
+    "height": 840,
+    "text": "Library storage is unavailable. Reconnect its drive or restore the configured folder, then restart OBTAINER. Existing records and settings are retained."
+  },
+  "consoleIssues": []
+}

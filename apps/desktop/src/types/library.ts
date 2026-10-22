@@ -18,7 +18,7 @@ export type ArtifactDetails=z.infer<typeof detailsSchema>;
 export type LibraryQuery={search?:string;integrity?:string|null;source?:string|null;fromDate?:number|null;toDate?:number|null;page?:number;kind?:string|null;sort?:string};
 
 export const desktopPreferencesSchema=z.object({autoRefresh:z.boolean(),notifyCompleted:z.boolean(),notifyFailed:z.boolean(),notifyDevices:z.boolean(),libraryDirectory:z.string().nullable()});
-export const desktopStateSchema=z.object({preferences:desktopPreferencesSchema,libraryDirectory:z.string(),backupDirectory:z.string(),restartRequired:z.boolean(),libraryBytes:number,backupBytes:number,extracted:number,customized:number,maxConcurrentJobs:z.literal(1)});
+export const desktopStateSchema=z.object({preferences:desktopPreferencesSchema,libraryDirectory:z.string(),libraryAvailable:z.boolean().optional(),backupDirectory:z.string(),restartRequired:z.boolean(),libraryBytes:number,backupBytes:number,extracted:number,customized:number,maxConcurrentJobs:z.literal(1)});
 export const backupSchema=z.object({id:z.string().regex(/^[a-f0-9]{32}$/),artifactSha256:hash,filename:z.string(),sizeBytes:number,createdAt:number,verifiedAt:number,sourceKind:z.string(),location:z.string()});
 export const storagePlanSchema=z.object({ticket:z.string().regex(/^[a-f0-9]{32}$/),source:z.string(),destination:z.string(),fileCount:number,bytes:number,expiresAt:number});
 export type DesktopState=z.infer<typeof desktopStateSchema>;

@@ -464,7 +464,7 @@ impl SessionManager {
             Some(e) => e.context(ctx)?,
             None => DeviceContext { ..*ctx },
         };
-        authorize(registry, &effective, &managed.binding, op, grant)?;
+        let authorization = authorize(registry, &effective, &managed.binding, op, grant);
         let started = Instant::now();
         let expiry = managed
             .binding
@@ -473,7 +473,20 @@ impl SessionManager {
             .min(effective.profile.expires_at);
         let bounded = bounded_read(control, expiry, ctx.now);
         bounded.checkpoint()?;
-        let value = action(managed.connection.as_mut(), &bounded, &effective)?;
+        let value =
+            authorization.and_then(|()| action(managed.connection.as_mut(), &bounded, &effective));
+        // A missing feature is not a failed authenticated transport. Retain only
+        // explicit domain failures, then recheck time, trust and discovery below.
+        if let Err(error) = &value {
+            if !matches!(
+                error.code,
+                AdapterErrorCode::OperationUnsupported
+                    | AdapterErrorCode::OperationNotImplemented
+                    | AdapterErrorCode::CapabilityUnknown
+            ) {
+                return Err(error.clone());
+            }
+        }
         bounded.checkpoint()?;
         let fresh = DeviceContext {
             now: ctx
@@ -481,7 +494,16 @@ impl SessionManager {
                 .saturating_add(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX)),
             ..effective
         };
-        authorize(registry, &fresh, &managed.binding, op, grant)?;
+        if let Err(error) = authorize(registry, &fresh, &managed.binding, op, grant) {
+            if !matches!(
+                error.code,
+                AdapterErrorCode::OperationUnsupported
+                    | AdapterErrorCode::OperationNotImplemented
+                    | AdapterErrorCode::CapabilityUnknown
+            ) {
+                return Err(error);
+            }
+        }
         let mut sessions = self
             .sessions
             .lock()
@@ -494,7 +516,7 @@ impl SessionManager {
             ));
         }
         sessions.insert(id, managed);
-        Ok(value)
+        value
     }
     pub fn read_identity(
         &self,

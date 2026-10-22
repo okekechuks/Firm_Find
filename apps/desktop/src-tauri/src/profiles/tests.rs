@@ -457,11 +457,27 @@ fn feature_and_subcapability_assessments_remain_independent() {
         v["capabilities"]["ussd"]["evidenceSources"] = serde_json::json!(["board"]);
     });
     // Synthetic feature variation: no claim about the actual Archer C7 or MG11.
-    let registry = Registry::load(vec![(&text, "bundled", true)]);
+    let mut registry = Registry::load(vec![(&text, "bundled", true)]);
     assert_eq!(registry.profiles.len(), 1, "{:?}", registry.diagnostics);
+    // Reserved readiness is engine-owned; inject internally after schema validation
+    // to exercise a nonadjacent duplicate without accepting it from profile JSON.
+    registry.profiles[0]
+        .profile
+        .capabilities
+        .apn
+        .requirements
+        .insert(0, Readiness::NotImplemented);
     let d = device();
     let r = evaluate(&registry, &d, strong(&d), NOW, 1);
     assert_eq!(r.features["apn"].assessment, Assessment::Supported);
+    assert_eq!(
+        r.features["apn"]
+            .readiness
+            .iter()
+            .filter(|entry| **entry == Readiness::NotImplemented)
+            .count(),
+        1
+    );
     assert!(r.features["apn"]
         .readiness
         .contains(&Readiness::RequiresPackage));

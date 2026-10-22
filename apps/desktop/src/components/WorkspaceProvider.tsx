@@ -6,8 +6,8 @@ import { WorkspaceContext, LibraryRevisionContext, type ToastTone } from "../lib
 import type { DesktopState, JobRecord } from "../types/library";
 interface Toast { id: number; message: string; tone: ToastTone }
 export function WorkspaceProvider({ desktop, children }: { desktop: boolean; children: React.ReactNode }) {
-  const revision = useLibraryFeed(desktop);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
+  const revision = useLibraryFeed(desktop, jobs.some(job => ["pending", "running"].includes(job.status)));
   const [activity, setActivity] = useState<Awaited<ReturnType<typeof getLibraryActivity>>>([]);
   const [state, setState] = useState<DesktopState | null>(null);
   const [loading, setLoading] = useState(desktop);
@@ -52,7 +52,9 @@ export function WorkspaceProvider({ desktop, children }: { desktop: boolean; chi
   useEffect(() => { const requests=generation; void refresh(); return () => { requests.current++; }; }, [refresh, revision]);
   const cancel = useCallback(async (id: string) => { try { await cancelLibraryJob(id); await refresh(); } catch (e) { notify(errorMessage(e), "error"); } }, [refresh, notify]);
   return <WorkspaceContext.Provider value={{ jobs, activity, state, loading, error, revision, refresh, cancel, notify }}><LibraryRevisionContext.Provider value={revision}>{children}</LibraryRevisionContext.Provider>
-    <aside className="toast-stack" aria-label="Notifications">{toasts.map(toast => <ToastItem key={toast.id} toast={toast} onClose={() => setToasts(items => items.filter(t => t.id !== toast.id))}/>)}</aside>
+    <aside className="toast-stack" aria-label="Notifications">
+      {state?.libraryAvailable === false ? <div className="notification-toast warning" role="alert"><AlertCircle size={19}/><div><p>Library storage is unavailable. Reconnect its drive or restore the configured folder, then restart OBTAINER. Existing records and settings are retained.</p></div></div> : null}
+      {toasts.map(toast => <ToastItem key={toast.id} toast={toast} onClose={() => setToasts(items => items.filter(t => t.id !== toast.id))}/>)}</aside>
   </WorkspaceContext.Provider>;
 }
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {

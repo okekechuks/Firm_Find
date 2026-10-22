@@ -625,7 +625,15 @@ pub fn evaluate(
         if !device.connected || assessment == Assessment::Unsupported {
             readiness.push(Readiness::Unavailable);
         }
-        readiness.dedup();
+        let mut unique = Vec::new();
+        readiness.retain(|entry| {
+            if unique.contains(entry) {
+                false
+            } else {
+                unique.push(*entry);
+                true
+            }
+        });
         let reason = specification.map_or_else(|| format!("No unique, fresh, verified profile match ({confidence:?}). USB IDs, labels and HTTP success cannot establish support."), |s| s.reason.clone());
         let subs = sub_keys(key).iter().map(|name| {
             let s = specification.and_then(|f| f.sub_capabilities.get(*name));

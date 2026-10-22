@@ -171,6 +171,11 @@ impl Repository {
                 "Only an active, uncancelled import may commit.",
             ));
         }
+        let already_visible: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM artifact_details WHERE sha256=?1 AND removed_at IS NULL)",
+            [hash],
+            |r| r.get(0),
+        )?;
         tx.execute(
             "INSERT OR IGNORE INTO firmware_artifacts VALUES(?1,?2)",
             params![hash, size],
@@ -194,7 +199,7 @@ impl Repository {
             [id],
             |r| r.get(0),
         )?;
-        if restored {
+        if restored && !already_visible {
             tx.execute("INSERT INTO artifact_presentation SELECT ?2,original_filename,'restored_default' FROM job_details WHERE job_id=?1 ON CONFLICT(sha256) DO UPDATE SET display_name=excluded.display_name,kind=excluded.kind",params![id,hash])?;
         }
         tx.execute("INSERT INTO integrity_checks(artifact_sha256,job_id,expected_size,actual_size,actual_sha256,status,verified_at) VALUES(?1,?2,?3,?3,?1,'verified',?4)",params![hash,id,size,now()])?;
@@ -239,6 +244,14 @@ impl Repository {
         Ok(())
     }
     pub fn library_artifacts(&self, q: &LibraryQuery, max: u64) -> Result<LibraryPage> {
+        self.library_artifacts_matching(q, max, None)
+    }
+    fn library_artifacts_matching(
+        &self,
+        q: &LibraryQuery,
+        max: u64,
+        exact_hash: Option<&str>,
+    ) -> Result<LibraryPage> {
         let search = q.search.as_deref().unwrap_or("");
         let page = q.page.unwrap_or(0);
         if search.len() > 256
@@ -295,14 +308,17 @@ impl Repository {
             _=>return Err(LibraryError::new("INVALID_FILTER","Unknown sort order.")),
         };
         let condition=" WHERE d.removed_at IS NULL AND (instr(a.sha256,lower(?1))>0 OR EXISTS(SELECT 1 FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND instr(lower(i.original_filename),lower(?1))>0)) AND (?2 IS NULL OR d.integrity_status=?2) AND (?3 IS NULL OR EXISTS(SELECT 1 FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND i.source_category=?3)) AND (?4 IS NULL OR d.first_imported_at>=?4) AND (?5 IS NULL OR d.first_imported_at<=?5)";
-        let condition = format!("{condition} AND (?6 IS NULL OR {kind_sql}=?6)");
+        let condition = format!(
+            "{condition} AND (?6 IS NULL OR {kind_sql}=?6) AND (?7 IS NULL OR a.sha256=?7)"
+        );
         let values = params![
             search,
             q.integrity,
             q.source,
             q.from_date,
             q.to_date,
-            q.kind
+            q.kind,
+            exact_hash
         ];
         let total=self.connection.query_row(&format!("SELECT COUNT(*) FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition}"),values,|r|r.get(0))?;
         let unique_bytes = self.connection.query_row(
@@ -342,12 +358,13 @@ impl Repository {
         if !valid_hash(hash) {
             return Err(LibraryError::new("INVALID_HASH", "Invalid SHA-256 digest."));
         }
-        let page = self.library_artifacts(
+        let page = self.library_artifacts_matching(
             &LibraryQuery {
                 search: Some(hash.into()),
                 ..Default::default()
             },
             0,
+            Some(hash),
         )?;
         let artifact = page
             .artifacts

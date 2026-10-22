@@ -1,7 +1,6 @@
 //! Evidence describes observations, never implied model or feature support.
 use super::Device;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -46,19 +45,6 @@ impl Default for Identity {
             explanation: "No supported management identity response has been collected.".into(),
         }
     }
-}
-
-/// Compare observations of the same identity claim. Windows driver/provider strings
-/// are separate from endpoint headers and never treated as verified manufacturers.
-pub fn conflicting_claims(observations: &[Evidence], kind: &str) -> bool {
-    observations
-        .iter()
-        .filter(|e| e.kind == kind && e.reliability != "hint")
-        .map(|e| e.value.trim().to_lowercase())
-        .filter(|s| !s.is_empty())
-        .collect::<BTreeSet<_>>()
-        .len()
-        > 1
 }
 
 pub fn resolve(device: &mut Device, now: u64) {
@@ -129,14 +115,10 @@ pub fn resolve(device: &mut Device, now: u64) {
             | Category::UsbModemCandidate
             | Category::NetworkGatewayCandidate
     );
-    identity.confidence = if conflicting_claims(&identity.observations, "manufacturer") {
-        "conflicting"
-    } else if relevant {
-        "candidate"
-    } else {
-        "unknown"
-    }
-    .into();
+    // PnP providers may legitimately differ between composite interfaces. They
+    // are Windows observations, never authoritative router manufacturer claims.
+    // Authenticated identity conflicts are checked by the profile/bootstrap engine.
+    identity.confidence = if relevant { "candidate" } else { "unknown" }.into();
     if relevant {
         identity.explanation = "Windows topology supports a candidate. A phone, modem or other tethering device can expose the same interfaces. Manufacturer, model and firmware remain unverified.".into();
     }
@@ -184,19 +166,28 @@ pub fn is_host_hardware(device: &Device) -> bool {
 mod tests {
     use super::*;
     #[test]
-    fn contradictory_claims_are_preserved_and_detected() {
-        let entries: Vec<_> = ["Maker A", "Maker B"]
-            .into_iter()
-            .map(|value| Evidence {
-                kind: "manufacturer".into(),
-                value: value.into(),
-                source: "test protocol".into(),
-                reliability: "observed".into(),
-                observed_at: 1,
-            })
-            .collect();
-        assert!(conflicting_claims(&entries, "manufacturer"));
-        assert_eq!(entries.len(), 2);
-        assert!(!conflicting_claims(&entries[..1], "manufacturer"));
+    fn differing_windows_providers_are_retained_without_claiming_router_identity() {
+        let mut device = crate::discovery::replay_fixture(include_str!(
+            "../../fixtures/discovery-lifecycle.json"
+        ))
+        .unwrap()[1]
+            .devices[0]
+            .clone();
+        for (index, interface) in device.interfaces.iter_mut().enumerate() {
+            interface.manufacturer = Some(format!("Windows provider {index}"));
+        }
+        resolve(&mut device, 2);
+        assert_eq!(
+            device
+                .identity
+                .observations
+                .iter()
+                .filter(|e| e.kind == "windows_manufacturer")
+                .count(),
+            device.interfaces.len()
+        );
+        assert_eq!(device.identity.confidence, "candidate");
+        assert!(device.identity.manufacturer.is_none());
+        assert!(device.identity.model.is_none());
     }
 }

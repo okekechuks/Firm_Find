@@ -115,8 +115,8 @@ pub fn guard_directories(path: &Path) -> Result<Vec<File>> {
             use std::os::windows::fs::OpenOptionsExt;
             guards.push(
                 OpenOptions::new()
-                    .access_mode(0)
-                    .share_mode(1)
+                    .access_mode(0x80000000) // GENERIC_READ activates share-delete protection.
+                    .share_mode(3) // Allow child writes, deny deletion/rename of the leased directory.
                     .custom_flags(0x02000000 | 0x00200000)
                     .open(&part)
                     .map_err(|e| {
@@ -284,7 +284,8 @@ pub struct Vault {
     pub root: PathBuf,
     pub staging: PathBuf,
     _guards: Vec<File>,
-    _lock: File,
+    _lock: Option<File>,
+    pub unavailable: bool,
 }
 impl Vault {
     pub fn open(root: &Path) -> Result<Self> {
@@ -304,10 +305,28 @@ impl Vault {
             root: root.into(),
             staging,
             _guards: guards,
-            _lock,
+            _lock: Some(_lock),
+            unavailable: false,
         })
     }
+    /// Preserve a configured but unavailable location without creating a replacement.
+    pub fn unavailable(root: PathBuf) -> Self {
+        Self {
+            staging: root.join("staging"),
+            root,
+            _guards: vec![],
+            _lock: None,
+            unavailable: true,
+        }
+    }
+    pub fn ensure_available(&self) -> Result<()> {
+        if self.unavailable {
+            return Err(LibraryError::new("LIBRARY_UNAVAILABLE", "Library storage is unavailable. Reconnect its drive or restore the configured folder, then restart OBTAINER. Existing records and settings are retained."));
+        }
+        Ok(())
+    }
     pub fn stage(&self, id: &str) -> Result<PathBuf> {
+        self.ensure_available()?;
         if !valid_id(id) {
             return Err(LibraryError::new(
                 "INVALID_JOB",
@@ -317,6 +336,7 @@ impl Vault {
         Ok(self.staging.join(format!("{id}.part")))
     }
     pub fn blob(&self, hash: &str) -> Result<(PathBuf, Vec<File>)> {
+        self.ensure_available()?;
         if !valid_hash(hash) {
             return Err(LibraryError::new(
                 "INVALID_HASH",

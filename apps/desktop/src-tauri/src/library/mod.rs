@@ -90,11 +90,24 @@ impl LibraryService {
             ));
         }
         let configured = lock(&repo)?.desktop_preferences()?.library_directory;
-        let vault = Vault::open(
-            &configured
-                .map(PathBuf::from)
-                .unwrap_or_else(|| root.join("vault")),
-        )?;
+        let vault = match configured {
+            None => Vault::open(&root.join("vault"))?,
+            Some(path) => {
+                let path = PathBuf::from(path);
+                // Default storage may be initialized automatically. A relocated root
+                // must already exist, and loss of access must not prevent app startup.
+                match guard_directories(&path).and_then(|_lease| Vault::open(&path)) {
+                    Ok(vault) => vault,
+                    Err(error) => {
+                        tracing::warn!(
+                            code = error.code,
+                            "Configured Library unavailable; records retained"
+                        );
+                        Vault::unavailable(path)
+                    }
+                }
+            }
+        };
         let _backup_guards = directory(&root.join("backups"))?;
         let (sender, receiver) = mpsc::sync_channel(16);
         let inner = Arc::new(Inner {
@@ -168,6 +181,7 @@ impl LibraryService {
         result
     }
     fn ensure_open(&self) -> Result<()> {
+        self.inner.vault.ensure_available()?;
         if self.inner.shutdown.load(Ordering::Acquire)
             || self.inner.relocating.load(Ordering::Acquire)
         {
@@ -736,6 +750,11 @@ impl Inner {
             if cleanup.is_err() {
                 repo.connection.execute("UPDATE job_details SET recovery_info='Unexpected staging item retained for manual review.' WHERE job_id=?1",[&id])?;
             }
+        }
+        // An inaccessible volume says nothing about the integrity of individual
+        // blobs. Keep their recorded state and all staging bytes for reconnection.
+        if self.vault.unavailable {
+            return Ok(());
         }
         // Reconcile in bounded pages; never reuse last session's verified label as current proof.
         let mut offset = 0;

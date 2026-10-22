@@ -1,0 +1,12 @@
+[
+    {
+        "name":  "obtainer.exe",
+        "bytes":  15696384,
+        "sha256":  "52E6419E87FC4EB83740724BCEF2D38A1A77A8FB6C36C46337D4638C5683F802"
+    },
+    {
+        "name":  "obtainer-native-test.exe",
+        "bytes":  15791616,
+        "sha256":  "11D70F44DCF97BDEB03531A640A94177C635542EFD3382DF1EE43CEB1517D73B"
+    }
+]
