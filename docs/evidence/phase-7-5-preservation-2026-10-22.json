@@ -43,5 +43,11 @@
     "settings": 1
   },
   "locationChanged": false,
-  "libraryOverride": null
+  "libraryOverride": null,
+  "usbOnlyFollowup": {
+    "command": "py scripts/probe-native-isolation.py .tools/phase7-5/normal-after-usb.json .tools/phase7-5/normal-before.json",
+    "exitCode": 0,
+    "equal": true,
+    "nativeSuiteNormalDataEqual": true
+  }
 }

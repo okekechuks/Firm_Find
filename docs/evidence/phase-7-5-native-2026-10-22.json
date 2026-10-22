@@ -562,18 +562,122 @@
           "runId": "ae0b10890ecc34156b855d38121224f6"
         }
       ]
+    },
+    {
+      "name": "usb_only_h01_native_release",
+      "command": "node scripts/verify-foundation.mjs --release-only --device-gui --acquisition-mg11",
+      "exitCode": 0,
+      "checkpointCount": 21,
+      "consoleIssueCount": 0,
+      "normalDataEqual": true,
+      "results": [
+        {
+          "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+        },
+        {
+          "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+        },
+        {
+          "name": "ordinary production executable rejects test activation before opening data"
+        },
+        {
+          "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "production: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "53c3cce91433c92df33256e9539a3017",
+          "dataDirectory": "<isolated-profiles>\\53c3cce91433c92df33256e9539a3017\\data"
+        },
+        {
+          "name": "production: native window, React and real SQLite IPC",
+          "url": "http://tauri.localhost/",
+          "pid": 24472,
+          "dataDirectory": "<isolated-profiles>\\53c3cce91433c92df33256e9539a3017\\data",
+          "theme": "system"
+        },
+        {
+          "name": "production: exactly six primary navigation destinations"
+        },
+        {
+          "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 53,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "production: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+        },
+        {
+          "name": "production: actual native diagnostics save, backend redaction and no overwrite; no network approval fabricated"
+        },
+        {
+          "name": "production: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "H01 real native GUI approval \u2192 bounded root response \u2192 candidate family \u2192 separate routes \u2192 redacted diagnostics; no firmware bytes or writes",
+          "probeCode": "identity_unknown",
+          "httpStatus": 200,
+          "protocolCandidates": [
+            "e_link_oem"
+          ]
+        },
+        {
+          "name": "production: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "no captured native console warnings or unhandled exceptions"
+        },
+        {
+          "name": "cleanup rejects mismatched marker/run ID and retains test data"
+        },
+        {
+          "name": "cleanup retains unknown staging without deleting files"
+        },
+        {
+          "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+        },
+        {
+          "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+        },
+        {
+          "name": "owned isolated run cleaned after all processes stopped",
+          "runId": "53c3cce91433c92df33256e9539a3017"
+        }
+      ]
     }
   ],
   "physicalH01": {
-    "qualification": "BLOCKED",
+    "qualification": "ROOT_HTTP_VERIFIED_IDENTITY_ACQUISITION_UNKNOWN",
     "probe": {
       "attempted": true,
-      "code": "no_route",
-      "httpStatus": null,
-      "metadataTruncated": false
+      "code": "identity_unknown",
+      "httpStatus": 200,
+      "metadataTruncated": true
     },
-    "reason": "Competing Wi-Fi/USB subnet; selected USB route is not preferred. No HTTP response collected.",
+    "protocolCandidates": [
+      "e_link_oem"
+    ],
+    "reason": "Owner disconnected competing Wi-Fi. Approved USB root request returned HTTP 200. E-LINK is a candidate family only; exact identity and executable acquisition remain unknown.",
     "canObtain": false
   },
-  "note": "Retained full native regression suite ran before the last global identity-conflict fix; final hardened dev/release smoke and full Rust suites ran afterward."
+  "note": "Retained full native regression suite ran before the last global identity-conflict fix; final hardened dev/release smoke and full Rust suites ran afterward.",
+  "physicalH01History": [
+    {
+      "qualification": "BLOCKED",
+      "probe": {
+        "attempted": true,
+        "code": "no_route",
+        "httpStatus": null,
+        "metadataTruncated": false
+      },
+      "reason": "Competing Wi-Fi/USB subnet; selected USB route is not preferred. No HTTP response collected.",
+      "canObtain": false
+    }
+  ]
 }

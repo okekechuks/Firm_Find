@@ -1,16 +1,18 @@
 {
   "canObtain": false,
   "engine": "7.5A-C-sprint-a",
-  "evaluatedAt": 1792695598697,
+  "evaluatedAt": 1792707575157,
   "evidenceCounts": 7,
   "identityConfidence": "unverified",
   "probe": {
     "attempted": true,
-    "code": "no_route",
-    "httpStatus": null,
-    "metadataTruncated": false
+    "code": "identity_unknown",
+    "httpStatus": 200,
+    "metadataTruncated": true
   },
-  "protocolCandidates": [],
+  "protocolCandidates": [
+    "e_link_oem"
+  ],
   "schemaVersion": 1,
   "strategies": [
     {

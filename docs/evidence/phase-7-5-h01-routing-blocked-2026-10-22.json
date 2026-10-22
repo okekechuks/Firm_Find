@@ -1,0 +1,131 @@
+{
+  "canObtain": false,
+  "engine": "7.5A-C-sprint-a",
+  "evaluatedAt": 1792695598697,
+  "evidenceCounts": 7,
+  "identityConfidence": "unverified",
+  "probe": {
+    "attempted": true,
+    "code": "no_route",
+    "httpStatus": null,
+    "metadataTruncated": false
+  },
+  "protocolCandidates": [],
+  "schemaVersion": 1,
+  "strategies": [
+    {
+      "capability": {
+        "evidence": [],
+        "executable": false,
+        "missingRequirements": [
+          "Trusted manufacturer identity",
+          "Verified firmware family",
+          "Trusted exact manufacturer/model",
+          "Exact hardware revision",
+          "Exact firmware family and version",
+          "Publisher-qualified source",
+          "Exact region/carrier and image type",
+          "Publisher integrity/authenticity evidence",
+          "Reviewed acquisition worker"
+        ],
+        "reason": "No exact applicable publisher artifact is registered. This does not establish device incompatibility.",
+        "state": "unknown"
+      },
+      "name": "Official firmware image",
+      "provenanceKind": "official_image",
+      "strategy": "official_image"
+    },
+    {
+      "capability": {
+        "evidence": [],
+        "executable": false,
+        "missingRequirements": [
+          "Trusted manufacturer identity",
+          "Verified firmware family",
+          "Trusted exact manufacturer/model",
+          "Exact hardware revision",
+          "Exact firmware family and version",
+          "Documented or exact-hardware-qualified firmware export",
+          "Endpoint trust and authentication",
+          "Explicit acquisition approval",
+          "Reviewed export worker and binary validation"
+        ],
+        "reason": "No documented or exact-hardware-qualified firmware export is registered. A configuration backup is not firmware.",
+        "state": "unknown"
+      },
+      "name": "Read-only device export",
+      "provenanceKind": "device_export",
+      "strategy": "documented_export"
+    },
+    {
+      "capability": {
+        "evidence": [],
+        "executable": false,
+        "missingRequirements": [
+          "Trusted manufacturer identity",
+          "Verified firmware family",
+          "Trusted exact manufacturer/model",
+          "Exact hardware revision",
+          "Exact firmware family and version",
+          "Model-qualified read-only storage adapter",
+          "Exact permitted ranges and exclusions",
+          "Coverage and recovery requirements",
+          "Authentication and explicit read approval"
+        ],
+        "reason": "No qualified bounded storage-read implementation is registered.",
+        "state": "unknown"
+      },
+      "name": "Authorized firmware storage read",
+      "provenanceKind": "partition_dump",
+      "strategy": "authorized_storage_read"
+    },
+    {
+      "capability": {
+        "evidence": [],
+        "executable": false,
+        "missingRequirements": [
+          "Trusted manufacturer identity",
+          "Verified firmware family",
+          "Trusted exact manufacturer/model",
+          "Exact hardware revision",
+          "Exact firmware family and version",
+          "Authentic applicable OEM package source",
+          "Exact region/carrier variant",
+          "Non-executing package parser",
+          "Integrity/authenticity validation"
+        ],
+        "reason": "No applicable authenticated OEM package source is registered. Updaters are never executed.",
+        "state": "unknown"
+      },
+      "name": "Manufacturer update package",
+      "provenanceKind": "manufacturer_package",
+      "strategy": "manufacturer_package"
+    },
+    {
+      "capability": {
+        "evidence": [],
+        "executable": false,
+        "missingRequirements": [
+          "Trusted manufacturer identity",
+          "Verified firmware family",
+          "Trusted exact manufacturer/model",
+          "Exact hardware revision",
+          "Exact firmware family and version",
+          "External tools and separate owner approval",
+          "Hardware-qualified read and coverage procedure"
+        ],
+        "reason": "Future expert-assisted workflow; no invasive operation is implemented.",
+        "state": "unknown"
+      },
+      "name": "External laboratory acquisition",
+      "provenanceKind": "external_physical_backup",
+      "strategy": "external_laboratory"
+    }
+  ],
+  "transports": [
+    "network",
+    "usb"
+  ],
+  "usbPid": "4E31",
+  "usbVid": "1286"
+}
