@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "nativeCheckpoints": 151,
+  "frontendTests": 134,
+  "rustStandardTests": 207,
+  "rustIsolatedTests": 208,
+  "genuineOpenWrtTests": 2,
+  "consoleIssues": 0,
+  "normalDataIdentical": true,
+  "builds": [
+    {
+      "name": "obtainer.exe",
+      "bytes": 15729664,
+      "sha256": "f67b03d76726f1c8efd7a592cdb2d803b65ce6fed4ca3be0ec38353498f352d8"
+    },
+    {
+      "name": "obtainer-native-test.exe",
+      "bytes": 15880192,
+      "sha256": "e3df48fb4f53db3f1408ac8952cf9078fe2def8a1048db98057485a8e6187f1b"
+    }
+  ]
+}

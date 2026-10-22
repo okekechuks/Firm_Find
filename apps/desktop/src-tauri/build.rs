@@ -20,6 +20,7 @@ fn main() {
             "open_managed_folder",
             "select_library_directory",
             "relocate_firmware_library",
+            "recover_default_library",
             "select_firmware_file",
             "discard_firmware_selection",
             "start_firmware_import",

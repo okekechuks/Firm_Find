@@ -217,8 +217,7 @@ fn scan_and_reply(
         .retain(|warning| warning.contains("notifications unavailable"));
     let commit = generation.lock().expect("Discovery generation poisoned");
     if epoch != *commit || queued_cancelled {
-        snapshot.cancelled = true;
-        snapshot.revision += 1;
+        mark_cancelled(snapshot);
     } else {
         snapshot.cancelled = false;
         match capture {
@@ -259,13 +258,33 @@ fn scan_and_reply(
 fn mark_failed(snapshot: &mut DiscoverySnapshot, warning: &str, detail: &str) {
     tracing::error!(detail, "Device inventory refresh failed");
     snapshot.status = DiscoveryStatus::Failed;
-    snapshot.revision += 1;
     snapshot.warnings.push(warning.into());
+}
+
+fn mark_cancelled(snapshot: &mut DiscoverySnapshot) {
+    // No inventory was committed. Existing evidence retains its original age.
+    snapshot.cancelled = true;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn cancelled_or_failed_scan_retains_authority_revision_and_age() {
+        let mut snapshot = DiscoverySnapshot {
+            revision: 41,
+            scanned_at: Some(12),
+            ..DiscoverySnapshot::default()
+        };
+        mark_cancelled(&mut snapshot);
+        assert_eq!(snapshot.revision, 41);
+        assert_eq!(snapshot.scanned_at, Some(12));
+        assert!(snapshot.cancelled);
+        mark_failed(&mut snapshot, "retained", "test capture failure");
+        assert_eq!(snapshot.revision, 41);
+        assert_eq!(snapshot.scanned_at, Some(12));
+        assert!(matches!(snapshot.status, DiscoveryStatus::Failed));
+    }
     #[test]
     fn review_rejected_refresh_does_not_cancel_admitted_scan() {
         let (sender, receiver) = mpsc::sync_channel(1);

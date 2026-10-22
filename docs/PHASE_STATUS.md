@@ -1,6 +1,14 @@
 # OBTAINER phase status
 
-Updated: **21 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
+Updated: **22 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
+
+## Targeted follow-up — 22 October
+
+**Correction verdict: PASS. Phase 7 software: PASS; physical hardware: PENDING.** [Current report](REVIEW_FOLLOWUP_2026_10_22.md) records separate OpenWrt review/login/session deadlines, a single framed inspection SSH call, optional-metadata limitations, correct SSH error classification, startup instance ownership and visible failures, confirmed default-Library recovery, cancelled/failed scan revision retention, isolated-profile CI checks, hidden observed fingerprint entry, restored-file notifications and strict post-read authorization. Four architecture/security/device documents are current. The misleading historical commit subject is documented without rewriting history.
+
+**Final results:** 207 standard Rust tests, 208 isolated-profile Rust tests, 2 explicitly executed genuine OpenWrt OS tests, 134 frontend tests and **151 native checkpoints pass**. TypeScript, lint, Rust formatting, both Clippy profiles and both optimized Windows executables pass. Stable Library event subscription was additionally corrected with a failing-then-passing regression. Native HMR, real startup failure dialog, process restart/recovery, simulator Cancel/read, genuine pinned SSH, file/backup workflows and actual Settings recovery pass with **zero console warnings/exceptions**. [Summary](evidence/review-followup-summary-2026-10-22.json), [native results](evidence/review-followup-native-2026-10-22.json), [console](evidence/review-followup-console-2026-10-22.json) and [preserved data fingerprints](evidence/review-followup-preservation-2026-10-22.json) retain the evidence.
+
+Normal database/WAL/rows/settings/saved-device/vault fingerprints equal the pre-correction baseline. The final native profile was safely cleaned. Test-related power/suspend failures and conservatively retained interrupted diagnostic profiles are recorded separately; the final AC-powered verification returned 0 and cleared its temporary idle-sleep hold. No permanent power plan, normal storage location, repository structure, physical firmware or router settings were changed. **Phase 8 remains unstarted and ready for simulator work only.** Earlier entries below are historical.
 
 ## Independent review corrections — 21 October
 

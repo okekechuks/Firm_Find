@@ -36,7 +36,7 @@ export function WorkspaceProvider({ desktop, children }: { desktop: boolean; chi
         const previous = seen.current.get(job.id);
         if (!["pending", "running"].includes(job.status) && previous !== job.status &&
           (previous !== undefined || (!firstRead.current && job.createdAt >= started.current))) {
-          if (job.status === "completed" && p?.notifyCompleted !== false) notify(`${job.kind === "firmware_backup" ? "Backup created" : job.kind === "backup_restore" ? "Backup restored to Library" : job.kind === "integrity_verify" ? "Integrity verification complete" : job.kind === "library_relocation" ? "Library copied. Restart to use the new location" : "Firmware import complete"}${job.originalFilename ? ` — ${job.originalFilename}` : ""}.`, "success");
+          if (job.status === "completed" && p?.notifyCompleted !== false) notify(job.kind === "backup_restore" ? "Backup restore verified." : `${job.kind === "firmware_backup" ? "Backup created" : job.kind === "integrity_verify" ? "Integrity verification complete" : job.kind === "library_relocation" ? "Library copied. Restart to use the new location" : "Firmware import complete"}${job.originalFilename ? ` — ${job.originalFilename}` : ""}.`, "success");
           else if (job.status === "failed" && p?.notifyFailed !== false) notify(job.message || "Operation failed. Inspect Logs for recovery details.", "error");
           else if (job.status === "cancelled") notify("Operation cancelled. Details retained in Logs.", "info");
         }
@@ -53,7 +53,7 @@ export function WorkspaceProvider({ desktop, children }: { desktop: boolean; chi
   const cancel = useCallback(async (id: string) => { try { await cancelLibraryJob(id); await refresh(); } catch (e) { notify(errorMessage(e), "error"); } }, [refresh, notify]);
   return <WorkspaceContext.Provider value={{ jobs, activity, state, loading, error, revision, refresh, cancel, notify }}><LibraryRevisionContext.Provider value={revision}>{children}</LibraryRevisionContext.Provider>
     <aside className="toast-stack" aria-label="Notifications">
-      {state?.libraryAvailable === false ? <div className="notification-toast warning" role="alert"><AlertCircle size={19}/><div><p>Library storage is unavailable. Reconnect its drive or restore the configured folder, then restart OBTAINER. Existing records and settings are retained.</p></div></div> : null}
+      {state?.libraryAvailable === false ? <div className="notification-toast warning" role="alert"><AlertCircle size={19}/><div><p>{state.restartRequired ? "Library location selected. Restart OBTAINER to activate it. Existing records and settings are retained." : "Library storage is unavailable. Reconnect its drive and restart, or open Settings to use the default location. Existing records and settings are retained."}</p></div></div> : null}
       {toasts.map(toast => <ToastItem key={toast.id} toast={toast} onClose={() => setToasts(items => items.filter(t => t.id !== toast.id))}/>)}</aside>
   </WorkspaceContext.Provider>;
 }

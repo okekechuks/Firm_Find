@@ -6,18 +6,18 @@
 |---|---|---|
 | `router_mifi_candidate` | USB physical relationship and a non-software network adapter, without an explicit Android-compatible hint | Could also be another tethering device; dedicated router status is unverified |
 | `usb_modem_candidate` | USB relationship with modem/COM function | Modem/control interface candidate; no command is sent |
-| `network_gateway_candidate` | Active physical interface with a reported gateway | Gateway belongs to that interface; model/ownership unknown |
+| `network_gateway_candidate` | Backend-created remote target from an explicitly selected saved local endpoint and active physical route | Separate from the protected PC interface; endpoint identity/ownership and support require their own evidence and approval |
 | `generic_network_interface` | Remaining network interfaces, including virtual/VPN records | Windows network hardware/software, not a confirmed router |
 | `unrelated_device` | Other included USB/serial records | Advanced diagnostics only |
 | `unknown` | No current classification; for example an old persisted summary | Refresh required for current evidence |
 
 ## Confidence and observations
 
-Confidence is categorical: `verified`, `probable`, `candidate`, `unknown`, `conflicting`. Current production observations support only `candidate` or `unknown`; the model does not manufacture a verified identity. `probable` and `verified` require stronger future protocol evidence. The old numeric `confidence` wire field remains at zero for compatibility and is not displayed as a score.
+Confidence is categorical: `verified`, `probable`, `candidate`, `unknown`, `conflicting`. Passive Windows observations support only `candidate` or `unknown`. Authenticated pinned management evidence is evaluated separately by bootstrap/profile matching and may establish a verified identity without granting unqualified feature support. The old numeric `confidence` wire field remains at zero for compatibility and is not displayed as a score.
 
 Each observation carries kind, value, source, reliability and collection timestamp. Windows manufacturer properties describe the Windows device/driver record. Server headers are untrusted endpoint observations, retained with the saved endpoint; they are not parsed into a manufacturer. User labels are never fed into identity resolution. Verified manufacturer/model/firmware remain null when no supported protocol response exists.
 
-`conflicting_claims` detects contradictory non-hint observations of the same identity claim and preserves both. Different component/driver manufacturer strings are retained as Windows properties rather than silently consolidated into a device manufacturer. No authenticated/vendor identity provider exists in Phase 2, so a real Windows-versus-management manufacturer conflict cannot yet be qualified on hardware. Fixture tests exercise contradictory structured claims. Future providers must use this resolver and mark conflicts before selecting any profile.
+Different Windows component/driver manufacturer strings are retained as `windows_manufacturer` observations, not contradictory authenticated router claims. The former unreachable `conflicting_claims` branch was removed. Phase 5 bootstrap/profile matching rejects conflicting authenticated identity and ambiguous authoritative profiles. Phase 7 pinned OpenWrt board responses can supply authenticated management evidence; OS-only identity never invents manufacturer or hardware revision. Physical qualification remains separate from the controlled OS fixture.
 
 ## Correlation and stable identifiers
 

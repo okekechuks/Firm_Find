@@ -21,6 +21,7 @@ use std::{
 };
 
 pub const LAB_TARGET: &str = "8888888888888888888888888888888888888888888888888888888888888888";
+const HOST_REVIEW_MS: u64 = 600_000;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TargetChoice {
@@ -314,6 +315,9 @@ impl Service {
         values
     }
     fn fresh(&self, selected: &Selected) -> Result<(), AdapterError> {
+        self.fresh_at(selected, connection::now())
+    }
+    fn fresh_at(&self, selected: &Selected, now: u64) -> Result<(), AdapterError> {
         let state = self
             .state
             .lock()
@@ -322,10 +326,7 @@ impl Service {
             .selected
             .as_ref()
             .is_none_or(|old| !old.same(selected))
-            || state
-                .status
-                .expires_at
-                .is_none_or(|expires| connection::now() >= expires)
+            || state.status.expires_at.is_none_or(|expires| now >= expires)
         {
             return Err(denied(
                 "Endpoint, interface, source address, evidence or approval changed; approve again.",
@@ -377,7 +378,7 @@ impl Service {
             interface_id: Some(selected.interface_id.clone()),
             source_address: Some(selected.source.to_string()),
             host_fingerprint: Some(observed.fingerprint().into()),
-            expires_at: Some(connection::now() + 30_000),
+            expires_at: Some(connection::now() + HOST_REVIEW_MS),
             ..Status::default()
         };
         state.selected = Some(selected);
@@ -447,7 +448,8 @@ impl Service {
         request: Connect,
         key: &Path,
     ) -> Result<Status, AdapterError> {
-        let (observed, endpoint, expires_at) = {
+        self.fresh(&selected)?;
+        let (observed, endpoint) = {
             let mut state = self
                 .state
                 .lock()
@@ -458,7 +460,6 @@ impl Service {
                     .take()
                     .ok_or_else(|| denied("Host observation is absent or already consumed."))?,
                 state.status.endpoint.clone().unwrap_or_default(),
-                state.status.expires_at.unwrap_or(0),
             )
         };
         let target = SshTarget::confirm(
@@ -481,7 +482,7 @@ impl Service {
             endpoint,
             interface_id: selected.interface_id.clone(),
             endpoint_identity: peer_scope,
-            expires_at,
+            expires_at: connection::now() + 30_000,
             simulated: false,
         };
         let approval =
@@ -972,7 +973,7 @@ pub(crate) fn pick_key(
         }
         let picker = Picker {
             cancellation,
-            deadline: Instant::now() + Duration::from_secs(25),
+            deadline: Instant::now() + Duration::from_secs(120),
         };
         let mut buffer = vec![0u16; 32768];
         let title: Vec<u16> = "Select existing SSH private key — contents stay in backend\0"
@@ -1017,6 +1018,21 @@ pub(crate) fn pick_key(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fingerprint_review_has_human_time_and_exact_expiry() {
+        let service = Service::default();
+        let selected = lab_like();
+        {
+            let mut state = service.state.lock().unwrap();
+            state.selected = Some(selected.clone());
+            state.status.expires_at = Some(1000 + HOST_REVIEW_MS);
+        }
+        assert!(service.fresh_at(&selected, 46_000).is_ok());
+        assert!(service
+            .fresh_at(&selected, 1000 + HOST_REVIEW_MS - 1)
+            .is_ok());
+        assert!(service.fresh_at(&selected, 1000 + HOST_REVIEW_MS).is_err());
+    }
     #[test]
     fn operation_guard_owns_busy_and_idle_cancel_is_reusable() {
         let service = Service::default();
@@ -1287,6 +1303,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(observed.host_fingerprint.as_deref(), Some(independent));
+        assert!(observed.expires_at.unwrap() >= connection::now() + HOST_REVIEW_MS - 1000);
         let connected = service
             .connect(
                 selected.clone(),
@@ -1299,6 +1316,10 @@ mod tests {
             )
             .unwrap();
         assert_eq!(connected.state, "identity_only");
+        assert!(
+            connected.expires_at.unwrap() >= connection::now() + 299_000,
+            "Authenticated lease starts at login, not host observation"
+        );
         assert!(connected.profile_qualified);
         assert!(connected.identity.as_ref().unwrap().manufacturer.is_none());
         assert!(connected

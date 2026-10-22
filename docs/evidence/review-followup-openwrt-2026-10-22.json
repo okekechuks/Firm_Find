@@ -1,0 +1,290 @@
+{
+  "enabled": true,
+  "busy": false,
+  "generation": 4,
+  "state": "inspected",
+  "targetId": "8888888888888888888888888888888888888888888888888888888888888888",
+  "endpoint": "ssh://127.0.0.1:22270",
+  "interfaceId": "owned-openwrt-qemu-loopback",
+  "sourceAddress": "127.0.0.1",
+  "hostFingerprint": "SHA256:Op8W4Qwl8QI+kensWPkD9vRBwf0f8MsbZSk+hAR3Hcs",
+  "expiresAt": 1792662925434,
+  "identity": {
+    "manufacturer": null,
+    "model": "QEMU Ubuntu 26.04 PC (i440FX + PIIX, 1996)",
+    "hardwareRevision": null,
+    "firmwareFamily": "OpenWrt",
+    "firmwareVersion": "25.12.6",
+    "boardName": "qemu-ubuntu-26-04-pc-i440fx-piix-1996",
+    "buildRevision": "r33311-981c978eff",
+    "target": "x86/64"
+  },
+  "profileQualified": true,
+  "readApproved": true,
+  "inspection": {
+    "networks": [
+      {
+        "name": "loopback",
+        "proto": "static",
+        "dns": null,
+        "peerdns": null,
+        "apn": null,
+        "auto_apn": null,
+        "pdptype": null,
+        "auth": null
+      },
+      {
+        "name": "lan",
+        "proto": "static",
+        "dns": null,
+        "peerdns": null,
+        "apn": null,
+        "auto_apn": null,
+        "pdptype": null,
+        "auth": null
+      }
+    ],
+    "wireless": [],
+    "runtimeDns": [
+      {
+        "name": "lan",
+        "up": true,
+        "proto": "static",
+        "dns": []
+      },
+      {
+        "name": "loopback",
+        "up": true,
+        "proto": "static",
+        "dns": []
+      }
+    ],
+    "dhcpDns": [
+      {
+        "name": "lan",
+        "interface": "lan",
+        "ipv4_options": [],
+        "ipv6_dns": null,
+        "ra": "server",
+        "dhcpv6": "server"
+      },
+      {
+        "name": "wan",
+        "interface": "wan",
+        "ipv4_options": [],
+        "ipv6_dns": null,
+        "ra": null,
+        "dhcpv6": null
+      }
+    ],
+    "radios": [],
+    "wirelessRuntime": [],
+    "limitations": [
+      "Partitions metadata unavailable; capability remains unknown."
+    ],
+    "ussd": {
+      "assessment": "UNKNOWN",
+      "reason": "No qualified modem interface or USSD capability evidence. No live request was sent."
+    },
+    "firmware": {
+      "deviceIdentity": {
+        "model": "QEMU Ubuntu 26.04 PC (i440FX + PIIX, 1996)",
+        "board_name": "qemu-ubuntu-26-04-pc-i440fx-piix-1996",
+        "release": {
+          "distribution": "OpenWrt",
+          "version": "25.12.6",
+          "revision": "r33311-981c978eff",
+          "target": "x86/64"
+        },
+        "rootfs_type": "ext4"
+      },
+      "acquisition": {
+        "status": "REQUIRES_VERIFICATION",
+        "reason": "Official x86/64 release images exist. Exact board, BIOS/EFI and layout compatibility remain unqualified; no firmware was acquired by this report.",
+        "evidence": [
+          "https://downloads.openwrt.org/releases/25.12.6/targets/x86/64/"
+        ],
+        "missingRequirements": [
+          "Exact board and hardware revision",
+          "Official image manifest and integrity/authenticity verification"
+        ],
+        "executable": false
+      },
+      "extraction": {
+        "status": "UNKNOWN",
+        "reason": "No qualified physical extraction method. Partition metadata is not firmware bytes or an installable backup.",
+        "evidence": [],
+        "missingRequirements": [
+          "Device-specific authorized read method",
+          "Coverage and integrity validation",
+          "Secret-bearing partition policy"
+        ],
+        "executable": false
+      },
+      "partitionLayout": {
+        "status": "UNKNOWN",
+        "reason": "MTD metadata unavailable; this does not establish missing storage or extraction support.",
+        "evidence": [],
+        "missingRequirements": [
+          "Reviewed platform-specific storage metadata source"
+        ],
+        "executable": false
+      },
+      "partitions": [],
+      "imageFormat": {
+        "status": "REQUIRES_VERIFICATION",
+        "reason": "Official x86 images distinguish ext4/squashfs and BIOS/EFI. The running root filesystem alone does not choose a compatible installation image.",
+        "evidence": [
+          "https://downloads.openwrt.org/releases/25.12.6/targets/x86/64/"
+        ],
+        "missingRequirements": [
+          "Exact image type and board mapping",
+          "Signature and encryption requirements",
+          "Size constraints"
+        ],
+        "executable": false
+      },
+      "customization": {
+        "apn": {
+          "directConfiguration": {
+            "status": "UNKNOWN",
+            "reason": "Readability does not establish a qualified configuration transaction.",
+            "evidence": [],
+            "missingRequirements": [
+              "Feature-specific verified device support",
+              "Backup, preview, apply, verification and restore implementation"
+            ],
+            "executable": false
+          },
+          "firmwareRebuild": {
+            "status": "UNKNOWN",
+            "reason": "No feature-specific rebuilt image or package integration has been qualified.",
+            "evidence": [],
+            "missingRequirements": [
+              "Compatible builder",
+              "Required hardware/driver/modem evidence",
+              "Qualified installation and recovery"
+            ],
+            "executable": false
+          }
+        },
+        "dns": {
+          "directConfiguration": {
+            "status": "UNKNOWN",
+            "reason": "Readability does not establish a qualified configuration transaction.",
+            "evidence": [],
+            "missingRequirements": [
+              "Feature-specific verified device support",
+              "Backup, preview, apply, verification and restore implementation"
+            ],
+            "executable": false
+          },
+          "firmwareRebuild": {
+            "status": "UNKNOWN",
+            "reason": "No feature-specific rebuilt image or package integration has been qualified.",
+            "evidence": [],
+            "missingRequirements": [
+              "Compatible builder",
+              "Required hardware/driver/modem evidence",
+              "Qualified installation and recovery"
+            ],
+            "executable": false
+          }
+        },
+        "ussd": {
+          "directConfiguration": {
+            "status": "UNKNOWN",
+            "reason": "Readability does not establish a qualified configuration transaction.",
+            "evidence": [],
+            "missingRequirements": [
+              "Feature-specific verified device support",
+              "Backup, preview, apply, verification and restore implementation"
+            ],
+            "executable": false
+          },
+          "firmwareRebuild": {
+            "status": "UNKNOWN",
+            "reason": "No feature-specific rebuilt image or package integration has been qualified.",
+            "evidence": [],
+            "missingRequirements": [
+              "Compatible builder",
+              "Required hardware/driver/modem evidence",
+              "Qualified installation and recovery"
+            ],
+            "executable": false
+          }
+        },
+        "wifiUserLimit": {
+          "directConfiguration": {
+            "status": "UNKNOWN",
+            "reason": "Readability does not establish a qualified configuration transaction.",
+            "evidence": [],
+            "missingRequirements": [
+              "Feature-specific verified device support",
+              "Backup, preview, apply, verification and restore implementation"
+            ],
+            "executable": false
+          },
+          "firmwareRebuild": {
+            "status": "UNKNOWN",
+            "reason": "No feature-specific rebuilt image or package integration has been qualified.",
+            "evidence": [],
+            "missingRequirements": [
+              "Compatible builder",
+              "Required hardware/driver/modem evidence",
+              "Qualified installation and recovery"
+            ],
+            "executable": false
+          }
+        }
+      },
+      "build": {
+        "status": "REQUIRES_TOOL",
+        "reason": "Official matching ImageBuilder exists; the OBTAINER build engine is not implemented and no customized image has been built.",
+        "evidence": [
+          "https://downloads.openwrt.org/releases/25.12.6/targets/x86/64/"
+        ],
+        "missingRequirements": [
+          "Exact build profile",
+          "Package and overlay requirements",
+          "Output validation"
+        ],
+        "executable": false
+      },
+      "installation": {
+        "status": "UNKNOWN",
+        "reason": "No qualified installation route; the physical installation engine is not implemented.",
+        "evidence": [],
+        "missingRequirements": [
+          "Exact board/image compatibility",
+          "Protected backups",
+          "Power and connection-loss handling",
+          "Explicit approval",
+          "Recovery qualification"
+        ],
+        "executable": false
+      },
+      "recovery": {
+        "status": "UNKNOWN",
+        "reason": "Recovery and rollback have not been tested on this device.",
+        "evidence": [],
+        "missingRequirements": [
+          "Device-specific documented procedure",
+          "Required physical access/tools",
+          "Hardware recovery evidence"
+        ],
+        "executable": false
+      },
+      "restrictions": [
+        "Inspection only; no configuration changes, raw partition reads, flashing or live USSD.",
+        "A privileged SSH account may be capable of writing; OBTAINER restricts its command dispatch.",
+        "Authenticated server reports are not independent physical-hardware certification.",
+        "This metadata report is not a firmware image or backup."
+      ],
+      "lastObserved": 1792662626452,
+      "confidence": "Authenticated server metadata; device-specific feasibility requires independent qualification"
+    }
+  },
+  "error": null,
+  "targets": []
+}

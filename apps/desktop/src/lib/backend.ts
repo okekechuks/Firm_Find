@@ -119,3 +119,4 @@ export async function removeFirmwareItem(id:string,backup:boolean){requireDeskto
 export async function openManagedFolder(target:"library"|"backups"|"artifact",id:string|null=null){requireDesktop();await invoke("open_managed_folder",{target,id});}
 export async function selectLibraryDirectory(){requireDesktop();return storagePlanSchema.nullable().parse(await invoke("select_library_directory"));}
 export async function relocateFirmwareLibrary(ticket:string){requireDesktop();return jobSchema.parse(await invoke("relocate_firmware_library",{ticket,confirmed:true}));}
+export async function recoverDefaultLibrary(){requireDesktop();await invoke("recover_default_library",{confirmed:true});}

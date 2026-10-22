@@ -19,7 +19,13 @@ export async function assertOwned(profile,file=profile.root) {
 }
 export function cleanupProcess(profile,env) {return spawnSync(profile.binary,['--cleanup-native-test-run'],{env,windowsHide:true,encoding:'utf8'});}
 export function verifyActivationGuards(workspace,profile,env,record){
-  const run=(binary,variables,args=[])=>{const result=spawnSync(binary,args,{env:variables,windowsHide:true,encoding:'utf8',timeout:15000});assert(!result.error,`Activation probe could not launch ${binary}: ${result.error}`);return result;};
+  const run=(binary,variables,args=[])=>{
+    if(path.basename(binary)==='obtainer.exe'){
+      const output=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(workspace,'scripts/verify-startup.ps1'),'-Binary',binary,'-ActivationProbe','-ExpectedText',args.length?'Simulation requires':'Native tests require',...(args.length?['-OpenWrtLab']:[])],{env:variables,windowsHide:true,encoding:'utf8',timeout:30000});
+      return {status:JSON.parse(output).exitCode};
+    }
+    const result=spawnSync(binary,args,{env:variables,windowsHide:true,encoding:'utf8',timeout:15000});assert(!result.error,`Activation probe could not launch ${binary}: ${result.error}`);return result;
+  };
   assert.equal(run(path.join(workspace,'target/release/obtainer.exe'),env).status,1);
   record('ordinary production executable rejects test activation before opening data');
   if(process.argv.includes('--phase7')){

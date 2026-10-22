@@ -122,34 +122,10 @@ fn run(
                     if outputs.iter().all(Option::is_some) {
                         if !status.success() {
                             // Peer-controlled stderr is never surfaced or logged.
-                            let diagnostic =
-                                String::from_utf8_lossy(outputs[1].as_deref().unwrap_or_default());
-                            if diagnostic.contains("Host key verification failed")
-                                || diagnostic.contains("REMOTE HOST IDENTIFICATION HAS CHANGED")
-                                || diagnostic.contains("No ED25519 host key is known")
-                            {
-                                return Err(error(
-                                    AdapterErrorCode::EndpointUntrusted,
-                                    "SSH host key could not be verified against the selected pin.",
-                                ));
-                            }
-                            if diagnostic.contains("Permission denied")
-                                || diagnostic.contains("Load key")
-                                || diagnostic.contains("no such identity")
-                            {
-                                return Err(error(
-                                    AdapterErrorCode::AuthenticationFailed,
-                                    "The selected SSH key could not authenticate the account.",
-                                ));
-                            }
-                            if diagnostic.contains("Bad configuration option")
-                                || diagnostic.contains("unsupported")
-                            {
-                                return Err(error(AdapterErrorCode::DependencyMissing, "Installed SSH toolchain does not support the required secure options or algorithm."));
-                            }
-                            return Err(error(
-                                AdapterErrorCode::TransportError,
-                                "SSH rejected the connection or the allowlisted query failed.",
+                            return Err(exit_error(
+                                name,
+                                status.code(),
+                                outputs[1].as_deref().unwrap_or_default(),
                             ));
                         }
                         return Ok(outputs[0].take().unwrap_or_default());
@@ -163,6 +139,46 @@ fn run(
         let _ = child.0.wait();
         result
     })
+}
+
+fn exit_error(name: &str, code: Option<i32>, stderr: &[u8]) -> AdapterError {
+    // Only OpenSSH's own failure status is eligible for diagnostic classification.
+    // Other exit values belong to the remote command, not authentication.
+    if name == "ssh" && code == Some(255) {
+        let diagnostic = String::from_utf8_lossy(stderr);
+        if [
+            "Host key verification failed",
+            "REMOTE HOST IDENTIFICATION HAS CHANGED",
+            "No ED25519 host key is known",
+        ]
+        .iter()
+        .any(|s| diagnostic.contains(s))
+        {
+            return error(
+                AdapterErrorCode::EndpointUntrusted,
+                "SSH host key could not be verified against the selected pin.",
+            );
+        }
+        if ["Permission denied", "Load key", "no such identity"]
+            .iter()
+            .any(|s| diagnostic.contains(s))
+        {
+            return error(
+                AdapterErrorCode::AuthenticationFailed,
+                "The selected SSH key could not authenticate the account.",
+            );
+        }
+        if ["Bad configuration option", "unsupported"]
+            .iter()
+            .any(|s| diagnostic.contains(s))
+        {
+            return error(AdapterErrorCode::DependencyMissing, "Installed SSH toolchain does not support the required secure options or algorithm.");
+        }
+    }
+    error(
+        AdapterErrorCode::TransportError,
+        "SSH connection or allowlisted command failed.",
+    )
 }
 
 static NEXT: AtomicU64 = AtomicU64::new(0);
@@ -395,6 +411,7 @@ impl SshTarget {
             .collect();
         for option in [
             "BatchMode=yes",
+            "LogLevel=ERROR",
             "StrictHostKeyChecking=yes",
             "HostKeyAlias=obtainer-target",
             "HostKeyAlgorithms=ssh-ed25519",
@@ -461,11 +478,41 @@ impl SshTarget {
     ) -> Result<Vec<u8>, AdapterError> {
         run("ssh", &self.args(query), query.output_limit(), control)
     }
+    pub fn inspection(
+        &self,
+        control: &OperationControl,
+    ) -> Result<super::query::InspectionReplies, AdapterError> {
+        let mut args = self.args(ReadQuery::Board);
+        *args.last_mut().expect("fixed SSH command argument") =
+            super::query::inspection_command().into();
+        let bytes = run("ssh", &args, super::query::BATCH_LIMIT, control)?;
+        super::query::inspection_replies(&bytes)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn only_ssh_255_diagnostics_classify_authentication() {
+        let diagnostic = b"Permission denied: command cannot read protected metadata";
+        assert_eq!(
+            exit_error("ssh", Some(1), diagnostic).code,
+            AdapterErrorCode::TransportError
+        );
+        assert_eq!(
+            exit_error("ssh", Some(255), diagnostic).code,
+            AdapterErrorCode::AuthenticationFailed
+        );
+        assert_eq!(
+            exit_error("ssh-keyscan", Some(255), diagnostic).code,
+            AdapterErrorCode::TransportError
+        );
+        assert_eq!(
+            exit_error("ssh", Some(0), b"Host key verification failed").code,
+            AdapterErrorCode::TransportError
+        );
+    }
     #[test]
     fn malformed_keys_and_shell_fragments_are_rejected() {
         assert!(public_key("ssh-ed25519 abc\nmalicious").is_err());
@@ -519,6 +566,7 @@ mod tests {
             .collect();
         for required in [
             "StrictHostKeyChecking=yes",
+            "LogLevel=ERROR",
             "IdentityAgent=none",
             "PasswordAuthentication=no",
             "ProxyCommand=none",

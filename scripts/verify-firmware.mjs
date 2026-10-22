@@ -18,7 +18,7 @@ async function prepare(){
  const digest=createHash('sha256');for await(const chunk of createReadStream(path.join(fixtures,'obtainer-generated-large.bin')))digest.update(chunk);largeHash=digest.digest('hex');
  await writeFile(path.join(fixtures,'obtainer-fail-transaction.bin'),Buffer.from(bytes).fill(0x51,256));prepared=true;
 }
-async function until(check,message,timeout=30000){const end=Date.now()+timeout;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,60));}throw new Error(message);}
+async function until(check,message,timeout=30000,interval=60){const end=Date.now()+timeout;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,interval));}throw new Error(message);}
 function api(client){return (command,args={})=>client.evaluate(`window.__TAURI_INTERNALS__.invoke(${JSON.stringify(command)},${JSON.stringify(args)})`);}
 function dialog(title,file,pid){return execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/drive-file-dialog.ps1'),'-DialogTitle',title,'-SelectedPath',file,'-OwnerPid',String(pid)],{windowsHide:true,encoding:'utf8',timeout:30000});}
 async function screen(client){await client.evaluate("document.querySelector('a[href=\"#firmware\"]').click()");await until(()=>client.evaluate("Boolean([...document.querySelectorAll('button')].find(b=>b.textContent==='Import Firmware'))"),'Library screen did not render');}
@@ -97,8 +97,18 @@ export async function verifyFirmwareHardening(client,{pid,evidence,record}){
  const picks=[await nativeSelection(client,pid,'obtainer-generated-large.bin'),await nativeSelection(client,pid,'obtainer-generated-large.bin')];
  const jobs=await client.evaluate(`Promise.all(${JSON.stringify(picks)}.map(s=>window.__TAURI_INTERNALS__.invoke('start_firmware_import',{input:{ticket:s.ticket,description:'Harmless isolated concurrent test',associatedDeviceId:null}})))`);
  assert.notEqual(jobs[0].id,jobs[1].id);const overlap=await Promise.all(jobs.map(j=>invoke('get_library_job',{id:j.id})));assert(overlap.some(j=>j.status==='pending'));assert(overlap.some(j=>j.status==='running'));
- // The serial worker hashes each 256 MiB copy and its published blob. Include queue time in the bounded debug-build deadline.
- const ends=await Promise.all(jobs.map(j=>terminal(client,j.id,180000)));assert(ends.every(j=>j.status==='completed'&&j.relatedArtifact===largeHash));assert.equal(ends.filter(j=>j.duplicate).length,1);assert.equal((await invoke('get_firmware_artifact',{sha256:largeHash})).artifact.sourceCount,2);
+ // Both serial 256 MiB imports stream/hash staging and vault bytes. Permit slow debug
+ // I/O, but reject a stalled queue within 30 s instead of hiding it behind a long timeout.
+ let ends, signature='',lastProgress=Date.now();
+ await until(async()=>{
+  ends=await Promise.all(jobs.map(j=>invoke('get_library_job',{id:j.id})));
+  if(ends.every(j=>['completed','failed','cancelled'].includes(j.status)))return true;
+  const current=ends.map(j=>`${j.id}:${j.status}:${j.stage}:${j.progressBytes}`).join('|');
+  if(current!==signature){signature=current;lastProgress=Date.now();}
+  assert(Date.now()-lastProgress<30000,'Concurrent import queue made no progress for 30 seconds');
+  return false;
+ },'Concurrent generated imports exceeded their total deadline',600000,200);
+ assert(ends.every(j=>j.status==='completed'&&j.relatedArtifact===largeHash));assert.equal(ends.filter(j=>j.duplicate).length,1);assert.equal((await invoke('get_firmware_artifact',{sha256:largeHash})).artifact.sourceCount,2);
  record('isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences');
  const blob=path.join(profile.root,'data/vault/sha256',hash.slice(0,2),hash+'.bin');await assertOwned(profile,blob);const corrupt=Buffer.from(bytes);corrupt[0]^=0xff;
  await writeFile(blob,corrupt);let job=await invoke('verify_firmware_integrity',{sha256:hash});assert.equal((await terminal(client,job.id)).errorCode,'HASH_MISMATCH');assert.equal((await invoke('get_firmware_artifact',{sha256:hash})).artifact.integrityStatus,'hash_mismatch');

@@ -141,6 +141,70 @@ fn review_missing_configured_library_keeps_startup_and_metadata() {
     reopened.stop();
 }
 
+#[test]
+fn unavailable_library_can_recover_default_without_losing_records_or_backup() {
+    let (d, repo, s) = setup();
+    let original = completed(
+        &s,
+        &source(d.path(), "recoverable.bin", b"generated recovery data"),
+    );
+    let hash = original.related_artifact.unwrap();
+    wait(&s, &s.create_backup(&hash).unwrap().id);
+    let backup = s.backups().unwrap();
+    let root = s.inner.root.clone();
+    s.stop();
+    drop(s);
+    let lost = d.path().join("absent-drive");
+    {
+        let r = repo.lock().unwrap();
+        let mut p = r.desktop_preferences().unwrap();
+        p.library_directory = Some(lost.to_string_lossy().into());
+        r.connection
+            .execute(
+                "UPDATE desktop_preferences SET value=?1 WHERE id=1",
+                [serde_json::to_string(&p).unwrap()],
+            )
+            .unwrap();
+    }
+    let offline =
+        LibraryService::start(repo.clone(), root.clone(), DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    assert_eq!(
+        offline.recover_default_library(false).unwrap_err().code,
+        "CONFIRMATION_REQUIRED"
+    );
+    assert!(repo
+        .lock()
+        .unwrap()
+        .desktop_preferences()
+        .unwrap()
+        .library_directory
+        .is_some());
+    offline.recover_default_library(true).unwrap();
+    assert!(offline.desktop_state().unwrap().restart_required);
+    assert!(offline.recover_default_library(true).is_err());
+    assert!(!lost.exists());
+    offline.stop();
+    drop(offline);
+    let recovered = LibraryService::start(repo, root, DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    assert!(recovered.desktop_state().unwrap().library_available);
+    assert!(recovered
+        .desktop_state()
+        .unwrap()
+        .preferences
+        .library_directory
+        .is_none());
+    assert_eq!(
+        recovered.details(&hash).unwrap().artifact.original_filename,
+        "recoverable.bin"
+    );
+    assert_eq!(recovered.backups().unwrap()[0].id, backup[0].id);
+    assert_eq!(
+        wait(&recovered, &recovered.verify(&hash).unwrap().id).status,
+        JobStatus::Completed
+    );
+    recovered.stop();
+}
+
 #[cfg(windows)]
 #[test]
 fn review_directory_lease_blocks_rename_until_released() {

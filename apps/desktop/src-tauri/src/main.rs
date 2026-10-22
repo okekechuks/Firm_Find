@@ -2,7 +2,7 @@
 
 fn main() {
     if let Err(error) = obtainer_lib::run() {
-        eprintln!("OBTAINER could not start: {error}");
+        obtainer_lib::startup::report_failure(&error);
         std::process::exit(1);
     }
 }

@@ -19,7 +19,7 @@ it("requires endpoint observation approval, independent host trust, native key s
   expect(await screen.findByText("REAL DEVICE — INSPECTION MODE")).toBeInTheDocument(); await user.selectOptions(await screen.findByLabelText("OpenWrt target"), openWrtTarget);
   expect(screen.getByRole("button", {name: "Observe SSH host key"})).toBeDisabled();
   await user.click(screen.getByRole("checkbox", {name: /I own or administer/})); await user.click(screen.getByRole("button", {name: "Observe SSH host key"}));
-  expect(backend.openWrtObserve).toHaveBeenCalledWith(openWrtTarget, 22); expect(await screen.findByText(openWrtPin)).toBeInTheDocument();
+  expect(backend.openWrtObserve).toHaveBeenCalledWith(openWrtTarget, 22); await screen.findByLabelText("Independently verified SSH fingerprint"); expect(screen.queryByText(openWrtPin)).not.toBeInTheDocument();
   const connect = screen.getByRole("button", {name: "Select SSH key and authenticate"}); expect(connect).toBeDisabled();
   await user.type(screen.getByLabelText("Independently verified SSH fingerprint"), openWrtPin); await user.click(screen.getByRole("checkbox", {name: /I independently checked/})); await user.click(connect);
   expect(backend.openWrtConnect).toHaveBeenCalledWith(openWrtPin, "root"); expect(await screen.findByRole("region", {name: "Authenticated OpenWrt identity"})).toHaveTextContent("25.12.6");
@@ -44,6 +44,8 @@ it("never permits observed or mismatched fingerprint alone to authenticate", asy
   vi.mocked(backend.openWrtStatus).mockResolvedValue(observedOpenWrt()); const user = userEvent.setup(); render(<OpenWrtInspection devices={devices} onClose={vi.fn()}/>); const field = await screen.findByLabelText("Independently verified SSH fingerprint");
   await user.type(field, `SHA256:${"b".repeat(43)}`); await user.click(screen.getByRole("checkbox", {name: /I independently checked/})); expect(screen.getByRole("button", {name: "Select SSH key and authenticate"})).toBeDisabled();
   expect(backend.openWrtConnect).not.toHaveBeenCalled(); expect(screen.queryByLabelText(/password|private key path/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(openWrtPin)).not.toBeInTheDocument();
+  expect(screen.getByText(/observed value stays hidden/)).toBeInTheDocument();
 });
 it("cancels pending work, suppresses late results and permits a fresh request", async () => {
   const connected = {...authenticatedOpenWrt(), state: "read_authorized" as const, readApproved: true}; vi.mocked(backend.openWrtStatus).mockResolvedValue(connected);

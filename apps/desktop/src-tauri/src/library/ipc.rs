@@ -226,6 +226,16 @@ pub async fn select_library_directory(
         .map_err(worker_error)?
 }
 #[tauri::command]
+pub async fn recover_default_library(
+    confirmed: bool,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<()> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.recover_default_library(confirmed))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
 pub async fn relocate_firmware_library(
     ticket: String,
     confirmed: bool,

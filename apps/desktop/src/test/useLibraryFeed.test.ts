@@ -15,6 +15,7 @@ it("backs off idle polling, keeps active jobs responsive and cleans up", async (
   view.rerender({ busy: true });
   await act(async () => { await vi.advanceTimersByTimeAsync(1700); });
   expect(view.result.current).toBe(2);
+  expect(onLibraryChanged).toHaveBeenCalledTimes(1);
   const changed = vi.mocked(onLibraryChanged).mock.calls.at(-1)![0];
   act(() => changed({} as Parameters<typeof changed>[0]));
   await act(async () => { await vi.advanceTimersByTimeAsync(200); });

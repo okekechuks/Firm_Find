@@ -50,6 +50,8 @@ export async function verifyOpenWrt(client,{label,evidence,record,pid}){
   await button(client,'Observe SSH host key');
   await until(async()=>{const s=await invoke('openwrt_status');return !s.busy&&s.state==='host_observed';},'Host observation failed');
   const observed=await invoke('openwrt_status');assert.equal(observed.hostFingerprint,pin);assert.equal(observed.targetId,lab);
+  assert(observed.expiresAt>=Date.now()+590000,'Fingerprint review needs a separate human-scale lease');
+  assert.equal(await client.evaluate(`document.querySelector('[aria-label="SSH host identity"]').textContent.includes(${JSON.stringify(pin)})`),false,'Observed fingerprint must remain hidden during independent entry');
   assert(observed.targets.find(t=>t.id===lab)?.lab);assert.equal(observed.identity,null);assert.equal(observed.readApproved,false);
   await input(client,'Independently verified SSH fingerprint',pin);
   await checkbox(client,'I independently checked');
@@ -57,6 +59,7 @@ export async function verifyOpenWrt(client,{label,evidence,record,pid}){
   execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/drive-file-dialog.ps1'),'-DialogTitle','Select existing SSH private key — contents stay in backend','-SelectedPath',path.join(root,'.tools/phase7-vm/test-key'),'-OwnerPid',String(pid)],{windowsHide:true,encoding:'utf8',timeout:30000});
   await until(async()=>{const s=await invoke('openwrt_status');if(s.state==='failed')throw Error(JSON.stringify(s.error));return !s.busy&&s.state==='identity_only';},'Authenticated identity did not reach native UI');
   const identity=await invoke('openwrt_status');assert.equal(identity.profileQualified,true);assert.equal(identity.readApproved,false);assert.equal(identity.identity.firmwareVersion,'25.12.6');assert.equal(identity.identity.target,'x86/64');assert.equal(identity.identity.hardwareRevision,null);assert.equal(identity.inspection,null);
+  assert(identity.expiresAt>=Date.now()+290000,'Authentication must start a fresh bounded session');
   await until(()=>client.evaluate("Boolean(document.querySelector('[aria-label=\"Authenticated OpenWrt identity\"]'))"),'Authenticated identity did not render');
   await checkbox(client,'I separately approve');await button(client,'Authorize read-only inspection');
   await until(()=>client.evaluate("Boolean([...document.querySelectorAll('.openwrt-dialog button')].find(b=>b.textContent==='Read configuration and firmware feasibility'&&!b.disabled))"),'Separate read approval did not enable inspection');

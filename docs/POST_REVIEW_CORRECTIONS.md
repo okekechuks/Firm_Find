@@ -1,5 +1,7 @@
 # Independent review corrections — 21 October 2026
 
+Follow-up review on **22 October**: [targeted corrections and current results](REVIEW_FOLLOWUP_2026_10_22.md). Earlier counts and evidence below are retained as historical results.
+
 Scope: the eight reported findings and five smaller findings. Existing Phase 5–7 frameworks, six-page GUI, schema 5 database, content-addressed vault and ordinary application data are retained. No physical router request, configuration change, extraction, flashing or live USSD is enabled by these corrections. Physical OpenWrt qualification remains pending.
 
 ## Findings and decisions

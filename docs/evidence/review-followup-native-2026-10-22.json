@@ -1,0 +1,590 @@
+{
+  "results": [
+    {
+      "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+    },
+    {
+      "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+    },
+    {
+      "name": "ordinary production executable rejects test activation before opening data"
+    },
+    {
+      "name": "ordinary production rejects OpenWrt lab activation; isolated binary rejects duplicate lab flags before data access"
+    },
+    {
+      "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "active test ownership prevents cleanup"
+    },
+    {
+      "name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner",
+      "runId": "b8258eb0c51a419fba40fe2d82fcf2f8",
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\b8258eb0c51a419fba40fe2d82fcf2f8\\data"
+    },
+    {
+      "name": "dev-reopen: native window, React and real SQLite IPC",
+      "url": "http://127.0.0.1:1420/",
+      "pid": 22204,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\b8258eb0c51a419fba40fe2d82fcf2f8\\data",
+      "theme": "system"
+    },
+    {
+      "name": "dev-reopen: exactly six primary navigation destinations"
+    },
+    {
+      "name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 55,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "dev-reopen: real adapter registry IPC, strict request validation and absent write/execution endpoints"
+    },
+    {
+      "name": "dev-reopen: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection",
+      "devices": 12,
+      "mg11Connected": false
+    },
+    {
+      "name": "dev-reopen: actual native React adapter status, protected/unsupported display and disabled extraction"
+    },
+    {
+      "name": "dev-reopen: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented"
+    },
+    {
+      "name": "dev-reopen: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+    },
+    {
+      "name": "dev-reopen: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+    },
+    {
+      "name": "dev-reopen: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+    },
+    {
+      "name": "dev-reopen: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+    },
+    {
+      "name": "dev-reopen: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+    },
+    {
+      "name": "dev-reopen: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+    },
+    {
+      "name": "dev-reopen: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+    },
+    {
+      "name": "dev-reopen: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+    },
+    {
+      "name": "dev-reopen: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+    },
+    {
+      "name": "dev-reopen: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+    },
+    {
+      "name": "dev-reopen: genuine OpenWrt OS, independent console pin, native key dialog, identity-only bootstrap, exact OS profile, separate read approval, UCI/ubus projections and feasibility GUI",
+      "version": "25.12.6",
+      "target": "x86/64",
+      "hardwareQualified": false,
+      "limitations": [
+        "Partitions metadata unavailable; capability remains unknown."
+      ]
+    },
+    {
+      "name": "dev-reopen: real GUI Cancel released resources and subsequent SSH authentication/read succeeded"
+    },
+    {
+      "name": "dev-reopen: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+    },
+    {
+      "name": "dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+      "jobId": "4bdda6f6102f812abb072a3834a6eb52",
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "size": 1048576
+    },
+    {
+      "name": "dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+      "sourceCount": 2
+    },
+    {
+      "name": "dev-reopen: actual streamed integrity verification and history",
+      "checks": 3
+    },
+    {
+      "name": "dev-reopen: actual native save dialog and unsigned metadata-only manifest",
+      "manifestSchemaVersion": 1
+    },
+    {
+      "name": "dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact",
+      "bytesObserved": 3145728,
+      "totalBytes": 268435456,
+      "elapsedMs": 1790,
+      "copyThroughputMiBPerSecond": 29.411764705882355,
+      "memory": {
+        "WorkingSet64": 86290432,
+        "PeakWorkingSet64": 89423872,
+        "PrivateMemorySize64": 26193920
+      }
+    },
+    {
+      "name": "dev-reopen: persisted job and activity screens render after restart"
+    },
+    {
+      "name": "dev-reopen: dashboard and Library reflect committed counts and no active work",
+      "artifacts": 1
+    },
+    {
+      "name": "isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences"
+    },
+    {
+      "name": "isolated native corruption and missing-blob detection; source reimport restores generated bytes without touching normal vault"
+    },
+    {
+      "name": "isolated native database failure after artifact publication: failed job, retained orphan, verified reuse on retry"
+    },
+    {
+      "name": "isolated native manifest remains saved when activity transaction fails; React displays separate warning"
+    },
+    {
+      "name": "dev-reopen: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"
+    },
+    {
+      "name": "dev-reopen: temporary HMR edit restored"
+    },
+    {
+      "name": "dev-reopen: injected read error and real IPC retry recovery"
+    },
+    {
+      "name": "dev-reopen: loading state retains cached data"
+    },
+    {
+      "name": "dev-reopen: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed"
+    },
+    {
+      "name": "dev-reopen: all six help popovers stay in bounds, take focus, close on real Escape and return focus"
+    },
+    {
+      "name": "dev-reopen: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help"
+    },
+    {
+      "name": "dev-reopen: actual Windows selection/classification and disabled extraction; no extraction operation invented"
+    },
+    {
+      "name": "dev-reopen: recorded firmware tags and four disabled capability-aware customization controls"
+    },
+    {
+      "name": "dev-reopen: real 256 MiB progress survives navigation; cancellation clears Overview and retains Logs"
+    },
+    {
+      "name": "dev-reopen: native verified backup restore records history without renaming/reclassifying an existing original; cancelled confirmation preserves backup; actual completion toast"
+    },
+    {
+      "name": "dev-reopen: file-specific confirmation, reversible removal and verified _DEFAULT recovery; bytes/history preserved"
+    },
+    {
+      "name": "dev-reopen: timestamped persisted Logs and completed-status filtering"
+    },
+    {
+      "name": "dev-reopen: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off"
+    },
+    {
+      "name": "isolated native verification observed running before graceful application shutdown",
+      "jobId": "46317bc5c27314a5eb755bf77e612ae4"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "graceful shutdown cancelled active verification; restart preserved terminal job and usable artifact"
+    },
+    {
+      "name": "Phase 4: actual copying job recorded before forced termination",
+      "jobId": "34938b2c7d933760ccf2afe95cf330f5"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "interrupted owned development launch and released resources",
+      "backendRenderedBeforeInterrupt": true
+    },
+    {
+      "name": "dev-recovery: isolated database/vault/logs and WebView profile; explicit test banner",
+      "runId": "b8258eb0c51a419fba40fe2d82fcf2f8",
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\b8258eb0c51a419fba40fe2d82fcf2f8\\data"
+    },
+    {
+      "name": "dev-recovery: native window, React and real SQLite IPC",
+      "url": "http://127.0.0.1:1420/",
+      "pid": 22752,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\b8258eb0c51a419fba40fe2d82fcf2f8\\data",
+      "theme": "system"
+    },
+    {
+      "name": "dev-recovery: exactly six primary navigation destinations"
+    },
+    {
+      "name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 55,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "dev-recovery: real adapter registry IPC, strict request validation and absent write/execution endpoints"
+    },
+    {
+      "name": "dev-recovery: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection",
+      "devices": 12,
+      "mg11Connected": false
+    },
+    {
+      "name": "dev-recovery: actual native React adapter status, protected/unsupported display and disabled extraction"
+    },
+    {
+      "name": "dev-recovery: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented"
+    },
+    {
+      "name": "dev-recovery: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+    },
+    {
+      "name": "dev-recovery: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+    },
+    {
+      "name": "dev-recovery: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+    },
+    {
+      "name": "dev-recovery: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+    },
+    {
+      "name": "dev-recovery: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+    },
+    {
+      "name": "dev-recovery: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+    },
+    {
+      "name": "dev-recovery: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+    },
+    {
+      "name": "dev-recovery: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+    },
+    {
+      "name": "dev-recovery: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+    },
+    {
+      "name": "dev-recovery: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+    },
+    {
+      "name": "dev-recovery: genuine OpenWrt OS, independent console pin, native key dialog, identity-only bootstrap, exact OS profile, separate read approval, UCI/ubus projections and feasibility GUI",
+      "version": "25.12.6",
+      "target": "x86/64",
+      "hardwareQualified": false,
+      "limitations": [
+        "Partitions metadata unavailable; capability remains unknown."
+      ]
+    },
+    {
+      "name": "dev-recovery: real GUI Cancel released resources and subsequent SSH authentication/read succeeded"
+    },
+    {
+      "name": "dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn"
+    },
+    {
+      "name": "dev-recovery: interrupted copy recovered as failed, known staging removed, no false success",
+      "jobId": "34938b2c7d933760ccf2afe95cf330f5"
+    },
+    {
+      "name": "dev-recovery: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+    },
+    {
+      "name": "dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+      "jobId": "6b905236d069a43ed171ff55d57b67dd",
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "size": 1048576
+    },
+    {
+      "name": "dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+      "sourceCount": 7
+    },
+    {
+      "name": "dev-recovery: actual streamed integrity verification and history",
+      "checks": 11
+    },
+    {
+      "name": "dev-recovery: actual native save dialog and unsigned metadata-only manifest",
+      "manifestSchemaVersion": 1
+    },
+    {
+      "name": "dev-recovery: persisted job and activity screens render after restart"
+    },
+    {
+      "name": "dev-recovery: dashboard and Library reflect committed counts and no active work",
+      "artifacts": 3
+    },
+    {
+      "name": "dev-recovery: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "production: isolated database/vault/logs and WebView profile; explicit test banner",
+      "runId": "b8258eb0c51a419fba40fe2d82fcf2f8",
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\b8258eb0c51a419fba40fe2d82fcf2f8\\data"
+    },
+    {
+      "name": "production: native window, React and real SQLite IPC",
+      "url": "http://tauri.localhost/",
+      "pid": 15036,
+      "dataDirectory": "C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\b8258eb0c51a419fba40fe2d82fcf2f8\\data",
+      "theme": "system"
+    },
+    {
+      "name": "production: exactly six primary navigation destinations"
+    },
+    {
+      "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+      "records": 55,
+      "watching": true,
+      "warnings": []
+    },
+    {
+      "name": "production: real adapter registry IPC, strict request validation and absent write/execution endpoints"
+    },
+    {
+      "name": "production: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection",
+      "devices": 12,
+      "mg11Connected": false
+    },
+    {
+      "name": "production: actual native React adapter status, protected/unsupported display and disabled extraction"
+    },
+    {
+      "name": "production: saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented"
+    },
+    {
+      "name": "production: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+    },
+    {
+      "name": "production: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+    },
+    {
+      "name": "production: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+    },
+    {
+      "name": "production: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+    },
+    {
+      "name": "production: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+    },
+    {
+      "name": "production: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+    },
+    {
+      "name": "production: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+    },
+    {
+      "name": "production: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+    },
+    {
+      "name": "production: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+    },
+    {
+      "name": "production: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+    },
+    {
+      "name": "production: genuine OpenWrt OS, independent console pin, native key dialog, identity-only bootstrap, exact OS profile, separate read approval, UCI/ubus projections and feasibility GUI",
+      "version": "25.12.6",
+      "target": "x86/64",
+      "hardwareQualified": false,
+      "limitations": [
+        "Partitions metadata unavailable; capability remains unknown."
+      ]
+    },
+    {
+      "name": "production: real GUI Cancel released resources and subsequent SSH authentication/read succeeded"
+    },
+    {
+      "name": "production: repeated startup keeps interrupted job terminal without rerunning it"
+    },
+    {
+      "name": "production: existing artifact/import history available before any new import; stale verified label withdrawn"
+    },
+    {
+      "name": "production: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+    },
+    {
+      "name": "production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+      "jobId": "c89c1aea0b587452b323c5f7d5f989a9",
+      "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+      "size": 1048576
+    },
+    {
+      "name": "production: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+      "sourceCount": 9
+    },
+    {
+      "name": "production: actual streamed integrity verification and history",
+      "checks": 14
+    },
+    {
+      "name": "production: actual native save dialog and unsigned metadata-only manifest",
+      "manifestSchemaVersion": 1
+    },
+    {
+      "name": "production: persisted job and activity screens render after restart"
+    },
+    {
+      "name": "production: dashboard and Library reflect committed counts and no active work",
+      "artifacts": 3
+    },
+    {
+      "name": "production: same-value settings write/read preserved original preferences"
+    },
+    {
+      "name": "production: blue six-section desktop, four genuine Overview statistics, no duplicate device panel or activity feed"
+    },
+    {
+      "name": "production: all six help popovers stay in bounds, take focus, close on real Escape and return focus"
+    },
+    {
+      "name": "production: real narrow/short native window, compact sidebar, no horizontal overflow and bounded help"
+    },
+    {
+      "name": "production: actual Windows selection/classification and disabled extraction; no extraction operation invented"
+    },
+    {
+      "name": "production: recorded firmware tags and four disabled capability-aware customization controls"
+    },
+    {
+      "name": "production: native verified backup restore records history without renaming/reclassifying an existing original; cancelled confirmation preserves backup; actual completion toast"
+    },
+    {
+      "name": "production: file-specific confirmation, reversible removal and verified _DEFAULT recovery; bytes/history preserved"
+    },
+    {
+      "name": "production: timestamped persisted Logs and completed-status filtering"
+    },
+    {
+      "name": "production: persisted auto-refresh, backend-enforced concurrency and manual refresh while automatic refresh is off"
+    },
+    {
+      "name": "production: real folder picker, plan cancellation, verified storage copy and restart gate; old Library preserved"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "production restart: copied Library active, artifacts/provenance/counts/settings retained, backup path unchanged and old vault preserved"
+    },
+    {
+      "name": "production restart: actual integrity job reads and verifies bytes from relocated Library"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "production restart: unavailable relocated Library keeps native window, React/IPC, records and settings; file jobs rejected and missing root not recreated"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "production restart: copied Library active, artifacts/provenance/counts/settings retained, backup path unchanged and old vault preserved"
+    },
+    {
+      "name": "production restart: actual integrity job reads and verifies bytes from relocated Library"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "production restart: restored test Library reacquires leases and verifies bytes without switching storage directories"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+    },
+    {
+      "name": "production recovery: actual Settings confirmation/cancellation, default selection, restart, retained metadata and verified default bytes; old storage preserved"
+    },
+    {
+      "name": "no captured native console warnings or unhandled exceptions"
+    },
+    {
+      "name": "cleanup rejects mismatched marker/run ID and retains test data"
+    },
+    {
+      "name": "cleanup retains unknown staging without deleting files"
+    },
+    {
+      "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+    },
+    {
+      "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+    },
+    {
+      "name": "owned isolated run cleaned after all processes stopped",
+      "runId": "b8258eb0c51a419fba40fe2d82fcf2f8"
+    }
+  ],
+  "commands": [
+    {
+      "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator --openwrt-lab",
+      "kind": "dev",
+      "exitCode": 0
+    },
+    {
+      "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator --openwrt-lab",
+      "kind": "dev",
+      "exitCode": 1
+    },
+    {
+      "command": "npm.cmd run tauri -- dev --config src-tauri/tauri.native-test.conf.json --features native-test-profile -- --bin obtainer-native-test --locked --offline -- --simulator --openwrt-lab",
+      "kind": "dev",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer-native-test.exe --simulator --openwrt-lab",
+      "kind": "release",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer-native-test.exe --simulator --openwrt-lab",
+      "kind": "release",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer-native-test.exe --simulator --openwrt-lab",
+      "kind": "release",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer-native-test.exe --simulator --openwrt-lab",
+      "kind": "release",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer-native-test.exe --simulator --openwrt-lab",
+      "kind": "release",
+      "exitCode": 0
+    },
+    {
+      "command": ".\\target\\release\\obtainer-native-test.exe --simulator --openwrt-lab",
+      "kind": "release",
+      "exitCode": 0
+    }
+  ]
+}

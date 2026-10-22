@@ -25,6 +25,7 @@
     "allow-open-managed-folder",
     "allow-select-library-directory",
     "allow-relocate-firmware-library",
+    "allow-recover-default-library",
     "allow-select-firmware-file",
     "allow-discard-firmware-selection",
     "allow-start-firmware-import",

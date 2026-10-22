@@ -8,6 +8,7 @@ mod native_test;
 pub mod openwrt;
 pub mod profiles;
 pub mod simulator;
+pub mod startup;
 pub mod storage;
 
 use commands::AppState;
@@ -69,6 +70,8 @@ pub fn run_native_test() -> tauri::Result<()> {
 }
 
 fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
+    let _instance =
+        startup::InstanceLock::acquire(profile.as_ref().map_or("production", |p| p.id.as_str()))?;
     let mut context = tauri::generate_context!();
     let expected = if profile.is_some() {
         "com.obtainer.desktop.native-test"
@@ -194,6 +197,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             library::ipc::open_managed_folder,
             library::ipc::select_library_directory,
             library::ipc::relocate_firmware_library,
+            library::ipc::recover_default_library,
             library::ipc::select_firmware_file,
             library::ipc::discard_firmware_selection,
             library::ipc::start_firmware_import,

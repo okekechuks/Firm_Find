@@ -159,8 +159,10 @@ impl AdapterConnection for Connection {
         if self.closed {
             return Err(denied("The SSH inspection session is closed."));
         }
-        // Every new SSH execution checks the exact host pin. Recheck identity before publishing.
-        let before = Board::parse(&self.target.query(ReadQuery::Board, control)?)?;
+        // One pinned SSH login, fixed framed queries, identity checked before and after.
+        let mut replies = self.target.inspection(control)?.into_iter();
+        let mut next = || replies.next().ok_or_else(query::invalid)?;
+        let before = Board::parse(&next()?)?;
         if before != self.board {
             return Err(AdapterError::new(
                 AdapterErrorCode::IdentityConflict,
@@ -170,43 +172,40 @@ impl AdapterConnection for Connection {
                 "Reconfirm endpoint trust and current device identity.",
             ));
         }
-        let networks = query::networks(&self.target.query(ReadQuery::Network, control)?)?;
-        let wireless = query::wireless(&self.target.query(ReadQuery::Wireless, control)?)?;
+        let networks = query::networks(&next()?)?;
+        let wireless = query::wireless(&next()?)?;
         let mut limitations = vec![];
         let runtime_dns = optional_query(
-            &self.target,
+            next(),
             ReadQuery::RuntimeDns,
-            control,
             query::runtime_dns,
             &mut limitations,
         )?;
         let dhcp_dns = optional_query(
-            &self.target,
+            next(),
             ReadQuery::DhcpDns,
-            control,
             query::dhcp_dns,
             &mut limitations,
         )?;
         let radios = optional_query(
-            &self.target,
+            next(),
             ReadQuery::WirelessRadios,
-            control,
             query::radios,
             &mut limitations,
         )?;
         let wireless_runtime = optional_query(
-            &self.target,
+            next(),
             ReadQuery::WirelessRuntime,
-            control,
             query::wireless_runtime,
             &mut limitations,
         )?;
-        let partitions = match self.target.query(ReadQuery::Partitions, control) {
-            Ok(bytes) => Some(query::partitions(&bytes)?),
-            Err(error) if error.code == AdapterErrorCode::TransportError => None,
-            Err(error) => return Err(error),
-        };
-        let after = Board::parse(&self.target.query(ReadQuery::Board, control)?)?;
+        let partitions = optional_query(
+            next(),
+            ReadQuery::Partitions,
+            query::partitions,
+            &mut limitations,
+        )?;
+        let after = Board::parse(&next()?)?;
         if after != before {
             return Err(AdapterError::new(
                 AdapterErrorCode::IdentityConflict,
@@ -224,15 +223,19 @@ impl AdapterConnection for Connection {
     }
 }
 fn optional_query<T>(
-    target: &SshTarget,
+    reply: Result<Vec<u8>, AdapterError>,
     query: ReadQuery,
-    control: &OperationControl,
     parse: impl FnOnce(&[u8]) -> Result<T, AdapterError>,
     limitations: &mut Vec<String>,
 ) -> Result<Option<T>, AdapterError> {
-    match target.query(query, control) {
-        Ok(bytes) => parse(&bytes).map(Some),
-        Err(error) if error.code == AdapterErrorCode::TransportError => {
+    match reply.and_then(|bytes| parse(&bytes)) {
+        Ok(value) => Ok(Some(value)),
+        Err(error)
+            if matches!(
+                error.code,
+                AdapterErrorCode::TransportError | AdapterErrorCode::IdentityUnverified
+            ) =>
+        {
             limitations.push(format!(
                 "{query:?} metadata unavailable; capability remains unknown."
             ));
@@ -251,6 +254,41 @@ pub fn management_identity(board: &Board) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn optional_parse_failures_stay_local_but_trust_failures_propagate() {
+        let mut limitations = vec![];
+        let value = optional_query(Ok(br#"[{"name":"lan","interface":"lan","ipv4_options":[],"ipv6_dns":[],"ra":"future-mode","dhcpv6":true}]"#.to_vec()), ReadQuery::DhcpDns, query::dhcp_dns, &mut limitations).unwrap();
+        assert!(value.is_none());
+        assert_eq!(limitations.len(), 1);
+        let value = optional_query(
+            Ok(b"[]".to_vec()),
+            ReadQuery::WirelessRadios,
+            query::radios,
+            &mut limitations,
+        )
+        .unwrap();
+        assert_eq!(value, Some(vec![]));
+        for code in [
+            AdapterErrorCode::AuthenticationFailed,
+            AdapterErrorCode::EndpointUntrusted,
+            AdapterErrorCode::IdentityConflict,
+            AdapterErrorCode::OperationCancelled,
+            AdapterErrorCode::OperationTimeout,
+        ] {
+            assert_eq!(
+                optional_query::<()>(
+                    Err(AdapterError::new(code, "test", None, false, "retry")),
+                    ReadQuery::DhcpDns,
+                    |_| Ok(()),
+                    &mut limitations
+                )
+                .unwrap_err()
+                .code,
+                code
+            );
+        }
+        assert!(Board::parse(b"malformed identity").is_err());
+    }
     #[test]
     fn production_descriptor_extends_one_contract_and_has_no_write_scope() {
         let registry = Registry::production().unwrap();

@@ -142,6 +142,32 @@ pub fn restored_name(original: &str, existing: &[String]) -> String {
     unreachable!()
 }
 impl LibraryService {
+    pub fn recover_default_library(&self, confirmed: bool) -> Result<()> {
+        if !confirmed {
+            return Err(LibraryError::new("CONFIRMATION_REQUIRED", "Confirm use of the default Library location. Missing files will not be copied or deleted."));
+        }
+        let controls = lock(&self.inner.controls)?;
+        if !self.inner.vault.unavailable
+            || self.inner.shutdown.load(Ordering::Acquire)
+            || self.inner.relocating.load(Ordering::Acquire)
+            || !controls.is_empty()
+        {
+            return Err(LibraryError::new("RECOVERY_UNAVAILABLE", "Recovery requires unavailable storage, no active jobs and no pending location change."));
+        }
+        let _checked = Vault::open(&self.inner.root.join("vault"))?;
+        let mut repo = lock(&self.inner.repo)?;
+        let mut preferences = repo.desktop_preferences()?;
+        preferences.library_directory = None;
+        let tx = repo.connection.transaction()?;
+        tx.execute(
+            "UPDATE desktop_preferences SET value=?1 WHERE id=1",
+            [serde_json::to_string(&preferences).expect("preferences serialize")],
+        )?;
+        db::event(&tx, "library_recovery_selected", "Default Library selected after unavailable storage; restart required. Existing records, backups and previous storage retained.", None, None, "warning")?;
+        tx.commit()?;
+        self.inner.relocating.store(true, Ordering::Release);
+        Ok(())
+    }
     pub fn desktop_state(&self) -> Result<DesktopState> {
         let repo = lock(&self.inner.repo)?;
         let (library_bytes,extracted,customized)=repo.connection.query_row("SELECT COALESCE(SUM(a.size_bytes),0),COALESCE(SUM(CASE WHEN p.kind='extracted' OR (p.kind IS NULL AND EXISTS(SELECT 1 FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND i.source_category='authorized_device_acquisition')) THEN 1 ELSE 0 END),0),COALESCE(SUM(CASE WHEN p.kind='customized' THEN 1 ELSE 0 END),0) FROM firmware_artifacts a JOIN artifact_details d USING(sha256) LEFT JOIN artifact_presentation p USING(sha256) WHERE d.removed_at IS NULL",[],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?)))?;

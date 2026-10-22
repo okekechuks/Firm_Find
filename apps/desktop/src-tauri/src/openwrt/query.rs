@@ -15,6 +15,123 @@ pub enum ReadQuery {
     Partitions,
 }
 
+pub const INSPECTION_QUERIES: [ReadQuery; 9] = [
+    ReadQuery::Board,
+    ReadQuery::Network,
+    ReadQuery::Wireless,
+    ReadQuery::RuntimeDns,
+    ReadQuery::DhcpDns,
+    ReadQuery::WirelessRadios,
+    ReadQuery::WirelessRuntime,
+    ReadQuery::Partitions,
+    ReadQuery::Board,
+];
+pub const BATCH_LIMIT: usize = 512 * 1024;
+
+/// Fixed allowlisted commands only. Byte framing keeps one query's data out of another.
+pub fn inspection_command() -> String {
+    let mut script = String::from("LC_ALL=C; export LC_ALL; ");
+    for (index, query) in INSPECTION_QUERIES.iter().enumerate() {
+        script.push_str(&format!("value=$({}); code=$?; printf 'OBTAINER1 {index} %s %s\\n' \"$code\" \"${{#value}}\"; printf '%s' \"$value\"; unset value; ", query.command()));
+    }
+    script
+}
+
+pub type InspectionReplies = Vec<Result<Vec<u8>, AdapterError>>;
+pub fn inspection_replies(mut bytes: &[u8]) -> Result<InspectionReplies, AdapterError> {
+    if bytes.len() > BATCH_LIMIT {
+        return Err(invalid());
+    }
+    let mut replies = Vec::new();
+    for (index, query) in INSPECTION_QUERIES.iter().enumerate() {
+        let end = bytes
+            .iter()
+            .position(|b| *b == b'\n')
+            .filter(|n| *n <= 80)
+            .ok_or_else(invalid)?;
+        let header = std::str::from_utf8(&bytes[..end]).map_err(|_| invalid())?;
+        let parts: Vec<_> = header.split(' ').collect();
+        if parts.len() != 4 || parts[0] != "OBTAINER1" || parts[1] != index.to_string() {
+            return Err(invalid());
+        }
+        let code: u8 = parts[2].parse().map_err(|_| invalid())?;
+        let size: usize = parts[3].parse().map_err(|_| invalid())?;
+        bytes = &bytes[end + 1..];
+        if size > query.output_limit() || size > bytes.len() {
+            return Err(invalid());
+        }
+        let (data, rest) = bytes.split_at(size);
+        bytes = rest;
+        replies.push(if code == 0 {
+            Ok(data.to_vec())
+        } else {
+            Err(AdapterError::new(
+                AdapterErrorCode::TransportError,
+                "Allowlisted metadata query unavailable.",
+                None,
+                true,
+                "Review inspection limitations.",
+            ))
+        });
+    }
+    if !bytes.is_empty() {
+        return Err(invalid());
+    }
+    Ok(replies)
+}
+
+#[cfg(test)]
+mod batch_tests {
+    use super::*;
+    fn frame() -> Vec<u8> {
+        let mut bytes = Vec::new();
+        for index in 0..INSPECTION_QUERIES.len() {
+            bytes.extend_from_slice(format!("OBTAINER1 {index} 0 2\n[]").as_bytes());
+        }
+        bytes
+    }
+    #[test]
+    fn single_batch_has_fixed_queries_and_strict_independent_frames() {
+        let replies = inspection_replies(&frame()).unwrap();
+        assert_eq!(replies.len(), 9);
+        assert!(replies.iter().all(|r| r.as_ref().unwrap() == b"[]"));
+        let script = inspection_command();
+        assert_eq!(script.matches("value=$(").count(), 9);
+        assert!(script.contains("LC_ALL=C"));
+        for query in INSPECTION_QUERIES {
+            assert!(script.contains(query.command()));
+        }
+        for bad in [
+            b"garbage".to_vec(),
+            frame()[..20].to_vec(),
+            [frame(), b"extra".to_vec()].concat(),
+            String::from_utf8(frame())
+                .unwrap()
+                .replacen("0 0 2", "1 0 2", 1)
+                .into_bytes(),
+            String::from_utf8(frame())
+                .unwrap()
+                .replacen("0 0 2", "0 0 999999", 1)
+                .into_bytes(),
+        ] {
+            assert!(inspection_replies(&bad).is_err());
+        }
+    }
+    #[test]
+    fn command_permission_failure_is_separate_from_ssh_login() {
+        let bytes = String::from_utf8(frame())
+            .unwrap()
+            .replacen("4 0 2", "4 1 2", 1);
+        let replies = inspection_replies(bytes.as_bytes()).unwrap();
+        assert_eq!(
+            replies[4].as_ref().unwrap_err().code,
+            AdapterErrorCode::TransportError
+        );
+        assert!(replies[3].is_ok());
+        assert!(replies[5].is_ok());
+    }
+}
+
 impl ReadQuery {
     pub fn command(self) -> &'static str {
         match self {

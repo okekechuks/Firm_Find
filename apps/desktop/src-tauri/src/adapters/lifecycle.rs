@@ -233,6 +233,7 @@ impl SessionManager {
         control: &OperationControl,
         initial: bool,
     ) -> Result<SessionStatus, AdapterError> {
+        let started = Instant::now();
         if self.stopped.load(Ordering::Acquire) {
             return Err(failure(
                 AdapterErrorCode::OperationCancelled,
@@ -293,17 +294,26 @@ impl SessionManager {
             .connection
             .read_identity(&control.stage(Stage::Identity))?;
         if initial {
+            let authenticated = DeviceContext {
+                now: ctx
+                    .now
+                    .saturating_add(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX)),
+                ..*ctx
+            };
             let verified = super::bootstrap::verify_handshake(
-                ctx,
+                &authenticated,
                 &binding,
                 managed.connection.as_ref(),
                 &identity,
             )?;
             let verified_ctx = DeviceContext {
                 profile: &verified.report,
-                ..*ctx
+                ..authenticated
             };
             if super::bootstrap::identity_only_binding(&binding) {
+                // The single-use handshake remains bounded by its own deadline.
+                // Successful pinned OpenWrt identity starts a separate read-session lease.
+                binding.expires_at = authenticated.now.saturating_add(300_000);
                 if verified.report.confidence == crate::profiles::MatchConfidence::Verified {
                     binding.profile_id =
                         verified.report.selected_profile.clone().unwrap_or_default();
@@ -495,12 +505,14 @@ impl SessionManager {
             ..effective
         };
         if let Err(error) = authorize(registry, &fresh, &managed.binding, op, grant) {
-            if !matches!(
-                error.code,
-                AdapterErrorCode::OperationUnsupported
-                    | AdapterErrorCode::OperationNotImplemented
-                    | AdapterErrorCode::CapabilityUnknown
-            ) {
+            if value.is_ok()
+                || !matches!(
+                    error.code,
+                    AdapterErrorCode::OperationUnsupported
+                        | AdapterErrorCode::OperationNotImplemented
+                        | AdapterErrorCode::CapabilityUnknown
+                )
+            {
                 return Err(error);
             }
         }

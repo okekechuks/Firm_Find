@@ -1,0 +1,7 @@
+{
+    "actualProductionWindow":  true,
+    "cause":  "already running",
+    "exitCode":  1,
+    "message":  "OK\n\nOBTAINER could not start.\n\nOBTAINER is already running for this workspace. Switch to its existing window, or close it before reopening.\n\nClose any existing OBTAINER window. Check that your application data folder is writable and that this version supports your database. Existing data has not been reset.\n",
+    "normalDataOpened":  false
+}

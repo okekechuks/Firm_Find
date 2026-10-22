@@ -98,3 +98,26 @@ it("keeps the workspace visible when relocated Library storage is unavailable",a
  expect(screen.getByText("Workspace remains usable")).toBeInTheDocument();
  expect(backend.relocateFirmwareLibrary).not.toHaveBeenCalled();
 });
+
+it("confirms unavailable Library recovery and preserves state when cancelled",async()=>{
+ const user=userEvent.setup();const recover=vi.spyOn(backend,"recoverDefaultLibrary").mockResolvedValue();
+ render(<WorkspaceContext.Provider value={workspace({state:{...desktopState,libraryAvailable:false}})}><Preferences snapshot={snapshot} saving={false} onSave={vi.fn()} previewTheme="system" onPreviewTheme={vi.fn()}/></WorkspaceContext.Provider>);
+ expect(screen.getByRole("button",{name:/Change folder/})).toBeDisabled();
+ await user.click(screen.getByRole("button",{name:"Use default Library location"}));
+ expect(screen.getByRole("dialog")).toHaveTextContent("cannot be copied");
+ await user.click(within(screen.getByRole("dialog")).getByRole("button",{name:"Cancel"}));expect(recover).not.toHaveBeenCalled();
+ await user.click(screen.getByRole("button",{name:"Use default Library location"}));
+ await user.click(within(screen.getByRole("dialog")).getByRole("button",{name:"Use default location"}));
+ expect(recover).toHaveBeenCalledOnce();expect(await screen.findByText(/Default Library selected/)).toBeInTheDocument();
+});
+
+it("does not announce a DEFAULT filename when a backup restores to an existing entry",async()=>{
+ const listeners:((j:typeof job)=>void)[]=[];
+ vi.mocked(backend.onLibraryChanged).mockImplementation(async callback=>{listeners.push(callback);return ()=>{};});
+ const pending={...job,kind:"backup_restore",status:"running" as const,originalFilename:"existing_DEFAULT.bin",createdAt:Date.now()};
+ vi.mocked(backend.listLibraryJobs).mockResolvedValue([pending]);render(<WorkspaceProvider desktop><div>Workspace</div></WorkspaceProvider>);
+ await waitFor(()=>expect(backend.listLibraryJobs).toHaveBeenCalled());await waitFor(()=>expect(listeners.length).toBeGreaterThan(0));
+ const completed={...pending,status:"completed" as const,duplicate:true};vi.mocked(backend.listLibraryJobs).mockResolvedValue([completed]);
+ await act(async()=>listeners.forEach(fn=>fn(completed)));
+ expect(await screen.findByText("Backup restore verified.")).toBeInTheDocument();expect(screen.queryByText(/existing_DEFAULT.bin/)).not.toBeInTheDocument();expect(screen.queryByText(/existing Library entry retained/)).not.toBeInTheDocument();
+});

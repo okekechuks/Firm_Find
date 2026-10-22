@@ -153,7 +153,9 @@ async function verify(label, extended = false) {
   const isDev = client.url.startsWith('http://127.0.0.1:1420/');
   // A CDP target exists before the first navigation/IPC bootstrap is finished.
   await connected();
-  await client.send('Page.reload'); await connected();
+  // Verify the actual startup page. Reloading here destroys active subscription/
+  // invoke callbacks and manufactures Tauri orphan-callback/fallback warnings.
+  // Restart/recovery is exercised by closing and launching the native process.
   const before = await invoke('get_snapshot');
   const guiState=await invoke('get_desktop_state');assert.equal(guiState.maxConcurrentJobs,1);assert.equal(typeof guiState.customized,'number');
   await writeFile(path.join(evidence,label+'-desktop-state.json'),JSON.stringify(guiState,null,2));
@@ -212,6 +214,29 @@ async function verify(label, extended = false) {
   record(label + ': same-value settings write/read preserved original preferences');
 
   if (extended) {
+    // Prove component HMR before deliberately invalidating the shared backend module.
+    await screen('settings', 'Settings');
+    originalSource = await readFile(preferencePath, 'utf8');
+    const anchor = '<h2>Appearance</h2>';
+    assert(originalSource.includes(anchor), 'HMR proof anchor missing');
+    changedSource = originalSource.replace(anchor, anchor + ' Hot reload verified.');
+    assert.notEqual(changedSource, originalSource, 'HMR proof anchor missing');
+    let restoreConflict = false;
+    try {
+      await writeFile(preferencePath, changedSource);
+      await until(() => client.evaluate("document.body.innerText.includes('Hot reload verified.')"), 'React HMR did not reach native view');
+      assert.deepEqual(processes(), state, 'HMR changed app/Vite process identities');
+      assert.deepEqual((await invoke('get_snapshot')).settings, originalSettings);
+      record(label + ': React hot reload with unchanged app/Vite PIDs');
+      await screenshot('dev-hmr');
+    } finally {
+      if (await readFile(preferencePath, 'utf8') === changedSource) await writeFile(preferencePath, originalSource);
+      else restoreConflict = true;
+      changedSource = undefined;
+    }
+    assert(!restoreConflict, 'Concurrent Preferences edit; refused to overwrite it');
+    await until(() => client.evaluate("!document.body.innerText.includes('Hot reload verified.')"), 'HMR restoration did not render');
+    record(label + ': temporary HMR edit restored');
     // Tauri's invoke property is immutable. Temporarily instrument the dev module;
     // fault flags affect only this test window and the original source is restored.
     originalBackend = await readFile(backendPath, 'utf8');
@@ -243,28 +268,7 @@ async function verify(label, extended = false) {
     // orphan callback warnings even though the native operation succeeds.
     await until(() => client.evaluate('import("/src/lib/backend.ts?t=" + Date.now()).then(module => !module.getSnapshot.toString().includes("__phase1FailSnapshot"))'), 'Restored backend module did not load');
     await connected();
-    await screen('settings', 'Settings');
-    originalSource = await readFile(preferencePath, 'utf8');
-    const anchor = '<h2>Appearance</h2>';
-    assert(originalSource.includes(anchor), 'HMR proof anchor missing');
-    changedSource = originalSource.replace(anchor, anchor + ' Hot reload verified.');
-    assert.notEqual(changedSource, originalSource, 'HMR proof anchor missing');
-    let restoreConflict = false;
-    try {
-      await writeFile(preferencePath, changedSource);
-      await until(() => client.evaluate("document.body.innerText.includes('Hot reload verified.')"), 'React HMR did not reach native view');
-      assert.deepEqual(processes(), state, 'HMR changed app/Vite process identities');
-      assert.deepEqual((await invoke('get_snapshot')).settings, originalSettings);
-      record(label + ': React hot reload with unchanged app/Vite PIDs');
-      await screenshot('dev-hmr');
-    } finally {
-      if (await readFile(preferencePath, 'utf8') === changedSource) await writeFile(preferencePath, originalSource);
-      else restoreConflict = true;
-      changedSource = undefined;
-    }
-    assert(!restoreConflict, 'Concurrent Preferences edit; refused to overwrite it');
-    await until(() => client.evaluate("!document.body.innerText.includes('Hot reload verified.')"), 'HMR restoration did not render');
-    record(label + ': temporary HMR edit restored');
+
   }
   if(process.argv.includes('--gui')&&['dev-reopen','production'].includes(label))await verifyGUI(client,{label,pid:state.apps[0].id,profile,evidence,record});
   await screen('dashboard', 'Overview'); await connected(); await screenshot(label);
@@ -319,6 +323,33 @@ async function verifyUnavailableLibrary() {
   assert.equal((await invoke('get_desktop_state')).libraryAvailable, true);
   await verifyGUIRestart(client,{profile,evidence,record}); await closeWindow();
   record('production restart: restored test Library reacquires leases and verifies bytes without switching storage directories');
+  // Exercise the explicit recovery path without moving or deleting normal data.
+  await rename(directory, held);
+  try {
+    start('release'); await connect(); await connected();
+    await screen('settings', 'Settings');
+    const clickText = async text => client.evaluate(`(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(text)}&&!b.disabled);if(!b)throw Error('Button missing: '+${JSON.stringify(text)});b.click();})()`);
+    await until(()=>client.evaluate("Boolean([...document.querySelectorAll('button')].find(b=>b.textContent==='Use default Library location'&&!b.disabled))"),'Storage recovery action unavailable');
+    await clickText('Use default Library location');
+    await until(()=>client.evaluate("Boolean(document.querySelector('.confirm-dialog[open]'))"),'Recovery confirmation missing');
+    await clickText('Cancel');
+    assert.notEqual((await invoke('get_desktop_state')).preferences.libraryDirectory,null,'Cancelled recovery changed location');
+    await clickText('Use default Library location'); await clickText('Use default location');
+    await until(async()=>{const s=await invoke('get_desktop_state');return s.restartRequired&&s.preferences.libraryDirectory===null;},'Default recovery was not persisted');
+    await screenshot('production-library-recovery-selected'); await closeWindow();
+    start('release'); await connect(); await connected();
+    const recovered=await invoke('get_desktop_state');
+    assert.equal(recovered.libraryAvailable,true);assert.equal(recovered.preferences.libraryDirectory,null);
+    assert.equal(path.normalize(recovered.libraryDirectory),path.normalize(path.join(profile.root,'data/vault')));
+    const page=await invoke('list_firmware_artifacts',{query:{}});assert(page.artifacts.length>0);
+    const verify=await invoke('verify_firmware_integrity',{sha256:page.artifacts[0].sha256});
+    await until(async()=>{const j=await invoke('get_library_job',{id:verify.id});return j.status==='completed';},'Recovered default bytes did not verify');
+    await screenshot('production-library-default-recovered');await closeWindow();
+    record('production recovery: actual Settings confirmation/cancellation, default selection, restart, retained metadata and verified default bytes; old storage preserved');
+  } finally {
+    if(processes().apps.length)await closeWindow();
+    await assertOwned(profile,held);await rename(held,directory);
+  }
 }
 async function chooseAppearance(theme) {
   await screen('settings', 'Settings');
@@ -331,6 +362,10 @@ async function chooseAppearance(theme) {
 let succeeded=false;let baselineCaptured=false;
 try {
   probeNormal(root,evidence,'before');baselineCaptured=true;record('normal schema/settings/artifact/job/profile/router/vault baseline captured read-only');
+  const startupProbe=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/verify-startup.ps1'),'-Binary',path.join(root,'target/release/obtainer.exe')],{env,windowsHide:true,encoding:'utf8',timeout:30000});
+  await writeFile(path.join(evidence,'production-startup-error.json'),startupProbe);
+  assert.equal(JSON.parse(startupProbe).exitCode,1);
+  record('ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data');
   verifyActivationGuards(root,profile,env,record);
   if (process.argv.includes('--watch-usb')) {
     await clean(); start('dev'); await connect(); await connected();
