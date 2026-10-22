@@ -993,13 +993,25 @@ h1 {
 .device-toolbar select { height: 40px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--ink); background: var(--surface); font: inherit; font-size: 11px; }
 .disconnected-toggle { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .disconnected-toggle input { accent-color: var(--accent); }
-.device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 340px)); gap: 12px; }
 .device-card { width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; text-align: left; color: var(--ink); padding: 17px; }
 .device-card.selected { border-color: var(--accent); }
 .device-card.disconnected { opacity: .72; }
 .device-card-top { width: 100%; display: flex; justify-content: flex-start; align-items: center; gap: 9px; color: var(--accent); margin-bottom: 14px; }
 .device-state.present { color: #18804a; border-color: #aedfc1; }
 .device-card h3 { overflow-wrap: anywhere; margin-bottom: 5px; }
+.device-card .device-connection { margin:0 0 14px;color:var(--muted);font-size:12px; }
+.device-color-key { display:flex;flex-wrap:wrap;gap:16px;margin:14px 0;font-size:11px;color:var(--muted); }
+.device-color-key span::before { content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--warning); }
+.device-color-key span:nth-child(2)::before { background:var(--error); }
+.device-color-key span:nth-child(3)::before { background:var(--success); }
+.device-summary-dialog { max-width:620px; }
+.device-network-summary { margin:20px 0; }
+.device-network-summary h3 { font-size:14px;margin-bottom:12px; }
+.device-network-summary dl>div { padding:10px 0;border-bottom:1px solid var(--line); }
+.device-network-summary dt { color:var(--muted);font-size:11px;margin-bottom:5px; }
+.device-network-summary dd { margin:0;font-size:12px;overflow-wrap:anywhere; }
+.compatibility-progress { width:100%;height:7px;accent-color:var(--accent); }
 .device-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
 .device-tags span { border-radius: 5px; background: var(--soft); color: var(--muted); padding: 4px 6px; font-size: 9px; }
 .device-card-actions { width: 100%; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 9px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }

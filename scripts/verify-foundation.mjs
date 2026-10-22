@@ -2,6 +2,7 @@ import { verifyGUI, verifyGUIRestart, configureGUIEvidence } from "./verify-gui.
 import { verifyAdapters } from "./verify-adapters.mjs";
 import { verifySimulator } from "./verify-simulator.mjs";
 import { verifyOpenWrt } from "./verify-openwrt.mjs";
+import { verifyDeviceGUI } from "./verify-device-gui.mjs";
 // Exercises the actual Windows Tauri dev command and release executable through native WebView2.
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
@@ -198,6 +199,7 @@ async function verify(label, extended = false) {
     assert.notEqual(next.status, 'failed');
   }
   record(label + ': discovery, three refreshes, unique IDs, unknown feature support', { records: discovery.devices.length, watching: discovery.watching, warnings: discovery.warnings });
+  if(process.argv.includes('--device-gui'))await verifyDeviceGUI(client,{label,record,screenshot});
   if(process.argv.includes('--phase5'))await verifyAdapters(client,{label,evidence,record});
   if(process.argv.includes('--phase6'))await verifySimulator(client,{label,evidence,record});
   if(process.argv.includes('--phase7'))await verifyOpenWrt(client,{label,evidence,record,pid:state.apps[0].id});
