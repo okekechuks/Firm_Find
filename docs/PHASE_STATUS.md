@@ -1,5 +1,9 @@
 # OBTAINER phase status
 
+## Phase 7.5 - IN PROGRESS; discovery slice software-verified, review pending
+
+Owner-approved stock router/MiFi acquisition workstream now precedes Phase 8. Rust route discovery, fingerprint/identity/evidence contracts, candidate vendor-family recognition, five independently evaluated strategy candidates, separate capabilities, honest amber UI and redacted diagnostics are implemented. No source/extractor is yet qualified, no firmware bytes acquired, and no analysis/build/install/recovery success claimed. [Architecture](PHASE_7_5_ARCHITECTURE.md), [implementation](PHASE_7_5_IMPLEMENTATION.md), [verification](PHASE_7_5_VERIFICATION.md), [five-device matrix](HARDWARE_TEST_MATRIX.md). Final checks: 142 frontend tests; 221 standard and 222 isolated-profile Rust tests; lint, formatting, both Clippy profiles, frontend build and both Windows executables pass. Retained native run: 106 checkpoints; final hardened dev/release smoke and normal-data preservation pass. H01 USB HTTP is BLOCKED by competing Wi-Fi routing, not classified as hardware incompatibility. Independent Sprint A acceptance and Sprints B/C remain pending. Phase 7 controlled OpenWrt software PASS and physical OpenWrt PENDING remain intact. Phase 8 remains unstarted.
+
 Updated: **22 October 2026**, Africa/Lagos. Existing [roadmap](IMPLEMENTATION_ROADMAP.md) retained; no planning document was recreated.
 
 ## Targeted follow-up — 22 October

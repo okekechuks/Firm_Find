@@ -1,5 +1,7 @@
 import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema,importSchema } from "../types/library";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { z } from "zod";
+import { acquisitionReportSchema, type AcquisitionRequest } from "../types/acquisition";
 import { listen } from "@tauri-apps/api/event";
 import { jobSchema, libraryPageSchema, detailsSchema, selectionSchema, activitySchema, manifestExportSchema, type LibraryQuery } from "../types/library";
 import { compatibilitySchema, registryEntrySchema, registrySchema } from "../types/profiles";
@@ -80,6 +82,14 @@ export async function cancelEndpointProbe(id: string) { requireDesktop(); await 
 export async function cancelDiscovery() { requireDesktop(); await invoke("cancel_discovery"); }
 export async function getProfileRegistry() { requireDesktop(); return registrySchema.parse(await invoke("get_profile_registry")); }
 export async function getDeviceCompatibility(deviceId: string) { requireDesktop(); return compatibilitySchema.parse(await invoke("get_device_compatibility", {deviceId})); }
+export async function discoverFirmwareRoutes(input: AcquisitionRequest) {
+  requireDesktop();
+  const report = acquisitionReportSchema.parse(await invoke("discover_firmware_routes", {input}));
+  if (report.deviceId !== input.deviceId || report.fingerprint.deviceId !== input.deviceId) throw new Error("Route report belongs to another target.");
+  return report;
+}
+export async function cancelFirmwareRouteDiscovery(deviceId:string) {requireDesktop();await invoke("cancel_firmware_route_discovery",{deviceId});}
+export async function exportAcquisitionDiagnostics(deviceId:string) {requireDesktop();return z.boolean().parse(await invoke("export_acquisition_diagnostics",{deviceId}));}
 export async function listAvailableAdapters() { requireDesktop(); return adapterDescriptorSchema.array().parse(await invoke("list_available_adapters")); }
 export async function getDeviceAdapterMatches(deviceId: string, targetKind: AdapterTargetKind = "discovered") {
   requireDesktop();

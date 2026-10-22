@@ -176,8 +176,27 @@ pub fn probe(
     networks: &[NetworkAdapter],
     token: &AtomicBool,
 ) -> EndpointResult {
+    probe_kind(target, scope, networks, token, false).0
+}
+
+pub(super) fn probe_root(
+    target: &Target,
+    scope: Option<&str>,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+) -> (EndpointResult, Option<Vec<u8>>) {
+    probe_kind(target, scope, networks, token, true)
+}
+
+fn probe_kind(
+    target: &Target,
+    scope: Option<&str>,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+    root: bool,
+) -> (EndpointResult, Option<Vec<u8>>) {
     let start = Instant::now();
-    let work = || -> Result<EndpointResult, Box<EndpointResult>> {
+    let work = || -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
         cancelled(token)?;
         let ips = resolve(&target.host)?;
         cancelled(token)?;
@@ -193,6 +212,16 @@ pub fn probe(
         let (ip, network) = choices.first().copied().ok_or_else(|| {
             reason.unwrap_or_else(|| EndpointResult::failure("no_route", "No route to router."))
         })?;
+        if root
+            && networks
+                .iter()
+                .any(|n| n.addresses.iter().any(|a| bare_ip(a) == Some(ip)))
+        {
+            return Err(EndpointResult::failure(
+                "host_endpoint",
+                "The selected endpoint belongs to this PC, not a router.",
+            ));
+        }
         let index = if ip.is_ipv6() {
             network.ipv6_index
         } else {
@@ -239,16 +268,17 @@ pub fn probe(
         } else {
             ip.to_string()
         };
-        let mut result = head(target, &pinned, token)?;
+        let (mut result, body) = request(target, &pinned, token, root)?;
         result.resolved_address = Some(pinned);
-        Ok(result)
+        Ok((result, body))
     };
-    let mut result = work().unwrap_or_else(|e| *e);
+    let (mut result, mut body) = work().unwrap_or_else(|e| (*e, None));
     if token.load(Ordering::Acquire) {
         result = *EndpointResult::failure(
             "cancelled",
             "Check cancelled. Previous observation retained.",
         );
+        body = None;
     }
     result.elapsed_ms = start.elapsed().as_millis() as u64;
     if matches!(
@@ -257,7 +287,7 @@ pub fn probe(
     ) {
         result.state = "unreachable".into();
     }
-    result
+    (result, body)
 }
 fn sockaddr(socket: SocketAddr) -> SOCKADDR_INET {
     let mut out = SOCKADDR_INET::default();
@@ -323,6 +353,8 @@ fn set(handle: &Handle, key: u32, value: u32) -> Result<(), Box<EndpointResult>>
 }
 struct CallbackContext {
     sender: std::sync::mpsc::SyncSender<Result<u32, u32>>,
+    body_sender: std::sync::mpsc::SyncSender<Result<Vec<u8>, u32>>,
+    read_buffer: [u8; 8192],
 }
 unsafe extern "system" fn callback(
     _handle: *mut c_void,
@@ -340,6 +372,25 @@ unsafe extern "system" fn callback(
         return;
     }
     let context = &*(context as *const CallbackContext);
+    if status == WINHTTP_CALLBACK_STATUS_READ_COMPLETE
+        && length <= 8192
+        && (!info.is_null() || length == 0)
+    {
+        let bytes = if length == 0 {
+            vec![]
+        } else {
+            std::slice::from_raw_parts(info.cast::<u8>(), length as usize).to_vec()
+        };
+        let _ = context.body_sender.try_send(Ok(bytes));
+    }
+    if status == WINHTTP_CALLBACK_STATUS_REQUEST_ERROR
+        && !info.is_null()
+        && length as usize >= size_of::<WINHTTP_ASYNC_RESULT>()
+    {
+        let _ = context
+            .body_sender
+            .try_send(Err((*info.cast::<WINHTTP_ASYNC_RESULT>()).dwError));
+    }
     let event = match status {
         WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE
         | WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE => Some(Ok(status)),
@@ -380,11 +431,21 @@ fn wait(
     }
 }
 
+#[cfg(test)]
 pub(super) fn head(
     target: &Target,
     pinned: &str,
     token: &AtomicBool,
 ) -> Result<EndpointResult, Box<EndpointResult>> {
+    request(target, pinned, token, false).map(|(result, _)| result)
+}
+
+fn request(
+    target: &Target,
+    pinned: &str,
+    token: &AtomicBool,
+    root: bool,
+) -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
     cancelled(token)?;
     let session = Handle::checked(unsafe {
         WinHttpOpen(
@@ -405,7 +466,7 @@ pub(super) fn head(
     let request = Handle::checked(unsafe {
         WinHttpOpenRequest(
             connection.0,
-            wide("HEAD").as_ptr(),
+            wide(if root { "GET" } else { "HEAD" }).as_ptr(),
             wide("/").as_ptr(),
             ptr::null(),
             ptr::null(),
@@ -450,7 +511,13 @@ pub(super) fn head(
     }
     let deadline = Instant::now() + Duration::from_secs(3);
     let (sender, receiver) = std::sync::mpsc::sync_channel(4);
-    let mut context = Box::new(CallbackContext { sender });
+    let (body_sender, body_receiver) = std::sync::mpsc::sync_channel(2);
+    let mut context = Box::new(CallbackContext {
+        sender,
+        body_sender,
+        read_buffer: [0; 8192],
+    });
+    let read_pointer = context.read_buffer.as_mut_ptr();
     let previous = unsafe {
         WinHttpSetStatusCallback(
             request.0,
@@ -550,28 +617,150 @@ pub(super) fn head(
         300..=399 => ("redirect_blocked", "reachable", "Endpoint returned a redirect. It was not followed. Enter the intended local destination explicitly if authorized."),
         _ => ("unsupported_management", "identity_unknown", "HTTP endpoint responded but this read-only HEAD check cannot identify its management interface."),
     };
-    Ok(EndpointResult {
-        code: code.into(),
-        state: state.into(),
-        message: message.into(),
-        status: Some(status as u16),
-        server,
-        checked_at: now(),
-        elapsed_ms: 0,
-        resolved_address: None,
-        tls: if target.secure {
-            "validated"
-        } else {
-            "not_used"
+    let mut body = None;
+    if root && (200..300).contains(&status) {
+        let mut bytes = Vec::new();
+        while bytes.len() < 16384 {
+            cancelled(token)?;
+            if unsafe { WinHttpReadData(request.0, read_pointer.cast(), 8192, ptr::null_mut()) }
+                == 0
+            {
+                return Err(http_error());
+            }
+            let chunk = loop {
+                cancelled(token)?;
+                let left = deadline.saturating_duration_since(Instant::now());
+                if left.is_zero() {
+                    return Err(EndpointResult::failure(
+                        "timeout",
+                        "Root metadata deadline exceeded.",
+                    ));
+                }
+                match body_receiver.recv_timeout(left.min(Duration::from_millis(50))) {
+                    Ok(Ok(chunk)) => break chunk,
+                    Ok(Err(error)) => return Err(windows_error(error)),
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        return Err(EndpointResult::failure(
+                            "unreachable",
+                            "Root metadata channel closed.",
+                        ))
+                    }
+                    _ => {}
+                }
+            };
+            if chunk.is_empty() {
+                break;
+            }
+            bytes.extend_from_slice(&chunk[..chunk.len().min(16384 - bytes.len())]);
         }
-        .into(),
-    })
+        body = Some(bytes);
+    }
+    Ok((
+        EndpointResult {
+            code: code.into(),
+            state: state.into(),
+            message: message.into(),
+            status: Some(status as u16),
+            server,
+            checked_at: now(),
+            elapsed_ms: 0,
+            resolved_address: None,
+            tls: if target.secure {
+                "validated"
+            } else {
+                "not_used"
+            }
+            .into(),
+        },
+        body,
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::io::{Read, Write};
+    #[test]
+    fn cancellation_during_root_body_read_releases_callback_buffers() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let (started, ready) = std::sync::mpsc::channel();
+        let (release, stop) = std::sync::mpsc::channel();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut bytes = [0; 4096];
+            let _ = stream.read(&mut bytes).unwrap();
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 500\r\nConnection: close\r\n\r\n")
+                .unwrap();
+            started.send(()).unwrap();
+            let _ = stop.recv_timeout(Duration::from_secs(5));
+        });
+        let token = std::sync::Arc::new(AtomicBool::new(false));
+        let worker_token = token.clone();
+        let worker = std::thread::spawn(move || {
+            request(
+                &Target {
+                    url: String::new(),
+                    host: "localhost".into(),
+                    port,
+                    secure: false,
+                },
+                "127.0.0.1",
+                &worker_token,
+                true,
+            )
+        });
+        ready.recv_timeout(Duration::from_secs(5)).unwrap();
+        token.store(true, Ordering::Release);
+        assert_eq!(worker.join().unwrap().unwrap_err().code, "cancelled");
+        release.send(()).unwrap();
+        server.join().unwrap();
+    }
+    #[test]
+    fn root_metadata_is_one_bounded_credential_free_get_and_redirects_are_not_followed() {
+        for (status, body) in [
+            (
+                "200 OK",
+                "<title>E-LINK Wireless Router</title>".to_string(),
+            ),
+            ("302 Found", "redirect".to_string()),
+            ("401 Unauthorized", "login".to_string()),
+            ("200 OK", "x".repeat(20000)),
+        ] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let port = listener.local_addr().unwrap().port();
+            let expected = body.as_bytes()[..body.len().min(16384)].to_vec();
+            let server = std::thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut buffer = [0; 4096];
+                let count = stream.read(&mut buffer).unwrap();
+                let sent = String::from_utf8_lossy(&buffer[..count]);
+                assert!(sent.starts_with("GET / HTTP/1.1"));
+                assert!(!sent.to_ascii_lowercase().contains("authorization:"));
+                assert!(!sent.to_ascii_lowercase().contains("cookie:"));
+                let _=stream.write_all(format!("HTTP/1.1 {status}\r\nContent-Length: {}\r\nLocation: http://example.com/forbidden\r\nSet-Cookie: private=secret\r\nConnection: close\r\n\r\n{body}",body.len()).as_bytes());
+            });
+            let target = Target {
+                url: String::new(),
+                host: "localhost".into(),
+                port,
+                secure: false,
+            };
+            let (result, bytes) =
+                request(&target, "127.0.0.1", &AtomicBool::new(false), true).unwrap();
+            if status == "200 OK" {
+                assert_eq!(bytes.unwrap(), expected);
+            } else {
+                assert!(bytes.is_none());
+                assert!(matches!(
+                    result.code.as_str(),
+                    "redirect_blocked" | "authentication_required"
+                ));
+            }
+            server.join().unwrap();
+        }
+    }
     #[test]
     fn review_hostname_resolution_supports_localhost() {
         // Resolution must finish, then the existing endpoint policy rejects loopback.

@@ -4,12 +4,14 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { Devices } from "../features/Devices";
 import type { DiscoverySnapshot } from "../types/contracts";
 
-const checks = vi.hoisted(() => ({profile: vi.fn(), adapters: vi.fn()}));
-vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), getDeviceCompatibility: checks.profile, getDeviceAdapterMatches: checks.adapters}));
+const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), export: vi.fn()}));
+vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export}));
+function result() {
+  return {deviceId:"a".repeat(64),discoveryRevision:4,expiresAt:Date.now()+60000,canObtain:false,identity:{confidence:"unverified",verifiedModel:null,verifiedHardwareRevision:null,verifiedFirmware:null,reportedModel:"Test MiFi"},protocols:[],probe:{attempted:false,code:"not_approved",httpStatus:null},candidates:[{strategy:"official_image",name:"Official firmware image",capability:{state:"unknown",reason:"No qualified source registered.",missingRequirements:["Exact hardware revision"]}}],capabilities:{}};
+}
 beforeEach(() => {
   vi.clearAllMocks();
-  const result = {deviceId: "a".repeat(64), discoveryRevision: 4, expiresAt: Date.now()+60000};
-  checks.profile.mockResolvedValue(result); checks.adapters.mockResolvedValue(result);
+  checks.routes.mockResolvedValue(result());checks.cancel.mockResolvedValue(undefined);checks.export.mockResolvedValue(true);
 });
 
 const unverifiedFeature = {
@@ -53,37 +55,71 @@ it("shows compact cards and a network summary without diagnostic clutter", async
   const dialog=screen.getByRole("dialog", {name:"Test MiFi"});
   expect(dialog).toHaveTextContent("192.0.2.10"); expect(dialog).toHaveTextContent("192.0.2.1");
   expect(dialog).not.toHaveTextContent("COM7"); expect(dialog).not.toHaveTextContent("Identification");
-  expect(within(dialog).getByRole("button", {name:"Extract Firmware"})).toBeDisabled();
+  expect(within(dialog).getByRole("button", {name:"Obtain Firmware"})).toBeDisabled();
   await user.click(within(dialog).getByRole("button", {name:"Close device information"}));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-it("uses real backend checks with indeterminate progress and denies unavailable extraction", async () => {
+it("discovers backend routes without falsely marking a detected device incompatible", async () => {
   let finish!:(value: unknown)=>void;
-  checks.adapters.mockReturnValueOnce(new Promise(resolve => {finish=resolve;}));
+  checks.routes.mockReturnValueOnce(new Promise(resolve => {finish=resolve;}));
   const user=userEvent.setup(); render(<Devices {...props}/>);
   await user.click(screen.getByRole("button", {name:"More info for Test MiFi"}));
-  await user.click(screen.getByRole("button", {name:"Verify Compatibility"}));
+  await user.click(screen.getByRole("button", {name:"Check Compatibility"}));
   expect(screen.getByRole("progressbar")).not.toHaveAttribute("value");
-  expect(screen.getByRole("button", {name:"Verify Compatibility"})).toBeDisabled();
-  finish({deviceId:inventory.devices[0].id,discoveryRevision:4,expiresAt:Date.now()+60000});
-  expect(await screen.findByRole("alert")).toHaveTextContent("Cannot locate firmware");
+  expect(screen.getByRole("button", {name:"Check Compatibility"})).toBeDisabled();
+  finish(result());
+  expect(await screen.findByRole("heading",{name:"No currently qualified acquisition method"})).toBeInTheDocument();
+  expect(screen.queryByText("Cannot locate firmware")).not.toBeInTheDocument();
   expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", {name:"Extract Firmware"})).toBeDisabled();
-  expect(checks.adapters).toHaveBeenCalledWith(inventory.devices[0].id);
+  expect(screen.getByRole("button", {name:"Obtain Firmware"})).toBeDisabled();
+  expect(checks.routes).toHaveBeenCalledWith(expect.objectContaining({deviceId:inventory.devices[0].id,authorized:false}));
+  expect(screen.getByRole("article",{name:/Test MiFi:/})).toHaveClass("device-warning");
+  expect(screen.getByText(/Official firmware image: unknown/)).toBeInTheDocument();
+  await user.click(screen.getByRole("button",{name:"Export Diagnostics"}));
+  expect(await screen.findByText("Redacted diagnostics saved.")).toBeInTheDocument();
 });
 
 it("discards a check completed after disconnection", async () => {
   let finish!:(value: unknown)=>void;
-  checks.adapters.mockReturnValueOnce(new Promise(resolve => {finish=resolve;}));
+  checks.routes.mockReturnValueOnce(new Promise(resolve => {finish=resolve;}));
   const user=userEvent.setup(); const view=render(<Devices {...props}/>);
   await user.click(screen.getByRole("button", {name:"More info for Test MiFi"}));
-  await user.click(screen.getByRole("button", {name:"Verify Compatibility"}));
+  await user.click(screen.getByRole("button", {name:"Check Compatibility"}));
   view.rerender(<Devices {...props} inventory={{...inventory,revision:5,devices:inventory.devices.map(d=>({...d,connected:false}))}}/>);
-  finish({deviceId:inventory.devices[0].id,discoveryRevision:4,expiresAt:Date.now()+60000});
+  finish(result());
   expect(await screen.findByText(/Device disconnected/)).toBeInTheDocument();
   expect(screen.queryByText("Cannot locate firmware")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", {name:"Extract Firmware"})).toBeDisabled();
+  expect(screen.queryByRole("heading",{name:"No currently qualified acquisition method"})).not.toBeInTheDocument();
+  expect(screen.getByRole("button", {name:"Obtain Firmware"})).toBeDisabled();
+});
+
+it("requires explicit endpoint approval and forwards only the selected target", async () => {
+  const user=userEvent.setup();render(<Devices {...props}/>);
+  await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));
+  await user.click(screen.getByText("Device observations and management endpoint"));
+  const approval=screen.getByRole("checkbox",{name:/I own or administer this endpoint/});
+  expect(approval).not.toBeChecked();await user.click(approval);
+  await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  expect(checks.routes).toHaveBeenCalledWith({deviceId:"a".repeat(64),endpoint:"http://192.0.2.1/",interfaceId:"fixture-adapter",authorized:true});
+  await user.clear(screen.getByRole("textbox",{name:"Management address"}));
+  expect(approval).not.toBeChecked();expect(screen.queryByRole("region",{name:"Firmware acquisition routes"})).not.toBeInTheDocument();
+});
+
+it("rejects an expired backend result and leaves obtain disabled", async () => {
+  checks.routes.mockResolvedValueOnce({...result(),expiresAt:Date.now()-1});
+  const user=userEvent.setup();render(<Devices {...props}/>);
+  await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));
+  await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Device information changed");
+  expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();
+});
+
+it("labels Ethernet/Wi-Fi as transport to a remote router, not a verified router identity", () => {
+  const gateway={...inventory.devices[0],transports:["network" as const],category:"generic_network_interface" as const,displayName:"PC adapter"};
+  render(<Devices {...props} inventory={{...inventory,devices:[gateway]}}/>);
+  expect(screen.getByRole("heading",{name:"Router via Test network"})).toBeInTheDocument();
+  expect(screen.queryByRole("heading",{name:"PC adapter"})).not.toBeInTheDocument();
 });
 
 it("filters disconnected devices and connection types", async () => {

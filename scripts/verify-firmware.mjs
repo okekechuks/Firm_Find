@@ -50,14 +50,14 @@ export async function verifyFirmware(client,{label,pid,record,evidence}){
  const discovery=await invoke('get_discovery');if(discovery.devices.length){const r=await invoke('get_device_compatibility',{deviceId:discovery.devices[0].id});assert(Object.values(r.features).every(f=>f.assessment==='UNKNOWN'&&!f.canApply));}
  record(label+': schema 5 and existing Phase 3.1 profile/compatibility IPC preserved');
  const first=await importFile(client,pid,'obtainer-generated-phase4.bin');const a=await terminal(client,first.id);assert.equal(a.status,'completed');assert.equal(a.relatedArtifact,hash);assert.equal(a.progressBytes,bytes.length);
- await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})))`),'Committed artifact did not render in React');
+ await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.querySelector('h3')?.textContent==='obtainer-generated-phase4.bin'))`),'Committed artifact did not render in React');
  const blob=path.join(snapshot.dataDirectory,'vault/sha256',hash.slice(0,2),hash+'.bin');assert.deepEqual(await readFile(blob),bytes);assert.deepEqual(await readFile(path.join(fixtures,'obtainer-generated-phase4.bin')),bytes);
  record(label+': real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved',{jobId:a.id,sha256:hash,size:bytes.length});
  const duplicate=await importFile(client,pid,'obtainer-identical-alias.bin');const b=await terminal(client,duplicate.id);assert.equal(b.status,'completed');assert.equal(b.duplicate,true);assert.equal(b.relatedArtifact,hash);
  let details=await invoke('get_firmware_artifact',{sha256:hash});assert(details.imports.some(i=>i.originalFilename==='obtainer-generated-phase4.bin'));assert(details.imports.some(i=>i.originalFilename==='obtainer-identical-alias.bin'));assert(details.imports.every(i=>i.sourceCategory==='user_import'&&i.provenanceStatus==='unverified'));
  record(label+': same bytes under another name deduplicate; import occurrences and unverified provenance persist',{sourceCount:details.artifact.sourceCount});
- await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})))`),'Artifact card missing');
- await client.evaluate(`[...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})).click()`);
+ await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.querySelector('h3')?.textContent==='obtainer-generated-phase4.bin'))`),'Artifact card missing');
+ await client.evaluate(`[...document.querySelectorAll('.artifact-card')].find(b=>b.querySelector('h3')?.textContent==='obtainer-generated-phase4.bin').click()`);
  await until(()=>client.evaluate("Boolean([...document.querySelectorAll('button')].find(b=>b.textContent==='Verify Integrity'))"),'Artifact details did not render');
  const old=new Set((await invoke('list_library_jobs')).map(j=>j.id));await client.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent==='Verify Integrity').click()");let verify;
  await until(async()=>{verify=(await invoke('list_library_jobs')).find(j=>!old.has(j.id)&&j.kind==='integrity_verify');return Boolean(verify);},'Integrity job not created');assert.equal((await terminal(client,verify.id)).status,'completed');details=await invoke('get_firmware_artifact',{sha256:hash});assert.equal(details.artifact.integrityStatus,'verified');
@@ -81,7 +81,7 @@ export async function verifyFirmware(client,{label,pid,record,evidence}){
  await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.stats-grid .stat')].find(c=>c.textContent.includes('Active jobs')&&c.querySelector('strong')?.textContent===${JSON.stringify(String(counts.runningJobs))}))`),'Dashboard count did not reflect committed SQLite artifacts');
  record(label+': dashboard and Library reflect committed counts and no active work',{artifacts:counts.artifacts});
  await writeFile(path.join(evidence,label+'-library.json'),JSON.stringify({artifact:await invoke('get_firmware_artifact',{sha256:hash}),jobs:await invoke('list_library_jobs'),activity:await invoke('get_library_activity')},null,2));
- await screen(client);await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})))`),'Persisted library did not render for screenshot');
+ await screen(client);await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.querySelector('h3')?.textContent==='obtainer-generated-phase4.bin'))`),'Persisted library did not render for screenshot');
  await client.evaluate('window.scrollTo(0,0)');await client.evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
  const image=await client.send('Page.captureScreenshot',{format:'png'});await writeFile(path.join(evidence,label+'-library.png'),Buffer.from(image.data,'base64'));
 }
@@ -91,7 +91,7 @@ async function nativeSelection(client,pid,filename){
  await client.evaluate("(()=>{window.__phase41Selection=window.__TAURI_INTERNALS__.invoke('select_firmware_file');})()");dialog('Import firmware',path.join(fixtures,filename),pid);
  const result=await client.evaluate('window.__phase41Selection');await client.evaluate('delete window.__phase41Selection');return result;
 }
-async function selectDetails(client){await screen(client);await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})))`),'Test artifact missing');await client.evaluate(`[...document.querySelectorAll('.artifact-card')].find(b=>b.textContent.includes(${JSON.stringify(hash)})).click()`);await until(()=>client.evaluate("Boolean([...document.querySelectorAll('button')].find(b=>b.textContent==='Export Manifest'))"),'Details missing');}
+async function selectDetails(client){await screen(client);await until(()=>client.evaluate(`Boolean([...document.querySelectorAll('.artifact-card')].find(b=>b.querySelector('h3')?.textContent==='obtainer-generated-phase4.bin'))`),'Test artifact missing');await client.evaluate(`[...document.querySelectorAll('.artifact-card')].find(b=>b.querySelector('h3')?.textContent==='obtainer-generated-phase4.bin').click()`);await until(()=>client.evaluate("Boolean([...document.querySelectorAll('button')].find(b=>b.textContent==='Export Manifest'))"),'Details missing');}
 export async function verifyFirmwareHardening(client,{pid,evidence,record}){
  await assertOwned(profile);const invoke=api(client);
  const picks=[await nativeSelection(client,pid,'obtainer-generated-large.bin'),await nativeSelection(client,pid,'obtainer-generated-large.bin')];

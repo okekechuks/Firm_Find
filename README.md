@@ -4,6 +4,8 @@ OBTAINER is a Windows app intended to help owners keep unsupported routers and M
 
 ## Current status
 
+**Phase 7.5 is underway.** More Info now checks separate firmware acquisition routes and explains what is missing. With your approval, it can inspect a local management page for candidate device-family signals. An unknown result keeps the device visible; it does not prove that firmware is impossible to obtain. Obtain Firmware stays disabled until an implemented route is qualified. This first slice acquires no firmware and changes no router settings. [Progress and evidence](docs/PHASE_7_5_VERIFICATION.md).
+
 The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can save a router address, check whether its management page responds, and review a separate support assessment for DNS, Wi-Fi user limits, APN and USSD.
 
 Device details include a Compatibility view explaining each feature's evidence, missing information and prerequisites. Saved label or software details stay clearly marked as user-reported. Profiles distinguish exact hardware revisions and firmware versions; an uncertain match keeps feature support unknown. The app does not change router settings.

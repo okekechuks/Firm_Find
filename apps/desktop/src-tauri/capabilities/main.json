@@ -9,6 +9,9 @@
     "windows"
   ],
   "permissions": [
+    "allow-discover-firmware-routes",
+    "allow-cancel-firmware-route-discovery",
+    "allow-export-acquisition-diagnostics",
     "allow-openwrt-status",
     "allow-openwrt-observe",
     "allow-openwrt-connect",

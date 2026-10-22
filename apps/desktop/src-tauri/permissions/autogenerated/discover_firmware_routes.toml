@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-discover-firmware-routes"
+description = "Enables the discover_firmware_routes command without any pre-configured scope."
+commands.allow = ["discover_firmware_routes"]
+
+[[permission]]
+identifier = "deny-discover-firmware-routes"
+description = "Denies the discover_firmware_routes command without any pre-configured scope."
+commands.deny = ["discover_firmware_routes"]

@@ -11,6 +11,7 @@ use std::time::Duration;
 pub enum Fault {
     None,
     ConnectWait,
+    ControlledConnect,
     AuthWait,
     IdentityWait,
     CapabilitiesWait,
@@ -26,6 +27,8 @@ pub struct MockAdapter {
     pub descriptor: AdapterDescriptor,
     pub fault: Fault,
     pub gate: Option<Arc<Barrier>>,
+    pub started: Option<std::sync::mpsc::Sender<()>>,
+    pub proceed: Option<Arc<std::sync::Mutex<std::sync::mpsc::Receiver<()>>>>,
     pub resources: Arc<AtomicUsize>,
 }
 impl MockAdapter {
@@ -49,10 +52,15 @@ impl MockAdapter {
             },
             fault: Fault::None,
             gate: None,
+            started: None,
+            proceed: None,
             resources: Arc::new(AtomicUsize::new(0)),
         }
     }
     fn wait(&self, control: &OperationControl) -> Result<(), AdapterError> {
+        if let Some(sender) = &self.started {
+            let _ = sender.send(());
+        }
         if let Some(gate) = &self.gate {
             gate.wait();
         }
@@ -93,6 +101,24 @@ impl ReadOnlyConnectionAdapter for MockAdapter {
         control.checkpoint()?;
         if matches!(self.fault, Fault::ConnectWait) {
             self.wait(control)?;
+        }
+        if matches!(self.fault, Fault::ControlledConnect) {
+            if let Some(sender) = &self.started {
+                let _ = sender.send(());
+            }
+            self.proceed
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(10))
+                .map_err(|_| {
+                    failure(
+                        AdapterErrorCode::OperationTimeout,
+                        "Controlled connector was not released.",
+                    )
+                })?;
+            control.checkpoint()?;
         }
         if !binding.simulated
             || binding.endpoint_identity != "FIXTURE-PIN"

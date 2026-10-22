@@ -1,0 +1,579 @@
+{
+  "date": "2026-10-22",
+  "runs": [
+    {
+      "name": "retained_native_regressions",
+      "command": "node scripts/verify-foundation.mjs --device-gui --phase4 --phase4-1 --phase6",
+      "exitCode": 0,
+      "checkpointCount": 106,
+      "consoleIssueCount": 0,
+      "normalDataEqual": true,
+      "results": [
+        {
+          "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+        },
+        {
+          "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+        },
+        {
+          "name": "ordinary production executable rejects test activation before opening data"
+        },
+        {
+          "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "active test ownership prevents cleanup"
+        },
+        {
+          "name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "ca9e47625bbb676ed01d8850c2d21ec8",
+          "dataDirectory": "<isolated-profiles>\\ca9e47625bbb676ed01d8850c2d21ec8\\data"
+        },
+        {
+          "name": "dev-reopen: native window, React and real SQLite IPC",
+          "url": "http://127.0.0.1:1420/",
+          "pid": 21604,
+          "dataDirectory": "<isolated-profiles>\\ca9e47625bbb676ed01d8850c2d21ec8\\data",
+          "theme": "system"
+        },
+        {
+          "name": "dev-reopen: exactly six primary navigation destinations"
+        },
+        {
+          "name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 53,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "dev-reopen: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+        },
+        {
+          "name": "dev-reopen: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "dev-reopen: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+        },
+        {
+          "name": "dev-reopen: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+        },
+        {
+          "name": "dev-reopen: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+        },
+        {
+          "name": "dev-reopen: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+        },
+        {
+          "name": "dev-reopen: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+        },
+        {
+          "name": "dev-reopen: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+        },
+        {
+          "name": "dev-reopen: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+        },
+        {
+          "name": "dev-reopen: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+        },
+        {
+          "name": "dev-reopen: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+        },
+        {
+          "name": "dev-reopen: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+        },
+        {
+          "name": "dev-reopen: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+        },
+        {
+          "name": "dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+          "jobId": "20e7813aba8a96dd508e3c1557fb6594",
+          "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+          "size": 1048576
+        },
+        {
+          "name": "dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+          "sourceCount": 2
+        },
+        {
+          "name": "dev-reopen: actual streamed integrity verification and history",
+          "checks": 3
+        },
+        {
+          "name": "dev-reopen: actual native save dialog and unsigned metadata-only manifest",
+          "manifestSchemaVersion": 1
+        },
+        {
+          "name": "dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact",
+          "bytesObserved": 2097152,
+          "totalBytes": 268435456,
+          "elapsedMs": 2369,
+          "copyThroughputMiBPerSecond": 18.51851851851852,
+          "memory": {
+            "WorkingSet64": 83812352,
+            "PeakWorkingSet64": 87060480,
+            "PrivateMemorySize64": 24289280
+          }
+        },
+        {
+          "name": "dev-reopen: persisted job and activity screens render after restart"
+        },
+        {
+          "name": "dev-reopen: dashboard and Library reflect committed counts and no active work",
+          "artifacts": 1
+        },
+        {
+          "name": "isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences"
+        },
+        {
+          "name": "isolated native corruption and missing-blob detection; source reimport restores generated bytes without touching normal vault"
+        },
+        {
+          "name": "isolated native database failure after artifact publication: failed job, retained orphan, verified reuse on retry"
+        },
+        {
+          "name": "isolated native manifest remains saved when activity transaction fails; React displays separate warning"
+        },
+        {
+          "name": "dev-reopen: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"
+        },
+        {
+          "name": "dev-reopen: temporary HMR edit restored"
+        },
+        {
+          "name": "dev-reopen: injected read error and real IPC retry recovery"
+        },
+        {
+          "name": "dev-reopen: loading state retains cached data"
+        },
+        {
+          "name": "isolated native verification observed running before graceful application shutdown",
+          "jobId": "4c485c4a9c2f16af820869f508ff9325"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "graceful shutdown cancelled active verification; restart preserved terminal job and usable artifact"
+        },
+        {
+          "name": "Phase 4: actual copying job recorded before forced termination",
+          "jobId": "f0d9bd388f91b9aa59a8e922902e8df5"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "interrupted owned development launch and released resources",
+          "backendRenderedBeforeInterrupt": true
+        },
+        {
+          "name": "dev-recovery: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "ca9e47625bbb676ed01d8850c2d21ec8",
+          "dataDirectory": "<isolated-profiles>\\ca9e47625bbb676ed01d8850c2d21ec8\\data"
+        },
+        {
+          "name": "dev-recovery: native window, React and real SQLite IPC",
+          "url": "http://127.0.0.1:1420/",
+          "pid": 22444,
+          "dataDirectory": "<isolated-profiles>\\ca9e47625bbb676ed01d8850c2d21ec8\\data",
+          "theme": "system"
+        },
+        {
+          "name": "dev-recovery: exactly six primary navigation destinations"
+        },
+        {
+          "name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 53,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "dev-recovery: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+        },
+        {
+          "name": "dev-recovery: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "dev-recovery: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+        },
+        {
+          "name": "dev-recovery: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+        },
+        {
+          "name": "dev-recovery: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+        },
+        {
+          "name": "dev-recovery: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+        },
+        {
+          "name": "dev-recovery: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+        },
+        {
+          "name": "dev-recovery: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+        },
+        {
+          "name": "dev-recovery: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+        },
+        {
+          "name": "dev-recovery: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+        },
+        {
+          "name": "dev-recovery: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+        },
+        {
+          "name": "dev-recovery: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+        },
+        {
+          "name": "dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn"
+        },
+        {
+          "name": "dev-recovery: interrupted copy recovered as failed, known staging removed, no false success",
+          "jobId": "f0d9bd388f91b9aa59a8e922902e8df5"
+        },
+        {
+          "name": "dev-recovery: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+        },
+        {
+          "name": "dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+          "jobId": "f5ebc40650a258a3e7397fecbdf08675",
+          "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+          "size": 1048576
+        },
+        {
+          "name": "dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+          "sourceCount": 5
+        },
+        {
+          "name": "dev-recovery: actual streamed integrity verification and history",
+          "checks": 9
+        },
+        {
+          "name": "dev-recovery: actual native save dialog and unsigned metadata-only manifest",
+          "manifestSchemaVersion": 1
+        },
+        {
+          "name": "dev-recovery: persisted job and activity screens render after restart"
+        },
+        {
+          "name": "dev-recovery: dashboard and Library reflect committed counts and no active work",
+          "artifacts": 3
+        },
+        {
+          "name": "dev-recovery: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "production: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "ca9e47625bbb676ed01d8850c2d21ec8",
+          "dataDirectory": "<isolated-profiles>\\ca9e47625bbb676ed01d8850c2d21ec8\\data"
+        },
+        {
+          "name": "production: native window, React and real SQLite IPC",
+          "url": "http://tauri.localhost/",
+          "pid": 21120,
+          "dataDirectory": "<isolated-profiles>\\ca9e47625bbb676ed01d8850c2d21ec8\\data",
+          "theme": "system"
+        },
+        {
+          "name": "production: exactly six primary navigation destinations"
+        },
+        {
+          "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 53,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "production: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+        },
+        {
+          "name": "production: actual native diagnostics save, backend redaction and no overwrite; no network approval fabricated"
+        },
+        {
+          "name": "production: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "production: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+        },
+        {
+          "name": "production: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+        },
+        {
+          "name": "production: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+        },
+        {
+          "name": "production: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+        },
+        {
+          "name": "production: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+        },
+        {
+          "name": "production: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+        },
+        {
+          "name": "production: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+        },
+        {
+          "name": "production: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+        },
+        {
+          "name": "production: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+        },
+        {
+          "name": "production: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+        },
+        {
+          "name": "production: repeated startup keeps interrupted job terminal without rerunning it"
+        },
+        {
+          "name": "production: existing artifact/import history available before any new import; stale verified label withdrawn"
+        },
+        {
+          "name": "production: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+        },
+        {
+          "name": "production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+          "jobId": "26e31c8df39d5f00c5ff9a91b807b5ed",
+          "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+          "size": 1048576
+        },
+        {
+          "name": "production: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+          "sourceCount": 7
+        },
+        {
+          "name": "production: actual streamed integrity verification and history",
+          "checks": 12
+        },
+        {
+          "name": "production: actual native save dialog and unsigned metadata-only manifest",
+          "manifestSchemaVersion": 1
+        },
+        {
+          "name": "production: persisted job and activity screens render after restart"
+        },
+        {
+          "name": "production: dashboard and Library reflect committed counts and no active work",
+          "artifacts": 3
+        },
+        {
+          "name": "production: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "no captured native console warnings or unhandled exceptions"
+        },
+        {
+          "name": "cleanup rejects mismatched marker/run ID and retains test data"
+        },
+        {
+          "name": "cleanup retains unknown staging without deleting files"
+        },
+        {
+          "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+        },
+        {
+          "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+        },
+        {
+          "name": "owned isolated run cleaned after all processes stopped",
+          "runId": "ca9e47625bbb676ed01d8850c2d21ec8"
+        }
+      ]
+    },
+    {
+      "name": "final_hardened_development",
+      "command": "node scripts/verify-foundation.mjs --gui-preview --device-gui",
+      "exitCode": 0,
+      "checkpointCount": 24,
+      "consoleIssueCount": 0,
+      "normalDataEqual": true,
+      "results": [
+        {
+          "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+        },
+        {
+          "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+        },
+        {
+          "name": "ordinary production executable rejects test activation before opening data"
+        },
+        {
+          "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "active test ownership prevents cleanup"
+        },
+        {
+          "name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "a26acadcc5f2fa5327183e4f3cc794ee",
+          "dataDirectory": "<isolated-profiles>\\a26acadcc5f2fa5327183e4f3cc794ee\\data"
+        },
+        {
+          "name": "dev-reopen: native window, React and real SQLite IPC",
+          "url": "http://127.0.0.1:1420/",
+          "pid": 21440,
+          "dataDirectory": "<isolated-profiles>\\a26acadcc5f2fa5327183e4f3cc794ee\\data",
+          "theme": "system"
+        },
+        {
+          "name": "dev-reopen: exactly six primary navigation destinations"
+        },
+        {
+          "name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 53,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "dev-reopen: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+        },
+        {
+          "name": "dev-reopen: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "dev-reopen: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"
+        },
+        {
+          "name": "dev-reopen: temporary HMR edit restored"
+        },
+        {
+          "name": "dev-reopen: injected read error and real IPC retry recovery"
+        },
+        {
+          "name": "dev-reopen: loading state retains cached data"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "no captured native console warnings or unhandled exceptions"
+        },
+        {
+          "name": "cleanup rejects mismatched marker/run ID and retains test data"
+        },
+        {
+          "name": "cleanup retains unknown staging without deleting files"
+        },
+        {
+          "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+        },
+        {
+          "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+        },
+        {
+          "name": "owned isolated run cleaned after all processes stopped",
+          "runId": "a26acadcc5f2fa5327183e4f3cc794ee"
+        }
+      ]
+    },
+    {
+      "name": "final_hardened_release",
+      "command": "node scripts/verify-foundation.mjs --release-only --device-gui",
+      "exitCode": 0,
+      "checkpointCount": 20,
+      "consoleIssueCount": 0,
+      "normalDataEqual": true,
+      "results": [
+        {
+          "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+        },
+        {
+          "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+        },
+        {
+          "name": "ordinary production executable rejects test activation before opening data"
+        },
+        {
+          "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "production: isolated database/vault/logs and WebView profile; explicit test banner",
+          "runId": "ae0b10890ecc34156b855d38121224f6",
+          "dataDirectory": "<isolated-profiles>\\ae0b10890ecc34156b855d38121224f6\\data"
+        },
+        {
+          "name": "production: native window, React and real SQLite IPC",
+          "url": "http://tauri.localhost/",
+          "pid": 20596,
+          "dataDirectory": "<isolated-profiles>\\ae0b10890ecc34156b855d38121224f6\\data",
+          "theme": "system"
+        },
+        {
+          "name": "production: exactly six primary navigation destinations"
+        },
+        {
+          "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+          "records": 53,
+          "watching": true,
+          "warnings": []
+        },
+        {
+          "name": "production: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+        },
+        {
+          "name": "production: actual native diagnostics save, backend redaction and no overwrite; no network approval fabricated"
+        },
+        {
+          "name": "production: compact native cards, backend route-discovery popup, no false acquisition success"
+        },
+        {
+          "name": "production: same-value settings write/read preserved original preferences"
+        },
+        {
+          "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+        },
+        {
+          "name": "no captured native console warnings or unhandled exceptions"
+        },
+        {
+          "name": "cleanup rejects mismatched marker/run ID and retains test data"
+        },
+        {
+          "name": "cleanup retains unknown staging without deleting files"
+        },
+        {
+          "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+        },
+        {
+          "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+        },
+        {
+          "name": "owned isolated run cleaned after all processes stopped",
+          "runId": "ae0b10890ecc34156b855d38121224f6"
+        }
+      ]
+    }
+  ],
+  "physicalH01": {
+    "qualification": "BLOCKED",
+    "probe": {
+      "attempted": true,
+      "code": "no_route",
+      "httpStatus": null,
+      "metadataTruncated": false
+    },
+    "reason": "Competing Wi-Fi/USB subnet; selected USB route is not preferred. No HTTP response collected.",
+    "canObtain": false
+  },
+  "note": "Retained full native regression suite ran before the last global identity-conflict fix; final hardened dev/release smoke and full Rust suites ran afterward."
+}

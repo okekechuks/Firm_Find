@@ -1,3 +1,4 @@
+pub mod acquisition;
 pub mod adapters;
 mod commands;
 pub mod connection;
@@ -141,6 +142,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             app.manage(Arc::new(openwrt_service));
             app.manage(adapters::Registry::production().map_err(std::io::Error::other)?);
             app.manage(adapters::SessionManager::default());
+            app.manage(acquisition::Service::default());
             app.manage(Arc::new(simulator::SimulatorService::new(
                 simulation_enabled,
                 simulation_owner,
@@ -178,6 +180,9 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            acquisition::ipc::discover_firmware_routes,
+            acquisition::ipc::cancel_firmware_route_discovery,
+            acquisition::ipc::export_acquisition_diagnostics,
             openwrt::ipc::openwrt_status,
             openwrt::ipc::openwrt_observe,
             openwrt::ipc::openwrt_connect,

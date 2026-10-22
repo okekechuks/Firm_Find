@@ -1,5 +1,7 @@
 # Firmware pipeline roadmap amendment
 
+**Approved placement — 22 October 2026:** the owner has authorized Phase 7.5 between 7 and 8, with subphases A–F for identification, vendor recognition, acquisition strategy discovery, genuine-byte acquisition/Library integration, isolated analysis and physical qualification. This supersedes the earlier proposed placement below. No phase renumbering or Phase 8 implementation. [Architecture](PHASE_7_5_ARCHITECTURE.md) and [current results](PHASE_7_5_VERIFICATION.md). Sprint A does not yet qualify an executable acquisition route.
+
 Proposed: 20 October 2026, from the owner's Phase 7 implementation requirements. **Proposed milestone placement is subject to project-owner approval.** Existing phases 0–19 keep their numbers and historical acceptance evidence. This document does not authorize physical extraction, configuration writes, firmware installation or live USSD during Phase 7.
 
 The permanent product workflow is:

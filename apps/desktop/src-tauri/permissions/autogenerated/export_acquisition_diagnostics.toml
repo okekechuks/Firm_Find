@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-export-acquisition-diagnostics"
+description = "Enables the export_acquisition_diagnostics command without any pre-configured scope."
+commands.allow = ["export_acquisition_diagnostics"]
+
+[[permission]]
+identifier = "deny-export-acquisition-diagnostics"
+description = "Denies the export_acquisition_diagnostics command without any pre-configured scope."
+commands.deny = ["export_acquisition_diagnostics"]

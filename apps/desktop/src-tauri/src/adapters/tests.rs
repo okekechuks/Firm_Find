@@ -34,23 +34,55 @@ fn identity_mismatch_cannot_establish_a_connected_session() {
 
 #[test]
 fn discovery_changes_during_connection_prevent_late_session_publication() {
-    let gate = Arc::new(Barrier::new(2));
+    let (started, receiver) = std::sync::mpsc::channel();
+    let (proceed, release) = std::sync::mpsc::channel();
     let mut mock = MockAdapter::new("fixture");
-    mock.fault = Fault::ConnectWait;
-    mock.gate = Some(gate.clone());
+    mock.fault = Fault::ControlledConnect;
+    mock.started = Some(started);
+    mock.proceed = Some(Arc::new(std::sync::Mutex::new(release)));
     let f = Fixture::new(&mock);
     let m = SessionManager::default();
-    let c = short(Stage::Connection);
     std::thread::scope(|scope| {
-        let worker = scope.spawn(|| f.connect(&m, &c));
-        gate.wait();
+        let worker = scope.spawn(|| {
+            let c = OperationControl::new(
+                Cancellation::default(),
+                Stage::Connection,
+                AdapterOperation::AuthorizedIdentityProbe,
+                Duration::from_secs(10),
+            )
+            .unwrap();
+            f.connect(&m, &c)
+        });
+        receiver
+            .recv_timeout(Duration::from_secs(10))
+            .expect("connector did not signal admission");
         m.observe_discovery(&crate::discovery::DiscoverySnapshot {
             revision: 2,
             ..Default::default()
         });
+        proceed.send(()).unwrap();
         assert!(worker.join().unwrap().is_err());
     });
     assert_eq!(m.active_count(), 0);
+    assert_eq!(mock.resources.load(Ordering::Acquire), 0);
+}
+#[test]
+fn controlled_connector_can_complete_without_a_discovery_change() {
+    let (started, receiver) = std::sync::mpsc::channel();
+    let (proceed, release) = std::sync::mpsc::channel();
+    let mut mock = MockAdapter::new("fixture");
+    mock.fault = Fault::ControlledConnect;
+    mock.started = Some(started);
+    mock.proceed = Some(Arc::new(std::sync::Mutex::new(release)));
+    let f = Fixture::new(&mock);
+    let m = SessionManager::default();
+    std::thread::scope(|scope| {
+        let worker = scope.spawn(|| f.connect(&m, &control()));
+        receiver.recv_timeout(Duration::from_secs(10)).unwrap();
+        proceed.send(()).unwrap();
+        assert!(worker.join().unwrap().is_ok());
+    });
+    m.shutdown();
     assert_eq!(mock.resources.load(Ordering::Acquire), 0);
 }
 #[test]

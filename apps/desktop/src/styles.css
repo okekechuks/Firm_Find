@@ -1006,6 +1006,12 @@ h1 {
 .device-color-key span:nth-child(2)::before { background:var(--error); }
 .device-color-key span:nth-child(3)::before { background:var(--success); }
 .device-summary-dialog { max-width:620px; }
+.device-summary-dialog>details, .acquisition-results>details { margin:12px 0; padding:10px 0; border-top:1px solid var(--line); font-size:12px; }
+.device-summary-dialog>details label { display:block; margin:10px 0; font-size:12px; }
+.device-summary-dialog>details input:not([type=checkbox]), .device-summary-dialog>details select { display:block; width:100%; margin-top:6px; }
+.acquisition-results { margin:18px 0; }
+.acquisition-results p, .acquisition-results dl { font-size:12px; line-height:1.6; overflow-wrap:anywhere; }
+.acquisition-results dd { margin:4px 0 12px; color:var(--muted); }
 .device-network-summary { margin:20px 0; }
 .device-network-summary h3 { font-size:14px;margin-bottom:12px; }
 .device-network-summary dl>div { padding:10px 0;border-bottom:1px solid var(--line); }

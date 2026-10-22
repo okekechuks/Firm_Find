@@ -428,6 +428,47 @@ impl LibraryService {
         self.inner.dialog_open.store(false, Ordering::Release);
         result
     }
+    /// Backend-generated, redacted metadata only. Never overwrite a selected file.
+    pub fn export_redacted_report(&self, report: &serde_json::Value, owner: isize) -> Result<bool> {
+        self.ensure_open()?;
+        if self.inner.dialog_open.swap(true, Ordering::AcqRel) {
+            return Err(LibraryError::new(
+                "DIALOG_BUSY",
+                "Finish the current file dialog first.",
+            ));
+        }
+        let result = (|| {
+            let Some(path) = diagnostics_dialog(owner)? else {
+                return Ok(false);
+            };
+            safe_path(&path)?;
+            if inside(&path, &self.inner.root)? || inside(&path, &self.inner.vault.root)? {
+                return Err(LibraryError::new(
+                    "INTERNAL_DESTINATION",
+                    "Save reports outside application data.",
+                ));
+            }
+            let parent = path
+                .parent()
+                .ok_or_else(|| LibraryError::new("UNSAFE_PATH", "No parent folder."))?;
+            let _guards = guard_directories(parent)?;
+            let temp = parent.join(format!(".obtainer-{}.tmp", nonce()?));
+            let result = (|| {
+                let mut file = new_file(&temp)?;
+                file.write_all(&serde_json::to_vec_pretty(report).map_err(|_| {
+                    LibraryError::new("EXPORT_FAILED", "Report serialization failed.")
+                })?)?;
+                file.sync_all()?;
+                drop(file);
+                fs::hard_link(&temp, &path)?;
+                Ok(true)
+            })();
+            let _ = fs::remove_file(&temp);
+            result
+        })();
+        self.inner.dialog_open.store(false, Ordering::Release);
+        result
+    }
     pub(crate) fn export_path(&self, hash: &str, path: &Path) -> Result<ManifestExportResult> {
         safe_path(path)?;
         if inside(path, &self.inner.root)? || inside(path, &self.inner.vault.root)? {

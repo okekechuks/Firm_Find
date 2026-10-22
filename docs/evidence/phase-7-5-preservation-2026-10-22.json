@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-22",
+  "equal": true,
+  "schema": 5,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreignKeys": [],
+  "allRowsSha256": "821847475ecb9449c7e405f40d892267befc571e7ba589ef9c403504403c0b7c",
+  "settingsSha256": "3df4b0e68f0630f87b31bdf8466de849b45c508cc980051fd7a19d1458d441cc",
+  "databaseFiles": {
+    "obtainer.db": {
+      "bytes": 389120,
+      "sha256": "e13b67692c9a87229ed1a92a052ca520d7cc938c28150334fd37d565deb17c2f"
+    },
+    "obtainer.db-wal": {
+      "bytes": 4132392,
+      "sha256": "4e900244989230526e550ee85d35ff16593e542e63b4da4ca24886665bfbfe3b"
+    }
+  },
+  "vaultFileCount": 1,
+  "vaultFilesDigest": "6af0131c97d8075f5d9125b2243ad7e8e63d6a523fd5959e58e2f3831cd62171",
+  "tableCounts": {
+    "activity_links": 76,
+    "artifact_details": 1,
+    "artifact_imports": 20,
+    "artifact_presentation": 0,
+    "audit_events": 235,
+    "compatibility_evaluations": 3,
+    "desktop_preferences": 1,
+    "device_identity_observations": 2,
+    "devices": 205,
+    "discovery_metadata": 205,
+    "firmware_artifacts": 1,
+    "firmware_backups": 0,
+    "integrity_checks": 31,
+    "job_details": 35,
+    "jobs": 35,
+    "manual_routers": 1,
+    "profile_versions": 2,
+    "settings": 1
+  },
+  "locationChanged": false,
+  "libraryOverride": null
+}

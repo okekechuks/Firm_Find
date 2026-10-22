@@ -1,0 +1,14 @@
+import { z } from "zod";
+import { evidenceSchema } from "./profiles";
+export const acquisitionStateSchema = z.enum(["not_checked", "unknown", "candidate", "requires_authentication", "requires_approval", "requires_external_tool", "available_verified", "unsupported", "failed", "completed_verified"]);
+const capability = z.object({state:acquisitionStateSchema,reason:z.string().max(2048),evidence:z.array(z.string()),missingRequirements:z.array(z.string()),executable:z.literal(false)}).strict();
+export const acquisitionReportSchema = z.object({
+  schemaVersion:z.literal(1),deviceId:z.string().regex(/^[a-f0-9]{64}$/),discoveryRevision:z.number().int(),evaluatedAt:z.number(),expiresAt:z.number(),
+  fingerprint:z.object({deviceId:z.string(),windowsName:z.string(),transports:z.array(z.string()),usbVid:z.string().nullable(),usbPid:z.string().nullable(),interfaceClasses:z.array(z.string()),endpoint:z.string().nullable(),interfaceId:z.string().nullable(),targetKind:z.enum(["local_endpoint","usb_or_network_device"])}).strict(),
+  identity:z.object({confidence:z.enum(["conflicting","verified","unverified"]),verifiedManufacturer:z.string().nullable(),verifiedFirmwareFamily:z.string().nullable(),verifiedModel:z.string().nullable(),verifiedHardwareRevision:z.string().nullable(),verifiedFirmware:z.string().nullable(),reportedModel:z.string().nullable(),evidence:z.array(evidenceSchema).max(256)}).strict(),
+  protocols:z.array(z.object({family:z.string(),confidence:z.literal("candidate"),evidence:z.array(z.string()),limitations:z.string()}).strict()).max(8),
+  candidates:z.array(z.object({strategy:z.enum(["official_image","documented_export","authorized_storage_read","manufacturer_package","external_laboratory"]),name:z.string(),capability,provenanceKind:z.string()}).strict()).max(16),
+  capabilities:z.record(capability),probe:z.object({attempted:z.boolean(),code:z.string(),httpStatus:z.number().int().nullable(),metadataTruncated:z.boolean()}).strict(),canObtain:z.literal(false),
+}).strict();
+export type AcquisitionReport = z.infer<typeof acquisitionReportSchema>;
+export type AcquisitionRequest = {deviceId:string;endpoint:string|null;interfaceId:string|null;authorized:boolean};

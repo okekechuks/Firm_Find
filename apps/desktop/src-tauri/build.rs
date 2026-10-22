@@ -1,6 +1,9 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "discover_firmware_routes",
+            "cancel_firmware_route_discovery",
+            "export_acquisition_diagnostics",
             "openwrt_status",
             "openwrt_observe",
             "openwrt_connect",

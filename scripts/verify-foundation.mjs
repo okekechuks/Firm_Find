@@ -199,7 +199,7 @@ async function verify(label, extended = false) {
     assert.notEqual(next.status, 'failed');
   }
   record(label + ': discovery, three refreshes, unique IDs, unknown feature support', { records: discovery.devices.length, watching: discovery.watching, warnings: discovery.warnings });
-  if(process.argv.includes('--device-gui'))await verifyDeviceGUI(client,{label,record,screenshot});
+  if(process.argv.includes('--device-gui'))await verifyDeviceGUI(client,{label,record,screenshot,pid:state.apps[0].id,profile,evidence});
   if(process.argv.includes('--phase5'))await verifyAdapters(client,{label,evidence,record});
   if(process.argv.includes('--phase6'))await verifySimulator(client,{label,evidence,record});
   if(process.argv.includes('--phase7'))await verifyOpenWrt(client,{label,evidence,record,pid:state.apps[0].id});
@@ -369,7 +369,9 @@ try {
   assert.equal(JSON.parse(startupProbe).exitCode,1);
   record('ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data');
   verifyActivationGuards(root,profile,env,record);
-  if (process.argv.includes('--watch-usb')) {
+  if (process.argv.includes('--release-only')) {
+    await clean(); start('release'); await verify('production'); await closeWindow();
+  } else if (process.argv.includes('--watch-usb')) {
     await clean(); start('dev'); await connect(); await connected();
     await screen('devices', 'Connected Devices');
     await watchUsb(client, {evidence, record});

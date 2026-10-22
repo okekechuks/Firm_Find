@@ -1,5 +1,7 @@
 # OBTAINER master plan
 
+**22 October 2026 — approved Phase 7.5 amendment:** stock router/MiFi identification and legitimate firmware acquisition now sit between Phases 7 and 8. Product workflow is connect → detect → identify → discover acquisition routes → obtain genuine bytes → Library → analyze/customize/build/validate → qualified install/verify/recover. Broad coverage is the goal; each capability requires its own evidence. Earlier configuration-first delivery order below is superseded where this approved workstream applies. Phases 0–19 are not renumbered. Phase 8 remains unstarted. [Architecture/review handoff](docs/PHASE_7_5_ARCHITECTURE.md), [implementation](docs/PHASE_7_5_IMPLEMENTATION.md), [verification](docs/PHASE_7_5_VERIFICATION.md).
+
 Planning revision: 15 October 2026. Product name remains **OBTAINER**; RFS is the reference architecture name used in the supplied guideline.
 
 This plan adopts the configuration-first direction and supersedes the phase ordering in the earlier product requirements. The desktop relocation was already committed before the corrective Phase 0 audit. The [technical audit](docs/PHASE_0_AUDIT.md) records the current implementation and environment; the existing structure is being retained. Planned modules below do not establish implemented functionality.

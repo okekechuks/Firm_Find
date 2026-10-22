@@ -368,16 +368,27 @@ impl Vault {
 
 #[cfg(windows)]
 pub fn dialog(save: bool, owner: isize) -> Result<Option<PathBuf>> {
+    dialog_named(save, owner, None)
+}
+pub fn diagnostics_dialog(owner: isize) -> Result<Option<PathBuf>> {
+    #[cfg(windows)]
+    return dialog_named(true, owner, Some("Export acquisition diagnostics"));
+    #[cfg(not(windows))]
+    dialog(true, owner)
+}
+#[cfg(windows)]
+fn dialog_named(save: bool, owner: isize, title_override: Option<&str>) -> Result<Option<PathBuf>> {
     use windows_sys::Win32::UI::Controls::Dialogs::*;
     let mut buffer = vec![0u16; 32768];
-    let title: Vec<u16> = if save {
-        "Export artifact manifest"
-    } else {
-        "Import firmware"
-    }
-    .encode_utf16()
-    .chain(Some(0))
-    .collect();
+    let title: Vec<u16> = title_override
+        .unwrap_or(if save {
+            "Export artifact manifest"
+        } else {
+            "Import firmware"
+        })
+        .encode_utf16()
+        .chain(Some(0))
+        .collect();
     let filter: Vec<u16> = if save {
         "JSON manifest\0*.json\0\0"
     } else {

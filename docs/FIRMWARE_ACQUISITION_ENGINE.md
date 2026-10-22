@@ -1,0 +1,9 @@
+# Firmware acquisition engine — current slice
+
+Sprint A implements Rust-managed route discovery, not firmware transfer. `acquisition/mod.rs` owns typed device fingerprints, identity/evidence assessments, vendor-family candidates, five independent strategy candidates and 16 capability assessments. `acquisition/ipc.rs` re-resolves current inventory, uses existing bounded connection leases, rejects stale results and caches at most 64 recent reports. Diagnostics are generated from backend state with raw identifiers, endpoint addresses, reported identity text and peer response text excluded.
+
+Strategies: exact official image, documented device export, qualified authorized storage read, authentic manufacturer package, external laboratory acquisition. No qualified artifact catalog or executable acquisition worker is registered in Sprint A. Every strategy remains unknown with specific missing requirements. This means missing implementation/evidence, not confirmed hardware incompatibility.
+
+Existing Library owns all future bytes, jobs, hashing, content-addressed storage, restart handling, backups and restoration. Sprint B must add provenance and acquisition streaming there. No second vault or database is created. Exact model/revision/firmware/region/image type and source trust are independent prerequisites. Official images, device exports, partition dumps, full backups and configuration archives must retain different provenance.
+
+No acquisition authorization, job, artifact or successful extraction is invented in Sprint A. Those executable contracts belong to reviewed Sprint B/C implementations. Source mismatch, redirects, untrusted manifests, checksum failures, interrupted transfers and disk-full qualification remain Sprint B gates. Independent analysis/build/installation/recovery gates remain closed.

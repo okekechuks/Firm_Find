@@ -1,5 +1,7 @@
 # OBTAINER implementation roadmap
 
+**Approved amendment — 22 October 2026:** add Phase 7.5 after Phase 7 and before Phase 8; retain all existing phase numbers and accepted evidence. 7.5A identification/fingerprinting; 7.5B vendor-management recognition; 7.5C strategy registry/route discovery; 7.5D genuine acquisition/Library provenance; 7.5E isolated analysis/extraction; 7.5F independent physical qualification. Sprint A delivers read-only discovery infrastructure, Sprint B a qualified real-byte acquisition route, Sprint C an isolated analysis workflow. Each slice requires executed evidence and independent review. Documents/contracts alone do not close the phase. [Current slice](PHASE_7_5_IMPLEMENTATION.md). Phase 8 remains unstarted until separately authorized.
+
 Revision: 15 October 2026. This roadmap uses the new guideline's phase numbers. It replaces the earlier acquisition-first roadmap. See [master plan](../RFS_MASTER_PLAN.md) for product scope and the target structure, and [phase status](PHASE_STATUS.md) for actual progress.
 
 Planning deliverables do not implement the features below. Each phase closes only after its relevant frontend, Rust backend, persistence, tests, and runtime evidence are connected.

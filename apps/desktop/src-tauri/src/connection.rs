@@ -52,6 +52,28 @@ pub fn now() -> u64 {
         .as_millis() as u64
 }
 
+/// One owner-approved root GET. Response bytes remain transient and are never logged.
+pub(crate) fn root_metadata(
+    target: &Target,
+    interface: &str,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+) -> (EndpointResult, Option<Vec<u8>>) {
+    #[cfg(windows)]
+    return windows::probe_root(target, Some(interface), networks, token);
+    #[cfg(not(windows))]
+    {
+        let _ = (target, interface, networks, token);
+        (
+            *EndpointResult::failure(
+                "unsupported_platform",
+                "Endpoint metadata requires Windows.",
+            ),
+            None,
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManualInput {
@@ -207,6 +229,22 @@ pub struct ProbeLease {
     service: ConnectionService,
     id: String,
     pub cancelled: Arc<AtomicBool>,
+}
+impl ProbeLease {
+    /// Serialize publication with cancellation/supersession without releasing another lease.
+    pub(crate) fn if_current<T>(&self, publish: impl FnOnce() -> T) -> Option<T> {
+        let state = self.service.control.lock().ok()?;
+        if !self.cancelled.load(Ordering::Acquire)
+            && state
+                .active
+                .get(&self.id)
+                .is_some_and(|token| Arc::ptr_eq(token, &self.cancelled))
+        {
+            Some(publish())
+        } else {
+            None
+        }
+    }
 }
 impl Drop for ProbeLease {
     fn drop(&mut self) {

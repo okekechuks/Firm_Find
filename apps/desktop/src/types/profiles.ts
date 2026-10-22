@@ -31,7 +31,7 @@ export const profileSchema = z.object({
 });
 export const registryEntrySchema = z.object({profile: profileSchema, origin: z.string(), authoritative: z.boolean(), contentHash: z.string()});
 export const registrySchema = z.object({profiles: z.array(registryEntrySchema), diagnostics: strings, digest: z.string()});
-const evidenceSchema = z.object({
+export const evidenceSchema = z.object({
   id: z.string(), subjectId: z.string(), attribute: attributeSchema, value: z.string(), source: z.enum(["windows_pnp", "physical_relationship", "network_topology", "authenticated_management", "supported_modem", "user_supplied", "endpoint_response"]),
   collectionMethod: z.string(), collectedAt: z.number(), reliability: z.enum(["strong", "observed", "hint"]), verification: z.enum(["verified", "observed", "user_reported", "unverified"]),
   interfaceId: z.string().nullable(), endpoint: z.string().nullable(), reference: z.string().nullable(), hardwareApplicability: z.string().nullable(), firmwareApplicability: z.string().nullable(), conflicts: strings, stale: z.boolean(),
