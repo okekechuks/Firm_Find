@@ -1,6 +1,6 @@
 # Phase 7 hardware qualification
 
-Revision: 20 October 2026. **Physical-hardware verdict: PENDING.** The owner reports only a regular proprietary MiFi. No authorized compatible physical OpenWrt target is available for this phase.
+Revision: 22 October 2026. **MG11 device identification: FAILED. Physical OpenWrt qualification: PENDING.** The owner reports a regular proprietary MiFi; no authorized compatible physical OpenWrt target is available for this phase.
 
 This document separates physical qualification from genuine OpenWrt OS interoperability and controlled fixtures. Software/native acceptance is recorded in [Phase 7 verification](PHASE_7_VERIFICATION.md); this document does not predeclare it.
 
@@ -11,7 +11,7 @@ This document separates physical qualification from genuine OpenWrt OS interoper
 | Disposable OpenWrt 25.12.6 x86/64 QEMU guest | Genuine OpenWrt OS; model `QEMU Ubuntu 26.04 PC (i440FX + PIIX, 1996)`; revision `r33311-981c978eff` | Controlled OS interoperability target; executed checks determine software acceptance |
 | Controlled SSH/parser fixtures | Test-only peers and deterministic input | Security/error regression evidence only |
 | Phase 6 Virtual Router Lab | Fictional simulator identity and authority | Simulator regression only; never physical-device evidence |
-| Owner's regular proprietary MiFi / saved comFi MG11 | Proprietary target; owner-reported identity, revision/software evidence remains unverified | No new physical contact or OpenWrt qualification; four feature support states remain unknown |
+| Owner's regular proprietary MiFi / saved comFi MG11 | Windows reports a generic USB Composite Device and `Ethernet 2` Remote NDIS interface; Windows reports `192.168.100.100` local address and `192.168.100.1` gateway. One authorized unauthenticated `GET /` returned HTTP 200 and page title `E-LINK Wireless Router`, without MG11 or firmware identity. | **FAILED for MG11 identification/detection goal**; not a supported OpenWrt target. Four feature support states remain unknown |
 | Physical compatible OpenWrt router | Not available | PENDING for every hardware-specific operation |
 
 The compressed guest source image is `openwrt-25.12.6-x86-64-generic-ext4-combined.img.gz`, SHA-256 `f8538784d0288b4133a99ac2a68443e4922ffde6343e80df56a5882364b9d499`. Image provenance and virtual identity are not a physical device profile. [Official release directory](https://downloads.openwrt.org/releases/25.12.6/targets/x86/64/).
@@ -34,7 +34,7 @@ The earlier MG11 owner report included `LT800/` and software `MF69_AM802L_ZX_DD_
 | Customized firmware build compatibility | Matching builder availability is not generated firmware | PENDING |
 | Installation, restart verification and recovery | No installation or recovery attempted | PENDING |
 
-No physical persistent configuration, firmware, calibration or modem state was intentionally changed by Phase 7 qualification because no physical target was contacted. This does not substitute for a future before/after physical inspection test.
+No physical persistent configuration, firmware, calibration or modem state was intentionally changed. The 22 October MG11 follow-up made only the single unauthenticated root-page GET listed above; it did not submit credentials or change router settings. This does not substitute for a future before/after physical inspection test.
 
 ## Smallest future hardware gate
 
