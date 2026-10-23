@@ -15,7 +15,7 @@
 | D6 | DONE | `storage.rs::Repository::open` first opens existing file with `SQLITE_OPEN_READ_ONLY`, reads user_version, and refuses >5 before writable open/WAL. Read/open failures fall back to existing writable error path. Missing file creation and second version check remain. Temp schema-6 test proves identical bytes, delete journal, no WAL/SHM sidecars; schema-5 rows/settings remain and WAL is enabled; invalid file retains NotADatabase, exclusively locked file retains DatabaseBusy. Existing fresh/migration/restart regressions retained. |
 | B4 pre-step | DONE, plan only | [PHASE_7_5_B4_PRESTEP_PLAN.md](PHASE_7_5_B4_PRESTEP_PLAN.md): exact static menu path, separate proposed scope/confirmation, authentication uncertainty, single-attempt stop rules, narrow parser/synthetic tests and supervised future read. No parser/spec/scope/transport code or live request implemented. |
 
-All implementation paths above are relative to `apps/desktop/src-tauri/src/` except the golden fixture, relative to `apps/desktop/src-tauri/`. New behavior tests and existing expectation updates are in `acquisition/tests.rs`; storage regressions in `storage.rs`. No GUI component or database migration changed.
+All implementation paths above are relative to `apps/desktop/src-tauri/src/` except the golden fixture, relative to `apps/desktop/src-tauri/`. New behavior tests and existing expectation updates are in `acquisition/tests.rs`; storage regressions in `storage.rs`. Evidence/design documents changed: this report, `PHASE_STATUS.md`, `PHASE_7_5_B4_PRESTEP_PLAN.md`, and D6 policy wording in `FIRMWARE_ACQUISITION_ENGINE.md`. No GUI component or database migration changed.
 
 ## Test-first record and initial failures
 
@@ -50,7 +50,9 @@ Rust commands below run with `$env:CARGO_INCREMENTAL='0'`; existing Windows path
 | `git rev-parse main` | 0; `369e74173c570009b47bfd4957a4852ed0856678` |
 | `git merge-base --is-ancestor 369e741 HEAD` | 0; branch is a fast-forward candidate |
 
-Required twenty-run final-code verification follows the implementation commit: `py scripts/verify-parallel-rust.py --runs 20 --output .tools/review-d6/final-parallel`. Exact tested revision, exits, counts and log hashes are computed in `results.json`; final outcome is recorded in the evidence follow-up.
+`py scripts/verify-parallel-rust.py --runs 20 --output .tools/review-d6/final-parallel` exited 0: twenty consecutive full-workspace default-parallel runs on final code commit `efc179a9d0d3b1c6f4cea75ed677aece8561f4cd`, each 263 passed /0 failed /1 ignored and two doctests passed. Every before/after revision matches; tracked tree clean throughout. All twenty log hashes match recorded bytes and new F1–F5/D6 regression names appear with `... ok` in every log. Computed records: `.tools/review-d6/final-parallel/results.json`. No implementation changes follow that revision; this follow-up edits documentation only.
+
+`py scripts/probe-native-isolation.py .tools/review-d6/normal-final.json .tools/review-d6/normal-before.json` exited 0 after all twenty runs: same complete normal-data snapshot. Final code tree and normal data are verified independently of the evidence-only commit. Final branch HEAD (documentation included) is supplied in delivery; repository is committed and clean at handoff.
 
 Not run: native GUI launch, Windows release builds, physical OpenWrt qualification or any physical router acquisition. B2 migration/artifact classes, B4 authenticated client, B5 binding, B7 official-image registry, B8 analysis worker remain unimplemented/blocked. All five hardware acquisition results H01–H05 remain pending; historical static metadata is not firmware acquisition. No acquisition claim until a real artifact has hash/provenance. Phase 8 unstarted. No hardware matrix change, credentials, write, flashing, upgrade, reset, live USSD, push, merge or tag.
 
