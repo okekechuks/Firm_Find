@@ -1,5 +1,15 @@
 # S1/S2 follow-up and D1-D6 design revisions
 
+## Post-approval implementation addendum
+
+23 October 2026: the owner accepted the revised B1 design and authorized local B1/B3/B6, the model-name scan and D6a characterization. Implementation and current results are in [PHASE_7_5_B1_IMPLEMENTATION.md](PHASE_7_5_B1_IMPLEMENTATION.md). This addendum supersedes the `confirmation pending / NOT DONE` snapshot below; it does not change the scope of the earlier R6-R10 review.
+
+The five B1 strategies are registered, local-only and return `not_implemented`; B3 registers only bounded `GET /` and `GET /version_num.txt` specs for validation, with no dispatch; B6 adds eleven independently reported compatibility stages. Model-name scanning and user-label invariance tests pass. D6a observed `Repository::open` refusing a schema-6 database after changing journal mode from `delete` to `wal` and changing database bytes. No storage fix or migration was made; that remains a separate review/approval gate.
+
+Latest verification: standard Rust 255 passed/1 ignored; isolated-profile Rust 256 passed/2 ignored; one compile-fail doctest passes in each profile; both Clippy profiles, formatting, 146 frontend tests, lint and production frontend build pass. Native GUI, Windows release builds and hardware qualification were not run. No network traffic or physical-device access occurred. Remaining blocked work: schema-6 migration/artifact classes, authenticated client, transport binding, official-image registry and analysis worker. Phase 8 remains unstarted.
+
+---
+
 23 October 2026, Africa/Lagos. Branch `phase-7-5-acquisition-engine`; starting HEAD `8d6b8d31990de09b81661eabef78d9a5b0e328ce`, clean working tree. R6-R10 accepted; B1 approved with changes. Reviewer independently ran 243 standard / 244 isolated Rust tests, both Clippy profiles, formatting and twenty standard repetitions at that revision. The reviewer's initial loop parser falsely matched `0 failed; 1 ignored`; the reviewer corrected it and reran, reporting all twenty exits 0. That parser error is not a code/test failure. Frontend/native/build/hardware checks were not independently repeated.
 
 ## Disposition and files

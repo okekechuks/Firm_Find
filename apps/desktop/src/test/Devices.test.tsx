@@ -6,8 +6,10 @@ import type { DiscoverySnapshot } from "../types/contracts";
 
 const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn()}));
 vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export}));
+const stageIds = ["detected","exact_identity","management_api","official_image","firmware_export","physical_read","firmware_acquired","filesystem_extracted","customization","rebuild","installation"] as const;
+const defaultStages = stageIds.map(id => ({id,state:id === "detected" ? "observed" : "not_implemented",reason:"No implementation is available."}));
 function result() {
-  return {deviceId:"a".repeat(64),discoveryRevision:4,expiresAt:Date.now()+60000,canObtain:false,identity:{confidence:"unverified",verifiedModel:null,verifiedHardwareRevision:null,verifiedFirmware:null,reportedModel:"Test MiFi"},protocols:[],probe:{attempted:false,code:"not_approved",httpStatus:null},candidates:[{strategy:"official_image",name:"Official firmware image",capability:{state:"unknown",reason:"No qualified source registered.",missingRequirements:["Exact hardware revision"]}}],capabilities:{}};
+  return {deviceId:"a".repeat(64),discoveryRevision:4,expiresAt:Date.now()+60000,canObtain:false,identity:{confidence:"unverified",verifiedModel:null,verifiedHardwareRevision:null,verifiedFirmware:null,reportedModel:"Test MiFi"},protocols:[],probe:{attempted:false,code:"not_approved",httpStatus:null},candidates:[{strategy:"official_image",name:"Official firmware image",capability:{state:"unknown",reason:"No qualified source registered.",missingRequirements:["Exact hardware revision"]}}],capabilities:{},stages:defaultStages};
 }
 beforeEach(() => {
   vi.clearAllMocks();
@@ -181,6 +183,25 @@ it("shows bounded metadata as a fact and preserves separately sourced firmware v
 it("does not dispatch discovery after native approval is declined", async()=>{
   checks.approve.mockRejectedValueOnce(new Error("Endpoint check not approved."));const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByText("Device observations and management endpoint"));await user.click(screen.getByRole("checkbox",{name:/I own or administer/}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));expect(await screen.findByRole("alert")).toHaveTextContent("Endpoint check not approved.");expect(checks.routes).not.toHaveBeenCalled();expect(screen.getByRole("button",{name:"Check Compatibility"})).toBeEnabled();
 });
-it("shows five summary stages and collapses remaining unavailable capabilities", async()=>{
-  const r=result();checks.routes.mockResolvedValueOnce({...r,capabilities:Object.fromEntries(["deviceDetected","exactIdentity","managementApi","officialImage","deviceExport","installation"].map(key=>[key,{state:key==="deviceDetected"?"observed":"not_implemented",reason:"No implementation",evidence:[],missingRequirements:[],executable:false}]))});const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));const summary=await screen.findByLabelText("Compatibility summary");expect(summary.querySelectorAll("dt")).toHaveLength(5);expect(screen.getByText("Independent capabilities").closest("details")).not.toHaveAttribute("open");expect(summary).toHaveTextContent("device Detected: observed");
+it("shows eleven compatibility stages with the existing five summary rows first", async()=>{
+  const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  const summary=await screen.findByLabelText("Compatibility summary");
+  expect([...summary.querySelectorAll("dt")].map(node=>node.textContent?.split(":")[0])).toEqual(["Detected","Exact identity","Management API","Official image","Firmware export"]);
+  const rest=screen.getByText("Remaining compatibility stages").closest("details")!;
+  expect(rest).not.toHaveAttribute("open");await user.click(screen.getByText("Remaining compatibility stages"));
+  expect(within(rest).getAllByRole("term")).toHaveLength(6);
+});
+
+it("renders every compatibility state neutrally and keeps stages independent", async()=>{
+  const states=["observed","verified","unknown","not_checked","not_supported","not_implemented","not_implemented","not_implemented","not_implemented","not_implemented","not_implemented"] as const;
+  const r=result();checks.routes.mockResolvedValueOnce({...r,stages:r.stages.map((stage,index)=>({...stage,state:states[index]}))});
+  const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  const summary=await screen.findByLabelText("Compatibility summary");
+  for(const state of ["observed","verified","unknown","not_checked","not_supported","not_implemented"]) expect(summary.closest(".acquisition-results")).toHaveTextContent(state.replaceAll("_"," "));
+  expect(summary.closest(".acquisition-results")?.querySelectorAll(".error, .device-error, [data-tone='error']")).toHaveLength(0);
+  await user.click(screen.getByText("Remaining compatibility stages"));
+  expect(screen.getByText("Exact identity: verified")).toBeInTheDocument();
+  expect(screen.getByText("Official image: not checked")).toBeInTheDocument();
+  expect(screen.getByText("Physical read: not implemented")).toBeInTheDocument();
+  expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();
 });

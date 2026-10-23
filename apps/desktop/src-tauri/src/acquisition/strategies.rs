@@ -1,60 +1,98 @@
-//! Built-in strategy catalog. Qualification is independent for each acquisition route.
+//! Closed compiled registry. Strategy implementations are pure stubs until separately reviewed.
 use super::*;
 
-pub struct AcquisitionStrategyRegistry {
-    entries: Vec<StrategyDefinition>,
-}
+pub mod authorized_storage_read;
+pub mod documented_export;
+pub mod external_laboratory;
+pub mod manufacturer_package;
+pub mod official_image;
+
 struct StrategyDefinition {
-    strategy: FirmwareAcquisitionStrategy,
     name: &'static str,
     provenance: &'static str,
     reason: &'static str,
-    prerequisites: &'static [&'static str],
 }
-impl Default for AcquisitionStrategyRegistry {
-    fn default() -> Self {
-        Self { entries: vec![
-            StrategyDefinition {strategy:FirmwareAcquisitionStrategy::OfficialImage,name:"Official firmware image",provenance:"official_image",reason:"No exact applicable publisher artifact is registered. This does not establish device incompatibility.",prerequisites:&["Publisher-qualified source", "Exact region/carrier and image type", "Publisher integrity/authenticity evidence", "Reviewed acquisition worker"]},
-            StrategyDefinition {strategy:FirmwareAcquisitionStrategy::DocumentedExport,name:"Read-only device export",provenance:"device_export",reason:"No documented or exact-hardware-qualified firmware export is registered. A configuration backup is not firmware.",prerequisites:&["Documented or exact-hardware-qualified firmware export", "Endpoint trust and authentication", "Explicit acquisition approval", "Reviewed export worker and binary validation"]},
-            StrategyDefinition {strategy:FirmwareAcquisitionStrategy::AuthorizedStorageRead,name:"Authorized firmware storage read",provenance:"partition_dump",reason:"No qualified bounded storage-read implementation is registered.",prerequisites:&["Model-qualified read-only storage adapter", "Exact permitted ranges and exclusions", "Coverage and recovery requirements", "Authentication and explicit read approval"]},
-            StrategyDefinition {strategy:FirmwareAcquisitionStrategy::ManufacturerPackage,name:"Manufacturer update package",provenance:"manufacturer_package",reason:"No applicable authenticated OEM package source is registered. Updaters are never executed.",prerequisites:&["Authentic applicable OEM package source", "Exact region/carrier variant", "Non-executing package parser", "Integrity/authenticity validation"]},
-            StrategyDefinition {strategy:FirmwareAcquisitionStrategy::ExternalLaboratory,name:"External laboratory acquisition",provenance:"external_physical_backup",reason:"Future expert-assisted workflow; no invasive operation is implemented.",prerequisites:&["External tools and separate owner approval", "Hardware-qualified read and coverage procedure"]},
-        ] }
+
+fn definition(id: StrategyId) -> StrategyDefinition {
+    match id {
+        StrategyId::OfficialImage => StrategyDefinition {
+            name: "Official firmware image",
+            provenance: "official_image",
+            reason: "No exact applicable publisher artifact is registered. This does not establish device incompatibility.",
+        },
+        StrategyId::DocumentedExport => StrategyDefinition {
+            name: "Read-only device export",
+            provenance: "device_export",
+            reason: "No documented or exact-hardware-qualified firmware export is registered. A configuration backup is not firmware.",
+        },
+        StrategyId::AuthorizedStorageRead => StrategyDefinition {
+            name: "Authorized firmware storage read",
+            provenance: "partition_dump",
+            reason: "No qualified bounded storage-read implementation is registered.",
+        },
+        StrategyId::ManufacturerPackage => StrategyDefinition {
+            name: "Manufacturer update package",
+            provenance: "manufacturer_package",
+            reason: "No applicable authenticated OEM package source is registered. Updaters are never executed.",
+        },
+        StrategyId::ExternalLaboratory => StrategyDefinition {
+            name: "External laboratory acquisition",
+            provenance: "external_physical_backup",
+            reason: "Future expert-assisted workflow; no invasive operation is implemented.",
+        },
     }
 }
+
+pub struct AcquisitionStrategyRegistry {
+    entries: Vec<Box<dyn AcquisitionStrategy>>,
+}
+
+impl Default for AcquisitionStrategyRegistry {
+    fn default() -> Self {
+        Self {
+            entries: vec![
+                Box::new(official_image::OfficialImage),
+                Box::new(documented_export::DocumentedExport),
+                Box::new(authorized_storage_read::AuthorizedStorageRead),
+                Box::new(manufacturer_package::ManufacturerPackage),
+                Box::new(external_laboratory::ExternalLaboratory),
+            ],
+        }
+    }
+}
+
 impl AcquisitionStrategyRegistry {
+    pub fn strategies(&self) -> impl Iterator<Item = &dyn AcquisitionStrategy> {
+        self.entries.iter().map(Box::as_ref)
+    }
+
+    pub fn get(&self, id: StrategyId) -> Option<&dyn AcquisitionStrategy> {
+        self.strategies().find(|strategy| strategy.id() == id)
+    }
+
+    pub fn can_obtain(&self) -> bool {
+        false
+    }
+
     pub fn evaluate(
         &self,
         identity: &DeviceIdentityAssessment,
     ) -> Vec<FirmwareAcquisitionCandidate> {
-        self.entries
-            .iter()
-            .map(|entry| {
-                let mut missing = Vec::new();
-                if identity.verified_manufacturer.is_none() {
-                    missing.push("Trusted manufacturer identity".into());
-                }
-                if identity.verified_firmware_family.is_none() {
-                    missing.push("Verified firmware family".into());
-                }
-                if identity.verified_model.is_none() {
-                    missing.push("Trusted exact manufacturer/model".into());
-                }
-                if identity.verified_hardware_revision.is_none() {
-                    missing.push("Exact hardware revision".into());
-                }
-                if identity.verified_firmware.is_none() {
-                    missing.push("Exact firmware family and version".into());
-                }
-                missing.extend(entry.prerequisites.iter().map(|p| (*p).into()));
-                let mut decision = capability(CapabilityState::Unknown, entry.reason, &[]);
-                decision.missing_requirements = missing;
-                // No executable source/export/storage provider is registered in Sprint A.
-                // Identity recognition alone cannot promote a route to available_verified.
+        let context = EvaluationContext::new(identity);
+        self.strategies()
+            .map(|strategy| {
+                let definition = definition(strategy.id());
+                let applicability = strategy.applicability(&context);
+                let mut decision = capability(CapabilityState::Unknown, definition.reason, &[]);
+                decision.missing_requirements = applicability
+                    .missing
+                    .iter()
+                    .map(|requirement| requirement.description().to_owned())
+                    .collect();
                 FirmwareAcquisitionCandidate {
-                    strategy: entry.strategy,
-                    name: entry.name.into(),
-                    provenance_kind: entry.provenance.into(),
+                    strategy: strategy.id().report_id(),
+                    name: definition.name.into(),
+                    provenance_kind: definition.provenance.into(),
                     capability: decision,
                 }
             })

@@ -1,4 +1,5 @@
 //! Backend receipts follow the Phase 5 bound, expiring, single-use grant pattern.
+use super::strategy_api::{StrategyError, StrategyId, StrategyProbeApproval};
 use super::*;
 use std::{
     sync::Mutex,
@@ -78,7 +79,7 @@ pub(super) fn binding(
     })
 }
 #[derive(Default)]
-pub(super) struct Approvals(Mutex<BTreeMap<String, (Binding, Instant)>>);
+pub(super) struct Approvals(Mutex<BTreeMap<String, (Binding, ApprovalScope, Instant)>>);
 impl Approvals {
     pub(super) fn issue(&self, binding: Binding) -> Result<String, DiscoveryError> {
         let id = crate::library::files::nonce()
@@ -87,13 +88,17 @@ impl Approvals {
             .0
             .lock()
             .map_err(|_| error("INTERNAL", "Approval unavailable."))?;
-        receipts.retain(|_, (_, deadline)| *deadline > Instant::now());
+        receipts.retain(|_, (_, _, deadline)| *deadline > Instant::now());
         if receipts.len() >= 64 {
             return Err(error("BUSY", "Too many pending approvals."));
         }
         receipts.insert(
             id.clone(),
-            (binding, Instant::now() + Duration::from_secs(30)),
+            (
+                binding,
+                ApprovalScope::EndpointMetadata,
+                Instant::now() + Duration::from_secs(30),
+            ),
         );
         Ok(id)
     }
@@ -102,13 +107,16 @@ impl Approvals {
         id: &str,
         binding: &Binding,
     ) -> Result<ClaimedApproval, DiscoveryError> {
-        let (expected, deadline) = self
+        let (expected, scope, deadline) = self
             .0
             .lock()
             .map_err(|_| error("INTERNAL", "Approval unavailable."))?
             .remove(id)
             .ok_or_else(|| error("APPROVAL_REQUIRED", "Approve this check again."))?;
-        if expected != *binding || Instant::now() >= deadline {
+        if expected != *binding
+            || scope != ApprovalScope::EndpointMetadata
+            || Instant::now() >= deadline
+        {
             return Err(error(
                 "APPROVAL_EXPIRED",
                 "Approval expired or target changed. Approve again.",
@@ -116,24 +124,53 @@ impl Approvals {
         }
         Ok(ClaimedApproval {
             binding: expected,
+            scope,
             deadline,
         })
     }
 }
+
+/// Authority stays explicit and operation-specific. This phase only issues EndpointMetadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ApprovalScope {
+    EndpointMetadata,
+    StrategyProbe {
+        strategy: StrategyId,
+        requests: Vec<super::request_registry::RequestId>,
+    },
+}
+
 /// Non-Clone, non-serializable proof, constructed only by a successful claim.
 pub(crate) struct ClaimedApproval {
     binding: Binding,
+    scope: ApprovalScope,
     deadline: Instant,
 }
 impl ClaimedApproval {
     pub(super) fn validate(&self, binding: &Binding) -> Result<(), DiscoveryError> {
-        if self.binding != *binding || Instant::now() >= self.deadline {
+        if self.scope != ApprovalScope::EndpointMetadata
+            || self.binding != *binding
+            || Instant::now() >= self.deadline
+        {
             return Err(error(
                 "APPROVAL_EXPIRED",
                 "Approval expired or target changed.",
             ));
         }
         Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn scope(&self) -> ApprovalScope {
+        self.scope.clone()
+    }
+
+    #[allow(dead_code)] // Strategy-probe receipts are intentionally not issued in this phase.
+    pub(crate) fn strategy_probe(
+        &self,
+        strategy: StrategyId,
+    ) -> Result<StrategyProbeApproval, StrategyError> {
+        StrategyProbeApproval::from_scope(self.scope.clone(), strategy)
     }
 }
 
@@ -181,7 +218,7 @@ mod tests {
             assert!(grants.claim(&id, &b).is_err());
         }
         let id = grants.issue(b.clone()).unwrap();
-        grants.0.lock().unwrap().get_mut(&id).unwrap().1 = Instant::now();
+        grants.0.lock().unwrap().get_mut(&id).unwrap().2 = Instant::now();
         assert!(grants.claim(&id, &b).is_err());
     }
 }

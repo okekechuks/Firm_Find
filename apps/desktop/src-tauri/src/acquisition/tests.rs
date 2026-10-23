@@ -56,6 +56,13 @@ fn exact_identity_does_not_skip_independent_source_and_export_qualification() {
         .missing_requirements
         .iter()
         .any(|r| r == "Exact hardware revision"));
+    assert_eq!(
+        serde_json::to_value(candidates).unwrap(),
+        serde_json::from_str::<serde_json::Value>(include_str!(
+            "../../fixtures/acquisition-catalogue-schema1.json"
+        ))
+        .unwrap()
+    );
 }
 #[test]
 fn discovery_commands_are_registered_in_the_production_acl() {
@@ -534,6 +541,464 @@ fn captured_static_version_with_xml_declaration_and_rgw_wrapper_is_observed() {
     assert!(identity(vec![e], connection::now(), None, None)
         .verified_firmware
         .is_none());
+}
+
+#[test]
+fn b1_compiled_strategy_registry_runs_only_unimplemented_probes() {
+    use super::strategy_api::StrategyProbeApproval;
+    use super::{AcquisitionStrategyRegistry, ProbeContext, StrategyId, StrategyKind};
+    let registry = AcquisitionStrategyRegistry::default();
+    let strategies = registry.strategies().collect::<Vec<_>>();
+    assert_eq!(strategies.len(), 5);
+    assert_eq!(
+        strategies.iter().map(|s| s.id()).collect::<Vec<_>>(),
+        vec![
+            StrategyId::OfficialImage,
+            StrategyId::DocumentedExport,
+            StrategyId::AuthorizedStorageRead,
+            StrategyId::ManufacturerPackage,
+            StrategyId::ExternalLaboratory,
+        ]
+    );
+    assert_eq!(
+        strategies.iter().map(|s| s.kind()).collect::<Vec<_>>(),
+        vec![
+            StrategyKind::OfficialImage,
+            StrategyKind::DeviceExport,
+            StrategyKind::StorageRead,
+            StrategyKind::ManufacturerPackage,
+            StrategyKind::ExternalLaboratory,
+        ]
+    );
+    let mut context = ProbeContext::new();
+    for strategy in strategies {
+        let approval = StrategyProbeApproval::for_test(strategy.id());
+        let report = strategy.probe(&mut context, &approval).unwrap();
+        assert_eq!(report.state, CapabilityState::NotImplemented);
+        assert!(!report.executable);
+        let wrong_scope = StrategyProbeApproval::for_test(StrategyId::OfficialImage);
+        if strategy.id() != StrategyId::OfficialImage {
+            assert_eq!(
+                strategy.probe(&mut context, &wrong_scope),
+                Err(super::StrategyError::ApprovalScopeMismatch)
+            );
+        }
+    }
+    assert!(!registry.can_obtain());
+}
+
+#[test]
+fn b1_metadata_approval_cannot_be_used_for_a_strategy_probe() {
+    use super::{approval::ApprovalScope, StrategyId};
+    let mut d = device();
+    d.networks[0].gateways = vec!["192.168.100.1".into()];
+    let mut request = input(&d);
+    request.endpoint = Some("http://192.168.100.1/".into());
+    request.interface_id = Some(d.networks[0].id.clone());
+    let binding = approval::binding(&d, 4, &request).unwrap();
+    let approvals = approval::Approvals::default();
+    let token = approvals.issue(binding.clone()).unwrap();
+    let proof = approvals.claim(&token, &binding).unwrap();
+    assert_eq!(proof.scope(), ApprovalScope::EndpointMetadata);
+    assert!(proof.strategy_probe(StrategyId::OfficialImage).is_err());
+}
+
+#[test]
+fn b1_reported_or_observed_values_never_satisfy_verified_requirements() {
+    use super::{EvaluationContext, Requirement};
+    let d = device();
+    let now = connection::now();
+    let reported = identity(
+        vec![EvidenceRecord::user_reported(
+            d.id.clone(),
+            Attribute::Model,
+            "same model".into(),
+            now,
+        )
+        .unwrap()],
+        now,
+        None,
+        None,
+    );
+    let requirement = Requirement::VerifiedModel;
+    assert!(!requirement.is_satisfied(&EvaluationContext::new(&reported)));
+
+    let mut observed = record(&d, Attribute::Model, "same model", now);
+    observed.source = EvidenceOrigin::EndpointResponse;
+    observed.verification = Verification::Observed;
+    observed.reliability = Reliability::Observed;
+    let assessment = identity(vec![observed], now, None, None);
+    assert!(!requirement.is_satisfied(&EvaluationContext::new(&assessment)));
+
+    let verified_except_revision = identity(
+        vec![
+            record(&d, Attribute::Manufacturer, "Fixture Vendor", now),
+            record(&d, Attribute::Model, "Fixture Model", now),
+            record(&d, Attribute::FirmwareFamily, "Fixture OS", now),
+            record(&d, Attribute::FirmwareVersion, "vendor_opaque_123", now),
+        ],
+        now,
+        None,
+        None,
+    );
+    let registry = AcquisitionStrategyRegistry::default();
+    let route = registry.get(StrategyId::DocumentedExport).unwrap();
+    let plan = route
+        .plan(
+            &EvaluationContext::new(&verified_except_revision),
+            &ProbeReport::not_implemented(StrategyId::DocumentedExport),
+        )
+        .unwrap();
+    assert!(plan
+        .missing
+        .contains(&Requirement::VerifiedHardwareRevision));
+    assert!(!plan.executable);
+}
+
+#[test]
+fn b1_plan_rejects_stale_mixed_endpoint_changed_generation_and_conflicting_evidence() {
+    use super::{AcquisitionStrategyRegistry, EvaluationContext, ProbeReport, StrategyId};
+    let registry = AcquisitionStrategyRegistry::default();
+    let strategy = registry.get(StrategyId::OfficialImage).unwrap();
+    let d = device();
+    let now = connection::now();
+    let verified = identity(
+        vec![
+            record(&d, Attribute::Manufacturer, "Fixture Vendor", now),
+            record(&d, Attribute::Model, "Fixture Model", now),
+            record(&d, Attribute::HardwareRevision, "V1", now),
+            record(&d, Attribute::FirmwareFamily, "Fixture OS", now),
+            record(&d, Attribute::FirmwareVersion, "vendor_opaque_123", now),
+        ],
+        now,
+        None,
+        None,
+    );
+    let probe = ProbeReport::not_implemented(StrategyId::OfficialImage);
+    let stale = EvaluationContext::new(&verified).with_generation(9, 8);
+    assert!(!strategy.plan(&stale, &probe).unwrap().executable);
+
+    let mut other_endpoint = record(&d, Attribute::Model, "Fixture Model", now);
+    other_endpoint.endpoint = Some("http://192.168.200.1/".into());
+    let mixed = identity(
+        vec![
+            record(&d, Attribute::Model, "Fixture Model", now),
+            other_endpoint,
+        ],
+        now,
+        None,
+        None,
+    );
+    assert!(
+        !strategy
+            .plan(&EvaluationContext::new(&mixed), &probe)
+            .unwrap()
+            .executable
+    );
+
+    let conflicting = identity(
+        vec![
+            record(&d, Attribute::Model, "Fixture Model", now),
+            record(&d, Attribute::Model, "Other Model", now),
+        ],
+        now,
+        None,
+        None,
+    );
+    assert!(
+        !strategy
+            .plan(&EvaluationContext::new(&conflicting), &probe)
+            .unwrap()
+            .executable
+    );
+
+    let mut stale_record = record(&d, Attribute::Model, "Fixture Model", now);
+    stale_record.stale = true;
+    let expired = identity(vec![stale_record], now, None, None);
+    assert!(
+        !strategy
+            .plan(&EvaluationContext::new(&expired), &probe)
+            .unwrap()
+            .executable
+    );
+}
+
+#[test]
+fn b3_compiled_request_registry_accepts_only_the_two_metadata_reads() {
+    use super::request_registry::{ProtocolFamilyId, RequestEnvelope, RequestId, RequestRegistry};
+    let registry = RequestRegistry::default();
+    let specs = registry.registered(ProtocolFamilyId::AsrDusterXml);
+    assert_eq!(specs.len(), 2);
+    assert_eq!(
+        specs.iter().map(|spec| spec.id()).collect::<Vec<_>>(),
+        vec![RequestId::Root, RequestId::StaticVersion,]
+    );
+    for spec in specs {
+        let url = format!("http://192.168.100.1{}", spec.canonical_path());
+        assert!(registry
+            .validate(
+                ProtocolFamilyId::AsrDusterXml,
+                spec.id(),
+                "http://192.168.100.1/",
+                &RequestEnvelope::get(&url),
+            )
+            .is_ok());
+    }
+    assert!(registry
+        .lookup(ProtocolFamilyId::AsrDusterXml, RequestId::Login)
+        .is_none());
+    assert!(registry
+        .lookup(ProtocolFamilyId::AsrDusterXml, RequestId::Logout)
+        .is_none());
+    assert!(registry
+        .lookup(ProtocolFamilyId::AsrDusterXml, RequestId::XmlAction)
+        .is_none());
+}
+
+#[test]
+fn b3_validator_rejects_every_unregistered_request_shape() {
+    use super::request_registry::{ProtocolFamilyId, RequestEnvelope, RequestId, RequestRegistry};
+    let registry = RequestRegistry::default();
+    let root = "http://192.168.100.1/";
+    let rejected = [
+        RequestEnvelope {
+            method: "POST",
+            url: root,
+            body: None,
+            redirect: None,
+        },
+        RequestEnvelope {
+            method: "GET",
+            url: root,
+            body: Some(b""),
+            redirect: None,
+        },
+        RequestEnvelope::get("http://192.168.100.1/other"),
+        RequestEnvelope::get("http://192.168.100.1/?caller=1"),
+        RequestEnvelope::get("http://192.168.100.1/%2fetc"),
+        RequestEnvelope::get("http://192.168.100.1/%252e%252e/version_num.txt"),
+        RequestEnvelope::get("http://192.168.100.1/../version_num.txt"),
+        RequestEnvelope::get("http://owner@192.168.100.1/"),
+        RequestEnvelope::get("http://192.168.100.1/#fragment"),
+        RequestEnvelope::get("ftp://192.168.100.1/"),
+        RequestEnvelope::get("http://192.168.100.2/"),
+        RequestEnvelope {
+            method: "GET",
+            url: root,
+            body: None,
+            redirect: Some("http://192.168.100.2/"),
+        },
+    ];
+    for request in rejected {
+        assert!(
+            registry
+                .validate(
+                    ProtocolFamilyId::AsrDusterXml,
+                    RequestId::Root,
+                    root,
+                    &request
+                )
+                .is_err(),
+            "accepted {request:?}"
+        );
+    }
+    for denied in [
+        "set", "upload", "upgrade", "reboot", "restore", "reset", "factory", "download", "delete",
+        "format", "flash",
+    ] {
+        let url = format!("{root}?Action={denied}");
+        assert!(
+            registry
+                .validate(
+                    ProtocolFamilyId::AsrDusterXml,
+                    RequestId::Root,
+                    root,
+                    &RequestEnvelope::get(&url),
+                )
+                .is_err(),
+            "accepted denied term {denied}"
+        );
+    }
+    assert!(registry
+        .validate(
+            ProtocolFamilyId::AsrDusterXml,
+            RequestId::StaticVersion,
+            "http://192.168.100.1/",
+            &RequestEnvelope::get("http://different-host/ version_num.txt"),
+        )
+        .is_err());
+}
+
+#[test]
+fn b6_report_has_eleven_ordered_stages_and_identity_does_not_advance_them() {
+    let d = device();
+    let unknown_report = discover(&d, vec![], 4, &input(&d), &AtomicBool::new(false)).unwrap();
+    assert_eq!(unknown_report.stages.len(), 11);
+    assert_eq!(
+        unknown_report
+            .stages
+            .iter()
+            .map(|stage| stage.id)
+            .collect::<Vec<_>>(),
+        vec![
+            CompatibilityStageId::Detected,
+            CompatibilityStageId::ExactIdentity,
+            CompatibilityStageId::ManagementApi,
+            CompatibilityStageId::OfficialImage,
+            CompatibilityStageId::FirmwareExport,
+            CompatibilityStageId::PhysicalRead,
+            CompatibilityStageId::FirmwareAcquired,
+            CompatibilityStageId::FilesystemExtracted,
+            CompatibilityStageId::Customization,
+            CompatibilityStageId::Rebuild,
+            CompatibilityStageId::Installation,
+        ]
+    );
+    assert!(unknown_report
+        .stages
+        .iter()
+        .all(|stage| !matches!(stage.state, CompatibilityStageState::NotSupported)));
+    let now = connection::now();
+    let verified_identity = identity(
+        vec![
+            record(&d, Attribute::Manufacturer, "Fixture Vendor", now),
+            record(&d, Attribute::Model, "Fixture Model", now),
+            record(&d, Attribute::HardwareRevision, "V1", now),
+            record(&d, Attribute::FirmwareFamily, "Fixture OS", now),
+            record(&d, Attribute::FirmwareVersion, "vendor_opaque_123", now),
+        ],
+        now,
+        None,
+        None,
+    );
+    let updated = compatibility_stages(
+        &verified_identity,
+        &unknown_report.probe,
+        &unknown_report.capabilities,
+    );
+    assert_eq!(updated[1].state, CompatibilityStageState::Verified);
+    for (index, (updated_stage, original_stage)) in
+        updated.iter().zip(&unknown_report.stages).enumerate()
+    {
+        if index != 1 {
+            assert_eq!(updated_stage.state, original_stage.state);
+        }
+    }
+}
+
+#[test]
+fn acquisition_model_selection_does_not_depend_on_user_label() {
+    let d = device();
+    let now = connection::now();
+    let assessment = identity(
+        vec![
+            record(&d, Attribute::Manufacturer, "Fixture Vendor", now),
+            record(&d, Attribute::Model, "Fixture Model", now),
+            record(&d, Attribute::HardwareRevision, "V1", now),
+            record(&d, Attribute::FirmwareFamily, "Fixture OS", now),
+            record(&d, Attribute::FirmwareVersion, "vendor_opaque_123", now),
+        ],
+        now,
+        None,
+        None,
+    );
+    let registry = AcquisitionStrategyRegistry::default();
+    let strategy = registry.get(StrategyId::OfficialImage).unwrap();
+    let first = EvaluationContext::new(&assessment).with_user_label("Owner name one");
+    let second = EvaluationContext::new(&assessment).with_user_label("Different owner name");
+    assert_eq!(
+        strategy.applicability(&first),
+        strategy.applicability(&second)
+    );
+}
+
+#[test]
+fn acquisition_runtime_has_no_hardware_model_name_special_cases() {
+    assert!(runtime_model_name_matches().is_empty());
+}
+
+fn runtime_model_name_matches() -> Vec<String> {
+    use std::{fs, path::Path};
+
+    fn collect_rs_files(directory: &Path, files: &mut Vec<std::path::PathBuf>) {
+        for entry in fs::read_dir(directory).expect("acquisition source directory is readable") {
+            let path = entry.expect("source directory entry is readable").path();
+            if path.is_dir() {
+                if !path
+                    .components()
+                    .any(|part| part.as_os_str() == "fixtures" || part.as_os_str() == "tests")
+                {
+                    collect_rs_files(&path, files);
+                }
+            } else if path.extension().is_some_and(|extension| extension == "rs")
+                && path.file_name().is_some_and(|name| name != "tests.rs")
+            {
+                files.push(path);
+            }
+        }
+    }
+
+    fn without_test_only_items(source: &str) -> String {
+        let lines: Vec<_> = source.lines().collect();
+        let mut output = String::new();
+        let mut index = 0;
+        while index < lines.len() {
+            if lines[index].trim() != "#[cfg(test)]" {
+                output.push_str(lines[index]);
+                output.push('\n');
+                index += 1;
+                continue;
+            }
+            index += 1;
+            if index >= lines.len() {
+                break;
+            }
+            let item = lines[index];
+            if item.trim_end().ends_with(';') {
+                index += 1;
+                continue;
+            }
+            let mut depth = 0_i32;
+            let mut started = false;
+            while index < lines.len() {
+                let line = lines[index];
+                for byte in line.bytes() {
+                    if byte == b'{' {
+                        depth += 1;
+                        started = true;
+                    } else if byte == b'}' {
+                        depth -= 1;
+                    }
+                }
+                index += 1;
+                if started && depth == 0 {
+                    break;
+                }
+            }
+        }
+        output
+    }
+
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/acquisition");
+    let mut files = Vec::new();
+    collect_rs_files(&root, &mut files);
+    let model_names: Vec<_> = include_str!("fixtures/hardware_model_names.txt")
+        .lines()
+        .map(str::trim)
+        .filter(|name| !name.is_empty() && !name.starts_with('#'))
+        .map(str::to_lowercase)
+        .collect();
+    let mut found = Vec::new();
+    for path in files {
+        let source = fs::read_to_string(&path).expect("runtime acquisition source is UTF-8");
+        let runtime_source = without_test_only_items(&source).to_lowercase();
+        for model in &model_names {
+            if runtime_source.contains(model) {
+                found.push(format!("{} contains {model}", path.display()));
+            }
+        }
+    }
+    found
 }
 
 #[test]

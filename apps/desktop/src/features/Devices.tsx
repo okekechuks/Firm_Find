@@ -3,9 +3,18 @@ import { Search, Usb, RefreshCw, X, LockKeyhole } from "lucide-react";
 import { deviceStatus } from "../lib/device-status";
 import { approveFirmwareRouteProbe, cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
-import type { AcquisitionReport } from "../types/acquisition";
+import type { AcquisitionReport, CompatibilityStageId } from "../types/acquisition";
 
 const labels = {usb: "USB", serial: "Serial", network: "Network"};
+const stageLabels: Record<CompatibilityStageId,string> = {
+  detected:"Detected", exact_identity:"Exact identity", management_api:"Management API",
+  official_image:"Official image", firmware_export:"Firmware export", physical_read:"Physical read",
+  firmware_acquired:"Firmware acquired", filesystem_extracted:"Filesystem extracted",
+  customization:"Customization", rebuild:"Rebuild", installation:"Installation",
+};
+const stageRow = (stage: AcquisitionReport["stages"][number]) => <div className="compatibility-stage" data-stage-state={stage.state} key={stage.id}>
+  <dt>{stageLabels[stage.id]}: {stage.state.replaceAll("_"," ")}</dt><dd>{stage.reason}</dd>
+</div>;
 const gatewayTarget = (device:Device) => device.category === "generic_network_interface" && device.networks.some(n => n.linkUp && !n.virtualInterface && n.gateways.length > 0);
 const deviceName = (device:Device) => gatewayTarget(device) ? `Router via ${device.networks.find(n => n.linkUp && !n.virtualInterface)?.displayName || device.displayName}` : device.displayName || "Unknown device";
 export function Devices({ inventory, desktop, error, refreshing, onRefresh, onCancel }: {
@@ -130,9 +139,10 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       {report.probe.code === "subnet_conflict" ? <p role="status">{report.probe.message}</p> : null}
       {report.probe.metadataTruncated ? <p className="muted small">Metadata limited to first 16 KiB.</p> : null}
       {report.probe.advancedEndpoint ? <p>Advanced local endpoint approved.</p> : null}
-      <dl aria-label="Compatibility summary">{["deviceDetected","exactIdentity","managementApi","officialImage","deviceExport"].map(key => report.capabilities[key] ? <div key={key}><dt>{key.replace(/([a-z])([A-Z])/g,"$1 $2")}: {report.capabilities[key].state.replaceAll("_"," ")}</dt><dd>{report.capabilities[key].reason}</dd></div> : null)}</dl>
+      <p className="muted small">Each stage is assessed separately. A verified stage does not enable another operation.</p>
+      <dl aria-label="Compatibility summary">{report.stages.slice(0,5).map(stageRow)}</dl>
+      <details><summary>Remaining compatibility stages</summary><dl>{report.stages.slice(5).map(stageRow)}</dl></details>
       {report.candidates.map(route => <details key={route.strategy}><summary>{route.name}: {route.capability.state.replaceAll("_"," ")}</summary><p>{route.capability.reason}</p><p className="muted small">Required: {route.capability.missingRequirements.join("; ")}</p></details>)}
-      <details><summary>Independent capabilities</summary><dl>{Object.entries(report.capabilities).filter(([key]) => !["deviceDetected","exactIdentity","managementApi","officialImage","deviceExport"].includes(key)).map(([key,value]) => <div key={key}><dt>{key.replace(/([a-z])([A-Z])/g,"$1 $2")}: {value.state.replaceAll("_"," ")}</dt><dd>{value.reason}</dd></div>)}</dl></details>
       <button className="secondary-button" disabled={exporting} onClick={() => void exportReport()}>{exporting ? "Exporting…" : "Export Diagnostics"}</button>
     </section> : null}
     {message ? <p role={state === "error" ? "alert" : "status"}>{message}</p> : null}

@@ -1,6 +1,14 @@
 # OBTAINER phase status
 
-## S1/S2 and revised B1 design - confirmation gate pending
+## Phase 7.5 B1/B3/B6 local implementation - PASS WITH LIMITATIONS
+
+23 October 2026: the owner accepted the revised design and authorized only local B1, B3, B6, the model-name scan and D6a characterization. Those items are implemented and verified in [the implementation report](PHASE_7_5_B1_IMPLEMENTATION.md). Latest checks: 255 standard Rust tests + 1 ignored, 256 isolated-profile Rust tests + 2 ignored, both doctest runs pass; both Clippy profiles and Rust formatting pass; frontend 146 tests, lint and production build pass. No physical device or Internet traffic was sent. B1 probes remain `not_implemented`, non-executable, and `canObtain` stays false. B3 is a validator/data registry only; it does not dispatch requests.
+
+D6a confirms a newer schema-6 database is refused only after startup changes `journal_mode` from `delete` to `wal` and changes file bytes. The storage correction is not implemented and remains a separate approval gate. Schema-6 migration/artifact classes, authenticated client, transport binding, official-image registry and analysis worker remain blocked. No acquisition capability is claimed; Phase 8 remains unstarted.
+
+## Earlier Phase 7.5 review entries (historical)
+
+## Historical: S1/S2 and revised B1 design - confirmation gate pending at that review
 
 23 October 2026: R6-R10 accepted and B1 approved with D1-D6 changes. S1 now bounds all peer waits, requires a live accepted connection in both branches and arms/checks timeout after acceptance using a unit-test-only deadline. S2 routes generated captures to ignored run evidence and guards against new generated image additions; existing history/images retained. [Follow-up and exact results](PHASE_7_5_DESIGN_REVIEW.md): 244 standard / 245 isolated Rust tests, 145 frontend tests, both Clippy profiles, formatting, lint and frontend/TypeScript build pass; normal application snapshot unchanged. Final-commit repetition uses the committed computed-values-only runner, with commit/count/exit pairs in `.tools/phase7-5-design-review/final-parallel/results.json` and delivery.
 

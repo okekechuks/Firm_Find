@@ -11,10 +11,21 @@ use std::{
 };
 mod approval;
 pub mod ipc;
+pub mod request_registry;
 mod strategies;
+mod strategy_api;
+pub use approval::ApprovalScope;
 use approval::Approvals;
 pub(crate) use approval::ClaimedApproval;
+pub use request_registry::{
+    ParserId, ProtocolFamilyId, RequestEnvelope, RequestId, RequestRegistry, RequestSpec,
+    RequestValidationError, ResponseType,
+};
 pub use strategies::AcquisitionStrategyRegistry;
+pub use strategy_api::{
+    AcquisitionPlan, AcquisitionStrategy, Applicability, EvaluationContext, LimitationCode,
+    ProbeContext, ProbeReport, Requirement, StrategyError, StrategyId, StrategyKind,
+};
 #[derive(Default)]
 pub struct Service(
     pub std::sync::Mutex<BTreeMap<String, AcquisitionCapabilityReport>>,
@@ -126,9 +137,45 @@ pub struct AcquisitionCapabilityReport {
     pub identity: DeviceIdentityAssessment,
     pub protocols: Vec<VendorProtocolCandidate>,
     pub candidates: Vec<FirmwareAcquisitionCandidate>,
+    pub stages: Vec<CompatibilityStage>,
     pub capabilities: BTreeMap<String, Capability>,
     pub probe: ProbeSummary,
     pub can_obtain: bool,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CompatibilityStageId {
+    Detected,
+    ExactIdentity,
+    ManagementApi,
+    OfficialImage,
+    FirmwareExport,
+    PhysicalRead,
+    FirmwareAcquired,
+    FilesystemExtracted,
+    Customization,
+    Rebuild,
+    Installation,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CompatibilityStageState {
+    Verified,
+    Observed,
+    Unknown,
+    NotChecked,
+    NotSupported,
+    NotImplemented,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CompatibilityStage {
+    pub id: CompatibilityStageId,
+    pub state: CompatibilityStageState,
+    pub reason: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -687,6 +734,7 @@ fn assess(
             ),
         );
     }
+    let stages = compatibility_stages(&identity, &probe, &capabilities);
     AcquisitionCapabilityReport {
         schema_version: 1,
         device_id: device.id.clone(),
@@ -697,9 +745,125 @@ fn assess(
         identity,
         protocols,
         candidates,
+        stages,
         capabilities,
         probe,
         can_obtain: false,
+    }
+}
+
+fn compatibility_stages(
+    identity: &DeviceIdentityAssessment,
+    probe: &ProbeSummary,
+    capabilities: &BTreeMap<String, Capability>,
+) -> Vec<CompatibilityStage> {
+    let state_for = |key: &str| {
+        capabilities
+            .get(key)
+            .map(|capability| stage_state(capability.state))
+            .unwrap_or(CompatibilityStageState::Unknown)
+    };
+    let reason_for = |key: &str| {
+        capabilities
+            .get(key)
+            .map(|capability| capability.reason.clone())
+            .unwrap_or_else(|| "No current evidence.".into())
+    };
+    let exact_identity = identity.verified_manufacturer.is_some()
+        && identity.verified_firmware_family.is_some()
+        && identity.verified_model.is_some()
+        && identity.verified_hardware_revision.is_some()
+        && identity.verified_firmware.is_some();
+    let mut stages = vec![
+        CompatibilityStage {
+            id: CompatibilityStageId::Detected,
+            state: CompatibilityStageState::Observed,
+            reason: "Windows observes a connected device or selected network interface.".into(),
+        },
+        CompatibilityStage {
+            id: CompatibilityStageId::ExactIdentity,
+            state: if exact_identity {
+                CompatibilityStageState::Verified
+            } else {
+                CompatibilityStageState::Unknown
+            },
+            reason: "Exact identity requires fresh, consistent, endpoint-bound trusted evidence.".into(),
+        },
+        CompatibilityStage {
+            id: CompatibilityStageId::ManagementApi,
+            state: if probe.http_status.is_some() {
+                CompatibilityStageState::Observed
+            } else if probe.attempted {
+                CompatibilityStageState::Unknown
+            } else {
+                CompatibilityStageState::NotChecked
+            },
+            reason: "An endpoint response is only an observation; management support remains unverified.".into(),
+        },
+    ];
+    for (id, key) in [
+        (CompatibilityStageId::OfficialImage, "officialImage"),
+        (CompatibilityStageId::FirmwareExport, "deviceExport"),
+        (CompatibilityStageId::PhysicalRead, "physicalRead"),
+        (CompatibilityStageId::FirmwareAcquired, "firmwareAcquired"),
+        (
+            CompatibilityStageId::FilesystemExtracted,
+            "filesystemExtracted",
+        ),
+    ] {
+        stages.push(CompatibilityStage {
+            id,
+            state: state_for(key),
+            reason: reason_for(key),
+        });
+    }
+    let customization_states = [
+        state_for("dnsCustomization"),
+        state_for("wifiCustomization"),
+        state_for("apnCustomization"),
+        state_for("ussdCustomization"),
+    ];
+    let customization_state = if customization_states
+        .iter()
+        .all(|state| *state == customization_states[0])
+    {
+        customization_states[0]
+    } else {
+        CompatibilityStageState::Unknown
+    };
+    stages.push(CompatibilityStage {
+        id: CompatibilityStageId::Customization,
+        state: customization_state,
+        reason: "Each feature requires its own exact hardware support; this stage grants no operation authority.".into(),
+    });
+    stages.push(CompatibilityStage {
+        id: CompatibilityStageId::Rebuild,
+        state: state_for("rebuilding"),
+        reason: reason_for("rebuilding"),
+    });
+    stages.push(CompatibilityStage {
+        id: CompatibilityStageId::Installation,
+        state: state_for("installation"),
+        reason: reason_for("installation"),
+    });
+    stages
+}
+
+fn stage_state(state: CapabilityState) -> CompatibilityStageState {
+    match state {
+        CapabilityState::AvailableVerified | CapabilityState::CompletedVerified => {
+            CompatibilityStageState::Verified
+        }
+        CapabilityState::Observed => CompatibilityStageState::Observed,
+        CapabilityState::NotChecked => CompatibilityStageState::NotChecked,
+        CapabilityState::NotImplemented => CompatibilityStageState::NotImplemented,
+        CapabilityState::Unsupported => CompatibilityStageState::NotSupported,
+        CapabilityState::Unknown
+        | CapabilityState::Candidate
+        | CapabilityState::RequiresAuthentication
+        | CapabilityState::RequiresApproval
+        | CapabilityState::RequiresExternalTool
+        | CapabilityState::Failed => CompatibilityStageState::Unknown,
     }
 }
 

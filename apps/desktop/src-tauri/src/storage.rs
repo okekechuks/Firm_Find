@@ -518,7 +518,8 @@ mod tests {
     }
 
     #[test]
-    fn newer_database_is_rejected_without_rewriting_it() -> Result<(), Box<dyn std::error::Error>> {
+    fn newer_database_is_rejected_without_changing_its_schema_version(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let temporary = tempfile::tempdir()?;
         let path = temporary.path().join("newer.db");
         let connection = Connection::open(&path)?;
@@ -531,6 +532,34 @@ mod tests {
         let connection = Connection::open(path)?;
         let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
         assert_eq!(version, 99);
+        Ok(())
+    }
+
+    #[test]
+    fn d6a_characterizes_newer_schema_wal_change_before_refusal(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        use rusqlite::OpenFlags;
+        use std::fs;
+        let temporary = tempfile::tempdir()?;
+        let path = temporary.path().join("schema-six.db");
+        let connection = Connection::open(&path)?;
+        connection.pragma_update(None, "user_version", 6)?;
+        drop(connection);
+
+        let before_bytes = fs::read(&path)?;
+        let before_mode = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY)?
+            .query_row("PRAGMA journal_mode", [], |row| row.get::<_, String>(0))?;
+        assert!(matches!(
+            Repository::open(&path),
+            Err(StorageError::NewerSchema)
+        ));
+        let after_bytes = fs::read(&path)?;
+        let after_mode = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY)?
+            .query_row("PRAGMA journal_mode", [], |row| row.get::<_, String>(0))?;
+
+        assert_eq!(before_mode, "delete");
+        assert_eq!(after_mode, "wal");
+        assert_ne!(before_bytes, after_bytes);
         Ok(())
     }
 }
