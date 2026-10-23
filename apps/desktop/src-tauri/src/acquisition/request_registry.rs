@@ -10,6 +10,7 @@ pub enum ProtocolFamilyId {
 pub enum RequestId {
     Root,
     StaticVersion,
+    StaticMenu,
     Login,
     Logout,
     XmlAction,
@@ -26,6 +27,7 @@ pub enum ResponseType {
 pub enum ParserId {
     RootHtml,
     StaticVersionXml,
+    StaticMenuXml,
 }
 
 /// Closed table entries have private fields and no caller-facing constructor.
@@ -107,6 +109,16 @@ const ASR_DUSTER_XML_SPECS: &[RequestSpec] = &[
         response_types: VERSION_TYPES,
         max_bytes: 4 * 1024,
         parser_id: ParserId::StaticVersionXml,
+        max_attempts: 1,
+        budget: Duration::from_secs(5),
+    },
+    RequestSpec {
+        id: RequestId::StaticMenu,
+        method: "GET",
+        canonical_path: "/xml/ui_mifi.xml",
+        response_types: &[ResponseType::Xml],
+        max_bytes: 16384,
+        parser_id: ParserId::StaticMenuXml,
         max_attempts: 1,
         budget: Duration::from_secs(5),
     },
@@ -274,7 +286,7 @@ mod tests {
     #[test]
     fn request_specs_are_bounded_and_read_only() {
         let specs = RequestRegistry::default().registered(ProtocolFamilyId::AsrDusterXml);
-        assert_eq!(specs.len(), 2);
+        assert_eq!(specs.len(), 3);
         assert_eq!(specs[0].method(), "GET");
         assert_eq!(specs[0].max_bytes(), 16 * 1024);
         assert_eq!(specs[1].method(), "GET");

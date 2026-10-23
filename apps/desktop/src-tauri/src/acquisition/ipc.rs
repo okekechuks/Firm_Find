@@ -236,3 +236,187 @@ pub async fn approve_firmware_route_probe(
     }
     service.1.issue(binding)
 }
+
+fn cached_menu_report(
+    service: &Service,
+    device: &Device,
+    revision: u64,
+    input: &DiscoveryRequest,
+) -> Result<AcquisitionCapabilityReport, DiscoveryError> {
+    let target = connection::parse_address(input.endpoint.as_deref().unwrap_or(""))
+        .map_err(|_| error("INVALID_ENDPOINT", "Select the checked endpoint."))?;
+    approval::binding(device, revision, input)?;
+    let report = service
+        .0
+        .lock()
+        .map_err(|_| error("INTERNAL", "Menu state unavailable."))?
+        .get(&device.id)
+        .cloned()
+        .ok_or_else(|| error("STALE_RESULT", "Run the root compatibility check first."))?;
+    if report.discovery_revision != revision
+        || report.expires_at <= connection::now()
+        || report.fingerprint.endpoint.as_deref() != Some(&target.url)
+        || report.fingerprint.interface_id != input.interface_id
+    {
+        return Err(error(
+            "STALE_RESULT",
+            "Run the root check again for this endpoint.",
+        ));
+    }
+    if !report
+        .protocols
+        .iter()
+        .any(|p| p.family == "asr_duster_xml")
+    {
+        return Err(error(
+            "NO_RECOGNIZED_FAMILY",
+            "No recognized family; no static menu request sent.",
+        ));
+    }
+    Ok(report)
+}
+
+#[tauri::command]
+pub async fn approve_static_menu(
+    input: DiscoveryRequest,
+    app: tauri::AppHandle,
+    discovery: tauri::State<'_, DiscoveryService>,
+    service: tauri::State<'_, Service>,
+) -> Result<String, DiscoveryError> {
+    let snapshot = discovery
+        .snapshot()
+        .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
+    let device = snapshot
+        .devices
+        .iter()
+        .find(|d| d.id == input.device_id)
+        .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
+    cached_menu_report(&service, device, snapshot.revision, &input)?;
+    let binding = approval::binding(device, snapshot.revision, &input)?;
+    let message = approval::menu_confirmation(device, &binding);
+    use tauri::Manager;
+    let owner = app
+        .get_webview_window("main")
+        .and_then(|w| w.hwnd().ok())
+        .map(|h| h.0 as isize)
+        .unwrap_or(0);
+    let approved = tauri::async_runtime::spawn_blocking(move || {
+        #[cfg(windows)]
+        {
+            use windows_sys::Win32::UI::WindowsAndMessaging::*;
+            let text: Vec<u16> = message.encode_utf16().chain(Some(0)).collect();
+            let title: Vec<u16> = "OBTAINER - approve static menu check"
+                .encode_utf16()
+                .chain(Some(0))
+                .collect();
+            unsafe {
+                MessageBoxW(
+                    owner as _,
+                    text.as_ptr(),
+                    title.as_ptr(),
+                    MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION,
+                ) == IDYES
+            }
+        }
+        #[cfg(not(windows))]
+        {
+            let _ = (owner, message);
+            false
+        }
+    })
+    .await
+    .map_err(|_| error("WORKER_FAILED", "Menu approval unavailable."))?;
+    if !approved {
+        return Err(error("CANCELLED", "Static menu check not approved."));
+    }
+    let current = discovery
+        .snapshot()
+        .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
+    let device = current
+        .devices
+        .iter()
+        .find(|d| d.id == input.device_id)
+        .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
+    cached_menu_report(&service, device, current.revision, &input)?;
+    if approval::binding(device, current.revision, &input)? != binding {
+        return Err(error("STALE_RESULT", "Device changed. Approve again."));
+    }
+    service.1.issue_menu(binding, approved)
+}
+
+#[tauri::command]
+pub async fn read_static_menu(
+    input: DiscoveryRequest,
+    discovery: tauri::State<'_, DiscoveryService>,
+    connections: tauri::State<'_, ConnectionService>,
+    service: tauri::State<'_, Service>,
+) -> Result<AcquisitionCapabilityReport, DiscoveryError> {
+    let snapshot = discovery
+        .snapshot()
+        .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
+    let device = snapshot
+        .devices
+        .iter()
+        .find(|d| d.id == input.device_id)
+        .cloned()
+        .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
+    let base = cached_menu_report(&service, &device, snapshot.revision, &input)?;
+    let lease = connections
+        .begin(&format!("acquisition:{}", device.id))
+        .map_err(|_| error("BUSY", "Another check is finishing."))?;
+    let binding = approval::binding(&device, snapshot.revision, &input)?;
+    let proof = service.1.claim_menu(
+        input
+            .approval_token
+            .as_deref()
+            .ok_or_else(|| error("APPROVAL_REQUIRED", "Approve static menu check."))?,
+        &binding,
+    )?;
+    let live = discovery.shared_snapshot();
+    let (report, lease) = tauri::async_runtime::spawn_blocking(move || {
+        let networks = snapshot
+            .devices
+            .iter()
+            .flat_map(|d| d.networks.clone())
+            .map(|n| (n.id.clone(), n))
+            .collect::<BTreeMap<_, _>>()
+            .into_values()
+            .collect::<Vec<_>>();
+        let report = super::static_menu::collect(
+            &base,
+            &device,
+            snapshot.revision,
+            &input,
+            &proof,
+            &lease.cancelled,
+            |target, interface, proof| {
+                connection::menu_metadata(proof, target, interface, &networks, &lease.cancelled)
+            },
+        )?;
+        Ok((report, lease))
+    })
+    .await
+    .map_err(|_| error("WORKER_FAILED", "Static menu worker unavailable."))??;
+    let current = live
+        .lock()
+        .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
+    if current.revision != report.discovery_revision
+        || !current
+            .devices
+            .iter()
+            .any(|d| d.id == report.device_id && d.connected)
+    {
+        return Err(error("STALE_RESULT", "Device changed during menu check."));
+    }
+    lease
+        .if_current(|| {
+            service
+                .0
+                .lock()
+                .map_err(|_| error("INTERNAL", "Menu state unavailable."))?
+                .insert(report.device_id.clone(), report.clone());
+            Ok(())
+        })
+        .ok_or_else(|| error("CANCELLED", "Static menu check superseded or cancelled."))??;
+    Ok(report)
+}

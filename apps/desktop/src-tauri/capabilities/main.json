@@ -10,6 +10,8 @@
   ],
   "permissions": [
     "allow-approve-firmware-route-probe",
+    "allow-approve-static-menu",
+    "allow-read-static-menu",
     "allow-discover-firmware-routes",
     "allow-cancel-firmware-route-discovery",
     "allow-export-acquisition-diagnostics",

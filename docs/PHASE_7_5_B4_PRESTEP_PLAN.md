@@ -1,6 +1,6 @@
-# Phase 7.5 B4 pre-step plan — approved as plan; implementation not authorized
+# Phase 7.5 B4 pre-step — accepted plan and software implementation
 
-23 October 2026. Design only: no request spec, approval scope, parser, transport or device request is implemented by this plan. Authenticated CGI work remains blocked.
+23 October 2026: reviewer accepted G1 and both plan amendments, merged local main to `1b7fbce`, then authorized this static-menu pre-step for software implementation on a new branch. [Implementation evidence](PHASE_7_5_B4_PRESTEP_VERIFICATION.md). The proposal text below is the accepted design record. Physical execution remains held until code acceptance and a separate short guideline. Authenticated CGI work remains blocked.
 
 ## Question and static evidence
 

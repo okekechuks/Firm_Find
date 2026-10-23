@@ -10,8 +10,12 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 mod approval;
+mod static_menu;
+pub(crate) use approval::StaticMenuApproval;
 pub mod ipc;
 pub mod request_registry;
+#[cfg(test)]
+mod static_menu_tests;
 mod strategies;
 mod strategy_api;
 use approval::Approvals;
@@ -140,6 +144,8 @@ pub struct AcquisitionCapabilityReport {
     pub stages: Vec<CompatibilityStage>,
     pub capabilities: BTreeMap<String, Capability>,
     pub probe: ProbeSummary,
+    #[serde(default)]
+    pub static_menu: Option<static_menu::StaticMenuObservation>,
     pub can_obtain: bool,
 }
 
@@ -749,6 +755,7 @@ fn assess(
         stages,
         capabilities,
         probe,
+        static_menu: None,
         can_obtain: false,
     }
 }

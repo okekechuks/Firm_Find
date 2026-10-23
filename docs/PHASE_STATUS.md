@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## B4 static-menu pre-step — software review pending; hardware held
+
+23 October 2026: reviewer accepted G1/B4 plan amendments and fast-forwarded local main to `1b7fbce8334203be261d16ddf1c196181284d49c`; origin/main remains `369e741`. New branch `phase-7-5-b4-menu-prestep` starts from that main. [B4 implementation report](PHASE_7_5_B4_PRESTEP_VERIFICATION.md) records the separately approved, single-use static-menu scope and one literal `GET /xml/ui_mifi.xml`, strict bounded parser, observed/unverified filename report line, diagnostics redaction and synthetic/loopback regressions. Existing root/version approvals cannot authorize it; filename never authorizes another request or a verified stage. Extraction stays disabled.
+
+Checks pass: 279 standard /280 isolated Rust tests, two doctests per profile; 150 frontend tests, lint, TypeScript/production build, both Clippy profiles and formatting. Normal-data snapshot unchanged. The approved pre-step is software only. No real device traffic or native popup/GUI verification is claimed. Hardware step waits for reviewer acceptance of Part 1 and a separate short guideline. B2, authenticated B4/CGI, B5, B7, B8, physical OpenWrt qualification, H01–H05 firmware acquisitions and Phase 8 remain pending. Main is unchanged by this branch; no push, merge or tag. Earlier entries below retain historical results. Final twenty-run source revision/outcome is recorded after implementation commit.
+
 ## G1 WAL preflight correction — reviewer acceptance pending
 
 23 October 2026: reviewer accepts F1–F5 and F6 fallback; D6 required G1 for realistic WAL-mode newer databases. [G1 report](PHASE_7_5_G1_VERIFICATION.md) records raw-header preflight, shared supported-version constant, retained WAL-only post-open check, WAL/delete/invalid/short/locked regression coverage and actual verification results. This entry supersedes previous SQLite-preflight sidecar guarantees. Normal application data is audited read-only; tests use temporary databases only.

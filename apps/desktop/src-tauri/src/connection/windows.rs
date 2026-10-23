@@ -195,7 +195,7 @@ fn probe_kind(
     token: &AtomicBool,
     root: bool,
 ) -> (EndpointResult, Option<Vec<u8>>) {
-    probe_path(target, scope, networks, token, root, "/")
+    probe_path(target, scope, networks, token, root, "/", None)
 }
 
 pub(super) fn probe_version(
@@ -204,7 +204,33 @@ pub(super) fn probe_version(
     networks: &[NetworkAdapter],
     token: &AtomicBool,
 ) -> (EndpointResult, Option<Vec<u8>>) {
-    probe_path(target, scope, networks, token, true, "/version_num.txt")
+    probe_path(
+        target,
+        scope,
+        networks,
+        token,
+        true,
+        "/version_num.txt",
+        None,
+    )
+}
+
+pub(super) fn probe_menu(
+    target: &Target,
+    scope: Option<&str>,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+    remaining: Duration,
+) -> (EndpointResult, Option<Vec<u8>>) {
+    probe_path(
+        target,
+        scope,
+        networks,
+        token,
+        true,
+        "/xml/ui_mifi.xml",
+        Some(Instant::now() + remaining.min(Duration::from_secs(5))),
+    )
 }
 
 fn probe_path(
@@ -214,6 +240,7 @@ fn probe_path(
     token: &AtomicBool,
     root: bool,
     path: &str,
+    menu_deadline: Option<Instant>,
 ) -> (EndpointResult, Option<Vec<u8>>) {
     let start = Instant::now();
     let work = || -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
@@ -282,8 +309,20 @@ fn probe_path(
             return Err(EndpointResult::failure("no_route", "Windows would use a different interface for this target. Check routing or VPN settings, then refresh."));
         }
         cancelled(token)?;
+        let tcp_budget = menu_deadline
+            .map(|d| {
+                d.saturating_duration_since(Instant::now())
+                    .min(Duration::from_millis(800))
+            })
+            .unwrap_or(Duration::from_millis(800));
+        if tcp_budget.is_zero() {
+            return Err(EndpointResult::failure(
+                "timeout",
+                "Static menu deadline exceeded.",
+            ));
+        }
         // A single TCP preflight distinguishes refusal from HTTP/TLS transport errors.
-        match TcpStream::connect_timeout(&socket, Duration::from_millis(800)) {
+        match TcpStream::connect_timeout(&socket, tcp_budget) {
             Ok(stream) => drop(stream),
             Err(e) => return Err(EndpointResult::failure(match e.kind() { std::io::ErrorKind::ConnectionRefused => "connection_refused", std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock => "timeout", _ => "unreachable" }, "Router management port did not accept the bounded connection. Check address, port and connection.")),
         }
@@ -293,7 +332,8 @@ fn probe_path(
         } else {
             ip.to_string()
         };
-        let (mut result, body) = request_path(target, &pinned, token, root, path)?;
+        let (mut result, body) =
+            request_path_inner(target, &pinned, token, root, path, menu_deadline)?;
         result.resolved_address = Some(pinned);
         Ok((result, body))
     };
@@ -474,6 +514,7 @@ fn request(
 ) -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
     request_path(target, pinned, token, root, "/")
 }
+#[cfg(test)]
 fn request_path(
     target: &Target,
     pinned: &str,
@@ -481,7 +522,23 @@ fn request_path(
     root: bool,
     path: &str,
 ) -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
+    request_path_inner(target, pinned, token, root, path, None)
+}
+fn request_path_inner(
+    target: &Target,
+    pinned: &str,
+    token: &AtomicBool,
+    root: bool,
+    path: &str,
+    menu_deadline: Option<Instant>,
+) -> Result<(EndpointResult, Option<Vec<u8>>), Box<EndpointResult>> {
     cancelled(token)?;
+    if menu_deadline.is_some_and(|d| Instant::now() >= d) {
+        return Err(EndpointResult::failure(
+            "timeout",
+            "Static menu deadline exceeded.",
+        ));
+    }
     let session = Handle::checked(unsafe {
         WinHttpOpen(
             wide("OBTAINER/0.1 read-only discovery").as_ptr(),
@@ -544,7 +601,7 @@ fn request_path(
     {
         return Err(http_error());
     }
-    let deadline = Instant::now() + Duration::from_secs(3);
+    let deadline = menu_deadline.unwrap_or_else(|| Instant::now() + Duration::from_secs(3));
     let (sender, receiver) = std::sync::mpsc::sync_channel(4);
     let (body_sender, body_receiver) = std::sync::mpsc::sync_channel(2);
     let mut context = Box::new(CallbackContext {
@@ -579,6 +636,12 @@ fn request_path(
     // The final HANDLE_CLOSING callback owns/frees this context, including on cancellation.
     let context_pointer = Box::into_raw(context) as usize;
     cancelled(token)?;
+    if Instant::now() >= deadline {
+        return Err(EndpointResult::failure(
+            "timeout",
+            "Static menu deadline exceeded.",
+        ));
+    }
     if unsafe {
         WinHttpSendRequest(
             request.0,
@@ -652,10 +715,68 @@ fn request_path(
         300..=399 => ("redirect_blocked", "reachable", "Endpoint returned a redirect. It was not followed. Enter the intended local destination explicitly if authorized."),
         _ => ("unsupported_management", "identity_unknown", "HTTP endpoint responded but this read-only HEAD check cannot identify its management interface."),
     };
+    if menu_deadline.is_some() && (200..300).contains(&status) {
+        let mut content_type = [0u16; 256];
+        let mut size = 510u32;
+        if unsafe {
+            WinHttpQueryHeaders(
+                request.0,
+                WINHTTP_QUERY_CONTENT_TYPE,
+                ptr::null(),
+                content_type.as_mut_ptr().cast(),
+                &mut size,
+                ptr::null_mut(),
+            )
+        } == 0
+        {
+            return Err(EndpointResult::failure(
+                "wrong_content_type",
+                "Static menu did not return XML.",
+            ));
+        }
+        let mime = String::from_utf16_lossy(&content_type[..(size as usize / 2).min(255)]);
+        let mime = mime
+            .trim_end_matches('\0')
+            .split(';')
+            .next()
+            .unwrap_or("")
+            .trim();
+        if !mime.eq_ignore_ascii_case("application/xml") && !mime.eq_ignore_ascii_case("text/xml") {
+            return Err(EndpointResult::failure(
+                "wrong_content_type",
+                "Static menu did not return XML.",
+            ));
+        }
+    }
+    let mut declared_length = 0u32;
+    let mut declared_size = 4u32;
+    let expected_length = if menu_deadline.is_some()
+        && (200..300).contains(&status)
+        && unsafe {
+            WinHttpQueryHeaders(
+                request.0,
+                WINHTTP_QUERY_CONTENT_LENGTH | WINHTTP_QUERY_FLAG_NUMBER,
+                ptr::null(),
+                (&mut declared_length as *mut u32).cast(),
+                &mut declared_size,
+                ptr::null_mut(),
+            )
+        } != 0
+    {
+        Some(declared_length as usize)
+    } else {
+        None
+    };
+    if expected_length.is_some_and(|n| n > 16384) {
+        return Err(EndpointResult::failure(
+            "metadata_too_large",
+            "Static menu exceeds 16 KiB.",
+        ));
+    }
     let mut body = None;
     if root && (200..300).contains(&status) {
         let mut bytes = Vec::new();
-        while bytes.len() < 16384 {
+        while bytes.len() < 16384 || (menu_deadline.is_some() && bytes.len() == 16384) {
             cancelled(token)?;
             if unsafe { WinHttpReadData(request.0, read_pointer.cast(), 8192, ptr::null_mut()) }
                 == 0
@@ -686,7 +807,19 @@ fn request_path(
             if chunk.is_empty() {
                 break;
             }
+            if menu_deadline.is_some() && bytes.len() + chunk.len() > 16384 {
+                return Err(EndpointResult::failure(
+                    "metadata_too_large",
+                    "Static menu exceeds 16 KiB.",
+                ));
+            }
             bytes.extend_from_slice(&chunk[..chunk.len().min(16384 - bytes.len())]);
+        }
+        if expected_length.is_some_and(|n| n != bytes.len()) {
+            return Err(EndpointResult::failure(
+                "truncated_metadata",
+                "Static menu response was truncated.",
+            ));
         }
         body = Some(bytes);
     }
@@ -933,5 +1066,204 @@ mod tests {
         );
         assert!(start.elapsed() < Duration::from_millis(350));
         server.join().unwrap();
+    }
+    fn synthetic_menu_request(stream: &mut std::net::TcpStream) -> String {
+        // Windows accepted sockets may inherit the listener's nonblocking mode.
+        stream.set_nonblocking(false).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let mut bytes = [0; 4096];
+        let mut used = 0;
+        while used < bytes.len() {
+            let count = stream.read(&mut bytes[used..]).unwrap();
+            assert!(count > 0, "synthetic peer closed before request headers");
+            used += count;
+            if bytes[..used].windows(4).any(|w| w == b"\r\n\r\n") {
+                return String::from_utf8(bytes[..used].to_vec()).unwrap();
+            }
+        }
+        panic!("synthetic request headers exceeded bound")
+    }
+
+    #[test]
+    fn menu_loopback_is_one_xml_get_and_enforces_stop_rules() {
+        // All bodies are synthetic; listener exists before client, with bounded accept/read.
+        for (status, mime, body, expected) in [
+            (
+                "200 OK",
+                "application/xml",
+                "<synthetic/>",
+                "identity_unknown",
+            ),
+            (
+                "401 Unauthorized",
+                "text/xml",
+                "<synthetic/>",
+                "authentication_required",
+            ),
+            ("302 Found", "text/xml", "<synthetic/>", "redirect_blocked"),
+            ("200 OK", "text/html", "<synthetic/>", "wrong_content_type"),
+        ] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let port = listener.local_addr().unwrap().port();
+            listener.set_nonblocking(true).unwrap();
+            let server = std::thread::spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(5);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((s, _)) => break s,
+                        Err(e)
+                            if e.kind() == std::io::ErrorKind::WouldBlock
+                                && Instant::now() < deadline =>
+                        {
+                            std::thread::park_timeout(Duration::from_millis(5))
+                        }
+                        Err(e) => panic!("synthetic peer: {e}"),
+                    }
+                };
+                let sent = synthetic_menu_request(&mut stream);
+                assert!(sent.starts_with("GET /xml/ui_mifi.xml HTTP/1.1"));
+                assert!(!sent.to_ascii_lowercase().contains("authorization:"));
+                assert!(!sent.to_ascii_lowercase().contains("cookie:"));
+                let _=stream.write_all(format!("HTTP/1.1 {status}\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nLocation: /must-not-follow\r\nConnection: close\r\n\r\n{body}",body.len()).as_bytes());
+            });
+            let target = Target {
+                url: String::new(),
+                host: "localhost".into(),
+                port,
+                secure: false,
+            };
+            let outcome = request_path_inner(
+                &target,
+                "127.0.0.1",
+                &AtomicBool::new(false),
+                true,
+                "/xml/ui_mifi.xml",
+                Some(Instant::now() + Duration::from_secs(5)),
+            );
+            let code = match outcome {
+                Ok((r, b)) => {
+                    if expected != "identity_unknown" {
+                        assert!(b.is_none())
+                    };
+                    r.code
+                }
+                Err(r) => r.code,
+            };
+            assert_eq!(code, expected);
+            server.join().unwrap();
+        }
+    }
+    #[test]
+    fn menu_auth_failure_is_not_hidden_by_oversized_body_header() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        listener.set_nonblocking(true).unwrap();
+        let server = std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((s, _)) => break s,
+                    Err(e)
+                        if e.kind() == std::io::ErrorKind::WouldBlock
+                            && Instant::now() < deadline =>
+                    {
+                        std::thread::park_timeout(Duration::from_millis(5))
+                    }
+                    Err(e) => panic!("peer {e}"),
+                }
+            };
+            let _ = synthetic_menu_request(&mut stream);
+            let _=stream.write_all(b"HTTP/1.1 401 Unauthorized\r\nContent-Type: application/xml\r\nContent-Length: 20000\r\nConnection: close\r\n\r\n");
+        });
+        let target = Target {
+            url: String::new(),
+            host: "localhost".into(),
+            port,
+            secure: false,
+        };
+        let result = request_path_inner(
+            &target,
+            "127.0.0.1",
+            &AtomicBool::new(false),
+            true,
+            "/xml/ui_mifi.xml",
+            Some(Instant::now() + Duration::from_secs(5)),
+        );
+        assert_eq!(result.unwrap().0.status, Some(401));
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn menu_loopback_caps_truncation_cancel_and_timeout() {
+        for mode in ["oversize", "truncated", "cancel", "timeout"] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let port = listener.local_addr().unwrap().port();
+            listener.set_nonblocking(true).unwrap();
+            let (started, ready) = std::sync::mpsc::channel();
+            let (release, finish) = std::sync::mpsc::channel();
+            let server = std::thread::spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(6);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((s, _)) => break s,
+                        Err(e)
+                            if e.kind() == std::io::ErrorKind::WouldBlock
+                                && Instant::now() < deadline =>
+                        {
+                            std::thread::park_timeout(Duration::from_millis(5))
+                        }
+                        Err(e) => panic!("peer {e}"),
+                    }
+                };
+                let _ = synthetic_menu_request(&mut stream);
+                let response = if mode == "oversize" {
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: 16385\r\nConnection: close\r\n\r\n"
+                } else {
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: 100\r\nConnection: close\r\n\r\n<synthetic/>"
+                };
+                let _ = stream.write_all(response.as_bytes());
+                let _ = started.send(());
+                if mode == "cancel" || mode == "timeout" {
+                    let _ = finish.recv_timeout(Duration::from_secs(7));
+                }
+            });
+            let token = std::sync::Arc::new(AtomicBool::new(false));
+            let worker_token = token.clone();
+            let worker = std::thread::spawn(move || {
+                let target = Target {
+                    url: String::new(),
+                    host: "localhost".into(),
+                    port,
+                    secure: false,
+                };
+                request_path_inner(
+                    &target,
+                    "127.0.0.1",
+                    &worker_token,
+                    true,
+                    "/xml/ui_mifi.xml",
+                    Some(Instant::now() + Duration::from_secs(5)),
+                )
+            });
+            ready.recv_timeout(Duration::from_secs(5)).unwrap();
+            if mode == "cancel" {
+                token.store(true, Ordering::Release);
+            }
+            let result = worker.join().unwrap();
+            let error = result.unwrap_err();
+            match mode {
+                "oversize" => assert_eq!(error.code, "metadata_too_large"),
+                "cancel" => assert_eq!(error.code, "cancelled"),
+                "timeout" => assert_eq!(error.code, "timeout"),
+                _ => assert!(matches!(
+                    error.code.as_str(),
+                    "truncated_metadata" | "unreachable" | "unsupported_management"
+                )),
+            }
+            let _ = release.send(());
+            server.join().unwrap();
+        }
     }
 }

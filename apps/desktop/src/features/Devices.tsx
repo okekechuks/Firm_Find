@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Search, Usb, RefreshCw, X, LockKeyhole } from "lucide-react";
 import { deviceStatus } from "../lib/device-status";
-import { approveFirmwareRouteProbe, cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
+import { approveStaticMenu, readStaticMenu, approveFirmwareRouteProbe, cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
 import type { AcquisitionReport, CompatibilityStageId } from "../types/acquisition";
 
@@ -109,6 +109,18 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       if (run === generation.current) {setState("error"); setMessage(errorMessage(failure));}
     }
   };
+  const readMenu = async () => {
+    const run=++generation.current;setState("checking");setMessage("");
+    try {
+      const input={deviceId:device.id,endpoint:endpoint||null,interfaceId:interfaceId||null,approvalToken:null as string|null,advancedEndpoint};
+      input.approvalToken=await approveStaticMenu(input);
+      if(run!==generation.current)return;
+      const result=await readStaticMenu(input);
+      if(run!==generation.current)return;
+      if(result.discoveryRevision!==revision || result.expiresAt<=Date.now())throw new Error("Menu result expired. Check compatibility again.");
+      setReport(result);setState("done");
+    }catch(failure){if(run===generation.current){setState("error");setMessage(errorMessage(failure));}}
+  };
   const exportReport = async () => {
     setExporting(true); setMessage("");
     try {if (await exportAcquisitionDiagnostics(device.id)) setMessage("Redacted diagnostics saved.");}
@@ -140,7 +152,10 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       {report.probe.metadataTruncated ? <p className="muted small">Metadata limited to first 16 KiB.</p> : null}
       {report.probe.advancedEndpoint ? <p>Advanced local endpoint approved.</p> : null}
       <p className="muted small">Each stage is assessed separately. A verified stage does not enable another operation.</p>
-      <dl aria-label="Compatibility summary">{report.stages.slice(0,5).map(stageRow)}</dl>
+      <dl aria-label="Compatibility summary">{report.stages.slice(0,5).map(stage=><div key={stage.id}>{stageRow(stage)}{stage.id==="management_api" ? <>
+        {report.staticMenu ? <p>{report.staticMenu.fileName ? `${report.staticMenu.label}: ${report.staticMenu.fileName}` : report.staticMenu.code==="menu_not_readable_without_login" ? "Menu not readable without login" : report.staticMenu.code.replaceAll("_"," ")}</p> : null}
+        {report.protocols.some(p=>p.family==="asr_duster_xml") ? <button className="secondary-button" disabled={state==="checking" || !device.connected} onClick={()=>void readMenu()}>Read static menu</button> : null}
+      </> : null}</div>)}</dl>
       <details><summary>Remaining compatibility stages</summary><dl>{report.stages.slice(5).map(stageRow)}</dl></details>
       {report.candidates.map(route => <details key={route.strategy}><summary>{route.name}: {route.capability.state.replaceAll("_"," ")}</summary><p>{route.capability.reason}</p><p className="muted small">Required: {route.capability.missingRequirements.join("; ")}</p></details>)}
       <button className="secondary-button" disabled={exporting} onClick={() => void exportReport()}>{exporting ? "Exporting…" : "Export Diagnostics"}</button>

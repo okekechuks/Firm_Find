@@ -132,3 +132,10 @@ export async function relocateFirmwareLibrary(ticket:string){requireDesktop();re
 export async function recoverDefaultLibrary(){requireDesktop();await invoke("recover_default_library",{confirmed:true});}
 
 export async function approveFirmwareRouteProbe(input:AcquisitionRequest) {requireDesktop();return z.string().regex(/^[a-f0-9]{32}$/).parse(await invoke("approve_firmware_route_probe",{input}));}
+
+export async function approveStaticMenu(input:AcquisitionRequest) {requireDesktop();return z.string().regex(/^[a-f0-9]{32}$/).parse(await invoke("approve_static_menu",{input}));}
+export async function readStaticMenu(input:AcquisitionRequest) {
+  requireDesktop();const report=acquisitionReportSchema.parse(await invoke("read_static_menu",{input}));
+  if(report.deviceId!==input.deviceId || report.fingerprint.deviceId!==input.deviceId)throw new Error("Menu report belongs to another target.");
+  return report;
+}

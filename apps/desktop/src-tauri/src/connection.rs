@@ -54,12 +54,18 @@ pub fn now() -> u64 {
 
 /// One owner-approved root GET. Response bytes remain transient and are never logged.
 pub(crate) fn root_metadata(
-    _approval: &crate::acquisition::ClaimedApproval,
+    approval: &crate::acquisition::ClaimedApproval,
     target: &Target,
     interface: &str,
     networks: &[NetworkAdapter],
     token: &AtomicBool,
 ) -> (EndpointResult, Option<Vec<u8>>) {
+    if !approval.metadata_target(target, interface) {
+        return (
+            *EndpointResult::failure("approval_required", "Approve the selected metadata check."),
+            None,
+        );
+    }
     #[cfg(windows)]
     return windows::probe_root(target, Some(interface), networks, token);
     #[cfg(not(windows))]
@@ -459,14 +465,49 @@ pub(crate) fn subnet_conflict(
 }
 /// Fixed static metadata path, never supplied by the caller.
 pub(crate) fn version_metadata(
-    _approval: &crate::acquisition::ClaimedApproval,
+    approval: &crate::acquisition::ClaimedApproval,
     target: &Target,
     interface: &str,
     networks: &[NetworkAdapter],
     token: &AtomicBool,
 ) -> (EndpointResult, Option<Vec<u8>>) {
+    if !approval.metadata_target(target, interface) {
+        return (
+            *EndpointResult::failure("approval_required", "Approve the selected metadata check."),
+            None,
+        );
+    }
     #[cfg(windows)]
     return windows::probe_version(target, Some(interface), networks, token);
+    #[cfg(not(windows))]
+    {
+        let _ = (target, interface, networks, token);
+        (
+            *EndpointResult::failure("unsupported_platform", "Windows required."),
+            None,
+        )
+    }
+}
+
+/// Only a claimed StaticMenu scope may reach this fixed, separately bounded request.
+pub(crate) fn menu_metadata(
+    proof: &crate::acquisition::StaticMenuApproval,
+    target: &Target,
+    interface: &str,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+) -> (EndpointResult, Option<Vec<u8>>) {
+    if !proof.take_target(target, interface) {
+        return (
+            *EndpointResult::failure(
+                "approval_required",
+                "Approve the selected static menu check.",
+            ),
+            None,
+        );
+    }
+    #[cfg(windows)]
+    return windows::probe_menu(target, Some(interface), networks, token, proof.remaining());
     #[cfg(not(windows))]
     {
         let _ = (target, interface, networks, token);

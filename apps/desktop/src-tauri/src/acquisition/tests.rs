@@ -729,14 +729,18 @@ fn b1_plan_rejects_stale_mixed_endpoint_changed_generation_and_conflicting_evide
 }
 
 #[test]
-fn b3_compiled_request_registry_accepts_only_the_two_metadata_reads() {
+fn b3_compiled_request_registry_accepts_only_the_three_metadata_reads() {
     use super::request_registry::{ProtocolFamilyId, RequestEnvelope, RequestId, RequestRegistry};
     let registry = RequestRegistry::default();
     let specs = registry.registered(ProtocolFamilyId::AsrDusterXml);
-    assert_eq!(specs.len(), 2);
+    assert_eq!(specs.len(), 3);
     assert_eq!(
         specs.iter().map(|spec| spec.id()).collect::<Vec<_>>(),
-        vec![RequestId::Root, RequestId::StaticVersion,]
+        vec![
+            RequestId::Root,
+            RequestId::StaticVersion,
+            RequestId::StaticMenu
+        ]
     );
     for spec in specs {
         let url = format!("http://192.168.100.1{}", spec.canonical_path());

@@ -32,6 +32,7 @@ tracing-subscriber = { version = "0.3", features = ["json"] }
 tracing-appender = "0.2"
 sha2 = "0.10"
 url = "2.5.8"
+quick-xml = "=0.42.0"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [

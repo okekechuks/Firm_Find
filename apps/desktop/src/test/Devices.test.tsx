@@ -4,8 +4,8 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { Devices } from "../features/Devices";
 import type { DiscoverySnapshot } from "../types/contracts";
 
-const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn()}));
-vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export}));
+const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn(),menuApprove:vi.fn(),menuRead:vi.fn()}));
+vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export,approveStaticMenu:checks.menuApprove,readStaticMenu:checks.menuRead}));
 const stageIds = ["detected","exact_identity","management_api","official_image","firmware_export","physical_read","firmware_acquired","filesystem_extracted","customization","rebuild","installation"] as const;
 const defaultStages = stageIds.map(id => ({id,state:id === "detected" ? "observed" : "not_implemented",reason:"No implementation is available."}));
 function result() {
@@ -204,4 +204,19 @@ it("renders every compatibility state neutrally and keeps stages independent", a
   expect(screen.getByText("Official image: not checked")).toBeInTheDocument();
   expect(screen.getByText("Physical read: not implemented")).toBeInTheDocument();
   expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();
+});
+
+it("requires a separate menu approval and displays only unverified filename under management",async()=>{
+  const user=userEvent.setup();const base={...result(),protocols:[{family:"asr_duster_xml"}]};checks.routes.mockResolvedValue(base);
+  checks.menuApprove.mockResolvedValue("d".repeat(32));checks.menuRead.mockResolvedValue({...base,staticMenu:{code:"observed",fileName:"synthetic_dashboard",label:"dashboard file name observed from the static menu; unverified"}});
+  render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));
+  await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  expect(checks.menuApprove).not.toHaveBeenCalled();await user.click(await screen.findByRole("button",{name:"Read static menu"}));
+  expect(checks.menuApprove).toHaveBeenCalledTimes(1);expect(checks.menuRead).toHaveBeenCalledWith(expect.objectContaining({approvalToken:"d".repeat(32)}));
+  expect(await screen.findByText(/unverified: synthetic_dashboard/)).toBeInTheDocument();expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();
+});
+it("owner rejection prevents menu dispatch and retains usable interface",async()=>{
+  const user=userEvent.setup();checks.routes.mockResolvedValue({...result(),protocols:[{family:"asr_duster_xml"}]});checks.menuApprove.mockRejectedValue(new Error("Static menu check not approved."));
+  render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  await user.click(await screen.findByRole("button",{name:"Read static menu"}));expect(await screen.findByRole("alert")).toHaveTextContent("not approved");expect(checks.menuRead).not.toHaveBeenCalled();expect(screen.getByRole("button",{name:"Read static menu"})).toBeEnabled();
 });

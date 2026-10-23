@@ -82,6 +82,23 @@ pub(super) fn binding(
 pub(super) struct Approvals(Mutex<BTreeMap<String, (Binding, ApprovalScope, Instant)>>);
 impl Approvals {
     pub(super) fn issue(&self, binding: Binding) -> Result<String, DiscoveryError> {
+        self.issue_scoped(binding, ApprovalScope::EndpointMetadata)
+    }
+    pub(super) fn issue_menu(
+        &self,
+        binding: Binding,
+        approved: bool,
+    ) -> Result<String, DiscoveryError> {
+        if !approved {
+            return Err(error("CANCELLED", "Static menu check not approved."));
+        }
+        self.issue_scoped(binding, menu_scope())
+    }
+    fn issue_scoped(
+        &self,
+        binding: Binding,
+        scope: ApprovalScope,
+    ) -> Result<String, DiscoveryError> {
         let id = crate::library::files::nonce()
             .map_err(|_| error("INTERNAL", "Approval unavailable."))?;
         let mut receipts = self
@@ -94,11 +111,7 @@ impl Approvals {
         }
         receipts.insert(
             id.clone(),
-            (
-                binding,
-                ApprovalScope::EndpointMetadata,
-                Instant::now() + Duration::from_secs(30),
-            ),
+            (binding, scope, Instant::now() + Duration::from_secs(30)),
         );
         Ok(id)
     }
@@ -107,16 +120,29 @@ impl Approvals {
         id: &str,
         binding: &Binding,
     ) -> Result<ClaimedApproval, DiscoveryError> {
+        self.claim_scoped(id, binding, ApprovalScope::EndpointMetadata)
+    }
+    pub(super) fn claim_menu(
+        &self,
+        id: &str,
+        binding: &Binding,
+    ) -> Result<StaticMenuApproval, DiscoveryError> {
+        self.claim_scoped(id, binding, menu_scope())
+            .map(|proof| StaticMenuApproval(proof, AtomicBool::new(false)))
+    }
+    fn claim_scoped(
+        &self,
+        id: &str,
+        binding: &Binding,
+        required: ApprovalScope,
+    ) -> Result<ClaimedApproval, DiscoveryError> {
         let (expected, scope, deadline) = self
             .0
             .lock()
             .map_err(|_| error("INTERNAL", "Approval unavailable."))?
             .remove(id)
             .ok_or_else(|| error("APPROVAL_REQUIRED", "Approve this check again."))?;
-        if expected != *binding
-            || scope != ApprovalScope::EndpointMetadata
-            || Instant::now() >= deadline
-        {
+        if expected != *binding || scope != required || Instant::now() >= deadline {
             return Err(error(
                 "APPROVAL_EXPIRED",
                 "Approval expired or target changed. Approve again.",
@@ -130,14 +156,23 @@ impl Approvals {
     }
 }
 
-/// Authority stays explicit and operation-specific. This phase only issues EndpointMetadata.
+/// Authority stays operation-specific: only endpoint metadata and static menu scopes are issued.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ApprovalScope {
     EndpointMetadata,
+    StaticMenuMetadata {
+        request: RequestId,
+    },
     StrategyProbe {
         strategy: StrategyId,
         requests: Vec<super::request_registry::RequestId>,
     },
+}
+
+fn menu_scope() -> ApprovalScope {
+    ApprovalScope::StaticMenuMetadata {
+        request: RequestId::StaticMenu,
+    }
 }
 
 /// Non-Clone, non-serializable proof, constructed only by a successful claim.
@@ -147,6 +182,13 @@ pub(crate) struct ClaimedApproval {
     deadline: Instant,
 }
 impl ClaimedApproval {
+    pub(crate) fn metadata_target(&self, target: &connection::Target, interface: &str) -> bool {
+        self.scope == ApprovalScope::EndpointMetadata
+            && self.binding.endpoint == target.url
+            && self.binding.interface == interface
+            && Instant::now() < self.deadline
+    }
+
     pub(super) fn validate(&self, binding: &Binding) -> Result<(), DiscoveryError> {
         if self.scope != ApprovalScope::EndpointMetadata
             || self.binding != *binding
@@ -218,6 +260,47 @@ impl StrategyProbeApproval {
     }
 }
 
+/// Separate, non-serializable scope proof; its request is always StaticMenu.
+pub(crate) struct StaticMenuApproval(ClaimedApproval, AtomicBool);
+impl StaticMenuApproval {
+    #[cfg(test)]
+    pub(super) fn for_test(device: &Device, revision: u64, input: &DiscoveryRequest) -> Self {
+        let b = binding(device, revision, input).unwrap();
+        let approvals = Approvals::default();
+        let receipt = approvals.issue_menu(b.clone(), true).unwrap();
+        approvals.claim_menu(&receipt, &b).unwrap()
+    }
+
+    pub(super) fn validate(&self, binding: &Binding) -> Result<(), DiscoveryError> {
+        if self.0.scope != menu_scope()
+            || self.0.binding != *binding
+            || Instant::now() >= self.0.deadline
+        {
+            return Err(error(
+                "APPROVAL_EXPIRED",
+                "Menu approval expired or target changed.",
+            ));
+        }
+        Ok(())
+    }
+    pub(crate) fn take_target(&self, target: &connection::Target, interface: &str) -> bool {
+        self.0.scope == menu_scope()
+            && self.0.binding.endpoint == target.url
+            && self.0.binding.interface == interface
+            && Instant::now() < self.0.deadline
+            && self
+                .1
+                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                .is_ok()
+    }
+    pub(crate) fn remaining(&self) -> Duration {
+        self.0.deadline.saturating_duration_since(Instant::now())
+    }
+}
+pub(super) fn menu_confirmation(device: &Device, binding: &Binding) -> String {
+    format!("Approve one read-only static menu check?\n\nDevice: {}\nInterface: {}\nEndpoint: {}\nRequest: GET /xml/ui_mifi.xml (maximum 16 KiB, one attempt)\n\nThis reads the dashboard menu mapping only. No login, settings change, firmware transfer or other request is authorized. Plain HTTP is not cryptographically verified. Proceed only if you own or administer this device.", confirmation_value(&device.display_name), confirmation_value(&binding.interface), confirmation_value(&binding.endpoint))
+}
+
 pub(super) fn confirmation_value(value: &str) -> String {
     value
         .chars()
@@ -264,5 +347,82 @@ mod tests {
         let id = grants.issue(b.clone()).unwrap();
         grants.0.lock().unwrap().get_mut(&id).unwrap().2 = Instant::now();
         assert!(grants.claim(&id, &b).is_err());
+    }
+    #[test]
+    fn menu_approval_replay_cross_scope_binding_expiry_and_no() {
+        let mut d = super::super::tests::device();
+        d.networks[0].gateways = vec!["192.168.100.1".into()];
+        let input = DiscoveryRequest {
+            device_id: d.id.clone(),
+            endpoint: Some("http://192.168.100.1/".into()),
+            interface_id: Some(d.networks[0].id.clone()),
+            approval_token: None,
+            advanced_endpoint: false,
+        };
+        let b = binding(&d, 4, &input).unwrap();
+        let a = Approvals::default();
+        assert!(a.issue_menu(b.clone(), false).is_err());
+        assert!(a.0.lock().unwrap().is_empty());
+        let token = a.issue_menu(b.clone(), true).unwrap();
+        assert!(a.claim(&token, &b).is_err());
+        let token = a.issue(b.clone()).unwrap();
+        assert!(a.claim_menu(&token, &b).is_err());
+        let wrong_request = a.issue(b.clone()).unwrap();
+        a.0.lock().unwrap().get_mut(&wrong_request).unwrap().1 =
+            ApprovalScope::StaticMenuMetadata {
+                request: RequestId::Root,
+            };
+        assert!(a.claim_menu(&wrong_request, &b).is_err());
+        let token = a.issue_menu(b.clone(), true).unwrap();
+        let mut proof = a.claim_menu(&token, &b).unwrap();
+        assert!(a.claim_menu(&token, &b).is_err());
+        assert!(proof.validate(&b).is_ok());
+        let target = connection::parse_address(&b.endpoint).unwrap();
+        assert!(proof.take_target(&target, &b.interface));
+        assert!(!proof.take_target(&target, &b.interface));
+        assert!(proof.0.validate(&b).is_err());
+        assert!(proof.0.strategy_probe(StrategyId::OfficialImage).is_err());
+        let token = a.issue(b.clone()).unwrap();
+        a.0.lock().unwrap().get_mut(&token).unwrap().1 = ApprovalScope::StrategyProbe {
+            strategy: StrategyId::OfficialImage,
+            requests: vec![RequestId::Root],
+        };
+        assert!(a.claim_menu(&token, &b).is_err());
+        assert!(a.claim_menu(&token, &b).is_err());
+        for field in 0..3 {
+            let token = a.issue_menu(b.clone(), true).unwrap();
+            let mut other = b.clone();
+            match field {
+                0 => other.endpoint = "http://192.168.100.2/".into(),
+                1 => other.interface = "other".into(),
+                _ => other.revision += 1,
+            };
+            assert!(a.claim_menu(&token, &other).is_err());
+            assert!(a.claim_menu(&token, &b).is_err());
+        }
+        let token = a.issue_menu(b.clone(), true).unwrap();
+        a.0.lock().unwrap().get_mut(&token).unwrap().2 = Instant::now();
+        assert!(a.claim_menu(&token, &b).is_err());
+        proof.0.deadline = Instant::now();
+        assert!(proof.validate(&b).is_err());
+    }
+    #[test]
+    fn menu_confirmation_caps_cleans_and_names_only_fixed_request() {
+        let mut d = super::super::tests::device();
+        d.networks[0].gateways = vec!["192.168.100.1".into()];
+        d.display_name = format!("{}\n\u{202e}", "X".repeat(200));
+        let input = DiscoveryRequest {
+            device_id: d.id.clone(),
+            endpoint: Some("http://192.168.100.1/".into()),
+            interface_id: Some(d.networks[0].id.clone()),
+            approval_token: None,
+            advanced_endpoint: false,
+        };
+        let b = binding(&d, 4, &input).unwrap();
+        let text = menu_confirmation(&d, &b);
+        assert!(text.contains(&format!("Device: {}\n", "X".repeat(80))));
+        assert!(!text.contains('\u{202e}'));
+        assert!(text.contains("GET /xml/ui_mifi.xml (maximum 16 KiB, one attempt)"));
+        assert!(!text.contains("login.cgi"));
     }
 }
