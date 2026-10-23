@@ -11,6 +11,8 @@
   "permissions": [
     "allow-approve-firmware-route-probe",
     "allow-approve-static-menu",
+    "allow-approve-auth-challenge",
+    "allow-read-auth-challenge",
     "allow-read-static-menu",
     "allow-discover-firmware-routes",
     "allow-cancel-firmware-route-discovery",

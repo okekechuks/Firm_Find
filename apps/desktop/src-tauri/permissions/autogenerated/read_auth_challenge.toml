@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-read-auth-challenge"
+description = "Enables the read_auth_challenge command without any pre-configured scope."
+commands.allow = ["read_auth_challenge"]
+
+[[permission]]
+identifier = "deny-read-auth-challenge"
+description = "Denies the read_auth_challenge command without any pre-configured scope."
+commands.deny = ["read_auth_challenge"]

@@ -232,6 +232,23 @@ pub(super) fn probe_menu(
         Some(Instant::now() + remaining.min(Duration::from_secs(5))),
     )
 }
+pub(super) fn probe_challenge(
+    target: &Target,
+    scope: Option<&str>,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+    remaining: Duration,
+) -> (EndpointResult, Option<Vec<u8>>) {
+    probe_path(
+        target,
+        scope,
+        networks,
+        token,
+        true,
+        "/login.cgi",
+        Some(Instant::now() + remaining.min(Duration::from_secs(5))),
+    )
+}
 
 fn probe_path(
     target: &Target,
@@ -397,6 +414,7 @@ fn windows_error(code: u32) -> Box<EndpointResult> {
     #[cfg(test)]
     eprintln!("WinHTTP error {code}");
     let (key, message) = match code {
+        ERROR_WINHTTP_HEADER_SIZE_OVERFLOW => ("challenge_not_usable", "Response headers exceed the bounded limit."),
         ERROR_WINHTTP_TIMEOUT => ("timeout", "HTTP response timed out. Retry after checking the router connection."),
         ERROR_WINHTTP_SECURE_FAILURE | ERROR_WINHTTP_SECURE_INVALID_CA | ERROR_WINHTTP_SECURE_CERT_CN_INVALID | ERROR_WINHTTP_SECURE_CERT_DATE_INVALID | ERROR_WINHTTP_SECURE_INVALID_CERT | ERROR_WINHTTP_SECURE_CERT_REVOKED => ("tls_trust_failure", "HTTPS certificate validation failed. Verify the router certificate and hostname through its owner before deliberately trusting its issuing certificate in Windows. No validation bypass is applied."),
         ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED => ("authentication_required", "The endpoint requires a client certificate. Authentication is unavailable in Phase 2."),
@@ -409,6 +427,81 @@ fn windows_error(code: u32) -> Box<EndpointResult> {
         result.tls = "untrusted".into();
     }
     result
+}
+// Transient header buffers have no Debug/Serialize implementation and are erased,
+// including malformed/oversized/early-return paths. No nonce-owned String is made.
+struct ErasedWide(Vec<u16>);
+impl Drop for ErasedWide {
+    fn drop(&mut self) {
+        for n in &mut self.0 {
+            unsafe { std::ptr::write_volatile(n, 0) }
+        }
+        std::sync::atomic::compiler_fence(Ordering::SeqCst);
+    }
+}
+struct ErasedHeader(Vec<u8>);
+impl Drop for ErasedHeader {
+    fn drop(&mut self) {
+        for n in &mut self.0 {
+            unsafe { std::ptr::write_volatile(n, 0) }
+        }
+        std::sync::atomic::compiler_fence(Ordering::SeqCst);
+    }
+}
+fn challenge_headers(request: &Handle, status: u16) -> crate::acquisition::ChallengeObservation {
+    use crate::acquisition::{parse_challenge_headers, ChallengeObservation};
+    let failure = || {
+        ChallengeObservation::failure(
+            if (300..400).contains(&status) {
+                "redirect_blocked"
+            } else if status != 401 {
+                "unexpected_status"
+            } else {
+                "challenge_not_usable"
+            },
+            Some(status),
+        )
+    };
+    let mut bytes = 0;
+    unsafe {
+        WinHttpQueryHeaders(
+            request.0,
+            WINHTTP_QUERY_RAW_HEADERS_CRLF,
+            ptr::null(),
+            ptr::null_mut(),
+            &mut bytes,
+            ptr::null_mut(),
+        );
+    }
+    if bytes == 0 || bytes > 16386 {
+        return failure();
+    }
+    let mut raw = ErasedWide(vec![0; (bytes as usize).div_ceil(2)]);
+    if unsafe {
+        WinHttpQueryHeaders(
+            request.0,
+            WINHTTP_QUERY_RAW_HEADERS_CRLF,
+            ptr::null(),
+            raw.0.as_mut_ptr().cast(),
+            &mut bytes,
+            ptr::null_mut(),
+        )
+    } == 0
+    {
+        return failure();
+    }
+    let count = (bytes as usize / 2).min(raw.0.len());
+    let mut ascii = ErasedHeader(Vec::with_capacity(count));
+    for &n in &raw.0[..count] {
+        if n == 0 {
+            break;
+        }
+        if n > 127 {
+            return failure();
+        }
+        ascii.0.push(n as u8);
+    }
+    parse_challenge_headers(status, &ascii.0)
 }
 fn set(handle: &Handle, key: u32, value: u32) -> Result<(), Box<EndpointResult>> {
     if unsafe { WinHttpSetOption(handle.0, key, (&value as *const u32).cast(), 4) } == 0 {
@@ -586,7 +679,11 @@ fn request_path_inner(
         WINHTTP_OPTION_AUTOLOGON_POLICY,
         WINHTTP_AUTOLOGON_SECURITY_LEVEL_HIGH,
     )?;
-    set(&request, WINHTTP_OPTION_MAX_RESPONSE_HEADER_SIZE, 16384)?;
+    set(
+        &request,
+        WINHTTP_OPTION_MAX_RESPONSE_HEADER_SIZE,
+        if path == "/login.cgi" { 8192 } else { 16384 },
+    )?;
     set(&request, WINHTTP_OPTION_RECEIVE_RESPONSE_TIMEOUT, 1500)?;
     // Preserve original Host and TLS name while resolving only the validated numeric IP.
     let pinned = wide(pinned);
@@ -685,6 +782,25 @@ fn request_path_inner(
     } == 0
     {
         return Err(http_error());
+    }
+    if path == "/login.cgi" {
+        cancelled(token)?;
+        let observation = challenge_headers(&request, status as u16);
+        cancelled(token)?;
+        if Instant::now() >= deadline {
+            return Err(EndpointResult::failure(
+                "timeout",
+                "Challenge deadline exceeded.",
+            ));
+        }
+        let mut result = *EndpointResult::failure(
+            &observation.code,
+            "Credential-free challenge check finished.",
+        );
+        result.status = Some(status as u16);
+        result.auth_challenge = Some(observation);
+        // Never query a response body, Server, cookies or authentication state here.
+        return Ok((result, None));
     }
     let mut buffer = [0u16; 256];
     let mut length = 510u32;
@@ -831,6 +947,7 @@ fn request_path_inner(
             status: Some(status as u16),
             server,
             observed_media_type: None,
+            auth_challenge: None,
             checked_at: now(),
             elapsed_ms: 0,
             resolved_address: None,
@@ -1186,6 +1303,119 @@ mod tests {
             };
             assert_eq!(code, expected);
             server.join().unwrap();
+        }
+    }
+    #[test]
+    fn challenge_loopback_headers_only_single_credential_free_get() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        listener.set_nonblocking(true).unwrap();
+        let server = std::thread::spawn(move || {
+            let end = Instant::now() + Duration::from_secs(5);
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((s, _)) => break s,
+                    Err(e)
+                        if e.kind() == std::io::ErrorKind::WouldBlock && Instant::now() < end =>
+                    {
+                        std::thread::park_timeout(Duration::from_millis(5))
+                    }
+                    Err(e) => panic!("synthetic peer {e}"),
+                }
+            };
+            let request = synthetic_menu_request(&mut stream);
+            assert!(request.starts_with("GET /login.cgi HTTP/1.1\r\n"));
+            let lower = request.to_ascii_lowercase();
+            assert!(
+                !lower.contains("authorization:")
+                    && !lower.contains("cookie:")
+                    && !lower.contains("/login.cgi?")
+            );
+            stream
+                .set_write_timeout(Some(Duration::from_secs(1)))
+                .unwrap();
+            let _=stream.write_all(b"HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Digest realm=\"Synthetic\", nonce=\"d00df00d1234abcd\", qop=\"auth\"\r\nSet-Cookie: synthetic=private\r\nContent-Length: 10000000\r\nConnection: close\r\n\r\n");
+            // Advertise a huge body, supply only a small prefix. A body-reading client
+            // would wait for the missing remainder; a header-only client closes now.
+            let _ = stream.write_all(&vec![b'x'; 32768]);
+        });
+        let target = Target {
+            url: String::new(),
+            host: "localhost".into(),
+            port,
+            secure: false,
+        };
+        let start = Instant::now();
+        let (result, body) = request_path_inner(
+            &target,
+            "127.0.0.1",
+            &AtomicBool::new(false),
+            true,
+            "/login.cgi",
+            Some(Instant::now() + Duration::from_secs(5)),
+        )
+        .unwrap();
+        server.join().unwrap();
+        assert!(body.is_none());
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["authChallenge"]["code"], "observed");
+        assert_eq!(json["authChallenge"]["setCookiePresent"], true);
+        assert!(!json.to_string().contains("d00df00d1234abcd"));
+        assert!(start.elapsed() < Duration::from_secs(5));
+    }
+    #[test]
+    fn challenge_loopback_cancellation_and_timeout_release_connection() {
+        for cancel in [true, false] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let port = listener.local_addr().unwrap().port();
+            listener.set_nonblocking(true).unwrap();
+            let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
+            let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
+            let server = std::thread::spawn(move || {
+                let end = Instant::now() + Duration::from_secs(5);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((s, _)) => break s,
+                        Err(e)
+                            if e.kind() == std::io::ErrorKind::WouldBlock
+                                && Instant::now() < end =>
+                        {
+                            std::thread::park_timeout(Duration::from_millis(5))
+                        }
+                        Err(e) => panic!("synthetic peer {e}"),
+                    }
+                };
+                let request = synthetic_menu_request(&mut stream);
+                assert!(request.starts_with("GET /login.cgi "));
+                ready_tx.send(()).unwrap();
+                let _ = release_rx.recv_timeout(Duration::from_secs(6));
+            });
+            let token = std::sync::Arc::new(AtomicBool::new(false));
+            let client_token = token.clone();
+            let client = std::thread::spawn(move || {
+                let target = Target {
+                    url: String::new(),
+                    host: "localhost".into(),
+                    port,
+                    secure: false,
+                };
+                request_path_inner(
+                    &target,
+                    "127.0.0.1",
+                    &client_token,
+                    true,
+                    "/login.cgi",
+                    Some(Instant::now() + Duration::from_secs(if cancel { 5 } else { 2 })),
+                )
+            });
+            ready_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+            if cancel {
+                token.store(true, Ordering::Release);
+            }
+            let result = client.join().unwrap().unwrap_err();
+            release_tx.send(()).unwrap();
+            server.join().unwrap();
+            assert_eq!(result.code, if cancel { "cancelled" } else { "timeout" });
         }
     }
     #[test]

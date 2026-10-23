@@ -1,5 +1,15 @@
 # Firmware acquisition engine
 
+## Current Stage 2A: credential-free challenge observation
+
+23 October 2026: Stage 1 and the Stage 2A design are accepted. The released software adds exactly one separately approved request, `GET /login.cgi` without query, body, credentials, Authorization or Cookie. The closed ASR-family table now has four entries: root, static version, static menu and Challenge. Login, StatusRead and Logout remain unregistered. Earlier table counts below describe historical gates.
+
+`AuthChallenge { request: Challenge }` is an opaque, single-use approval bound to device, discovery revision, interface and normalized endpoint, expiring 30 seconds after its own native confirmation. Existing metadata/menu/strategy scopes cannot substitute for it or vice versa. A fresh same-endpoint/interface root observation must already recognize the candidate family; otherwise no challenge is sent. The shared connection lease, cancellation and route/subnet guards apply before dispatch and publication.
+
+Challenge has one attempt and a five-second network budget. WinHTTP headers are bounded to 8 KiB overall and 2 KiB for WWW-Authenticate; the application returns before any body-read API. WinHTTP/OS internal buffering is not claimed to be zero. Only a single HTTP-401 Digest challenge with well-formed quoted parameters is usable. Output contains bounded printable realm, token-list qop, optional algorithm, status and nonce/Set-Cookie/other-scheme presence flags. The hex nonce is inspected only through borrowed transient bytes; raw header buffers are erased on drop. No nonce, cookie value, body, other header value, credential or session is retained. Conservative rejection includes non-ASCII headers, escaped quoted values, folded/malformed headers and ambiguous schemes.
+
+The additive schema-1 `authChallenge` line is endpoint_response / observed / observed, labelled `authentication challenge observed; unverified`. Diagnostics revalidate its bounds. A failed observation exposes only a bounded code, status and flags; false flags on rejected input do not establish authoritative absence. No compatibility stage, identity evidence or permission advances; `canObtain` remains false. [Software results](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md). Part 3 hardware is HELD until code acceptance and a separate release. Login, StatusRead, Logout, credential entry/Secret use, B2, B5, B7, B8 and Phase 8 remain blocked.
+
 ## Current B4 pre-step: separately approved static menu read
 
 23 October 2026: G1 and B4 plan amendments are accepted; reviewer merged local main to `1b7fbce`. The separate B4 software branch implements only `GET /xml/ui_mifi.xml`. A fresh earlier root report must contain candidate `asr_duster_xml` for the same device/revision/interface/normalized endpoint. A separate native Yes/No dialog issues `StaticMenuMetadata { request: StaticMenu }`, expiring after 30 seconds. Root/version and strategy receipts cannot claim it or be satisfied by it. Claim consumes the receipt; an atomic transport gate permits only one attempt, including failed/cancelled attempts.

@@ -31,6 +31,8 @@ pub struct EndpointResult {
     pub tls: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub observed_media_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth_challenge: Option<crate::acquisition::ChallengeObservation>,
 }
 impl EndpointResult {
     pub fn failure(code: &str, message: &str) -> Box<Self> {
@@ -45,8 +47,45 @@ impl EndpointResult {
             resolved_address: None,
             tls: "not_checked".into(),
             observed_media_type: None,
+            auth_challenge: None,
         })
     }
+}
+
+pub(crate) fn challenge_metadata(
+    proof: &crate::acquisition::AuthChallengeApproval,
+    target: &Target,
+    interface: &str,
+    networks: &[NetworkAdapter],
+    token: &AtomicBool,
+) -> crate::acquisition::ChallengeObservation {
+    use crate::acquisition::ChallengeObservation;
+    if !proof.take_target(target, interface) {
+        return ChallengeObservation::failure("transport_failed", None);
+    }
+    #[cfg(windows)]
+    let result =
+        windows::probe_challenge(target, Some(interface), networks, token, proof.remaining()).0;
+    #[cfg(not(windows))]
+    let result = {
+        let _ = (networks, token);
+        *EndpointResult::failure("unsupported_platform", "Windows required.")
+    };
+    result
+        .auth_challenge
+        .unwrap_or_else(|| {
+            ChallengeObservation::failure(
+                match result.code.as_str() {
+                    "timeout" => "timeout",
+                    "cancelled" => "cancelled",
+                    "subnet_conflict" => "subnet_conflict",
+                    "challenge_not_usable" => "challenge_not_usable",
+                    _ => "transport_failed",
+                },
+                result.status,
+            )
+        })
+        .sanitized()
 }
 /// Retain only a bounded media-type token, never arbitrary response header text.
 pub(crate) fn menu_media_type(value: Option<&str>) -> String {

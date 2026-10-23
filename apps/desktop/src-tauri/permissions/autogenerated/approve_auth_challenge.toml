@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-approve-auth-challenge"
+description = "Enables the approve_auth_challenge command without any pre-configured scope."
+commands.allow = ["approve_auth_challenge"]
+
+[[permission]]
+identifier = "deny-approve-auth-challenge"
+description = "Denies the approve_auth_challenge command without any pre-configured scope."
+commands.deny = ["approve_auth_challenge"]

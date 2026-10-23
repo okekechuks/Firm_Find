@@ -10,6 +10,11 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 mod approval;
+mod challenge;
+pub(crate) use approval::AuthChallengeApproval;
+pub(crate) use challenge::{parse_headers as parse_challenge_headers, ChallengeObservation};
+#[cfg(test)]
+mod challenge_tests;
 mod static_menu;
 pub(crate) use approval::StaticMenuApproval;
 pub mod ipc;
@@ -146,6 +151,8 @@ pub struct AcquisitionCapabilityReport {
     pub probe: ProbeSummary,
     #[serde(default)]
     pub static_menu: Option<static_menu::StaticMenuObservation>,
+    #[serde(default)]
+    pub auth_challenge: Option<ChallengeObservation>,
     pub can_obtain: bool,
 }
 
@@ -756,6 +763,7 @@ fn assess(
         capabilities,
         probe,
         static_menu: None,
+        auth_challenge: None,
         can_obtain: false,
     }
 }
@@ -887,6 +895,10 @@ fn stage_state(state: CapabilityState) -> CompatibilityStageState {
 /// Deliberately omit all raw evidence, device IDs, endpoint/interface addresses and peer text.
 pub fn diagnostics(report: &AcquisitionCapabilityReport) -> serde_json::Value {
     let mut exported = serde_json::json!({"schemaVersion":1,"engine":"7.5A-C-sprint-a","evaluatedAt":report.evaluated_at,"usbVid":report.fingerprint.usb_vid,"usbPid":report.fingerprint.usb_pid,"transports":report.fingerprint.transports,"identityConfidence":report.identity.confidence,"evidenceCounts":report.identity.evidence.len(),"protocolCandidates":report.protocols.iter().map(|p| &p.family).collect::<Vec<_>>(),"probe":{"attempted":report.probe.attempted,"code":report.probe.code,"httpStatus":report.probe.http_status,"metadataTruncated":report.probe.metadata_truncated,"advancedEndpoint":report.probe.advanced_endpoint},"strategies":report.candidates,"canObtain":false});
+    if let Some(challenge) = &report.auth_challenge {
+        exported["authChallenge"] =
+            serde_json::to_value(challenge.sanitized()).expect("bounded challenge serialization");
+    }
     if let Some(menu) = report
         .static_menu
         .as_ref()

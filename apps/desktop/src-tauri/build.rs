@@ -3,6 +3,8 @@ fn main() {
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
             "approve_firmware_route_probe",
             "approve_static_menu",
+            "approve_auth_challenge",
+            "read_auth_challenge",
             "read_static_menu",
             "discover_firmware_routes",
             "cancel_firmware_route_discovery",

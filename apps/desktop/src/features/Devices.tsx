@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Search, Usb, RefreshCw, X, LockKeyhole } from "lucide-react";
 import { deviceStatus } from "../lib/device-status";
-import { approveStaticMenu, readStaticMenu, approveFirmwareRouteProbe, cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
+import { approveAuthChallenge, readAuthChallenge, approveStaticMenu, readStaticMenu, approveFirmwareRouteProbe, cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
 import type { AcquisitionReport, CompatibilityStageId } from "../types/acquisition";
 
@@ -121,6 +121,18 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       setReport(result);setState("done");
     }catch(failure){if(run===generation.current){setState("error");setMessage(errorMessage(failure));}}
   };
+  const readChallenge = async () => {
+    const run=++generation.current;setState("checking");setMessage("");
+    try {
+      const input={deviceId:device.id,endpoint:endpoint||null,interfaceId:interfaceId||null,approvalToken:null as string|null,advancedEndpoint};
+      input.approvalToken=await approveAuthChallenge(input);
+      if(run!==generation.current)return;
+      const result=await readAuthChallenge(input);
+      if(run!==generation.current)return;
+      if(result.discoveryRevision!==revision||result.expiresAt<=Date.now())throw new Error("Challenge result expired. Check compatibility again.");
+      setReport(result);setState("done");
+    }catch(failure){if(run===generation.current){setState("error");setMessage(errorMessage(failure));}}
+  };
   const exportReport = async () => {
     setExporting(true); setMessage("");
     try {if (await exportAcquisitionDiagnostics(device.id)) setMessage("Redacted diagnostics saved.");}
@@ -155,6 +167,8 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       <dl aria-label="Compatibility summary">{report.stages.slice(0,5).map(stage=><div key={stage.id}>{stageRow(stage)}{stage.id==="management_api" ? <>
         {report.staticMenu ? <p>{report.staticMenu.fileName ? `${report.staticMenu.label}: ${report.staticMenu.fileName}` : report.staticMenu.code==="menu_not_readable_without_login" ? "Menu not readable without login" : report.staticMenu.code==="wrong_content_type" ? `Static menu requires XML; observed media type: ${report.staticMenu.observedMediaType || "unavailable"}.` : report.staticMenu.code.replaceAll("_"," ")}</p> : null}
         {report.protocols.some(p=>p.family==="asr_duster_xml") ? <button className="secondary-button" disabled={state==="checking" || !device.connected} onClick={()=>void readMenu()}>Read static menu</button> : null}
+        {report.authChallenge ? <p>{report.authChallenge.code==="observed" ? `${report.authChallenge.label}: realm ${report.authChallenge.realm}; qop ${report.authChallenge.qop}; algorithm ${report.authChallenge.algorithm || "not supplied"}. Cookie header: ${report.authChallenge.setCookiePresent ? "present; authenticated work blocked" : "not present"}.` : `Authentication challenge: ${report.authChallenge.code.replaceAll("_"," ")}.`}</p> : null}
+        {report.protocols.some(p=>p.family==="asr_duster_xml") ? <button className="secondary-button" disabled={state==="checking"||!device.connected} onClick={()=>void readChallenge()}>Observe authentication challenge</button> : null}
       </> : null}</div>)}</dl>
       <details><summary>Remaining compatibility stages</summary><dl>{report.stages.slice(5).map(stageRow)}</dl></details>
       {report.candidates.map(route => <details key={route.strategy}><summary>{route.name}: {route.capability.state.replaceAll("_"," ")}</summary><p>{route.capability.reason}</p><p className="muted small">Required: {route.capability.missingRequirements.join("; ")}</p></details>)}

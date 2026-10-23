@@ -4,8 +4,8 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { Devices } from "../features/Devices";
 import type { DiscoverySnapshot } from "../types/contracts";
 
-const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn(),menuApprove:vi.fn(),menuRead:vi.fn()}));
-vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export,approveStaticMenu:checks.menuApprove,readStaticMenu:checks.menuRead}));
+const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn(),menuApprove:vi.fn(),menuRead:vi.fn(),challengeApprove:vi.fn(),challengeRead:vi.fn()}));
+vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export,approveStaticMenu:checks.menuApprove,readStaticMenu:checks.menuRead,approveAuthChallenge:checks.challengeApprove,readAuthChallenge:checks.challengeRead}));
 const stageIds = ["detected","exact_identity","management_api","official_image","firmware_export","physical_read","firmware_acquired","filesystem_extracted","customization","rebuild","installation"] as const;
 const defaultStages = stageIds.map(id => ({id,state:id === "detected" ? "observed" : "not_implemented",reason:"No implementation is available."}));
 function result() {
@@ -14,6 +14,19 @@ function result() {
 beforeEach(() => {
   vi.clearAllMocks();
   checks.approve.mockResolvedValue("c".repeat(32)); checks.routes.mockResolvedValue(result());checks.cancel.mockResolvedValue(undefined);checks.export.mockResolvedValue(true);
+});
+
+it("requires separate challenge approval and renders only sanitized unverified metadata",async()=>{
+  const user=userEvent.setup();const base={...result(),protocols:[{family:"asr_duster_xml"}]};checks.routes.mockResolvedValue(base);
+  checks.challengeApprove.mockResolvedValue("e".repeat(32));checks.challengeRead.mockResolvedValue({...base,authChallenge:{code:"observed",realm:"Synthetic realm",qop:"auth",algorithm:"MD5",noncePresent:true,setCookiePresent:false,otherSchemesPresent:false,label:"authentication challenge observed; unverified"}});
+  render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
+  expect(checks.challengeApprove).not.toHaveBeenCalled();await user.click(await screen.findByRole("button",{name:"Observe authentication challenge"}));
+  expect(checks.challengeRead).toHaveBeenCalledWith(expect.objectContaining({approvalToken:"e".repeat(32)}));expect(await screen.findByText(/authentication challenge observed; unverified.*Synthetic realm/)).toBeInTheDocument();expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();
+});
+it("challenge No causes zero read calls and leaves interface usable",async()=>{
+  checks.routes.mockResolvedValue({...result(),protocols:[{family:"asr_duster_xml"}]});checks.challengeApprove.mockRejectedValue(new Error("Authentication challenge not approved."));
+  const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));await user.click(await screen.findByRole("button",{name:"Observe authentication challenge"}));
+  expect(await screen.findByRole("alert")).toHaveTextContent("not approved");expect(checks.challengeRead).not.toHaveBeenCalled();expect(screen.getByRole("button",{name:"Observe authentication challenge"})).toBeEnabled();
 });
 
 const unverifiedFeature = {

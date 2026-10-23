@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## Stage 2A Part 2 — credential-free challenge software; review pending
+
+23 October 2026: design accepted; software adds one separately approved, single-use, header-only `GET /login.cgi`. [Verification report](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md) records scoped approvals, fresh-root preconditions, bounded Digest metadata, privacy/cancellation/timeout regressions and strict frontend IPC. Checks: 291 standard /292 isolated Rust tests, two doctests each, both Clippy profiles, formatting, 155 frontend tests, lint and TypeScript/production frontend build pass. Exact final-commit repeat and normal-data evidence follow in the report. No identity, stage or extraction authority advances; `canObtain=false`.
+
+Part 3 physical challenge remains HELD for code acceptance and separate release; no native GUI or hardware result claimed in this software gate. Login, StatusRead, Logout, credential entry/Secret use, B2 implementation, B5, B7, B8 and Phase 8 remain blocked. The newly supplied parallel track permits four design documents only after this software delivery is committed. No push, tag or merge; historical entries below retain earlier gate states.
+
 ## B4 H1 and supervised static-menu step — done with limitations
 
 23 October 2026: B4 pre-step accepted with H1. [Correction and hardware report](PHASE_7_5_B4_HARDWARE_STEP.md) records failing regressions, bounded media-type diagnostics and owner-operated native confirmations. XML-only policy unchanged. Checks pass: 280 standard /281 isolated Rust tests, two doctests per profile, 151 frontend tests, lint, TypeScript/production frontend build, both Clippy profiles, formatting and both Windows release builds. Twenty default-parallel workspace runs pass on final code `429cde56f07aebe26db3389d2c605febd591c82c`; exact handoff-HEAD repeat metadata is linked in the report.

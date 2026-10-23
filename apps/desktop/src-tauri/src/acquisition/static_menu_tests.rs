@@ -54,7 +54,7 @@ fn menu_synthetic_rejects_ambiguous_entities_namespaces_and_tokens() {
 fn menu_closed_table_registers_only_third_static_get() {
     let registry = RequestRegistry::default();
     let entries = registry.registered(ProtocolFamilyId::AsrDusterXml);
-    assert_eq!(entries.len(), 3);
+    assert_eq!(entries.len(), 4);
     let spec = registry
         .lookup(ProtocolFamilyId::AsrDusterXml, RequestId::StaticMenu)
         .unwrap();

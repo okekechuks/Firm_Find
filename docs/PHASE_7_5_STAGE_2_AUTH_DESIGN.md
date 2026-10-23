@@ -3,9 +3,10 @@
 23 October 2026, Africa/Lagos. **Design accepted; only credential-free Challenge software is released. Hardware remains held for separate acceptance.**
 Branch `phase-7-5-stage-2a-auth-design` starts at
 `5df1aaceb4e4f8e352e5c7280edcae2b42635966`, from the accepted, unmerged Stage 1
-branch. This delivery changes this document only. It implements no request,
-approval, parser, credential dialog, transport or migration. No device request
-or credential entry is authorized by this document.
+branch. That initial delivery changed this document only. The later released
+Part 2 software is tracked on `phase-7-5-stage-2a-challenge` in
+[its verification report](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md).
+No credential entry or hardware request is authorized by this document.
 
 Stage 1 is accepted: the supervised static-menu result was `observed`, filename
 `status1`, unverified. That observation supplies no request authority. The
@@ -564,13 +565,14 @@ must wait for Part 2 code acceptance and a separate short guideline.
 | Q10 | How will transport/session/permitted-use qualifiers be represented and enforced by existing profile consumers without a schema change or generic trusted-model promotion? Proposed envelope needs its own review before code. |
 | Q11 | Which DHCP-server/source-binding facts can be observed reliably on Windows? Current unknowns/collision blocks remain; B5 transport-binding implementation is not released here. |
 
-Part 2 is **not started**. Even after review of this design, a separate short
-guideline is required before implementing its one credential-free
-`GET /login.cgi`, new AuthChallenge approval, bounded realm/qop-only output and
-one owner-supervised run. That operation must discard nonce and body, request
-no credentials, send no login query/Authorization/Cookie and perform no status
-read or logout. A Part 2 result cannot answer Q5–Q10 or authorize authenticated
-code by itself. No request or credential entry occurred in Part 1.
+Part 2 software implements the separately released one credential-free
+`GET /login.cgi`, new AuthChallenge approval and bounded realm/qop/algorithm,
+status and presence-flag output. Nonce and body are not retained; no credentials,
+login query/Authorization/Cookie, status read or logout are sent. Its synthetic
+and owned-loopback results are linked above. Part 3 hardware remains HELD for
+code acceptance and a separate short release. Software fixtures cannot answer
+Q4 or the real-device cookie question Q5, and no challenge result authorizes
+authenticated code. No request or credential entry occurred in Part 1.
 
 Still blocked: authenticated B4 client/credential entry; B2/schema-6 migration
 and artifact classes; B5; B7 official-image registry; B8 analysis worker; Phase 8.
@@ -593,4 +595,6 @@ provided in delivery (the document cannot embed its own commit ID).
 Handoff command: `git diff main..HEAD`; the task-only change is
 `git diff 5df1aac..HEAD -- docs/PHASE_7_5_STAGE_2_AUTH_DESIGN.md`.
 Stage 1 and main remain untouched; no push, tag, merge or history rewrite.
-Stop here for review; design approval alone does not release Part 2 code.
+The preceding handoff describes the original documentation-only delivery.
+Part 2 was subsequently released by its own guideline; stop after its software
+verification for review. No hardware or authenticated step is released.

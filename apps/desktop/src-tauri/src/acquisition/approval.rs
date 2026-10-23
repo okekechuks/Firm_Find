@@ -81,6 +81,24 @@ pub(super) fn binding(
 #[derive(Default)]
 pub(super) struct Approvals(Mutex<BTreeMap<String, (Binding, ApprovalScope, Instant)>>);
 impl Approvals {
+    pub(super) fn issue_challenge(
+        &self,
+        binding: Binding,
+        approved: bool,
+    ) -> Result<String, DiscoveryError> {
+        if !approved {
+            return Err(error("CANCELLED", "Authentication challenge not approved."));
+        }
+        self.issue_scoped(binding, challenge_scope())
+    }
+    pub(super) fn claim_challenge(
+        &self,
+        id: &str,
+        binding: &Binding,
+    ) -> Result<AuthChallengeApproval, DiscoveryError> {
+        self.claim_scoped(id, binding, challenge_scope())
+            .map(|proof| AuthChallengeApproval(proof, AtomicBool::new(false)))
+    }
     pub(super) fn issue(&self, binding: Binding) -> Result<String, DiscoveryError> {
         self.issue_scoped(binding, ApprovalScope::EndpointMetadata)
     }
@@ -159,6 +177,9 @@ impl Approvals {
 /// Authority stays operation-specific: only endpoint metadata and static menu scopes are issued.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ApprovalScope {
+    AuthChallenge {
+        request: RequestId,
+    },
     EndpointMetadata,
     StaticMenuMetadata {
         request: RequestId,
@@ -172,6 +193,167 @@ pub enum ApprovalScope {
 fn menu_scope() -> ApprovalScope {
     ApprovalScope::StaticMenuMetadata {
         request: RequestId::StaticMenu,
+    }
+}
+fn challenge_scope() -> ApprovalScope {
+    ApprovalScope::AuthChallenge {
+        request: RequestId::Challenge,
+    }
+}
+
+/// One credential-free GET only; cannot be cloned, serialized or upgraded into a session.
+pub(crate) struct AuthChallengeApproval(ClaimedApproval, AtomicBool);
+impl AuthChallengeApproval {
+    #[cfg(test)]
+    pub(super) fn for_test(device: &Device, revision: u64, input: &DiscoveryRequest) -> Self {
+        let b = binding(device, revision, input).unwrap();
+        let a = Approvals::default();
+        let receipt = a.issue_challenge(b.clone(), true).unwrap();
+        a.claim_challenge(&receipt, &b).unwrap()
+    }
+    pub(super) fn validate(&self, binding: &Binding) -> Result<(), DiscoveryError> {
+        if self.0.scope != challenge_scope()
+            || self.0.binding != *binding
+            || Instant::now() >= self.0.deadline
+        {
+            return Err(error(
+                "APPROVAL_EXPIRED",
+                "Challenge approval expired or target changed.",
+            ));
+        }
+        Ok(())
+    }
+    pub(crate) fn take_target(&self, target: &connection::Target, interface: &str) -> bool {
+        self.0.scope == challenge_scope()
+            && self.0.binding.endpoint == target.url
+            && self.0.binding.interface == interface
+            && Instant::now() < self.0.deadline
+            && self
+                .1
+                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                .is_ok()
+    }
+    pub(crate) fn remaining(&self) -> Duration {
+        self.0.deadline.saturating_duration_since(Instant::now())
+    }
+}
+pub(super) fn challenge_confirmation(device: &Device, binding: &Binding) -> String {
+    format!("Approve one credential-free authentication challenge check?\n\nDevice: {}\nInterface: {}\nEndpoint: {}\nRequest: GET /login.cgi, one attempt, maximum 5 seconds.\n\nNo username, password, Authorization header or cookies will be sent. Only a bounded realm and qop observation may be reported; the nonce and response body will not be kept. Plain HTTP is not cryptographically verified. This does not authorize login, identity reads, logout or firmware access. Continue only if you own or administer this endpoint.",confirmation_value(&device.display_name),confirmation_value(&binding.interface),confirmation_value(&binding.endpoint))
+}
+
+#[cfg(test)]
+mod challenge_scope_tests {
+    use super::*;
+    #[test]
+    fn challenge_scope_replay_cross_scope_binding_expiry_and_no() {
+        let mut d = super::super::tests::device();
+        d.networks[0].gateways = vec!["192.168.100.1".into()];
+        let input = DiscoveryRequest {
+            device_id: d.id.clone(),
+            endpoint: Some("http://192.168.100.1/".into()),
+            interface_id: Some(d.networks[0].id.clone()),
+            approval_token: None,
+            advanced_endpoint: false,
+        };
+        let b = binding(&d, 4, &input).unwrap();
+        let a = Approvals::default();
+        assert!(a.issue_challenge(b.clone(), false).is_err());
+        assert!(a.0.lock().unwrap().is_empty());
+        for scope in [
+            ApprovalScope::EndpointMetadata,
+            menu_scope(),
+            ApprovalScope::StrategyProbe {
+                strategy: StrategyId::OfficialImage,
+                requests: vec![RequestId::Root],
+            },
+        ] {
+            let receipt = a.issue_scoped(b.clone(), scope).unwrap();
+            assert!(a.claim_challenge(&receipt, &b).is_err());
+        }
+        let receipt = a.issue_challenge(b.clone(), true).unwrap();
+        assert!(a.claim(&receipt, &b).is_err());
+        let receipt = a.issue_challenge(b.clone(), true).unwrap();
+        assert!(a.claim_menu(&receipt, &b).is_err());
+        let receipt = a.issue_challenge(b.clone(), true).unwrap();
+        a.0.lock().unwrap().get_mut(&receipt).unwrap().1 = ApprovalScope::AuthChallenge {
+            request: RequestId::Login,
+        };
+        assert!(a.claim_challenge(&receipt, &b).is_err());
+        for field in 0..3 {
+            let receipt = a.issue_challenge(b.clone(), true).unwrap();
+            let mut changed = b.clone();
+            match field {
+                0 => changed.endpoint = "http://192.168.100.2/".into(),
+                1 => changed.interface = "other".into(),
+                _ => changed.revision += 1,
+            };
+            assert!(a.claim_challenge(&receipt, &changed).is_err());
+            assert!(a.claim_challenge(&receipt, &b).is_err());
+        }
+        let receipt = a.issue_challenge(b.clone(), true).unwrap();
+        a.0.lock().unwrap().get_mut(&receipt).unwrap().2 = Instant::now();
+        assert!(a.claim_challenge(&receipt, &b).is_err());
+        let receipt = a.issue_challenge(b.clone(), true).unwrap();
+        let proof = a.claim_challenge(&receipt, &b).unwrap();
+        assert!(a.claim_challenge(&receipt, &b).is_err());
+        let target = connection::parse_address(&b.endpoint).unwrap();
+        assert!(!proof.take_target(&target, "other"));
+        assert!(proof.take_target(&target, &b.interface));
+        assert!(!proof.take_target(&target, &b.interface));
+        assert!(proof.0.validate(&b).is_err());
+        assert!(proof.0.strategy_probe(StrategyId::OfficialImage).is_err());
+    }
+    #[test]
+    fn challenge_confirmation_matches_design_and_ipc_acl_is_closed() {
+        let mut d = super::super::tests::device();
+        d.networks[0].gateways = vec!["192.168.100.1".into()];
+        d.display_name = format!("private\n\u{202e}{}", "x".repeat(100));
+        let input = DiscoveryRequest {
+            device_id: d.id.clone(),
+            endpoint: Some("http://192.168.100.1/".into()),
+            interface_id: Some(d.networks[0].id.clone()),
+            approval_token: None,
+            advanced_endpoint: false,
+        };
+        let b = binding(&d, 4, &input).unwrap();
+        let design = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../../docs/PHASE_7_5_STAGE_2_AUTH_DESIGN.md"
+        ))
+        .replace("\r\n", "\n");
+        let block = design
+            .split_once("**AuthChallenge title:**")
+            .unwrap()
+            .1
+            .split_once("```text\n")
+            .unwrap()
+            .1
+            .split_once("\n```")
+            .unwrap()
+            .0;
+        let expected = block
+            .replace("{device_name}", &confirmation_value(&d.display_name))
+            .replace("{interface_id}", &confirmation_value(&b.interface))
+            .replace("{normalized_endpoint}", &confirmation_value(&b.endpoint));
+        assert_eq!(challenge_confirmation(&d, &b), expected);
+        assert_eq!(confirmation_value(&d.display_name).chars().count(), 80);
+        assert!(!challenge_confirmation(&d, &b).contains('\u{202e}'));
+        let acl = include_str!("../../capabilities/main.json");
+        let ipc = include_str!("ipc.rs");
+        let build = include_str!("../../build.rs");
+        let handlers = include_str!("../lib.rs");
+        for (command, permission) in [
+            ("approve_auth_challenge", "allow-approve-auth-challenge"),
+            ("read_auth_challenge", "allow-read-auth-challenge"),
+        ] {
+            assert!(
+                acl.contains(permission)
+                    && ipc.contains(command)
+                    && build.contains(command)
+                    && handlers.contains(command)
+            );
+        }
+        assert!(ipc.contains("OBTAINER - approve authentication challenge"));
     }
 }
 

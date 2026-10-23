@@ -11,6 +11,8 @@ pub enum RequestId {
     Root,
     StaticVersion,
     StaticMenu,
+    Challenge,
+    StatusRead,
     Login,
     Logout,
     XmlAction,
@@ -18,6 +20,7 @@ pub enum RequestId {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResponseType {
+    Headers,
     Html,
     PlainText,
     Xml,
@@ -25,6 +28,7 @@ pub enum ResponseType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParserId {
+    AuthChallengeHeaders,
     RootHtml,
     StaticVersionXml,
     StaticMenuXml,
@@ -43,6 +47,8 @@ pub enum ParserId {
 ///     parser_id: obtainer_lib::acquisition::request_registry::ParserId::RootHtml,
 ///     max_attempts: 1,
 ///     budget: std::time::Duration::from_secs(1),
+///     max_header_bytes: None,
+///     max_auth_header_bytes: None,
 /// };
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,9 +61,17 @@ pub struct RequestSpec {
     parser_id: ParserId,
     max_attempts: u8,
     budget: Duration,
+    max_header_bytes: Option<usize>,
+    max_auth_header_bytes: Option<usize>,
 }
 
 impl RequestSpec {
+    pub fn max_header_bytes(&self) -> Option<usize> {
+        self.max_header_bytes
+    }
+    pub fn max_auth_header_bytes(&self) -> Option<usize> {
+        self.max_auth_header_bytes
+    }
     pub fn id(&self) -> RequestId {
         self.id
     }
@@ -99,6 +113,8 @@ const ASR_DUSTER_XML_SPECS: &[RequestSpec] = &[
         response_types: ROOT_TYPES,
         max_bytes: 16 * 1024,
         parser_id: ParserId::RootHtml,
+        max_header_bytes: None,
+        max_auth_header_bytes: None,
         max_attempts: 1,
         budget: Duration::from_secs(5),
     },
@@ -109,6 +125,8 @@ const ASR_DUSTER_XML_SPECS: &[RequestSpec] = &[
         response_types: VERSION_TYPES,
         max_bytes: 4 * 1024,
         parser_id: ParserId::StaticVersionXml,
+        max_header_bytes: None,
+        max_auth_header_bytes: None,
         max_attempts: 1,
         budget: Duration::from_secs(5),
     },
@@ -119,8 +137,22 @@ const ASR_DUSTER_XML_SPECS: &[RequestSpec] = &[
         response_types: &[ResponseType::Xml],
         max_bytes: 16384,
         parser_id: ParserId::StaticMenuXml,
+        max_header_bytes: None,
+        max_auth_header_bytes: None,
         max_attempts: 1,
         budget: Duration::from_secs(5),
+    },
+    RequestSpec {
+        id: RequestId::Challenge,
+        method: "GET",
+        canonical_path: "/login.cgi",
+        response_types: &[ResponseType::Headers],
+        max_bytes: 0,
+        parser_id: ParserId::AuthChallengeHeaders,
+        max_attempts: 1,
+        budget: Duration::from_secs(5),
+        max_header_bytes: Some(8192),
+        max_auth_header_bytes: Some(2048),
     },
 ];
 
@@ -286,7 +318,7 @@ mod tests {
     #[test]
     fn request_specs_are_bounded_and_read_only() {
         let specs = RequestRegistry::default().registered(ProtocolFamilyId::AsrDusterXml);
-        assert_eq!(specs.len(), 3);
+        assert_eq!(specs.len(), 4);
         assert_eq!(specs[0].method(), "GET");
         assert_eq!(specs[0].max_bytes(), 16 * 1024);
         assert_eq!(specs[1].method(), "GET");

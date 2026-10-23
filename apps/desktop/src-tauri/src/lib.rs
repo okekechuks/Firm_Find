@@ -182,6 +182,8 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
         .invoke_handler(tauri::generate_handler![
             acquisition::ipc::approve_firmware_route_probe,
             acquisition::ipc::approve_static_menu,
+            acquisition::ipc::approve_auth_challenge,
+            acquisition::ipc::read_auth_challenge,
             acquisition::ipc::read_static_menu,
             acquisition::ipc::discover_firmware_routes,
             acquisition::ipc::cancel_firmware_route_discovery,

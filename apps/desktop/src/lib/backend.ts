@@ -134,6 +134,12 @@ export async function recoverDefaultLibrary(){requireDesktop();await invoke("rec
 export async function approveFirmwareRouteProbe(input:AcquisitionRequest) {requireDesktop();return z.string().regex(/^[a-f0-9]{32}$/).parse(await invoke("approve_firmware_route_probe",{input}));}
 
 export async function approveStaticMenu(input:AcquisitionRequest) {requireDesktop();return z.string().regex(/^[a-f0-9]{32}$/).parse(await invoke("approve_static_menu",{input}));}
+export async function approveAuthChallenge(input:AcquisitionRequest) {requireDesktop();return z.string().regex(/^[a-f0-9]{32}$/).parse(await invoke("approve_auth_challenge",{input}));}
+export async function readAuthChallenge(input:AcquisitionRequest) {
+  requireDesktop();const report=acquisitionReportSchema.parse(await invoke("read_auth_challenge",{input}));
+  if(report.deviceId!==input.deviceId || !report.authChallenge)throw new Error("Challenge response belongs to another target or is missing.");
+  return report;
+}
 export async function readStaticMenu(input:AcquisitionRequest) {
   requireDesktop();const report=acquisitionReportSchema.parse(await invoke("read_static_menu",{input}));
   if(report.deviceId!==input.deviceId || report.fingerprint.deviceId!==input.deviceId)throw new Error("Menu report belongs to another target.");
