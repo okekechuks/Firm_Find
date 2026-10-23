@@ -6,7 +6,7 @@
 
 [B4 pre-step plan](PHASE_7_5_B4_PRESTEP_PLAN.md) is approved as a plan only. Requested `callXML` citations and case-exact `objdashboard` discriminator are reverified against capture hashes and documented. No B4 implementation, menu request, new scope or parser is authorized. B2/B4/B5/B7/B8, physical OpenWrt and all five hardware firmware acquisitions remain pending; Phase 8 unstarted. Reviewer alone decides acceptance and performs any merge. No push, merge or tag.
 
-Local checks pass: 266 standard /267 isolated Rust tests, two doctests each; 146 frontend tests, lint, TypeScript/production build, both Clippy profiles and formatting. Normal database/settings/vault/saved-device/log snapshot identical. Main remains `369e74173c570009b47bfd4957a4852ed0856678`; ancestor check exits 0. Earlier entries below retain historical results; final G1 code revision and twenty-run evidence are supplied after verification.
+Local checks pass: 266 standard /267 isolated Rust tests, two doctests each; 146 frontend tests, lint, TypeScript/production build, both Clippy profiles and formatting. Twenty consecutive default-parallel full-workspace runs pass on final G1 code commit `0cdd571ac7bd786bd67278d2da0d8cfa528509c3`, each 266 passed /0 failed /1 ignored plus two doctests; all log hashes and G1 regression markers verified. Normal database/settings/vault/saved-device/log snapshot remains identical after all twenty runs. Repository clean at handoff; subsequent commit records documentation only, with exact end SHA in delivery. Main remains `369e74173c570009b47bfd4957a4852ed0856678`; ancestor check exits 0. Earlier entries below retain historical results.
 
 ## Phase 7.5 review fixes and D6 — reviewer acceptance pending
 
