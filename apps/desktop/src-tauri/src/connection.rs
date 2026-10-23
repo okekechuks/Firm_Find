@@ -54,6 +54,7 @@ pub fn now() -> u64 {
 
 /// One owner-approved root GET. Response bytes remain transient and are never logged.
 pub(crate) fn root_metadata(
+    _approval: &crate::acquisition::ClaimedApproval,
     target: &Target,
     interface: &str,
     networks: &[NetworkAdapter],
@@ -458,6 +459,7 @@ pub(crate) fn subnet_conflict(
 }
 /// Fixed static metadata path, never supplied by the caller.
 pub(crate) fn version_metadata(
+    _approval: &crate::acquisition::ClaimedApproval,
     target: &Target,
     interface: &str,
     networks: &[NetworkAdapter],

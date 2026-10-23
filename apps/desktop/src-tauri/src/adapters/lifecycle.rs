@@ -295,9 +295,7 @@ impl SessionManager {
             .read_identity(&control.stage(Stage::Identity))?;
         if initial {
             let authenticated = DeviceContext {
-                now: ctx
-                    .now
-                    .saturating_add(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX)),
+                now: authorization_now(ctx.now, binding.simulated, started.elapsed()),
                 ..*ctx
             };
             let verified = super::bootstrap::verify_handshake(
@@ -481,7 +479,7 @@ impl SessionManager {
             .expires_at
             .min(grant.expires_at())
             .min(effective.profile.expires_at);
-        let bounded = bounded_read(control, expiry, ctx.now);
+        let bounded = session_read_control(control, expiry, ctx.now, managed.binding.simulated);
         bounded.checkpoint()?;
         let value =
             authorization.and_then(|()| action(managed.connection.as_mut(), &bounded, &effective));
@@ -499,9 +497,7 @@ impl SessionManager {
         }
         bounded.checkpoint()?;
         let fresh = DeviceContext {
-            now: ctx
-                .now
-                .saturating_add(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX)),
+            now: authorization_now(ctx.now, managed.binding.simulated, started.elapsed()),
             ..effective
         };
         if let Err(error) = authorize(registry, &fresh, &managed.binding, op, grant) {
@@ -888,5 +884,54 @@ mod read_deadline_tests {
             bounded_read(&shorter, 10_000, 1000).deadline,
             shorter.deadline
         );
+    }
+}
+
+fn authorization_now(now: u64, simulated: bool, elapsed: Duration) -> u64 {
+    if simulated {
+        now
+    } else {
+        now.saturating_add(elapsed.as_millis().try_into().unwrap_or(u64::MAX))
+    }
+}
+#[cfg(test)]
+mod review_clock_tests {
+    use super::*;
+    #[test]
+    fn r4_simulated_authorization_never_borrows_wall_clock_milliseconds() {
+        assert_eq!(authorization_now(1000, true, Duration::from_secs(5)), 1000);
+        assert_eq!(authorization_now(1000, false, Duration::from_secs(5)), 6000);
+    }
+}
+
+fn session_read_control(
+    control: &OperationControl,
+    expiry: u64,
+    now: u64,
+    simulated: bool,
+) -> OperationControl {
+    if simulated {
+        control.clone()
+    } else {
+        bounded_read(control, expiry, now)
+    }
+}
+#[cfg(test)]
+mod review_deadline_tests {
+    use super::*;
+    #[test]
+    fn r4_virtual_boundary_does_not_create_one_millisecond_wall_deadline() {
+        let control = OperationControl::new(
+            Cancellation::default(),
+            Stage::Read,
+            AdapterOperation::ReadDns,
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert_eq!(
+            session_read_control(&control, 1001, 1000, true).deadline,
+            control.deadline
+        );
+        assert!(session_read_control(&control, 1001, 1000, false).deadline < control.deadline);
     }
 }

@@ -4,8 +4,8 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 export async function verifyDeviceGUI(client, {label, record, screenshot,pid,profile,evidence}) {
   const evaluate = source => client.evaluate(source);
-  async function until(check, message) {
-    const end=Date.now()+20000;
+  async function until(check, message, timeout=20000) {
+    const end=Date.now()+timeout;
     while(Date.now()<end){if(await check())return;await new Promise(resolve=>setTimeout(resolve,150));}
     throw new Error(message);
   }
@@ -50,7 +50,7 @@ export async function verifyDeviceGUI(client, {label, record, screenshot,pid,pro
     assert.deepEqual(await readFile(destination),original);
     record('production: actual native diagnostics save, backend redaction and no overwrite; no network approval fabricated');
   }
-  if(label==='production' && await evaluate('!!document.querySelector(".device-summary-dialog input[placeholder]").value')) {
+  if(label==='production' && !process.argv.includes('--acquisition-mg11') && await evaluate('!!document.querySelector(".device-summary-dialog input[placeholder]").value')) {
     await evaluate('document.querySelector(".device-summary-dialog > details").open=true; [...document.querySelectorAll(".device-summary-dialog label")].find(l=>l.textContent.includes("I own or administer")).querySelector("input").click()');
     await evaluate('[...document.querySelectorAll(".device-summary-dialog button")].find(b=>b.textContent==="Check Compatibility").click()');
     execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.resolve('scripts/reject-route-approval.ps1'),'-OwnerPid',String(pid)],{windowsHide:true,timeout:20000});
@@ -65,6 +65,8 @@ export async function verifyDeviceGUI(client, {label, record, screenshot,pid,pro
     const inventory=await evaluate("window.__TAURI_INTERNALS__.invoke('get_discovery')");
     const target=inventory.devices.find(d=>d.connected&&d.vendorId==='1286'&&d.productId==='4E31'&&d.networks.filter(n=>n.linkUp&&!n.virtualInterface&&n.gateways.includes('192.168.100.1')).length===1);
     if(!target){record('H01 physical acquisition probe PENDING: known USB/network candidate unavailable');return;}
+    // Copy only the owner's stated firmware label into this isolated profile; never verified.
+    await evaluate(`window.__TAURI_INTERNALS__.invoke('record_device_observation',${JSON.stringify({deviceId:target.id,attribute:'firmware_version',value:'MF69_AM802L_ZX_DD_N_241106_EU'})})`);
     await evaluate(`document.querySelector('[data-device-id="${target.id}"] button').click()`);
     await until(()=>evaluate('!!document.querySelector(".device-summary-dialog[open]")'),'H01 popup missing');
     await evaluate('document.querySelector(".device-summary-dialog > details").open=true');
@@ -72,9 +74,19 @@ export async function verifyDeviceGUI(client, {label, record, screenshot,pid,pro
     await evaluate('[...document.querySelectorAll(".device-summary-dialog label")].find(l=>l.textContent.includes("I own or administer")).querySelector("input").click()');
     await evaluate('[...document.querySelectorAll(".device-summary-dialog button")].find(b=>b.textContent==="Check Compatibility").click()');
     record('H01 awaiting owner confirmation in native approve-read dialog; hardware check cannot proceed silently');
-    await until(()=>evaluate('!!document.querySelector(".acquisition-results")'),'Owner-authorized H01 root probe failed');
+    if(process.argv.includes('--h01-no')) {
+      await until(()=>evaluate('document.querySelector(".device-summary-dialog").textContent.includes("Endpoint check not approved.")'),'Owner did not reject the MG11 native approval',300000);
+      assert.equal(await evaluate('!!document.querySelector(".acquisition-results")'),false);
+      await screenshot('production-h01-owner-no');
+      await writeFile(path.join(evidence,'h01-owner-no.json'),JSON.stringify({ownerDecision:'no',reportDisplayed:false,networkAuthorized:false},null,2));
+      await evaluate('document.querySelector(".device-summary-dialog .icon-button").click()');
+      record('H01 actual MG11 native approval answered No by owner; no route report or network authorization');return;
+    }
+    await until(()=>evaluate('!!document.querySelector(".acquisition-results")'),'Owner-authorized H01 root probe failed',300000);
     const text=await evaluate('document.querySelector(".acquisition-results").innerText');
     assert(text.includes('Identity: unverified'));assert(text.includes('No currently qualified acquisition method'));
+    const observedVersion=text.match(/Endpoint-observed version: ([A-Za-z0-9._/-]+) \(unverified\)/)?.[1] ?? null;
+    await writeFile(path.join(evidence,'h01-supervised-summary.json'),JSON.stringify({http200:text.includes('(HTTP 200)'),subnetConflict:text.includes('subnet conflict'),collisionMessageShown:text.includes('Another network uses the same address range'),observedVersion,ownerReportedVersionShown:text.includes('User-reported firmware: MF69_AM802L_ZX_DD_N_241106_EU (unverified)'),identityStillUnverified:text.includes('Identity: unverified'),canObtain:false},null,2));
     const diagnostics=path.join(profile.root,'fixtures','acquisition-diagnostics.json');
     await evaluate('[...document.querySelectorAll(".device-summary-dialog button")].find(b=>b.textContent==="Export Diagnostics").click()');
     execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.resolve('scripts/drive-file-dialog.ps1'),'-DialogTitle','Export acquisition diagnostics','-SelectedPath',diagnostics,'-OwnerPid',String(pid)],{windowsHide:true,timeout:30000});

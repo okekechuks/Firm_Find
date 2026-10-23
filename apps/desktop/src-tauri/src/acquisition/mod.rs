@@ -13,6 +13,7 @@ mod approval;
 pub mod ipc;
 mod strategies;
 use approval::Approvals;
+pub(crate) use approval::ClaimedApproval;
 pub use strategies::AcquisitionStrategyRegistry;
 #[derive(Default)]
 pub struct Service(
@@ -163,6 +164,115 @@ pub fn error(code: &'static str, message: &'static str) -> DiscoveryError {
     DiscoveryError { code, message }
 }
 
+/// Bounded lexical HTML scan: comments and raw script/style text are never tags.
+/// Only complete src/href attributes on actual opening tags are resource evidence.
+fn resource_attributes(page: &str) -> Vec<&str> {
+    let bytes = page.as_bytes();
+    let mut at = 0;
+    let mut values = vec![];
+    while at < bytes.len() {
+        let Some(next) = page[at..].find('<') else {
+            break;
+        };
+        at += next;
+        if page[at..].starts_with("<!--") {
+            let Some(end) = page[at + 4..].find("-->") else {
+                break;
+            };
+            at += 4 + end + 3;
+            continue;
+        }
+        let start = at + 1;
+        let mut end = start;
+        let mut quote = 0;
+        while end < bytes.len() {
+            let b = bytes[end];
+            if quote != 0 {
+                if b == quote {
+                    quote = 0;
+                }
+            } else if b == b'\'' || b == b'"' {
+                quote = b;
+            } else if b == b'>' {
+                break;
+            }
+            end += 1;
+        }
+        if end == bytes.len() {
+            break;
+        }
+        at = end + 1;
+        let mut cursor = start;
+        if !bytes[cursor].is_ascii_alphabetic() {
+            continue;
+        }
+        while cursor < end && bytes[cursor].is_ascii_alphanumeric() {
+            cursor += 1;
+        }
+        let tag = &page[start..cursor];
+        while cursor < end {
+            while cursor < end && (bytes[cursor].is_ascii_whitespace() || bytes[cursor] == b'/') {
+                cursor += 1;
+            }
+            let key = cursor;
+            while cursor < end
+                && !bytes[cursor].is_ascii_whitespace()
+                && !b"=/>".contains(&bytes[cursor])
+            {
+                cursor += 1;
+            }
+            if key == cursor {
+                cursor += 1;
+                continue;
+            }
+            let name = &page[key..cursor];
+            while cursor < end && bytes[cursor].is_ascii_whitespace() {
+                cursor += 1;
+            }
+            if cursor == end || bytes[cursor] != b'=' {
+                continue;
+            }
+            cursor += 1;
+            while cursor < end && bytes[cursor].is_ascii_whitespace() {
+                cursor += 1;
+            }
+            if cursor == end {
+                break;
+            }
+            let delimiter = if bytes[cursor] == b'\'' || bytes[cursor] == b'"' {
+                let q = bytes[cursor];
+                cursor += 1;
+                Some(q)
+            } else {
+                None
+            };
+            let value = cursor;
+            while cursor < end
+                && !delimiter.map_or_else(
+                    || bytes[cursor].is_ascii_whitespace() || bytes[cursor] == b'>',
+                    |q| bytes[cursor] == q,
+                )
+            {
+                cursor += 1;
+            }
+            if name == "src" || name == "href" {
+                values.push(&page[value..cursor]);
+            }
+            if delimiter.is_some() && cursor < end {
+                cursor += 1;
+            }
+        }
+        if tag == "script" || tag == "style" {
+            let close = format!("</{tag}");
+            let Some(end) = page[at..].find(&close) else {
+                break;
+            };
+            at += end;
+        }
+    }
+    values
+}
+
 /// No response text is retained. Only allowlisted family signals leave this parser.
 pub fn recognize(body: &[u8], server: Option<&str>) -> Vec<VendorProtocolCandidate> {
     let page = String::from_utf8_lossy(&body[..body.len().min(16384)]).to_ascii_lowercase();
@@ -177,7 +287,15 @@ pub fn recognize(body: &[u8], server: Option<&str>) -> Vec<VendorProtocolCandida
         "js/base/ajax_calls.js",
         "images/asr_logo.png",
     ];
-    let asr_signals: Vec<_> = asr.into_iter().filter(|v| page.contains(v)).collect();
+    let resources = resource_attributes(&page);
+    let asr_signals: Vec<_> = asr
+        .into_iter()
+        .filter(|v| {
+            resources
+                .iter()
+                .any(|r| r.trim_start_matches("./") == *v || r.trim_start_matches('/') == *v)
+        })
+        .collect();
     let openwrt = title.contains("openwrt") && server == "uhttpd";
     let mut candidates = vec![];
     if asr_signals.len() >= 2 {
@@ -306,7 +424,15 @@ fn discover(
     input: &DiscoveryRequest,
     token: &AtomicBool,
 ) -> Result<AcquisitionCapabilityReport, DiscoveryError> {
-    discover_on_networks(device, evidence, revision, input, token, &device.networks)
+    discover_on_networks(
+        device,
+        evidence,
+        revision,
+        input,
+        token,
+        &device.networks,
+        None,
+    )
 }
 
 pub(super) fn discover_on_networks(
@@ -316,6 +442,7 @@ pub(super) fn discover_on_networks(
     input: &DiscoveryRequest,
     token: &AtomicBool,
     all_networks: &[crate::discovery::NetworkAdapter],
+    approval: Option<ClaimedApproval>,
 ) -> Result<AcquisitionCapabilityReport, DiscoveryError> {
     if !device.connected {
         return Err(error(
@@ -392,7 +519,8 @@ pub(super) fn discover_on_networks(
         message: String::new(),
     };
     let mut protocols = vec![];
-    if input.approval_token.is_some() {
+    if let Some(approval) = approval {
+        approval.validate(&approval::binding(device, revision, input)?)?;
         let endpoint = input
             .endpoint
             .as_deref()
@@ -421,7 +549,8 @@ pub(super) fn discover_on_networks(
             })?;
         fingerprint.endpoint = Some(target.url.clone());
         fingerprint.interface_id = Some(network.id.clone());
-        let (result, body) = connection::root_metadata(&target, interface, all_networks, token);
+        let (result, body) =
+            connection::root_metadata(&approval, &target, interface, all_networks, token);
         probe = ProbeSummary {
             attempted: true,
             code: result.code,
@@ -439,7 +568,7 @@ pub(super) fn discover_on_networks(
         if protocols.iter().any(|p| p.family == "asr_duster_xml") && !token.load(Ordering::Acquire)
         {
             let (version_result, version_body) =
-                connection::version_metadata(&target, interface, all_networks, token);
+                connection::version_metadata(&approval, &target, interface, all_networks, token);
             if version_result.status == Some(200) {
                 if let Some(e) = version_body
                     .as_deref()
@@ -579,7 +708,27 @@ fn version_evidence(
     interface: &str,
     body: &[u8],
 ) -> Option<EvidenceRecord> {
-    let text = std::str::from_utf8(body).ok()?.trim();
+    let text = std::str::from_utf8(body)
+        .ok()?
+        .trim_start_matches('\u{feff}')
+        .trim();
+    let text = if text.starts_with("<?xml ") {
+        let (declaration, rest) = text.split_once("?>")?;
+        if declaration.len() > 128
+            || !declaration.is_ascii()
+            || declaration[5..].contains(['<', '>', '&'])
+        {
+            return None;
+        }
+        rest.trim()
+    } else {
+        text
+    };
+    let text = if let Some(inner) = text.strip_prefix("<RGW>") {
+        inner.strip_suffix("</RGW>")?.trim()
+    } else {
+        text
+    };
     let value = text
         .strip_prefix("<firmware_version>")?
         .strip_suffix("</firmware_version>")?;

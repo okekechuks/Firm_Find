@@ -97,7 +97,11 @@ impl Approvals {
         );
         Ok(id)
     }
-    pub(super) fn claim(&self, id: &str, binding: &Binding) -> Result<(), DiscoveryError> {
+    pub(super) fn claim(
+        &self,
+        id: &str,
+        binding: &Binding,
+    ) -> Result<ClaimedApproval, DiscoveryError> {
         let (expected, deadline) = self
             .0
             .lock()
@@ -110,8 +114,37 @@ impl Approvals {
                 "Approval expired or target changed. Approve again.",
             ));
         }
+        Ok(ClaimedApproval {
+            binding: expected,
+            deadline,
+        })
+    }
+}
+/// Non-Clone, non-serializable proof, constructed only by a successful claim.
+pub(crate) struct ClaimedApproval {
+    binding: Binding,
+    deadline: Instant,
+}
+impl ClaimedApproval {
+    pub(super) fn validate(&self, binding: &Binding) -> Result<(), DiscoveryError> {
+        if self.binding != *binding || Instant::now() >= self.deadline {
+            return Err(error(
+                "APPROVAL_EXPIRED",
+                "Approval expired or target changed.",
+            ));
+        }
         Ok(())
     }
+}
+
+pub(super) fn confirmation_value(value: &str) -> String {
+    value
+        .chars()
+        .filter(|c| {
+            !c.is_control() && !matches!(*c,'\u{202a}'..='\u{202e}'|'\u{2066}'..='\u{2069}')
+        })
+        .take(80)
+        .collect()
 }
 
 #[cfg(test)]

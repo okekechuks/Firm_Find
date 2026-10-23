@@ -1,0 +1,4 @@
+
+# Captured bounded HTML fixture: preserve exact bytes and signal offsets.
+apps/desktop/src-tauri/fixtures/asr-root-redacted.html -text -diff
+apps/desktop/src-tauri/fixtures/asr-version-redacted.xml -text

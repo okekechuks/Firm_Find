@@ -1,5 +1,8 @@
 # Phase 7.5 Sprint A close-out and Sprint B review gate
 
+Latest: [R1-R5 review corrections and supervised hardware gate](PHASE_7_5_REVIEW_FIXES.md). Earlier counts below are historical.
+
+
 Date: 22 October 2026 (Africa/Lagos). Branch: `phase-7-5-acquisition-engine`. Start: `cd0d9af7aa40b93ac364cd2015e50ad8d77fe98c`. Original independent verdict: **PASS WITH LIMITATIONS**. Claude independently ran 221 standard Rust tests, 1 ignored, at the original slice; original frontend/native/hardware results were Codex-reported, not independently re-run. This correction report is also Codex-executed evidence, awaiting re-review. No merge, Phase 8, authenticated vendor adapter or acquisition claim.
 
 ## A1-A6 disposition

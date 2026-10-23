@@ -1,5 +1,8 @@
 # Phase 7.5 verification — Sprint A
 
+Latest: [R1-R5 review corrections and supervised hardware gate](PHASE_7_5_REVIEW_FIXES.md). Earlier counts below are historical.
+
+
 Latest: [Sprint A close-out corrections and re-review handoff](PHASE_7_5_SPRINT_A_CLOSEOUT.md). Results below are the original slice and USB-only follow-up; they do not physically qualify the corrected recognition/version reader.
 
 22 October 2026, Africa/Lagos. **Phase 7.5 IN PROGRESS. Sprint A read-only discovery software checks PASS; independent acceptance PENDING. H01 selected-USB root HTTP response VERIFIED after owner disconnected competing Wi-Fi; exact identity and acquisition UNKNOWN.** No Phase 8 work, executable acquisition route, firmware artifact, isolated analysis success or physical write is claimed.

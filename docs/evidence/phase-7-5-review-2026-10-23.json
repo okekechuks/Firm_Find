@@ -1,0 +1,805 @@
+{
+  "date": "2026-10-23",
+  "startCommit": "1703d87ed340c07e67cdb5d11c3032849830ae72",
+  "initialRegressionFailures": 6,
+  "standardRust": {
+    "passed": 242,
+    "ignored": 1,
+    "exitCode": 0
+  },
+  "isolatedRust": {
+    "passed": 243,
+    "ignored": 2,
+    "exitCode": 0
+  },
+  "frontend": {
+    "passed": 145,
+    "files": 17
+  },
+  "initialParallelWorkspaceSeries": [
+    {
+      "run": 1,
+      "exitCode": 0
+    },
+    {
+      "run": 2,
+      "exitCode": 0
+    },
+    {
+      "run": 3,
+      "exitCode": 0
+    },
+    {
+      "run": 4,
+      "exitCode": 0
+    },
+    {
+      "run": 5,
+      "exitCode": 0
+    },
+    {
+      "run": 6,
+      "exitCode": 0
+    },
+    {
+      "run": 7,
+      "exitCode": 0
+    },
+    {
+      "run": 8,
+      "exitCode": 0
+    },
+    {
+      "run": 9,
+      "exitCode": 0
+    },
+    {
+      "run": 10,
+      "exitCode": 0
+    },
+    {
+      "run": 11,
+      "exitCode": 0
+    },
+    {
+      "run": 12,
+      "exitCode": 0
+    },
+    {
+      "run": 13,
+      "exitCode": 0
+    },
+    {
+      "run": 14,
+      "exitCode": 0
+    },
+    {
+      "run": 15,
+      "exitCode": 0
+    },
+    {
+      "run": 16,
+      "exitCode": 0
+    },
+    {
+      "run": 17,
+      "exitCode": 0
+    },
+    {
+      "run": 18,
+      "exitCode": 101
+    }
+  ],
+  "initialSeriesFailure": "run 18: retained OpenWrt loopback server-readiness timeout; both target simulator tests passed",
+  "finalParallelWorkspaceSeries": [
+    {
+      "run": 1,
+      "exitCode": 0
+    },
+    {
+      "run": 2,
+      "exitCode": 0
+    },
+    {
+      "run": 3,
+      "exitCode": 0
+    },
+    {
+      "run": 4,
+      "exitCode": 0
+    },
+    {
+      "run": 5,
+      "exitCode": 0
+    },
+    {
+      "run": 6,
+      "exitCode": 0
+    },
+    {
+      "run": 7,
+      "exitCode": 0
+    },
+    {
+      "run": 8,
+      "exitCode": 0
+    },
+    {
+      "run": 9,
+      "exitCode": 0
+    },
+    {
+      "run": 10,
+      "exitCode": 0
+    },
+    {
+      "run": 11,
+      "exitCode": 0
+    },
+    {
+      "run": 12,
+      "exitCode": 0
+    },
+    {
+      "run": 13,
+      "exitCode": 0
+    },
+    {
+      "run": 14,
+      "exitCode": 0
+    },
+    {
+      "run": 15,
+      "exitCode": 0
+    },
+    {
+      "run": 16,
+      "exitCode": 0
+    },
+    {
+      "run": 17,
+      "exitCode": 0
+    },
+    {
+      "run": 18,
+      "exitCode": 0
+    },
+    {
+      "run": 19,
+      "exitCode": 0
+    },
+    {
+      "run": 20,
+      "exitCode": 0
+    }
+  ],
+  "parallelTestThreads": "default; no serial override",
+  "nativeRegressions": {
+    "command": "node scripts/verify-foundation.mjs --device-gui --phase4 --phase4-1 --phase6",
+    "exitCode": 0,
+    "checkpoints": 107,
+    "consoleIssues": [],
+    "results": [
+      {
+        "name": "normal schema/settings/artifact/job/profile/router/vault baseline captured read-only"
+      },
+      {
+        "name": "ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data"
+      },
+      {
+        "name": "ordinary production executable rejects test activation before opening data"
+      },
+      {
+        "name": "native-test executable rejects missing/unsafe run IDs and arbitrary data paths"
+      },
+      {
+        "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+      },
+      {
+        "name": "active test ownership prevents cleanup"
+      },
+      {
+        "name": "dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner",
+        "runId": "ab9b7d2675ca6ce25660adbaffed50ba",
+        "dataDirectory": "<isolated-profiles>\\ab9b7d2675ca6ce25660adbaffed50ba\\data"
+      },
+      {
+        "name": "dev-reopen: native window, React and real SQLite IPC",
+        "url": "http://127.0.0.1:1420/",
+        "pid": 21364,
+        "dataDirectory": "<isolated-profiles>\\ab9b7d2675ca6ce25660adbaffed50ba\\data",
+        "theme": "system"
+      },
+      {
+        "name": "dev-reopen: exactly six primary navigation destinations"
+      },
+      {
+        "name": "dev-reopen: discovery, three refreshes, unique IDs, unknown feature support",
+        "records": 54,
+        "watching": true,
+        "warnings": []
+      },
+      {
+        "name": "dev-reopen: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+      },
+      {
+        "name": "dev-reopen: compact native cards, backend route-discovery popup, no false acquisition success"
+      },
+      {
+        "name": "dev-reopen: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+      },
+      {
+        "name": "dev-reopen: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+      },
+      {
+        "name": "dev-reopen: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+      },
+      {
+        "name": "dev-reopen: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+      },
+      {
+        "name": "dev-reopen: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+      },
+      {
+        "name": "dev-reopen: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+      },
+      {
+        "name": "dev-reopen: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+      },
+      {
+        "name": "dev-reopen: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+      },
+      {
+        "name": "dev-reopen: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+      },
+      {
+        "name": "dev-reopen: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+      },
+      {
+        "name": "dev-reopen: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+      },
+      {
+        "name": "dev-reopen: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+        "jobId": "aa511baa0b5d45da5c2eed799e0d9d80",
+        "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+        "size": 1048576
+      },
+      {
+        "name": "dev-reopen: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+        "sourceCount": 2
+      },
+      {
+        "name": "dev-reopen: actual streamed integrity verification and history",
+        "checks": 3
+      },
+      {
+        "name": "dev-reopen: actual native save dialog and unsigned metadata-only manifest",
+        "manifestSchemaVersion": 1
+      },
+      {
+        "name": "dev-reopen: real copy progress, UI cancellation, idempotent retry and no incomplete library artifact",
+        "bytesObserved": 4194304,
+        "totalBytes": 268435456,
+        "elapsedMs": 1491,
+        "copyThroughputMiBPerSecond": 32.25806451612903,
+        "memory": {
+          "WorkingSet64": 87568384,
+          "PeakWorkingSet64": 89960448,
+          "PrivateMemorySize64": 23527424
+        }
+      },
+      {
+        "name": "dev-reopen: persisted job and activity screens render after restart"
+      },
+      {
+        "name": "dev-reopen: dashboard and Library reflect committed counts and no active work",
+        "artifacts": 1
+      },
+      {
+        "name": "isolated native concurrent identical 256 MiB imports: one blob, two durable occurrences"
+      },
+      {
+        "name": "isolated native corruption and missing-blob detection; source reimport restores generated bytes without touching normal vault"
+      },
+      {
+        "name": "isolated native database failure after artifact publication: failed job, retained orphan, verified reuse on retry"
+      },
+      {
+        "name": "isolated native manifest remains saved when activity transaction fails; React displays separate warning"
+      },
+      {
+        "name": "dev-reopen: same-value settings write/read preserved original preferences"
+      },
+      {
+        "name": "dev-reopen: React hot reload with unchanged app/Vite PIDs"
+      },
+      {
+        "name": "dev-reopen: temporary HMR edit restored"
+      },
+      {
+        "name": "dev-reopen: injected read error and real IPC retry recovery"
+      },
+      {
+        "name": "dev-reopen: loading state retains cached data"
+      },
+      {
+        "name": "isolated native verification observed running before graceful application shutdown",
+        "jobId": "945a70f8abdd817881466a0777397867"
+      },
+      {
+        "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+      },
+      {
+        "name": "graceful shutdown cancelled active verification; restart preserved terminal job and usable artifact"
+      },
+      {
+        "name": "Phase 4: actual copying job recorded before forced termination",
+        "jobId": "a72716b3655f7cf2c0b5e384bab22e83"
+      },
+      {
+        "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+      },
+      {
+        "name": "interrupted owned development launch and released resources",
+        "backendRenderedBeforeInterrupt": true
+      },
+      {
+        "name": "dev-recovery: isolated database/vault/logs and WebView profile; explicit test banner",
+        "runId": "ab9b7d2675ca6ce25660adbaffed50ba",
+        "dataDirectory": "<isolated-profiles>\\ab9b7d2675ca6ce25660adbaffed50ba\\data"
+      },
+      {
+        "name": "dev-recovery: native window, React and real SQLite IPC",
+        "url": "http://127.0.0.1:1420/",
+        "pid": 25236,
+        "dataDirectory": "<isolated-profiles>\\ab9b7d2675ca6ce25660adbaffed50ba\\data",
+        "theme": "system"
+      },
+      {
+        "name": "dev-recovery: exactly six primary navigation destinations"
+      },
+      {
+        "name": "dev-recovery: discovery, three refreshes, unique IDs, unknown feature support",
+        "records": 54,
+        "watching": true,
+        "warnings": []
+      },
+      {
+        "name": "dev-recovery: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+      },
+      {
+        "name": "dev-recovery: compact native cards, backend route-discovery popup, no false acquisition success"
+      },
+      {
+        "name": "dev-recovery: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+      },
+      {
+        "name": "dev-recovery: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+      },
+      {
+        "name": "dev-recovery: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+      },
+      {
+        "name": "dev-recovery: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+      },
+      {
+        "name": "dev-recovery: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+      },
+      {
+        "name": "dev-recovery: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+      },
+      {
+        "name": "dev-recovery: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+      },
+      {
+        "name": "dev-recovery: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+      },
+      {
+        "name": "dev-recovery: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+      },
+      {
+        "name": "dev-recovery: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+      },
+      {
+        "name": "dev-recovery: existing artifact/import history available before any new import; stale verified label withdrawn"
+      },
+      {
+        "name": "dev-recovery: interrupted copy recovered as failed, known staging removed, no false success",
+        "jobId": "a72716b3655f7cf2c0b5e384bab22e83"
+      },
+      {
+        "name": "dev-recovery: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+      },
+      {
+        "name": "dev-recovery: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+        "jobId": "9e9eee7595313b0b7cb780e26af30277",
+        "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+        "size": 1048576
+      },
+      {
+        "name": "dev-recovery: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+        "sourceCount": 5
+      },
+      {
+        "name": "dev-recovery: actual streamed integrity verification and history",
+        "checks": 9
+      },
+      {
+        "name": "dev-recovery: actual native save dialog and unsigned metadata-only manifest",
+        "manifestSchemaVersion": 1
+      },
+      {
+        "name": "dev-recovery: persisted job and activity screens render after restart"
+      },
+      {
+        "name": "dev-recovery: dashboard and Library reflect committed counts and no active work",
+        "artifacts": 3
+      },
+      {
+        "name": "dev-recovery: same-value settings write/read preserved original preferences"
+      },
+      {
+        "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+      },
+      {
+        "name": "production: isolated database/vault/logs and WebView profile; explicit test banner",
+        "runId": "ab9b7d2675ca6ce25660adbaffed50ba",
+        "dataDirectory": "<isolated-profiles>\\ab9b7d2675ca6ce25660adbaffed50ba\\data"
+      },
+      {
+        "name": "production: native window, React and real SQLite IPC",
+        "url": "http://tauri.localhost/",
+        "pid": 2548,
+        "dataDirectory": "<isolated-profiles>\\ab9b7d2675ca6ce25660adbaffed50ba\\data",
+        "theme": "system"
+      },
+      {
+        "name": "production: exactly six primary navigation destinations"
+      },
+      {
+        "name": "production: discovery, three refreshes, unique IDs, unknown feature support",
+        "records": 54,
+        "watching": true,
+        "warnings": []
+      },
+      {
+        "name": "production: current USB candidate through acquisition IPC; no probe without approval; five independently unavailable routes"
+      },
+      {
+        "name": "production: actual native diagnostics save, backend redaction and no overwrite; no network approval fabricated"
+      },
+      {
+        "name": "production: real native endpoint approval rejected with No; React recovers without network request or report"
+      },
+      {
+        "name": "production: compact native cards, backend route-discovery popup, no false acquisition success"
+      },
+      {
+        "name": "production: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged"
+      },
+      {
+        "name": "production: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads"
+      },
+      {
+        "name": "production: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes"
+      },
+      {
+        "name": "production: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result"
+      },
+      {
+        "name": "production: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch"
+      },
+      {
+        "name": "production: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback"
+      },
+      {
+        "name": "production: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds"
+      },
+      {
+        "name": "production: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects"
+      },
+      {
+        "name": "production: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads"
+      },
+      {
+        "name": "production: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged"
+      },
+      {
+        "name": "production: repeated startup keeps interrupted job terminal without rerunning it"
+      },
+      {
+        "name": "production: existing artifact/import history available before any new import; stale verified label withdrawn"
+      },
+      {
+        "name": "production: schema 5 and existing Phase 3.1 profile/compatibility IPC preserved"
+      },
+      {
+        "name": "production: real native file picker, confirmation, persisted job, SHA-256 vault bytes, original source preserved",
+        "jobId": "b782bfd1abf210df6b195d5c3e2ac002",
+        "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264",
+        "size": 1048576
+      },
+      {
+        "name": "production: same bytes under another name deduplicate; import occurrences and unverified provenance persist",
+        "sourceCount": 7
+      },
+      {
+        "name": "production: actual streamed integrity verification and history",
+        "checks": 12
+      },
+      {
+        "name": "production: actual native save dialog and unsigned metadata-only manifest",
+        "manifestSchemaVersion": 1
+      },
+      {
+        "name": "production: persisted job and activity screens render after restart"
+      },
+      {
+        "name": "production: dashboard and Library reflect committed counts and no active work",
+        "artifacts": 3
+      },
+      {
+        "name": "production: same-value settings write/read preserved original preferences"
+      },
+      {
+        "name": "shutdown left no app, owned WebView process, Vite process or development listener"
+      },
+      {
+        "name": "no captured native console warnings or unhandled exceptions"
+      },
+      {
+        "name": "cleanup rejects mismatched marker/run ID and retains test data"
+      },
+      {
+        "name": "cleanup retains unknown staging without deleting files"
+      },
+      {
+        "name": "cleanup refuses reparse traversal; unrelated sentinel remains unchanged"
+      },
+      {
+        "name": "normal database rows/file hashes and vault blobs unchanged after isolated native suite"
+      },
+      {
+        "name": "owned isolated run cleaned after all processes stopped",
+        "runId": "ab9b7d2675ca6ce25660adbaffed50ba"
+      }
+    ]
+  },
+  "fixture": {
+    "bytes": 16384,
+    "sha256": "298f2a5bb7daa44a582249fd4304eb39142c7780d6eda91bd4b3834faeb02e96",
+    "captured": true,
+    "executed": false
+  },
+  "hardware": {
+    "wifiOn": {
+      "http200": false,
+      "subnetConflict": true,
+      "collisionMessageShown": true,
+      "observedVersion": null,
+      "ownerReportedVersionShown": true,
+      "identityStillUnverified": true,
+      "canObtain": false
+    },
+    "wifiOnProbe": {
+      "advancedEndpoint": false,
+      "attempted": true,
+      "code": "subnet_conflict",
+      "httpStatus": null,
+      "metadataTruncated": false
+    },
+    "wifiOnOwnerSettingsFirmware": "unchanged; owner confirmed",
+    "usbOnly": {
+      "http200": true,
+      "subnetConflict": false,
+      "collisionMessageShown": false,
+      "observedVersion": "REL_MRVL_UAPXC_v2.6.0",
+      "ownerReportedVersionShown": true,
+      "identityStillUnverified": true,
+      "canObtain": false
+    },
+    "ownerNo": {
+      "ownerDecision": "no",
+      "reportDisplayed": false,
+      "networkAuthorized": false
+    },
+    "normalDataPreservedAfterSoftware": true,
+    "usbOnlyInitial": {
+      "result": "FAILED_STATIC_VERSION_SUBCHECK",
+      "rootHTTP": 200,
+      "observedVersion": null,
+      "candidate": "asr_duster_xml",
+      "harnessExitCode": 0
+    },
+    "usbOnlyReport": {
+      "canObtain": false,
+      "engine": "7.5A-C-sprint-a",
+      "evaluatedAt": 1792715004478,
+      "evidenceCounts": 9,
+      "identityConfidence": "unverified",
+      "probe": {
+        "advancedEndpoint": false,
+        "attempted": true,
+        "code": "identity_unknown",
+        "httpStatus": 200,
+        "metadataTruncated": true
+      },
+      "protocolCandidates": [
+        "asr_duster_xml"
+      ],
+      "schemaVersion": 1,
+      "strategies": [
+        {
+          "capability": {
+            "evidence": [],
+            "executable": false,
+            "missingRequirements": [
+              "Trusted manufacturer identity",
+              "Verified firmware family",
+              "Trusted exact manufacturer/model",
+              "Exact hardware revision",
+              "Exact firmware family and version",
+              "Publisher-qualified source",
+              "Exact region/carrier and image type",
+              "Publisher integrity/authenticity evidence",
+              "Reviewed acquisition worker"
+            ],
+            "reason": "No exact applicable publisher artifact is registered. This does not establish device incompatibility.",
+            "state": "unknown"
+          },
+          "name": "Official firmware image",
+          "provenanceKind": "official_image",
+          "strategy": "official_image"
+        },
+        {
+          "capability": {
+            "evidence": [],
+            "executable": false,
+            "missingRequirements": [
+              "Trusted manufacturer identity",
+              "Verified firmware family",
+              "Trusted exact manufacturer/model",
+              "Exact hardware revision",
+              "Exact firmware family and version",
+              "Documented or exact-hardware-qualified firmware export",
+              "Endpoint trust and authentication",
+              "Explicit acquisition approval",
+              "Reviewed export worker and binary validation"
+            ],
+            "reason": "No documented or exact-hardware-qualified firmware export is registered. A configuration backup is not firmware.",
+            "state": "unknown"
+          },
+          "name": "Read-only device export",
+          "provenanceKind": "device_export",
+          "strategy": "documented_export"
+        },
+        {
+          "capability": {
+            "evidence": [],
+            "executable": false,
+            "missingRequirements": [
+              "Trusted manufacturer identity",
+              "Verified firmware family",
+              "Trusted exact manufacturer/model",
+              "Exact hardware revision",
+              "Exact firmware family and version",
+              "Model-qualified read-only storage adapter",
+              "Exact permitted ranges and exclusions",
+              "Coverage and recovery requirements",
+              "Authentication and explicit read approval"
+            ],
+            "reason": "No qualified bounded storage-read implementation is registered.",
+            "state": "unknown"
+          },
+          "name": "Authorized firmware storage read",
+          "provenanceKind": "partition_dump",
+          "strategy": "authorized_storage_read"
+        },
+        {
+          "capability": {
+            "evidence": [],
+            "executable": false,
+            "missingRequirements": [
+              "Trusted manufacturer identity",
+              "Verified firmware family",
+              "Trusted exact manufacturer/model",
+              "Exact hardware revision",
+              "Exact firmware family and version",
+              "Authentic applicable OEM package source",
+              "Exact region/carrier variant",
+              "Non-executing package parser",
+              "Integrity/authenticity validation"
+            ],
+            "reason": "No applicable authenticated OEM package source is registered. Updaters are never executed.",
+            "state": "unknown"
+          },
+          "name": "Manufacturer update package",
+          "provenanceKind": "manufacturer_package",
+          "strategy": "manufacturer_package"
+        },
+        {
+          "capability": {
+            "evidence": [],
+            "executable": false,
+            "missingRequirements": [
+              "Trusted manufacturer identity",
+              "Verified firmware family",
+              "Trusted exact manufacturer/model",
+              "Exact hardware revision",
+              "Exact firmware family and version",
+              "External tools and separate owner approval",
+              "Hardware-qualified read and coverage procedure"
+            ],
+            "reason": "Future expert-assisted workflow; no invasive operation is implemented.",
+            "state": "unknown"
+          },
+          "name": "External laboratory acquisition",
+          "provenanceKind": "external_physical_backup",
+          "strategy": "external_laboratory"
+        }
+      ],
+      "transports": [
+        "network",
+        "usb"
+      ],
+      "usbPid": "4E31",
+      "usbVid": "1286"
+    },
+    "initialOwnerNoAttempt": {
+      "qualified": false,
+      "ownerClicked": "yes",
+      "reportPublished": false,
+      "harnessExitCode": 1,
+      "reason": "network change invalidated result; owned window closed after evidence capture"
+    },
+    "usbOnlyInitialOwnerSettingsFirmware": "unchanged; owner confirmed",
+    "finalOwnerSettingsFirmware": "unchanged; owner explicitly confirmed after final corrected USB read and earlier No test",
+    "normalDataPreservedAfterAllChecks": true,
+    "internalRouterDatabaseInspected": false,
+    "allFourPhysicalFeatures": "UNKNOWN"
+  },
+  "sprintB": "NOT_STARTED",
+  "phase8": "NOT_STARTED",
+  "finalParallelWorkspaceSeriesTestsPerRun": 240,
+  "parallelSeriesPrecededIndependentStaticParserCorrection": true,
+  "versionFixture": {
+    "bytes": 115,
+    "sha256": "da140c1b09bd742e55384c49450db81a96712115d32a901c38cad0ad921a47c2",
+    "regressionFailedBeforeFix": true,
+    "initialExitCode": 101
+  },
+  "normalData": {
+    "equal": true,
+    "integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "foreignKeyErrors": [],
+    "allRowsSha256": "821847475ecb9449c7e405f40d892267befc571e7ba589ef9c403504403c0b7c",
+    "settingsSha256": "3df4b0e68f0630f87b31bdf8466de849b45c508cc980051fd7a19d1458d441cc",
+    "databaseFiles": {
+      "obtainer.db": {
+        "bytes": 389120,
+        "sha256": "e13b67692c9a87229ed1a92a052ca520d7cc938c28150334fd37d565deb17c2f"
+      },
+      "obtainer.db-wal": {
+        "bytes": 4132392,
+        "sha256": "4e900244989230526e550ee85d35ff16593e542e63b4da4ca24886665bfbfe3b"
+      }
+    },
+    "vaultFiles": {
+      "sha256\\c9\\c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264.bin": {
+        "bytes": 1048576,
+        "sha256": "c9d16ec151d225feed57262437acf87a52427fcc7bb749c84051a11016e01264"
+      }
+    }
+  },
+  "releaseBuilds": {
+    "ordinaryExitCode": 0,
+    "isolatedExitCode": 0,
+    "ordinarySha256": "034f3b572b5853db02ab5a2658090dcbf8b5a62e2103fc04f76f4cf52416739e"
+  },
+  "reviewGate": "PENDING_INDEPENDENT_REVIEW",
+  "part1ExecutionVerdict": "PASS_WITH_LIMITATIONS; pending independent re-review; identity/acquisition unqualified"
+}

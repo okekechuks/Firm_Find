@@ -1,5 +1,344 @@
-<!-- Minimal redacted fixture reconstructed from the reviewer-reported genuine root-page references; not a full captured page. -->
-<title>E-LINK Wireless Router</title>
-<script src="js/base/xml_helper.js"></script>
-<script src="js/base/ajax_calls.js"></script>
-<img src="images/asr_logo.png">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>E-LINK Wireless Router</title>        
+        <style>
+            .password-container {
+                position: relative;
+                display: inline-block;
+            }
+            .eye {
+                position: absolute;
+                right: 2px;
+                top: 48%;
+                transform: translateY(-50%);
+                cursor: pointer;
+            }
+        </style>
+
+        <script type="text/javascript" src="js/jquery/jquery.js" language="javascript"></script>
+         <script type="text/javascript">
+             var g_platformName = "mifi";      
+             if (typeof jQuery == 'undefined') { 
+			 //document.location = "http://192.168.0.1?c=" + (new Date()).valueOf();
+			 window.location.reload(true);
+		}   
+        </script>
+        <script type="text/javascript" src="js/jquery/jquery.i18n.properties-1.0.4.js" language="javascript"></script>
+        
+        <script type="text/javascript" src="js/library/jquery.form.js" language="javascript"></script>
+        <script type="text/javascript" src="js/library/download.jQuery.js" language="javascript"></script>
+        
+        
+        
+        <script type="text/javascript" src="js/library/md5.js" language="javascript"></script>
+        <script type="text/javascript" src="js/library/table.js" language="javascript"></script>
+        <script type="text/javascript" src="js/library/modaldbox.js" language="javascript"></script>
+       
+     
+        <script type="text/javascript" src="js/base/ajax_calls.js" language="javascript"></script>
+        <script type="text/javascript" src="js/base/utils.js" language="javascript"></script>
+        <script type="text/javascript" src="js/base/xml_helper.js" language="javascript"></script>
+        <script type="text/javascript" src="js/base/layout_manager.js" language="javascript"></script>
+        <script type="text/javascript" src="js/base/validator.js" language="javascript"></script>
+
+        <script type="text/javascript" src="js/controls/enabled_disabled.js" language="javascript"></script>
+        <script type="text/javascript" src="js/controls/ip_address.js" language="javascript"></script>
+        <script type="text/javascript" src="js/controls/visible_invisible.js" language="javascript"></script>
+        <script type="text/javascript" src="js/controls/allow_deny.js" language="javascript"></script>
+	<script type="text/javascript" src="js/controls/always_ondemand.js" language="javascript"></script>
+	<script type="text/javascript" src="js/controls/ascii_hex.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/dashboard.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/quick_setup.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/wireless/primary_network.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/internet/internet_connection.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/router/user_management.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/router/poweroff_router.js" language="javascript"></script>
+	
+        <script type="text/javascript" src="js/panel/router/software_upgrade.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/router/conf_management.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/router/reboot_router.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/router/time_setting.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/router/acs_management.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/wireless/wireless_settings.js" language="javascript"></script>
+        
+        <script type="text/javascript" src="js/panel/wireless/wireless_mac_filters.js" language="javascript"></script>
+
+	 <script type="text/javascript" src="js/panel/home_network/network_activity.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/home_network/dhcp_settings.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/home_network/firewall_settings.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/home_network/connected_device.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/home_network/custom_fw.js" language="javascript"></script>
+		<script type="text/javascript" src="js/panel/home_network/port_forwarding.js" language="javascript"></script>
+		<script type="text/javascript" src="js/panel/home_network/port_filter.js" language="javascript"></script>
+		<script type="text/javascript" src="js/panel/home_network/data_traffic.js" language="javascript"></script>  
+		<script type="text/javascript" src="js/panel/home_network/ussd.js" language="javascript"></script>  
+        <script type="text/javascript" src="js/panel/internet/manual_network.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/internet/traffic_statistics.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/internet/band_setting.js" language="javascript"></script>
+        <script type="text/javascript" src="js/panel/internet/traffic_setting.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/internet/pin_puk.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/internet/mep.js" language="javascript"></script>
+
+    <!--
+	<script type="text/javascript" src="js/panel/phoneBook/phoneBook.js" language="javascript"></script>
+	-->
+	<script type="text/javascript" src="js/panel/SMS/SMS.js" language="javascript"></script>
+	<script type="text/javascript" src="js/panel/SMS/SMSSettings.js" language="javascript"></script>       
+
+        
+		
+
+        <!--
+        <script type="text/javascript" src="WebDav/WebDavObj.js" language="javascript"></script>
+        <script type="text/javascript" src="WebDav/SD_Card_management.js" language="javascript"></script>
+        <script type="text/javascript" src="WebDav/WebDavObj_Share.js" language="javascript"></script>
+        -->
+	
+
+        <link href="css/stylesheet.css" rel="stylesheet" type="text/css" />
+        <link rel="stylesheet" type="text/css" href="css/table.css" media="all">
+		<!--
+        <link rel="stylesheet" type="text/css" href="css/webdav_table.css" media="all">
+		-->
+        <link rel="stylesheet" type="text/css" href="css/modaldbox.css" media="all">
+
+
+	<link type="application/rss+xml" rel='alternate' href='ap-x.rss'/>
+
+        <script type="text/javascript">
+          //  var locale;
+            function setLocale(value){
+                setCookie("locale",value,365);
+                setLocalization(getCookie('locale'));
+                var strLocale=getCookie('locale');
+                var locale_lan;
+                if(strLocale == 'cn')
+            	  	locale_lan= 'cn';
+            	else if (strLocale == 'es')
+                    locale_lan = 'es';
+                else if (strLocale == 'pt')
+                    locale_lan = 'pt';
+                else if (strLocale == 'ru')
+                    locale_lan = 'ru';
+                else if (strLocale == 'vn')
+                    locale_lan = 'vn';
+                else
+            	  	locale_lan = 'en';
+               postXMLlocale("locale", "<?xml version=\"1.0\" encoding=\"US-ASCII\"?><RGW><locale><language>"+locale_lan+"</language></locale></RGW>",15000);
+                displayControls();
+                document.getElementById("tbarouter_username").focus();  
+            }
+
+           function  displayControls(){
+               document.getElementById("laUsername").innerHTML=jQuery.i18n.prop("laUsername");
+                document.getElementById("laPassword").innerHTML=jQuery.i18n.prop("laPassword");
+                document.getElementById("btnSignIn").value = jQuery.i18n.prop("btnSignIn");
+                //document.getElementById("btnSharedFile").value = jQuery.i18n.prop("btnSharedFile");
+	       document.getElementById("lTitleUAPXC").innerHTML = jQuery.i18n.prop("lTitleUAPXC");
+	       document.getElementById("lacopyright").innerHTML = jQuery.i18n.prop("lacopyright");
+
+           }
+		
+        // function sharefile()
+        // {
+		// 	document.getElementById("divAdminApp").style.width="1000px";	
+	    //  	document.getElementById("divAdminApp").innerHTML = callProductHTML("WebDav/WebDav_Share.html");
+	    //  	document.getElementById("lTitleShareFile").innerHTML = jQuery.i18n.prop("lTitleShareFile");
+	    //   	document.getElementById("ShareFileBack").innerHTML=jQuery.i18n.prop("ShareFileBack");
+		// 	ShareFileShowInit();
+        // }
+        
+        function Login()
+        {
+            var username=encodeURIComponent(document.getElementById("tbarouter_username").value);
+            var password=encodeURIComponent(document.getElementById("tbarouter_password").value);
+	    var login_done;
+
+            //setLocalization(getCookie("locale"));
+            if(username=="" ||password=="")
+            	login_done = 0;
+            else
+            	login_done = doLogin(username,password)
+	    if(login_done == 1){
+
+                document.getElementById("divAdminApp").innerHTML =callProductHTML("html/adminApp.html");
+                document.getElementById("lableWelcome").innerHTML = jQuery.i18n.prop("lableWelcome");
+				document.getElementById("quickSetup").innerHTML = jQuery.i18n.prop("quickSetupName");
+				document.getElementById("MainHelp").innerHTML = jQuery.i18n.prop("helpName");
+				document.getElementById("MainLogOut").innerHTML = jQuery.i18n.prop("LogOutName");
+                document.getElementById("divAdminApp").className = "";
+                document.getElementsByTagName("body")[0].className = "";
+
+                initAPP();
+
+            }
+            else {
+               document.getElementById('lloginfailed').style.display = 'block';
+               if(login_done == 0)
+                    document.getElementById("lloginfailed").innerHTML = jQuery.i18n.prop("lloginfailed");
+	       else if(login_done == -1)
+		    document.getElementById("lloginfailed").innerHTML = jQuery.i18n.prop("lnoconn");
+            }
+        }
+        function checkEnter(e)
+        {
+
+            var characterCode;
+            if(e && e.which){
+                e = e
+                characterCode = e.which
+            } else {
+                e = event
+                characterCode = e.keyCode
+            }
+            if(characterCode == 13){
+                Login();
+            }
+        }
+        function hideError(){
+            document.getElementById('lloginfailed').style.display = 'none';
+        }
+         var versionString;
+   function initIndex(){
+   	if("IE6" == GetBrowserType())
+   	{
+
+		var fileref=document.createElement('script');
+  		fileref.setAttribute("type","text/javascript");
+  		fileref.setAttribute("src", 'js/jquery/jquery.bgiframe.min.js');
+
+  		document.getElementsByTagName("head")[0].appendChild(fileref);
+   	}
+
+       var objXML =  $().XML_Operations();
+       var versionXMLData = getVersionXML("version_num.txt");
+       var versionXML = objXML.getXMLDOCVersion(versionXMLData);
+
+       var strVesrion =  $(versionXML).find("firmware_version").text();
+       strVesrion=strVesrion.substring(strVesrion.indexOf("UAPXC", 0),strVesrion.length);
+       strVesrion=strVesrion.replace("_"," ");
+       document.getElementById("version").innerHTML=strVesrion;
+       versionString = strVesrion;
+       var Last_loginString = "Last Login Time: ";
+       var lastLoginXMLData = getLastLoginXML("last_login.txt");
+       var lastlogindateXML = objXML.getXMLDOCVersion(lastLoginXMLData);
+        var Last_loginTime = $(lastlogindateXML).find("last_login").text();
+	if(Last_loginTime != '')
+	        Last_loginString = Last_loginString + Last_loginTime
+	else
+		Last_loginString = ""
+       document.getElementById("last_login").innerHTML=Last_loginString;
+
+
+       document.getElementById("tbarouter_username").focus();
+          var xml = callProductXML("locale");
+         var language = $(xml).find("language").text();
+         if(language == "en")
+         {
+         	 setLocalization("en");
+         	 setCookie("locale", "en", 365);
+         }
+         else if (language == "es")
+         {
+         	setLocalization("es");
+         	setCookie("locale", "es", 365);
+         }
+         else if (language == "pt")
+         {
+         	setLocalization("pt");
+         	setCookie("locale", "pt", 365);
+         }
+         else if (language == "ru")
+         {
+         	setLocalization("ru");
+         	setCookie("locale", "ru", 365);
+         }
+         else if (language == "vn")
+         {
+         	setLocalization("vn");
+         	setCookie("locale", "vn", 365);
+         }
+         else
+         {
+         	setLocalization("cn");
+         	setCookie("locale", "cn", 365);
+         }
+   			
+		setCookie("platform", "mifi", 365);
+
+         displayControls();
+
+    }
+
+
+            function initAPP(){
+                document.title = jQuery.i18n.prop("lTitleUAPXC");
+
+                document.getElementById("lVesrion").innerHTML = versionString;
+                document.getElementById("lacopyright").innerHTML = jQuery.i18n.prop("lacopyright");
+                initmb();
+
+	        var qs_complete;
+	        var xml = getData("qs_complete");
+                qs_complete=$(xml).find("qs_complete").text();
+	        if ( qs_complete == "0" ) {
+                    sm("MBQuickSetup",650,320);
+                    localizeQuickSetupMB();
+                }
+                else
+                {
+                    createMenuFromXML();
+                    createMenu(1);
+                }
+	    }
+
+
+	function btnSkipQSClicked()
+        {
+            if(document.getElementById("chkSkip").checked) {
+	       	var mapData = new Array(0);
+	        mapData = putMapElement(mapData,"RGW/management/qs_complete","1",0);
+	        postXML("qs_complete", g_objXML.getXMLDocToString(g_objXML.createXML(mapData)));
+            }
+            document.getElementById("lableWelcome").innerHTML = jQuery.i18n.prop("lableWelcome");
+            document.getElementById("quickSetupSpan").innerHTML = '<a href="#."  onclick="quickSetup()" id="quickSetup" >Quick Setup</a>  |  <a href="#." id="HelpName" onclick="getMainHelp()">Help</a>  |  <a href="#."  id="LogOutName"  onclick="logOut()">Log Out</a>';
+			document.getElementById("quickSetup").innerHTML = jQuery.i18n.prop("quickSetupName");
+			document.getElementById("HelpName").innerHTML = jQuery.i18n.prop("helpName");
+			document.getElementById("LogOutName").innerHTML = jQuery.i18n.prop("LogOutName");
+	  		hm();
+            createMenuFromXML();
+            createMenu(1);
+
+        }
+
+
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('tbarouter_password');
+            const eyeClosed = document.getElementById('eyeClosed');
+            const eyeOpen = document.getElementById('eyeOpen');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeClosed.style.display = 'none';
+                eyeOpen.style.display = 'block';
+            } else {
+                passwordInput.type = 'password';
+                eyeClosed.style.display = 'block';
+                eyeOpen.style.display = 'none';
+            }
+        }
+
+        </script>
+    </head>
+    <body onload="initIndex()" class="loginBody">
+        <div class="liginbox" id="divAdminApp">
+	     <!-- <span class="mar_logo">&nbsp;</span> -->
+            <!--<img src="images/asr_logo.png" alt="" />-->
+            <br class="clear" />
+            <div class="box1">
+                <div

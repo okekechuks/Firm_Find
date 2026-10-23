@@ -2,6 +2,25 @@ use super::*;
 use crate::{commands::AppState, connection::ConnectionService, discovery::DiscoveryService};
 use std::sync::Arc;
 
+pub(super) fn reserve_probe(
+    connections: &ConnectionService,
+    service: &Service,
+    device: &Device,
+    revision: u64,
+    input: &DiscoveryRequest,
+) -> Result<(connection::ProbeLease, Option<ClaimedApproval>), DiscoveryError> {
+    let lease = connections
+        .begin(&format!("acquisition:{}", device.id))
+        .map_err(|_| error("BUSY", "Another route check is finishing. Try again."))?;
+    let proof = if let Some(receipt) = input.approval_token.as_deref() {
+        let binding = approval::binding(device, revision, input)?;
+        Some(service.1.claim(receipt, &binding)?)
+    } else {
+        None
+    };
+    Ok((lease, proof))
+}
+
 #[tauri::command]
 pub async fn discover_firmware_routes(
     input: DiscoveryRequest,
@@ -19,18 +38,13 @@ pub async fn discover_firmware_routes(
         .find(|d| d.id == input.device_id)
         .cloned()
         .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
-    if let Some(receipt) = input.approval_token.as_deref() {
-        let binding = approval::binding(&device, snapshot.revision, &input)?;
-        service.1.claim(receipt, &binding)?;
-    }
+    let (lease, approval) =
+        reserve_probe(&connections, &service, &device, snapshot.revision, &input)?;
     service
         .0
         .lock()
         .map_err(|_| error("INTERNAL", "Discovery state unavailable."))?
         .remove(&input.device_id);
-    let lease = connections
-        .begin(&format!("acquisition:{}", device.id))
-        .map_err(|_| error("BUSY", "Another route check is finishing. Try again."))?;
     let repo = Arc::clone(&state.repository);
     let live = discovery.shared_snapshot();
     let (report, lease) = tauri::async_runtime::spawn_blocking(move || {
@@ -61,6 +75,7 @@ pub async fn discover_firmware_routes(
             &input,
             &lease.cancelled,
             &all_networks,
+            approval,
         )?;
         if lease.cancelled.load(Ordering::Acquire) {
             return Err(error("CANCELLED", "Route discovery cancelled."));
@@ -183,7 +198,7 @@ pub async fn approve_firmware_route_probe(
         .and_then(|w| w.hwnd().ok())
         .map(|h| h.0 as isize)
         .unwrap_or(0);
-    let message=format!("Approve one bounded, read-only check?\n\nDevice: {}\nInterface: {}\nEndpoint: {}\nAdvanced endpoint: {}\n\nGET / and, only for a recognized ASR family, GET /version_num.txt. No login or device changes.",device.display_name,input.interface_id.as_deref().unwrap_or(""),input.endpoint.as_deref().unwrap_or(""),input.advanced_endpoint);
+    let message=format!("Approve one bounded, read-only check?\n\nDevice: {}\nInterface: {}\nEndpoint: {}\nAdvanced endpoint: {}\n\nGET / and, only for a recognized ASR family, GET /version_num.txt. No login or device changes.",approval::confirmation_value(&device.display_name),approval::confirmation_value(input.interface_id.as_deref().unwrap_or("")),approval::confirmation_value(input.endpoint.as_deref().unwrap_or("")),input.advanced_endpoint);
     let approved = tauri::async_runtime::spawn_blocking(move || {
         #[cfg(windows)]
         {

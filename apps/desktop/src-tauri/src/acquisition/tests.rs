@@ -233,7 +233,7 @@ fn public_endpoint_disconnect_protected_device_and_cancel_are_rejected() {
     request.endpoint = Some("https://8.8.8.8/".into());
     request.interface_id = Some("network".into());
     assert_eq!(
-        discover(&d, vec![], 4, &request, &token).unwrap_err().code,
+        approval::binding(&d, 4, &request).unwrap_err().code,
         "INVALID_ENDPOINT"
     );
     d.connected = false;
@@ -267,9 +267,7 @@ fn missing_interface_and_mismatched_subject_cannot_probe() {
     request.approval_token = Some("test".into());
     request.endpoint = Some("http://192.168.100.1/".into());
     assert_eq!(
-        discover(&d, vec![], 4, &request, &AtomicBool::new(false))
-            .unwrap_err()
-            .code,
+        approval::binding(&d, 4, &request).unwrap_err().code,
         "INTERFACE_REQUIRED"
     );
     let mut e = record(&d, Attribute::Model, "other", connection::now());
@@ -422,4 +420,106 @@ fn collision_diagnostics_do_not_export_interface_names() {
     report.probe.code = "subnet_conflict".into();
     report.probe.message = "Another network: private owner's interface".into();
     assert!(!diagnostics(&report).to_string().contains("private owner"));
+}
+
+#[test]
+fn r1_captured_fixture_and_positive_family_candidates() {
+    let page = include_bytes!("../../fixtures/asr-root-redacted.html");
+    assert_eq!(
+        page.len(),
+        16384,
+        "fixture must be the reviewed captured prefix"
+    );
+    for body in [page.as_slice(), &page[..16000]] {
+        let p = recognize(body, None);
+        assert_eq!(p.len(), 1);
+        assert_eq!(p[0].family, "asr_duster_xml");
+        assert_eq!(p[0].confidence, CapabilityState::Candidate);
+    }
+    let open = recognize(b"<title>OpenWrt</title>", Some("uhttpd"));
+    assert_eq!(open[0].family, "openwrt");
+    assert_eq!(open[0].confidence, CapabilityState::Candidate);
+}
+#[test]
+fn r2_visible_text_comments_and_script_strings_are_not_resource_attributes() {
+    for body in [b"<p>js/base/ajax_calls.js js/base/xml_helper.js</p>".as_slice(),b"<!-- <script src='js/base/ajax_calls.js'></script><script src='js/base/xml_helper.js'></script> -->",b"<script>var example=\"<img src='js/base/ajax_calls.js'><img src='js/base/xml_helper.js'>\";</script>"] {assert!(recognize(body,None).is_empty());}
+}
+#[test]
+fn r3_network_gate_cannot_rely_on_token_presence() {
+    assert!(!include_str!("mod.rs").contains("if input.approval_token.is_some()"));
+}
+#[test]
+fn r5_busy_admission_precedes_claim() {
+    let src = include_str!("ipc.rs");
+    assert!(src.find(".begin(").unwrap() < src.find(".claim(").unwrap());
+}
+#[test]
+fn r5_confirmation_values_are_single_line_and_capped() {
+    let value = super::approval::confirmation_value(&format!("bad\r\n\0\t{}", "x".repeat(200)));
+    assert!(value.chars().count() <= 80);
+    assert!(!value.chars().any(char::is_control));
+}
+
+#[test]
+fn r3_bogus_token_without_claimed_proof_is_local_only() {
+    let d = device();
+    let mut request = input(&d);
+    request.approval_token = Some("forged".into());
+    request.endpoint = Some("http://192.168.100.1/".into());
+    let result = discover(&d, vec![], 4, &request, &AtomicBool::new(false)).unwrap();
+    assert!(!result.probe.attempted);
+    type Probe = fn(
+        &ClaimedApproval,
+        &connection::Target,
+        &str,
+        &[crate::discovery::NetworkAdapter],
+        &AtomicBool,
+    ) -> (connection::EndpointResult, Option<Vec<u8>>);
+    let _proof_required: Probe = connection::root_metadata;
+}
+#[test]
+fn r5_busy_does_not_consume_receipt() {
+    let mut d = device();
+    d.networks[0].gateways = vec!["192.168.100.1".into()];
+    let mut request = input(&d);
+    request.endpoint = Some("http://192.168.100.1/".into());
+    request.interface_id = Some(d.networks[0].id.clone());
+    let service = Service::default();
+    let binding = approval::binding(&d, 4, &request).unwrap();
+    request.approval_token = Some(service.1.issue(binding).unwrap());
+    let connections = connection::ConnectionService::default();
+    let first = connections.begin("held-one").unwrap();
+    let second = connections.begin("held-two").unwrap();
+    assert!(matches!(
+        ipc::reserve_probe(&connections, &service, &d, 4, &request),
+        Err(DiscoveryError { code: "BUSY", .. })
+    ));
+    drop(first);
+    drop(second);
+    let (_lease, proof) = ipc::reserve_probe(&connections, &service, &d, 4, &request).unwrap();
+    assert!(proof.is_some());
+}
+
+#[test]
+fn captured_static_version_with_xml_declaration_and_rgw_wrapper_is_observed() {
+    let d = device();
+    let e = version_evidence(
+        &d,
+        "http://192.168.100.1/",
+        "usb",
+        include_bytes!("../../fixtures/asr-version-redacted.xml"),
+    )
+    .unwrap();
+    assert_eq!(e.value, "REL_MRVL_UAPXC_v2.6.0");
+    assert_eq!(e.verification, Verification::Observed);
+    assert_eq!(e.reliability, Reliability::Observed);
+    assert!(identity(vec![e], connection::now(), None, None)
+        .verified_firmware
+        .is_none());
+}
+
+#[test]
+fn static_version_xml_rejects_entities_duplicates_and_unbalanced_wrappers() {
+    let d = device();
+    for body in [b"<!DOCTYPE RGW [<!ENTITY e SYSTEM 'file:///private'>]><RGW><firmware_version>&e;</firmware_version></RGW>".as_slice(),b"<RGW><firmware_version>A</firmware_version><firmware_version>B</firmware_version></RGW>",b"<RGW><firmware_version>A</firmware_version>",b"<?xml version='1.0'?><RGW><firmware_version>&evil;</firmware_version></RGW>"] {assert!(version_evidence(&d,"http://192.168.100.1/","usb",body).is_none());}
 }
