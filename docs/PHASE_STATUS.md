@@ -1,8 +1,10 @@
 # OBTAINER phase status
 
-## B4 H1 and supervised static-menu step — in progress
+## B4 H1 and supervised static-menu step — done with limitations
 
-23 October 2026: B4 pre-step accepted with H1. [Correction and hardware report](PHASE_7_5_B4_HARDWARE_STEP.md) records failing regressions, bounded media-type diagnostics and the owner-operated native harness. XML-only policy unchanged. Final-commit software gates and supervised hardware run pending. No authentication, B2/B5/B7/B8 or Phase 8 work authorized. Earlier entries below describe their historical delivery states.
+23 October 2026: B4 pre-step accepted with H1. [Correction and hardware report](PHASE_7_5_B4_HARDWARE_STEP.md) records failing regressions, bounded media-type diagnostics and owner-operated native confirmations. XML-only policy unchanged. Checks pass: 280 standard /281 isolated Rust tests, two doctests per profile, 151 frontend tests, lint, TypeScript/production frontend build, both Clippy profiles, formatting and both Windows release builds. Twenty default-parallel workspace runs pass on final code `429cde56f07aebe26db3389d2c605febd591c82c`; exact handoff-HEAD repeat metadata is linked in the report.
+
+Supervised USB-only MG11 run exits 0: existing root/version check yields an ASR-family candidate and observed `REL_MRVL_UAPXC_v2.6.0`; one separately approved menu GET yields `observed`, filename `status1`, unverified. Separate native No gives `CANCELLED`, zero read invocations and no second fetch. Owner's before/after web display shows `MF69_AM802L_ZX_DD_N_241106_EU`; owner states “Visible settings unchanged”. Normal application snapshots remain identical. Six native pages, IPC, discovery refresh and shutdown verified. No firmware acquired, no request to the observed filename, and no new authority granted. B2, authenticated B4/CGI, B5, B7, B8 and Phase 8 remain blocked; reviewer decides the next request-specific plan. No push, tag or merge. Earlier entries below retain their historical delivery states.
 
 ## B4 static-menu pre-step — software review pending; hardware held
 

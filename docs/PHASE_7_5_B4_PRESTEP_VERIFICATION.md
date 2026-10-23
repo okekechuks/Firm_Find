@@ -2,7 +2,18 @@
 
 23 October 2026, Africa/Lagos. Branch `phase-7-5-b4-menu-prestep` created from local main at `1b7fbce8334203be261d16ddf1c196181284d49c`, initially clean. Reviewer accepted G1/B4 plan amendments and fast-forwarded main; origin/main remains historical until the owner authorizes a push. This delivery implements only the approved software pre-step. No physical MiFi request or hardware confirmation occurred.
 
-## Numbered requirements
+## Latest correction and hardware follow-up
+
+The text above records the original `c3486cb` software-only handoff.
+The subsequently authorized H1 correction and one supervised MG11 static-menu
+run are now documented in [the hardware-step report](PHASE_7_5_B4_HARDWARE_STEP.md):
+280 standard /281 isolated Rust tests, 151 frontend tests, both release builds
+and the required repeated suites pass. Menu outcome `observed`, filename
+`status1`, remains unverified and was not fetched. Separate owner No produced
+zero read calls. Owner reports visible settings unchanged; normal-data snapshots
+match. No authentication or firmware acquisition is implemented by this step.
+
+## Numbered requirements (original software delivery)
 
 | Item | Status | Implementation and verification |
 | --- | --- | --- |
