@@ -1,5 +1,13 @@
 # OBTAINER phase status
 
+## Stage 2A C1 — software PASS; supervised challenge PENDING
+
+24 October 2026: C1 commit `a76c98a` passes twenty default-parallel full-workspace runs (293 standard tests and two doctests each), 294 isolated tests/two doctests, both Clippy profiles, formatting, 156 frontend tests, lint, TypeScript/production frontend build and both optimized Windows executables. [Exact evidence](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md) records command exits, hashes and normal-data preservation.
+
+Native application, six pages, React/SQLite IPC and discovery refresh pass. The supervised harness exits 1 after root approval remained incomplete for 300 seconds; it never reached the challenge read or separate No test. No hardware challenge outcome, cookie result or after-test owner confirmation is claimed. Hardware remains pending; no login/credentials/status/logout is released. Normal data remains identical.
+
+Four separately released designs are delivered for review on `phase-7-5-design-track` (`ee3e53d..5f2678a`), each in its own commit: artifact/schema 6, endpoint binding, official-image acquisition, isolated worker. They contain source/official-document evidence, test plans and open questions only. All implementations remain blocked; Phase 7/7.5 is not complete. Watcher feedback and live owner hardware confirmation are the next dependencies.
+
 ## Stage 2A C1 — software correction; supervised challenge conditionally released
 
 24 October 2026: reviewer accepts initial challenge code `ca231dd` with C1; its 20 default-parallel repeats pass. C1 adds normal Digest token forms and closed, privacy-safe shape diagnostics; exact synthetic regressions fail before the fix. Latest checks: 293 standard /294 isolated Rust tests plus two doctests each, 156 frontend tests, lint, TypeScript/production frontend build and formatting pass. [C1 verification](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md) records exact commands and remaining gate execution. Hardware waits for committed/green C1, repeat gate and owner's before statement. No login/credentials/status/logout or new acquisition authority. Parallel Stage 3–6 documents are design-only; implementation still blocked.

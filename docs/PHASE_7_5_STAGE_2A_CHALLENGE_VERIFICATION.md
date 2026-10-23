@@ -16,6 +16,44 @@ Latest C1 checks: full standard command below exits 0, 293 passed/0 failed/1 ign
 
 Both exact Clippy commands in the table below also exit 0 after C1, no warnings (`c1-clippy-standard.log`, `c1-clippy-isolated.log`). Normal read-only comparison after C1 software exits 0 (`normal-after-c1-software.json`, `c1-data-software.log`), unchanged from the original snapshot. Release builds, final C1 repeats and hardware evidence remain pending at this code commit.
 
+### Completed C1 gate and incomplete supervised attempt
+
+C1 implementation commit: `a76c98a3ae6e7129680eabd8d5301add20310183`. `py scripts/verify-parallel-rust.py --runs 20 --output .tools/stage2a-challenge/c1-parallel` exits 0. All twenty runs use the default parallel scheduler and the same clean tracked HEAD: 293 passed/0 failed/1 ignored plus two doctests. Every log SHA-256, commit-before/after, dirty flag and C1/privacy regression marker was checked against `c1-parallel/results.json`. These are C1 results, separate from the earlier ca231dd runs.
+
+`npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline` exits 0 (`c1-production-native.log`), optimized Windows production build. `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-native-tests.ps1` exits 0 (`c1-isolated-native.log`), dedicated isolated executable; script confirms production executable unchanged by the test build. Binary hashes/lengths are computed in `c1-binaries.json`: production SHA-256 `0278DDB4776A03458A4C24C0C219A7B0C32F74FAE264D6D549883C94F4780C65`, isolated `E539EDB214999815906AF9E12BA0FCE7F159CBB9AC7BAB622AFB863DC553F091`.
+
+Owner's before statement, **24 October 2026, Africa/Lagos**, quoted exactly from the reply (web display only; not independently verified firmware evidence):
+
+> Software Upgrade
+> Software Information
+> Current Software Version:
+> MF69_AM802L_ZX_DD_N_241106_EU
+
+The earlier reply `done` was to the powered/USB/Wi-Fi preparation question. No explicit before-test settings-condition statement was supplied; do not expand the version quote into one.
+
+Native command: `node scripts/verify-foundation.mjs --release-only --device-gui --acquisition-mg11-challenge`, exit **1**, `hardware-driver.log`. Evidence directory `.tools/foundation/2026-10-23T23-27-41.980Z/` is UTC-named; the run occurred on 24 October in Lagos. Actual native window/nonzero HWND, rendered React DOM, all six navigation destinations, real SQLite IPC, three discovery refreshes/unique IDs and unknown feature support passed. The real root native dialog was read using the existing helper at 23:27:50 UTC. Its exact observed body (newline formatting preserved here) was:
+
+```text
+Approve one bounded, read-only check?
+
+Device: USB Composite Device
+Interface: {7F7C5ABA-3722-40E6-A506-E36DF47013EF}
+Endpoint: http://192.168.100.1/
+Advanced endpoint: false
+
+GET / and, only for a recognized ASR family, GET /version_num.txt. No login or device changes.
+```
+
+Root approval did not complete within the bounded 300-second wait. The harness stopped with `Native approval/read did not finish`, shut down its owned application and retained its marked test profile for inspection. `challenge-observations.json` has root/challenge/decline null and only the root-dialog observation; no challenge IPC/read stage was reached. This is **not** a router transport timeout, a declined approval, a successful native challenge dialog or evidence about the device's challenge format. No challenge response/status/realm/shape or No-test result exists. No actual challenge request is claimed; no packet capture was made. Q4/Q5 hardware answers remain unknown, and no retry/fetch/workaround was dispatched. An extra read-only CDP state inspection attempted after shutdown exited 1 with `ECONNREFUSED 127.0.0.1:9223`; it recovered no state and sent no router request.
+
+The native runner's normal-before/after JSON snapshots compare equal, including all rows, settings, DB/WAL hashes, saved devices and vault/log files. A separate `py scripts/probe-native-isolation.py .tools/stage2a-challenge/normal-after-c1-native.json .tools/stage2a-challenge/normal-before.json` exits 0, also unchanged. No owner after-test web statement has been collected for this incomplete attempt; no router-settings preservation result is invented. Generated screenshots stay local and uncommitted. Development/HMR, adapter/simulator native suites and physical OpenWrt were not rerun at this targeted gate; retained unit/isolated regressions passed.
+
+**C1 software verdict: PASS. Supervised challenge: PENDING (root approval wait expired). Authenticated code remains BLOCKED.** Phase 7/7.5 is not complete.
+
+### Parallel design handoff
+
+The separately released documentation track is complete on `phase-7-5-design-track`, in the local `.tools/design-track` worktree, based on accepted `ee3e53de90b8d3357f415cac1aa6086d372c5184`. Four commits, each changing its one design and status entry: Stage 3 `82dc4ab`, Stage 4 `a2651cf`, Stage 5 `0005e38`, Stage 6 `5f2678ace8e783ec90464cd85d8fe6b7a3d9861c`. Only five documentation files differ from the accepted base; worktree is clean. Documentation section/fence/source/citation checks and `git diff --check` exit 0; no SQL/tool/code execution or owner-data test was performed for those documents. Open questions require reviewer answers; every implementation remains blocked. Inspect with `git diff phase-7-5-stage-2a-auth-design..phase-7-5-design-track`; no merge was performed.
+
 Initial code `ca231dd631391a30f21ff1fc48f0fb3b6279e35b` completed `py scripts/verify-parallel-rust.py --runs 20 --output .tools/stage2a-challenge/code-parallel`, exit 0: every run 291/0/1 plus two doctests, unchanged HEAD and clean tracked tree. Metadata/log hashes are in `code-parallel/results.json`. C1 changes require their own new final-commit repeat; these earlier runs are not claimed for C1. `py scripts/probe-native-isolation.py .tools/stage2a-challenge/normal-after-software.json .tools/stage2a-challenge/normal-before.json` exited 0 with identical normal data before C1; it will be compared again after later checks.
 
 ## Scope and numbered delivery
