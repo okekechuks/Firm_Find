@@ -588,48 +588,104 @@ mod tests {
     fn blackhole_peer_cancellation_and_timeout_release_child_and_pipes() {
         use crate::adapters::{AdapterOperation, Cancellation, Stage};
         use std::net::{TcpListener, TcpStream};
+        use std::sync::{atomic::AtomicBool, Arc, OnceLock};
+        const SETUP_SAFETY: Duration = Duration::from_secs(60);
         // A loopback TCP sink exercises process teardown only, not protocol compatibility.
         for cancel in [true, false] {
             let (listening_tx, listening_rx) = mpsc::channel();
             let (accepted_tx, accepted_rx) = mpsc::channel();
             let (release_tx, release_rx) = mpsc::channel();
+            let (done_tx, done_rx) = mpsc::channel();
+            let operation_finished = Arc::new(AtomicBool::new(false));
+            let sink_finished = Arc::clone(&operation_finished);
             let sink = std::thread::spawn(move || {
                 let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+                listener.set_nonblocking(true).unwrap();
                 listening_tx.send(listener.local_addr().unwrap()).unwrap();
-                let (stream, _) = listener.accept().unwrap();
-                accepted_tx.send(()).unwrap();
-                release_rx.recv().unwrap();
+                let accept_limit = std::time::Instant::now() + SETUP_SAFETY;
+                let stream = loop {
+                    if std::time::Instant::now() >= accept_limit {
+                        return;
+                    }
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            // Shutdown can release an unconnected sink even if
+                            // the owned cleanup wake-up cannot reach it.
+                            match release_rx.recv_timeout(Duration::from_millis(10)) {
+                                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                                _ => return,
+                            }
+                        }
+                        Err(error) => panic!("loopback sink accept failed: {error}"),
+                    }
+                };
+                // A cleanup wake-up after observe returned is not proof of SSH acceptance.
+                let _ = accepted_tx.send(!sink_finished.load(Ordering::Acquire));
+                let _ = release_rx.recv_timeout(SETUP_SAFETY);
                 drop(stream);
             });
-            // Readiness is a server event, not a five-second race against accept.
-            let address = listening_rx.recv().unwrap();
+            let address = listening_rx
+                .recv_timeout(SETUP_SAFETY)
+                .expect("loopback sink did not report listening within the setup safety limit");
             let cancellation = Cancellation::default();
             let worker_token = cancellation.clone();
+            let deadline = Arc::new(OnceLock::new());
+            let worker_deadline = Arc::clone(&deadline);
+            let worker_finished = Arc::clone(&operation_finished);
             let worker = std::thread::spawn(move || {
                 // Queue/setup time must not consume the client's operation budget.
                 let control = OperationControl::new(
                     worker_token,
                     Stage::Connection,
                     AdapterOperation::AuthorizedIdentityProbe,
-                    Duration::from_millis(if cancel { 60_000 } else { 750 }),
+                    SETUP_SAFETY,
                 )
-                .unwrap();
+                .unwrap()
+                .with_test_deadline(worker_deadline);
                 let result = observe(address.ip(), address.port(), &control);
-                // If a deadline expired before SSH connected, unblock our owned
-                // listener for cleanup. This loopback wake-up is not an SSH peer.
+                let completed_at = std::time::Instant::now();
+                worker_finished.store(true, Ordering::Release);
+                // Always unblock our owned listener, including a failed SSH startup.
                 let _ = TcpStream::connect_timeout(&address, Duration::from_secs(1));
-                result
+                let _ = done_tx.send((result, completed_at));
             });
-            if cancel {
-                // Only cancellation needs an established blackhole connection.
-                // Timeout may legitimately happen before SSH reaches accept.
-                accepted_rx.recv().unwrap();
+            let accepted = accepted_rx.recv_timeout(SETUP_SAFETY);
+            let established =
+                matches!(accepted, Ok(true)) && !operation_finished.load(Ordering::Acquire);
+            if !established || cancel {
+                cancellation.cancel();
+            } else {
+                // The 750 ms deadline starts only after a genuine, still-live
+                // SSH connection was accepted, never during process startup.
+                deadline
+                    .set(std::time::Instant::now() + Duration::from_millis(750))
+                    .unwrap();
+            }
+            let result = done_rx.recv_timeout(Duration::from_secs(10));
+            if result.is_err() {
                 cancellation.cancel();
             }
-            let error = worker.join().unwrap().unwrap_err();
-            // Unblock our owned sink even if the expected error assertion fails.
-            release_tx.send(()).unwrap();
+            // Cleanup runs before assertions, even if setup/completion failed.
+            let _ = TcpStream::connect_timeout(&address, Duration::from_secs(1));
+            let _ = release_tx.send(());
             sink.join().unwrap();
+            if result.is_ok() {
+                worker.join().unwrap();
+            }
+            assert!(
+                established,
+                "SSH did not establish a live silent peer before the setup safety limit: {accepted:?}"
+            );
+            let (result, completed_at) =
+                result.expect("SSH cancellation/armed timeout did not finish within 10 seconds");
+            if !cancel {
+                assert!(
+                    completed_at >= *deadline.get().expect("connected timeout was never armed"),
+                    "SSH ended before the post-accept deadline; setup timeout is not a blackhole timeout"
+                );
+            }
+            let error = result.unwrap_err();
             assert_eq!(
                 error.code,
                 if cancel {

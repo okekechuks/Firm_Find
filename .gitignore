@@ -12,3 +12,6 @@ target/
 *.db-wal
 .env*
 !.env.example
+# Generated native verification captures stay local; existing tracked evidence is retained.
+/docs/images/phase6-*/
+/docs/images/gui-*.png

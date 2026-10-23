@@ -15,7 +15,7 @@ export async function verifySimulator(client,{label,evidence,record}){
  const before=await invoke('get_snapshot');assert.equal(before.testProfile.simulationAvailable,true);assert.equal(before.testProfile.simulatedAdapters,false);
  const inventory=(await invoke('get_discovery')).devices.map(d=>d.id).sort();
  const artifacts=(await invoke('list_firmware_artifacts',{query:{}})).total;
- const imageDir=path.join(root,'docs/images',`phase6-${before.testProfile.runId}`);await mkdir(imageDir,{recursive:true});
+ const imageDir=path.join(evidence,'screenshots',`phase6-${before.testProfile.runId}`);await mkdir(imageDir,{recursive:true});
  async function shot(name,selector='.simulation-workspace'){
   await client.evaluate(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({block:'start'})`);
   if(selector!=='.simulation-workspace')await client.evaluate("window.scrollBy(0,-((document.querySelector('.simulation-banner')?.getBoundingClientRect().height??0)+32))");

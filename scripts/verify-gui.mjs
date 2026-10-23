@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { assertOwned } from './native-test-profile.mjs';
 const root=path.resolve(import.meta.dirname,'..');
-let imageRoot=path.join(root,'docs/images');
+let imageRoot=path.join(root,'.tools/gui-evidence');
 export function configureGUIEvidence(directory){imageRoot=directory;}
 let initialPreferences,migration;
 const headings={dashboard:'Overview',devices:'Connected Devices',firmware:'Library',backups:'Backup Manager',jobs:'Logs',settings:'Settings'};
@@ -101,7 +101,7 @@ export async function verifyGUI(client,{label,pid,profile,evidence,record}){
   const artifacts=await invoke('list_firmware_artifacts',{query:{}});for(const a of artifacts.artifacts){const key=path.join('sha256',a.sha256.slice(0,2),a.sha256+'.bin');assert.equal((await stat(path.join(state.libraryDirectory,key))).size,(await stat(path.join(destination,key))).size);}
   migration={destination,previous:state.libraryDirectory,artifacts:artifacts.artifacts.map(a=>({sha256:a.sha256,sizeBytes:a.sizeBytes,kind:a.kind,sourceCount:a.sourceCount})),backupDirectory:state.backupDirectory,theme:originalTheme};await writeFile(path.join(evidence,'gui-storage-migration.json'),JSON.stringify(migration,null,2));record(label+': real folder picker, plan cancellation, verified storage copy and restart gate; old Library preserved');
  }
- await writeFile(path.join(evidence,`${label}-gui.json`),JSON.stringify({navigation,statistics:state,backup,restored:restoredDetails.artifact,screenshots:`docs/images/gui-${label}-*.png`,extraction:'Unavailable: no acquisition adapter; actual disabled state captured.'},null,2));
+ await writeFile(path.join(evidence,`${label}-gui.json`),JSON.stringify({navigation,statistics:state,backup,restored:restoredDetails.artifact,screenshots:path.relative(root,path.join(imageRoot,`gui-${label}-*.png`)),extraction:'Unavailable: no acquisition adapter; actual disabled state captured.'},null,2));
 }
 export async function verifyGUIRestart(client,{profile,evidence,record}){
  assert(migration,'No migration to reopen');await assertOwned(profile);const invoke=api(client);const state=await invoke('get_desktop_state');assert.equal(path.normalize(state.libraryDirectory),path.normalize(migration.destination));assert.equal(state.backupDirectory,migration.backupDirectory);assert.equal(state.restartRequired,false);assert.equal((await invoke('get_snapshot')).settings.theme,migration.theme);assert.equal(state.preferences.autoRefresh,initialPreferences.autoRefresh);

@@ -70,6 +70,8 @@ pub struct OperationControl {
     deadline: Instant,
     operation: AdapterOperation,
     stage: Stage,
+    #[cfg(test)]
+    test_deadline: Option<Arc<std::sync::OnceLock<Instant>>>,
 }
 impl OperationControl {
     pub fn new(
@@ -89,6 +91,8 @@ impl OperationControl {
             deadline: Instant::now() + budget,
             operation,
             stage,
+            #[cfg(test)]
+            test_deadline: None,
         })
     }
     pub fn stage(&self, stage: Stage) -> Self {
@@ -107,12 +111,30 @@ impl OperationControl {
                 .min(Instant::now() + Duration::from_secs(limit)),
             operation: self.operation,
             stage,
+            #[cfg(test)]
+            test_deadline: self.test_deadline.clone(),
         }
     }
+    /// Unit-test-only deadline armed by a peer event, retaining the real safety cap.
+    #[cfg(test)]
+    pub(crate) fn with_test_deadline(
+        mut self,
+        deadline: Arc<std::sync::OnceLock<Instant>>,
+    ) -> Self {
+        self.test_deadline = Some(deadline);
+        self
+    }
     pub fn checkpoint(&self) -> Result<(), AdapterError> {
+        let deadline = self.deadline;
+        #[cfg(test)]
+        let deadline = self
+            .test_deadline
+            .as_ref()
+            .and_then(|value| value.get())
+            .map_or(deadline, |value| deadline.min(*value));
         let code = if self.token.is_cancelled() {
             Some(AdapterErrorCode::OperationCancelled)
-        } else if Instant::now() >= self.deadline {
+        } else if Instant::now() >= deadline {
             Some(if matches!(self.stage, Stage::Connection) {
                 AdapterErrorCode::ConnectionTimeout
             } else {
@@ -919,6 +941,30 @@ fn session_read_control(
 #[cfg(test)]
 mod review_deadline_tests {
     use super::*;
+    #[test]
+    fn test_deadline_only_expires_after_arming_and_survives_stage_clone() {
+        let deadline = Arc::new(std::sync::OnceLock::new());
+        let control = OperationControl::new(
+            Cancellation::default(),
+            Stage::Connection,
+            AdapterOperation::AuthorizedIdentityProbe,
+            Duration::from_secs(60),
+        )
+        .unwrap()
+        .with_test_deadline(Arc::clone(&deadline));
+        let staged = control.stage(Stage::Connection);
+        assert!(control.checkpoint().is_ok());
+        assert!(staged.checkpoint().is_ok());
+        deadline.set(Instant::now()).unwrap();
+        assert_eq!(
+            control.checkpoint().unwrap_err().code,
+            AdapterErrorCode::ConnectionTimeout
+        );
+        assert_eq!(
+            staged.checkpoint().unwrap_err().code,
+            AdapterErrorCode::ConnectionTimeout
+        );
+    }
     #[test]
     fn r4_virtual_boundary_does_not_create_one_millisecond_wall_deadline() {
         let control = OperationControl::new(

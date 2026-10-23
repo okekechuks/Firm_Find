@@ -22,7 +22,7 @@ configureFirmwareTestRun(profile);
 const settingsRoundtrip = process.argv.includes('--settings-roundtrip');
 const evidence = path.join(root, '.tools/foundation', new Date().toISOString().replaceAll(':', '-'));
 await mkdir(evidence, { recursive: true });
-if(process.argv.includes('--phase5'))configureGUIEvidence(path.join(evidence,'gui'));
+configureGUIEvidence(path.join(evidence,'gui'));
 const results = [], consoleEvents = [], commands = [], launches = [];
 const env = { ...process.env, OBTAINER_TEST_ROOT: root, OBTAINER_NATIVE_TEST_RUN_ID:profile.id, CARGO_INCREMENTAL: '0',
   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9223' };
