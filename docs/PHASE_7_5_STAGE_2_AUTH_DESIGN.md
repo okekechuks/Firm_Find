@@ -1,6 +1,6 @@
 # Phase 7.5 Stage 2A: authenticated identity-read design
 
-23 October 2026, Africa/Lagos. **Design proposal only; stop for review.**
+23 October 2026, Africa/Lagos. **Design accepted; only credential-free Challenge software is released. Hardware remains held for separate acceptance.**
 Branch `phase-7-5-stage-2a-auth-design` starts at
 `5df1aaceb4e4f8e352e5c7280edcae2b42635966`, from the accepted, unmerged Stage 1
 branch. This delivery changes this document only. It implements no request,
@@ -26,12 +26,12 @@ Only static local bytes were read; JavaScript was not executed.
 | `/js/base/ajax_calls.js` | `6432420bc1aefcb7990b7180664bf0be720e434ae952093f1f6a1fde9fd524e1` | Local capture hashed and cited lines re-read. |
 | `/js/base/utils.js` | `862497a77554c3d67da5fbed611bf13d9df9bc126bf2a7af882c997cb89c6f68` | Local capture hashed and cited lines re-read. |
 | `/js/base/layout_manager.js` | `9c8d5fd1fc47111180b80ceee1261cc38aa560fc1d53b8e03e286cae6fc3664c` | Local capture hashed; menu mapping at lines 56–75 re-read. |
-| `/js/panel/dashboard.js` | `f57e620d871ec877920d1a04cef4a7e41eb2db0af20c77bd457b967c40ae381d` | Anchor and lines 682–684 inherited from the accepted design and current reviewer guideline. Full capture was not found locally; those lines/hash were **not independently reverified in this task**. |
-| `/js/panel/internet/internet_connection.js` | `84f54df2fd9e91ec34fe9a43c1f7d368d0776367244d39293c9b8df4364e3dee` | Anchor and lines 1853–1854 inherited from the accepted design and reviewer guideline; same local-capture limitation. |
+| `/js/panel/dashboard.js` | `f57e620d871ec877920d1a04cef4a7e41eb2db0af20c77bd457b967c40ae381d` | Reviewer re-downloaded the static capture and confirmed hash and lines 682–684. Lines 672–678 also read Wi-Fi mode and ssid from the same document. |
+| `/js/panel/internet/internet_connection.js` | `84f54df2fd9e91ec34fe9a43c1f7d368d0776367244d39293c9b8df4364e3dee` | Reviewer re-downloaded the static capture and confirmed hash and lines 1853–1854 reading status1 and IMEI. |
 
-The last two citations attribute `sysinfo/device_name`, `sysinfo/version_num`
-and the IMEI risk to the reviewer. Obtaining their retained captures for local
-reverification is an open review item; this task does not download them.
+The last two capture verifications are attributed to the reviewer, not a new
+Codex download. They confirm the identity fields, IMEI risk and Wi-Fi fields.
+This task does not download them.
 [Stage 1 evidence](PHASE_7_5_B4_HARDWARE_STEP.md) supplies the actual menu result.
 
 The original [B1 design](FIRMWARE_ACQUISITION_ENGINE.md) remains historical where
@@ -306,7 +306,8 @@ Output tokens, preserved exactly without case/date/version normalization:
   starting alphanumeric. It remains an opaque vendor string; no numeric/date
   ordering or firmware-image inference.
 
-IMEI, IMSI, ICCID, SIM state, subscriber IDs, MAC/serial numbers, network/account
+The status1 document contains Wi-Fi configuration as well as IMEI. Wi-Fi `ssid`
+and `mode`, IMEI, IMSI, ICCID, SIM state, subscriber IDs, MAC/serial numbers, network/account
 fields and **all** other values are discarded inside the parser. Even a nested
 unknown field inside sysinfo gets no output slot. Only the two explicitly
 allowed strings can leave successful parsing. A malicious server could put
@@ -320,6 +321,10 @@ oversized or unexpected success content never reaches `StatusRead`. Source
 `login_done` uses a substring; this design intentionally fails closed until a
 reviewed success contract is supplied, rather than accepting “not 200 OK” as
 successful authentication. Never retain failure/lockout body text in a report.
+For a future HTTP-200 login whose body differs from trimmed `200 OK`, stop as
+`AUTHENTICATION_FAILED`. Record only H1-sanitized media type, length bucket
+`0`, `1-16`, `17-256`, `257-4096` or `over`, and a boolean for containing `200 OK`.
+No body text is retained and the parser is never relaxed automatically.
 
 ## 6. Per-field evidence, source separation and permitted uses
 
@@ -499,14 +504,58 @@ reviewer-specified repeat/native checks on its final code. These are planned
 gates, not results claimed for this design. No Phase 6 simulator expansion or
 physical adapter implementation is included here.
 
-## 10. Open questions and separate Part 2 release gate
+## Reviewer decisions, 23 October
+
+These decisions supersede the original proposals/questions below; they do not
+release authentication or a hardware run.
+
+- Q1 accepted: two owner-issued scopes, AuthChallenge and
+  AuthenticatedIdentityRead, plus derived CleanupLogout covered by the final
+  identity dialog. No third independent confirmation.
+- Q2 accepted: exactly one remote StatusRead; before/after means local binding
+  and evidence rechecks. No two-remote-snapshot claim. Future protected work
+  needs its own fresh same-session read.
+- Q3 accepted: enter cleanup exactly once; dispatch only after a login may have
+  reached the device, with unchanged safe binding and live cleanup deadline.
+  Otherwise report logout_unconfirmed. Never logout before a login attempt.
+- Q4 awaits a real credential-free challenge in separately accepted Part 3.
+  Part 2 releases software only; synthetic fixtures cannot answer it.
+- Q5 accepted: cookies disabled. Only boolean Set-Cookie presence, never its
+  value. Presence stops any later authenticated work for review; no workaround.
+- Q6 provisionally accepted: query login signs /cgi/protected.cgi with nc=1;
+  its extra header signs /cgi/xml_action.cgi with nc=1; data header uses nc=2.
+  Hardware proof requires a later supervised authenticated release, one attempt,
+  no retry or alternate signing. Challenge observation does not prove it.
+- Q7 accepted: HTTP 200 and at most 4 KiB UTF-8 text/html or text/plain body
+  exactly `200 OK` after ASCII-whitespace trim. A different body fails with only
+  sanitized type, length bucket and contains-200-OK boolean as specified above.
+- Q8 accepted with restriction: first username/password release permits printable
+  ASCII 0x20–0x7E only. Reject non-ASCII before any request with
+  `This release supports ASCII passwords only`. Caps/deadlines otherwise as
+  proposed; logout is always unconfirmed absent a later reviewed acknowledgment
+  contract. This does not relax the closed login-query validation rules.
+- Q9 answered by reviewer capture verification. device_name may be configurable;
+  version_num is opaque. No Attribute::Model or firmware-identity mapping. Discard
+  Wi-Fi ssid/mode as well as IMEI and every other unapproved field.
+- Q10 accepted: typed in-memory envelope containing field, value, plain_http
+  transport, scope/session/binding references, collection/expiry times. No profile
+  EvidenceRecord mapping or stored row without separate contract review.
+- Q11 remains unknown: do not guess DHCP-server evidence. B5 not released.
+
+The released AuthChallenge approval expires 30 seconds after native confirmation,
+not the five-minute future-flow proposal in section 2. Its only request is one
+query-free, credential-free GET /login.cgi with a five-second network budget.
+No Login, StatusRead, Logout, credentials or Secret use is released. Hardware
+must wait for Part 2 code acceptance and a separate short guideline.
+
+## 10. Original questions and current Part 2/3 gates
 
 | ID | Question / conservative decision pending review |
 | --- | --- |
 | Q1 | Are the intended “three scopes” two owner grants plus derived CleanupLogout, or three independent owner confirmations? No third issuance is assumed. |
 | Q2 | Does “identity before and after” require two remote status reads? Exactly one is currently described; no second read is authorized and no two-snapshot claim is made. |
 | Q3 | Does the reviewer accept always-enter-cleanup with conditional safe logout, rather than sending after binding loss, before login or after cleanup expiry? No unsafe request is permitted to satisfy a literal “always”. |
-| Q4 | Does real `GET /login.cgi` return 401 and a usable WWW-Authenticate header? What realm/qop/algorithm/charset shape is actually present? The JavaScript stub is not evidence. Part 2 may observe only approved realm/qop, never nonce. |
+| Q4 | Real status and challenge shape remain unknown. Released Part 2 software may emit sanitized realm/qop/algorithm, HTTP status and nonce/Set-Cookie/other-scheme presence booleans only; no nonce value. Hardware Part 3 is held until code acceptance and separate release. |
 | Q5 | Does the device require a session cookie? JavaScript has cookie helpers/comments, but the cited flow does not prove a dependency. Keep cookies disabled; any dependency stops for a reviewed decision. |
 | Q6 | Must login include the additional Digest header from `authentication()`, consuming nc=1, before the status header uses nc=2? Source supports that path; the abbreviated guideline does not mention it. No alternate-wire/signing experiment is authorized. |
 | Q7 | What is the actual successful login body and lockout/failure grammar? Source's substring test is insufficient for a strict success contract. Do not guess HTML wrappers, localized lockout text or account lockout thresholds. |
