@@ -153,7 +153,7 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       {report.probe.advancedEndpoint ? <p>Advanced local endpoint approved.</p> : null}
       <p className="muted small">Each stage is assessed separately. A verified stage does not enable another operation.</p>
       <dl aria-label="Compatibility summary">{report.stages.slice(0,5).map(stage=><div key={stage.id}>{stageRow(stage)}{stage.id==="management_api" ? <>
-        {report.staticMenu ? <p>{report.staticMenu.fileName ? `${report.staticMenu.label}: ${report.staticMenu.fileName}` : report.staticMenu.code==="menu_not_readable_without_login" ? "Menu not readable without login" : report.staticMenu.code.replaceAll("_"," ")}</p> : null}
+        {report.staticMenu ? <p>{report.staticMenu.fileName ? `${report.staticMenu.label}: ${report.staticMenu.fileName}` : report.staticMenu.code==="menu_not_readable_without_login" ? "Menu not readable without login" : report.staticMenu.code==="wrong_content_type" ? `Static menu requires XML; observed media type: ${report.staticMenu.observedMediaType || "unavailable"}.` : report.staticMenu.code.replaceAll("_"," ")}</p> : null}
         {report.protocols.some(p=>p.family==="asr_duster_xml") ? <button className="secondary-button" disabled={state==="checking" || !device.connected} onClick={()=>void readMenu()}>Read static menu</button> : null}
       </> : null}</div>)}</dl>
       <details><summary>Remaining compatibility stages</summary><dl>{report.stages.slice(5).map(stageRow)}</dl></details>

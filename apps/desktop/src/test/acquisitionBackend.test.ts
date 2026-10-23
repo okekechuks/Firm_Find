@@ -6,6 +6,13 @@ vi.mock("@tauri-apps/api/core",()=>({invoke:vi.fn(),isTauri:vi.fn()}));
 const id="a".repeat(64);
 const report=()=>({schemaVersion:1,deviceId:id,discoveryRevision:3,evaluatedAt:Date.now(),expiresAt:Date.now()+60000,fingerprint:{deviceId:id,windowsName:"USB Composite Device",transports:["usb","network"],usbVid:"1286",usbPid:"4E31",interfaceClasses:["Net"],endpoint:null,interfaceId:null,targetKind:"usb_or_network_device"},identity:{confidence:"unverified",verifiedManufacturer:null,verifiedFirmwareFamily:null,verifiedModel:null,verifiedHardwareRevision:null,verifiedFirmware:null,reportedModel:null,evidence:[]},protocols:[],candidates:[],capabilities:{},probe:{attempted:false,code:"not_approved",httpStatus:null,metadataTruncated:false},stages:compatibilityStageIds.map(id=>({id,state:id==="detected"?"observed":"not_implemented",reason:"No implementation"})),canObtain:false});
 beforeEach(()=>{vi.resetAllMocks();vi.mocked(isTauri).mockReturnValue(true);});
+it("accepts only bounded sanitized media types as static-menu limitations",()=>{
+  const staticMenu={code:"wrong_content_type",fileName:null,observedMediaType:"text/plain",source:"endpoint_response",reliability:"observed",verification:"observed",label:"dashboard file name observed from the static menu; unverified"};
+  expect(acquisitionReportSchema.safeParse({...report(),staticMenu}).success).toBe(true);
+  for(const value of ["unavailable","text/html","application/problem+xml"])expect(acquisitionReportSchema.safeParse({...report(),staticMenu:{...staticMenu,observedMediaType:value}}).success).toBe(true);
+  for(const value of ["x".repeat(65),"text/html; secret=x","text/html@private", "Text/HTML"])expect(acquisitionReportSchema.safeParse({...report(),staticMenu:{...staticMenu,observedMediaType:value}}).success).toBe(false);
+  expect(acquisitionReportSchema.safeParse({...report(),staticMenu:{...staticMenu,code:"timeout"}}).success).toBe(false);
+});
 it("uses the route-discovery IPC contract without creating implicit endpoint approval",async()=>{
   vi.mocked(invoke).mockResolvedValue(report());
   await discoverFirmwareRoutes({deviceId:id,endpoint:null,interfaceId:null,approvalToken:null,advancedEndpoint:false});

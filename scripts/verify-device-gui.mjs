@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
+import { verifyStaticMenu } from './verify-static-menu.mjs';
 export async function verifyDeviceGUI(client, {label, record, screenshot,pid,profile,evidence}) {
+  if(process.argv.includes('--acquisition-mg11-menu'))return verifyStaticMenu(client,{label,pid,evidence});
   const evaluate = source => client.evaluate(source);
   async function until(check, message, timeout=20000) {
     const end=Date.now()+timeout;

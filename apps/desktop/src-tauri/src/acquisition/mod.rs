@@ -886,7 +886,15 @@ fn stage_state(state: CapabilityState) -> CompatibilityStageState {
 
 /// Deliberately omit all raw evidence, device IDs, endpoint/interface addresses and peer text.
 pub fn diagnostics(report: &AcquisitionCapabilityReport) -> serde_json::Value {
-    serde_json::json!({"schemaVersion":1,"engine":"7.5A-C-sprint-a","evaluatedAt":report.evaluated_at,"usbVid":report.fingerprint.usb_vid,"usbPid":report.fingerprint.usb_pid,"transports":report.fingerprint.transports,"identityConfidence":report.identity.confidence,"evidenceCounts":report.identity.evidence.len(),"protocolCandidates":report.protocols.iter().map(|p| &p.family).collect::<Vec<_>>(),"probe":{"attempted":report.probe.attempted,"code":report.probe.code,"httpStatus":report.probe.http_status,"metadataTruncated":report.probe.metadata_truncated,"advancedEndpoint":report.probe.advanced_endpoint},"strategies":report.candidates,"canObtain":false})
+    let mut exported = serde_json::json!({"schemaVersion":1,"engine":"7.5A-C-sprint-a","evaluatedAt":report.evaluated_at,"usbVid":report.fingerprint.usb_vid,"usbPid":report.fingerprint.usb_pid,"transports":report.fingerprint.transports,"identityConfidence":report.identity.confidence,"evidenceCounts":report.identity.evidence.len(),"protocolCandidates":report.protocols.iter().map(|p| &p.family).collect::<Vec<_>>(),"probe":{"attempted":report.probe.attempted,"code":report.probe.code,"httpStatus":report.probe.http_status,"metadataTruncated":report.probe.metadata_truncated,"advancedEndpoint":report.probe.advanced_endpoint},"strategies":report.candidates,"canObtain":false});
+    if let Some(menu) = report
+        .static_menu
+        .as_ref()
+        .filter(|m| m.code == "wrong_content_type")
+    {
+        exported["staticMenu"] = serde_json::json!({"code":"wrong_content_type", "observedMediaType":connection::menu_media_type(menu.observed_media_type.as_deref())});
+    }
+    exported
 }
 
 #[cfg(test)]

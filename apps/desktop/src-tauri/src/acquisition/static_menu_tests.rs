@@ -63,6 +63,64 @@ fn menu_closed_table_registers_only_third_static_get() {
     assert_eq!(spec.response_types(), &[ResponseType::Xml]);
 }
 
+#[test]
+fn menu_wrong_media_type_limitation_exports_only_sanitized_type() {
+    let (d, input, base) = synthetic_context();
+    for (raw, expected) in [
+        (Some("text/plain"), "text/plain"),
+        (Some("text/html"), "text/html"),
+        (Some("text/html/private@secret"), "unavailable"),
+        (
+            Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+            "unavailable",
+        ),
+        (None, "unavailable"),
+    ] {
+        let proof = StaticMenuApproval::for_test(&d, 4, &input);
+        let report = static_menu::collect(
+            &base,
+            &d,
+            4,
+            &input,
+            &proof,
+            &AtomicBool::new(false),
+            |_, _, _| {
+                let mut result = serde_json::to_value(connection::EndpointResult::failure(
+                    "wrong_content_type",
+                    "private_response_message",
+                ))
+                .unwrap();
+                result["observedMediaType"] = serde_json::json!(raw);
+                result["server"] = serde_json::json!("private_server");
+                (
+                    serde_json::from_value(result).unwrap(),
+                    Some(b"private_body".to_vec()),
+                )
+            },
+        )
+        .unwrap();
+        let encoded = serde_json::to_value(&report).unwrap();
+        assert_eq!(encoded["staticMenu"]["observedMediaType"], expected);
+        let exported = diagnostics(&report);
+        assert_eq!(
+            exported["staticMenu"],
+            serde_json::json!({"code":"wrong_content_type", "observedMediaType":expected})
+        );
+        let json = exported.to_string();
+        for secret in [
+            "private_response_message",
+            "private_server",
+            "private_body",
+            "private@secret",
+            "192.168.100.1",
+            &d.id,
+        ] {
+            assert!(!json.contains(secret));
+        }
+        assert!(!report.can_obtain);
+    }
+}
+
 fn synthetic_context() -> (Device, DiscoveryRequest, AcquisitionCapabilityReport) {
     let mut d = super::tests::device();
     d.networks[0].gateways = vec!["192.168.100.1".into()];

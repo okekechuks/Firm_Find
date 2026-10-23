@@ -1,5 +1,9 @@
 # OBTAINER phase status
 
+## B4 H1 and supervised static-menu step — in progress
+
+23 October 2026: B4 pre-step accepted with H1. [Correction and hardware report](PHASE_7_5_B4_HARDWARE_STEP.md) records failing regressions, bounded media-type diagnostics and the owner-operated native harness. XML-only policy unchanged. Final-commit software gates and supervised hardware run pending. No authentication, B2/B5/B7/B8 or Phase 8 work authorized. Earlier entries below describe their historical delivery states.
+
 ## B4 static-menu pre-step — software review pending; hardware held
 
 23 October 2026: reviewer accepted G1/B4 plan amendments and fast-forwarded local main to `1b7fbce8334203be261d16ddf1c196181284d49c`; origin/main remains `369e741`. New branch `phase-7-5-b4-menu-prestep` starts from that main. [B4 implementation report](PHASE_7_5_B4_PRESTEP_VERIFICATION.md) records the separately approved, single-use static-menu scope and one literal `GET /xml/ui_mifi.xml`, strict bounded parser, observed/unverified filename report line, diagnostics redaction and synthetic/loopback regressions. Existing root/version approvals cannot authorize it; filename never authorizes another request or a verified stage. Extraction stays disabled.

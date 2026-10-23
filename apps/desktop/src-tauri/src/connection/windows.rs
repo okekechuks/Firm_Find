@@ -729,10 +729,10 @@ fn request_path_inner(
             )
         } == 0
         {
-            return Err(EndpointResult::failure(
-                "wrong_content_type",
-                "Static menu did not return XML.",
-            ));
+            let mut failure =
+                EndpointResult::failure("wrong_content_type", "Static menu did not return XML.");
+            failure.observed_media_type = Some(menu_media_type(None));
+            return Err(failure);
         }
         let mime = String::from_utf16_lossy(&content_type[..(size as usize / 2).min(255)]);
         let mime = mime
@@ -742,10 +742,10 @@ fn request_path_inner(
             .unwrap_or("")
             .trim();
         if !mime.eq_ignore_ascii_case("application/xml") && !mime.eq_ignore_ascii_case("text/xml") {
-            return Err(EndpointResult::failure(
-                "wrong_content_type",
-                "Static menu did not return XML.",
-            ));
+            let mut failure =
+                EndpointResult::failure("wrong_content_type", "Static menu did not return XML.");
+            failure.observed_media_type = Some(menu_media_type(Some(&mime.to_ascii_lowercase())));
+            return Err(failure);
         }
     }
     let mut declared_length = 0u32;
@@ -830,6 +830,7 @@ fn request_path_inner(
             message: message.into(),
             status: Some(status as u16),
             server,
+            observed_media_type: None,
             checked_at: now(),
             elapsed_ms: 0,
             resolved_address: None,
@@ -1092,7 +1093,7 @@ mod tests {
         for (status, mime, body, expected) in [
             (
                 "200 OK",
-                "application/xml",
+                "application/xml; charset=UTF-8",
                 "<synthetic/>",
                 "identity_unknown",
             ),
@@ -1104,6 +1105,20 @@ mod tests {
             ),
             ("302 Found", "text/xml", "<synthetic/>", "redirect_blocked"),
             ("200 OK", "text/html", "<synthetic/>", "wrong_content_type"),
+            ("200 OK", "text/plain", "<synthetic/>", "wrong_content_type"),
+            ("200 OK", "", "<synthetic/>", "wrong_content_type"),
+            (
+                "200 OK",
+                "text/html/SECRET@host",
+                "<synthetic/>",
+                "wrong_content_type",
+            ),
+            (
+                "200 OK",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "<synthetic/>",
+                "wrong_content_type",
+            ),
         ] {
             let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
             let port = listener.local_addr().unwrap().port();
@@ -1126,7 +1141,12 @@ mod tests {
                 assert!(sent.starts_with("GET /xml/ui_mifi.xml HTTP/1.1"));
                 assert!(!sent.to_ascii_lowercase().contains("authorization:"));
                 assert!(!sent.to_ascii_lowercase().contains("cookie:"));
-                let _=stream.write_all(format!("HTTP/1.1 {status}\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nLocation: /must-not-follow\r\nConnection: close\r\n\r\n{body}",body.len()).as_bytes());
+                let header = if mime.is_empty() {
+                    String::new()
+                } else {
+                    format!("Content-Type: {mime}\r\n")
+                };
+                let _=stream.write_all(format!("HTTP/1.1 {status}\r\n{header}Content-Length: {}\r\nLocation: /must-not-follow\r\nConnection: close\r\n\r\n{body}",body.len()).as_bytes());
             });
             let target = Target {
                 url: String::new(),
@@ -1149,7 +1169,20 @@ mod tests {
                     };
                     r.code
                 }
-                Err(r) => r.code,
+                Err(r) => {
+                    if expected == "wrong_content_type" {
+                        let media = if matches!(mime, "text/html" | "text/plain") {
+                            mime
+                        } else {
+                            "unavailable"
+                        };
+                        assert_eq!(
+                            serde_json::to_value(&r).unwrap()["observedMediaType"],
+                            media
+                        );
+                    }
+                    r.code
+                }
             };
             assert_eq!(code, expected);
             server.join().unwrap();

@@ -29,6 +29,8 @@ pub struct EndpointResult {
     pub elapsed_ms: u64,
     pub resolved_address: Option<String>,
     pub tls: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub observed_media_type: Option<String>,
 }
 impl EndpointResult {
     pub fn failure(code: &str, message: &str) -> Box<Self> {
@@ -42,8 +44,21 @@ impl EndpointResult {
             elapsed_ms: 0,
             resolved_address: None,
             tls: "not_checked".into(),
+            observed_media_type: None,
         })
     }
+}
+/// Retain only a bounded media-type token, never arbitrary response header text.
+pub(crate) fn menu_media_type(value: Option<&str>) -> String {
+    value
+        .filter(|v| {
+            !v.is_empty()
+                && v.len() <= 64
+                && v.bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b".+-/".contains(&b))
+        })
+        .unwrap_or("unavailable")
+        .into()
 }
 pub fn now() -> u64 {
     SystemTime::now()

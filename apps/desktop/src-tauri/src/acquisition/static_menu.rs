@@ -11,6 +11,8 @@ pub struct StaticMenuObservation {
     pub reliability: Reliability,
     pub verification: Verification,
     pub label: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub observed_media_type: Option<String>,
 }
 fn observation(code: &str, file_name: Option<String>) -> StaticMenuObservation {
     StaticMenuObservation {
@@ -20,6 +22,7 @@ fn observation(code: &str, file_name: Option<String>) -> StaticMenuObservation {
         reliability: Reliability::Observed,
         verification: Verification::Observed,
         label: "dashboard file name observed from the static menu; unverified".into(),
+        observed_media_type: None,
     }
 }
 
@@ -251,6 +254,12 @@ pub(super) fn collect(
             None,
         )
     };
-    report.static_menu = Some(observation(code, name));
+    let mut menu = observation(code, name);
+    if code == "wrong_content_type" {
+        menu.observed_media_type = Some(connection::menu_media_type(
+            result.observed_media_type.as_deref(),
+        ));
+    }
+    report.static_menu = Some(menu);
     Ok(report)
 }
