@@ -1,5 +1,9 @@
 # OBTAINER phase status
 
+## Stage 2A C1 — software correction; supervised challenge conditionally released
+
+24 October 2026: reviewer accepts initial challenge code `ca231dd` with C1; its 20 default-parallel repeats pass. C1 adds normal Digest token forms and closed, privacy-safe shape diagnostics; exact synthetic regressions fail before the fix. Latest checks: 293 standard /294 isolated Rust tests plus two doctests each, 156 frontend tests, lint, TypeScript/production frontend build and formatting pass. [C1 verification](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md) records exact commands and remaining gate execution. Hardware waits for committed/green C1, repeat gate and owner's before statement. No login/credentials/status/logout or new acquisition authority. Parallel Stage 3–6 documents are design-only; implementation still blocked.
+
 ## Stage 2A Part 2 — credential-free challenge software; review pending
 
 23 October 2026: design accepted; software adds one separately approved, single-use, header-only `GET /login.cgi`. [Verification report](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md) records scoped approvals, fresh-root preconditions, bounded Digest metadata, privacy/cancellation/timeout regressions and strict frontend IPC. Checks: 291 standard /292 isolated Rust tests, two doctests each, both Clippy profiles, formatting, 155 frontend tests, lint and TypeScript/production frontend build pass. Exact final-commit repeat and normal-data evidence follow in the report. No identity, stage or extraction authority advances; `canObtain=false`.

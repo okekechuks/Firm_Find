@@ -551,6 +551,8 @@ must wait for Part 2 code acceptance and a separate short guideline.
 
 ## 10. Original questions and current Part 2/3 gates
 
+24 October C1 release supersedes the earlier Part 3 hold: after C1's software gate and commit, one owner-supervised credential-free challenge and separate No check are released. Q4 remains unanswered until that real run. Fixed shape facts may now explain unusable syntax without retaining nonce/opaque/domain values. No authenticated request, credential or login release follows from this amendment.
+
 | ID | Question / conservative decision pending review |
 | --- | --- |
 | Q1 | Are the intended “three scopes” two owner grants plus derived CleanupLogout, or three independent owner confirmations? No third issuance is assumed. |

@@ -2,8 +2,99 @@
 use super::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum HeaderCount {
+    #[serde(rename = "0")]
+    Zero,
+    #[serde(rename = "1")]
+    One,
+    #[serde(rename = "2")]
+    Two,
+    #[serde(rename = "3+")]
+    Many,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum Scheme {
+    Digest,
+    Basic,
+    Negotiate,
+    Ntlm,
+    Other,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ParameterName {
+    Realm,
+    Nonce,
+    Qop,
+    Algorithm,
+    Opaque,
+    Stale,
+    Charset,
+    Domain,
+    Userhash,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ShapeReason {
+    NoHeader,
+    MultipleHeaders,
+    NonDigest,
+    MissingRealm,
+    MissingNonce,
+    BadNonceShape,
+    BadQop,
+    BadParameterSyntax,
+    DuplicateParameter,
+    Oversized,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ParameterShape {
+    pub name: ParameterName,
+    pub quoted: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ChallengeShape {
+    pub header_count: HeaderCount,
+    pub scheme: Option<Scheme>,
+    pub parameters: Vec<ParameterShape>,
+    pub other_parameter_count: u16,
+    pub reason: Option<ShapeReason>,
+}
+impl Default for ChallengeShape {
+    fn default() -> Self {
+        Self {
+            header_count: HeaderCount::Zero,
+            scheme: None,
+            parameters: vec![],
+            other_parameter_count: 0,
+            reason: Some(ShapeReason::NoHeader),
+        }
+    }
+}
+fn parameter_name(key: &str) -> Option<ParameterName> {
+    Some(match key {
+        "realm" => ParameterName::Realm,
+        "nonce" => ParameterName::Nonce,
+        "qop" => ParameterName::Qop,
+        "algorithm" => ParameterName::Algorithm,
+        "opaque" => ParameterName::Opaque,
+        "stale" => ParameterName::Stale,
+        "charset" => ParameterName::Charset,
+        "domain" => ParameterName::Domain,
+        "userhash" => ParameterName::Userhash,
+        _ => return None,
+    })
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ChallengeObservation {
+    #[serde(default)]
+    pub shape: Option<ChallengeShape>,
     pub code: String,
     pub http_status: Option<u16>,
     pub realm: Option<String>,
@@ -18,8 +109,34 @@ pub struct ChallengeObservation {
     pub label: String,
 }
 impl ChallengeObservation {
+    pub(crate) fn header_failure(status: Option<u16>, oversized: bool) -> Self {
+        let mut out = Self::failure(
+            if status.is_some_and(|s| (300..400).contains(&s)) {
+                "redirect_blocked"
+            } else if status.is_some_and(|s| s != 401) {
+                "unexpected_status"
+            } else {
+                "challenge_not_usable"
+            },
+            status,
+        );
+        out.shape = Some(ChallengeShape {
+            reason: Some(if oversized {
+                ShapeReason::Oversized
+            } else {
+                ShapeReason::BadParameterSyntax
+            }),
+            ..ChallengeShape::default()
+        });
+        out
+    }
     pub(crate) fn failure(code: &str, status: Option<u16>) -> Self {
         Self {
+            shape: if code == "challenge_not_usable" {
+                Some(ChallengeShape::default())
+            } else {
+                None
+            },
             code: code.into(),
             http_status: status,
             realm: None,
@@ -135,6 +252,11 @@ impl ChallengeObservation {
             _ => "challenge_not_usable",
         };
         let mut out = Self::failure(code, self.http_status);
+        out.shape = self.shape.clone().or(out.shape).map(|mut shape| {
+            shape.parameters.truncate(256);
+            shape.other_parameter_count = shape.other_parameter_count.min(8192);
+            shape
+        });
         out.nonce_present = self.nonce_present;
         out.set_cookie_present = self.set_cookie_present;
         out.other_schemes_present = self.other_schemes_present;
@@ -156,10 +278,72 @@ impl ChallengeObservation {
                 out.algorithm = self.algorithm.clone();
             } else {
                 out.code = "challenge_not_usable".into();
+                out.shape = Some(ChallengeShape {
+                    reason: Some(ShapeReason::BadParameterSyntax),
+                    ..out.shape.unwrap_or_default()
+                });
             }
         }
         out
     }
+}
+// Facts cover bounded, syntactically reachable parameters in header order. A
+// malformed tail is never searched heuristically for additional names/values.
+fn scan_parameter_shapes(value: &str, shape: &mut ChallengeShape) {
+    let Some((_, mut rest)) = value.split_once(|c: char| c.is_ascii_whitespace()) else {
+        return;
+    };
+    loop {
+        rest = rest.trim_start_matches([' ', '\t']);
+        let end = rest
+            .bytes()
+            .take_while(|b| b.is_ascii_alphanumeric() || b"_-".contains(b))
+            .count();
+        if end == 0 || end > 64 {
+            return;
+        }
+        let key = rest[..end].to_ascii_lowercase();
+        rest = rest[end..].trim_start_matches([' ', '\t']);
+        let Some(next) = rest.strip_prefix('=') else {
+            return;
+        };
+        rest = next.trim_start_matches([' ', '\t']);
+        let quoted = rest.starts_with('"');
+        if let Some(name) = parameter_name(&key) {
+            if shape.parameters.len() >= 256 {
+                return;
+            }
+            shape.parameters.push(ParameterShape { name, quoted });
+        } else {
+            shape.other_parameter_count = shape.other_parameter_count.saturating_add(1);
+        }
+        if quoted {
+            let Some(end) = rest[1..].find('"') else {
+                return;
+            };
+            rest = &rest[end + 2..];
+        } else {
+            let end = rest.find([',', ' ', '\t']).unwrap_or(rest.len());
+            if end == 0 {
+                return;
+            }
+            rest = &rest[end..];
+        }
+        rest = rest.trim_start_matches([' ', '\t']);
+        let Some(next) = rest.strip_prefix(',') else {
+            return;
+        };
+        rest = next;
+    }
+}
+fn rejected(
+    mut out: ChallengeObservation,
+    mut shape: ChallengeShape,
+    reason: ShapeReason,
+) -> ChallengeObservation {
+    shape.reason = Some(reason);
+    out.shape = Some(shape);
+    out
 }
 pub(crate) fn parse_headers(status: u16, raw: &[u8]) -> ChallengeObservation {
     let mut out = ChallengeObservation::failure(
@@ -172,18 +356,23 @@ pub(crate) fn parse_headers(status: u16, raw: &[u8]) -> ChallengeObservation {
         },
         Some(status),
     );
-    if raw.len() > 8192 || !raw.is_ascii() {
-        return out;
+    let mut shape = ChallengeShape::default();
+    if raw.len() > 8192 {
+        return rejected(out, shape, ShapeReason::Oversized);
+    }
+    if !raw.is_ascii() {
+        return rejected(out, shape, ShapeReason::BadParameterSyntax);
     }
     let Ok(text) = std::str::from_utf8(raw) else {
-        return out;
+        return rejected(out, shape, ShapeReason::BadParameterSyntax);
     };
     let mut lines = text.split("\r\n");
     if !lines.next().is_some_and(|l| l.starts_with("HTTP/")) {
-        return out;
+        return rejected(out, shape, ShapeReason::BadParameterSyntax);
     }
     let mut auth = Vec::new();
     let mut invalid = false;
+    let mut oversized = false;
     for line in lines.filter(|l| !l.is_empty()) {
         let Some((name, value)) = line.split_once(':') else {
             invalid = true;
@@ -199,25 +388,56 @@ pub(crate) fn parse_headers(status: u16, raw: &[u8]) -> ChallengeObservation {
         if name.eq_ignore_ascii_case("WWW-Authenticate") {
             let value = value.trim_matches([' ', '\t']);
             let scheme = value.split_ascii_whitespace().next().unwrap_or("");
-            if !scheme.eq_ignore_ascii_case("Digest") {
+            let kind = if scheme.eq_ignore_ascii_case("Digest") {
+                Scheme::Digest
+            } else if scheme.eq_ignore_ascii_case("Basic") {
+                Scheme::Basic
+            } else if scheme.eq_ignore_ascii_case("Negotiate") {
+                Scheme::Negotiate
+            } else if scheme.eq_ignore_ascii_case("NTLM") {
+                Scheme::Ntlm
+            } else {
+                Scheme::Other
+            };
+            if kind != Scheme::Digest {
                 out.other_schemes_present = true;
             }
+            if auth.is_empty() {
+                shape.scheme = Some(kind);
+            }
             if line.len() > 2048 {
-                invalid = true;
+                oversized = true;
             }
             auth.push(value);
         }
     }
-    if invalid || auth.len() != 1 || out.other_schemes_present || status != 401 {
-        return out;
-    }
-    let value = auth[0];
-    let Some((scheme, mut rest)) = value.split_once(|c: char| c.is_ascii_whitespace()) else {
-        return out;
+    shape.header_count = match auth.len() {
+        0 => HeaderCount::Zero,
+        1 => HeaderCount::One,
+        2 => HeaderCount::Two,
+        _ => HeaderCount::Many,
     };
-    if !scheme.eq_ignore_ascii_case("Digest") {
-        return out;
+    if oversized {
+        return rejected(out, shape, ShapeReason::Oversized);
     }
+    for value in &auth {
+        scan_parameter_shapes(value, &mut shape);
+    }
+    if invalid {
+        return rejected(out, shape, ShapeReason::BadParameterSyntax);
+    }
+    if auth.is_empty() {
+        return rejected(out, shape, ShapeReason::NoHeader);
+    }
+    if auth.len() != 1 {
+        return rejected(out, shape, ShapeReason::MultipleHeaders);
+    }
+    if out.other_schemes_present {
+        return rejected(out, shape, ShapeReason::NonDigest);
+    }
+    let Some((_, mut rest)) = auth[0].split_once(|c: char| c.is_ascii_whitespace()) else {
+        return rejected(out, shape, ShapeReason::BadParameterSyntax);
+    };
     let mut values = BTreeMap::new();
     loop {
         rest = rest.trim_start_matches([' ', '\t']);
@@ -229,7 +449,7 @@ pub(crate) fn parse_headers(status: u16, raw: &[u8]) -> ChallengeObservation {
             .take_while(|b| b.is_ascii_alphanumeric() || b"_-".contains(b))
             .count();
         if count == 0 || count > 64 {
-            return out;
+            return rejected(out, shape, ShapeReason::BadParameterSyntax);
         }
         let key = rest[..count].to_ascii_lowercase();
         rest = rest[count..].trim_start_matches([' ', '\t']);
@@ -237,62 +457,100 @@ pub(crate) fn parse_headers(status: u16, raw: &[u8]) -> ChallengeObservation {
             out.nonce_present = true;
         }
         if !rest.starts_with('=') {
-            if !matches!(key.as_str(), "realm" | "nonce" | "qop" | "algorithm") {
+            if parameter_name(&key).is_none() {
                 out.other_schemes_present = true;
             }
-            return out;
+            return rejected(out, shape, ShapeReason::BadParameterSyntax);
         }
         rest = rest[1..].trim_start_matches([' ', '\t']);
-        let Some(quoted) = rest.strip_prefix('"') else {
-            return out;
-        };
-        let Some(end) = quoted.find('"') else {
-            return out;
-        };
-        let val = &quoted[..end];
-        if val.len() > 128
-            || val
+        let quoted = rest.starts_with('"');
+        let val;
+        if quoted {
+            let inside = &rest[1..];
+            let Some(end) = inside.find('"') else {
+                return rejected(out, shape, ShapeReason::BadParameterSyntax);
+            };
+            val = &inside[..end];
+            rest = inside[end + 1..].trim_start_matches([' ', '\t']);
+            if val.len() > 128 {
+                return rejected(out, shape, ShapeReason::Oversized);
+            }
+            if val
                 .bytes()
                 .any(|b| !(0x20..=0x7e).contains(&b) || b == b'\\')
-            || values.insert(key, val).is_some()
-        {
-            return out;
+            {
+                return rejected(out, shape, ShapeReason::BadParameterSyntax);
+            }
+        } else {
+            if !matches!(key.as_str(), "algorithm" | "stale" | "charset" | "userhash") {
+                return rejected(out, shape, ShapeReason::BadParameterSyntax);
+            }
+            let end = rest.find([',', ' ', '\t']).unwrap_or(rest.len());
+            val = &rest[..end];
+            rest = rest[end..].trim_start_matches([' ', '\t']);
+            if val.len() > 32 {
+                return rejected(out, shape, ShapeReason::Oversized);
+            }
+            if !valid_token(val, 32) {
+                return rejected(out, shape, ShapeReason::BadParameterSyntax);
+            }
         }
-        rest = quoted[end + 1..].trim_start_matches([' ', '\t']);
+        if values.insert(key, val).is_some() {
+            return rejected(out, shape, ShapeReason::DuplicateParameter);
+        }
         if rest.is_empty() {
             break;
         }
         let Some(next) = rest.strip_prefix(',') else {
-            return out;
+            return rejected(out, shape, ShapeReason::BadParameterSyntax);
         };
         rest = next;
         if rest.trim().is_empty() {
-            return out;
+            return rejected(out, shape, ShapeReason::BadParameterSyntax);
         }
     }
-    let Some(realm) = values.get("realm").copied().filter(|v| valid_realm(v)) else {
-        return out;
+    let Some(realm) = values.get("realm").copied() else {
+        return rejected(out, shape, ShapeReason::MissingRealm);
     };
+    if realm.len() > 64 {
+        return rejected(out, shape, ShapeReason::Oversized);
+    }
+    if !valid_realm(realm) {
+        return rejected(out, shape, ShapeReason::BadParameterSyntax);
+    }
+    let Some(nonce) = values.get("nonce").copied() else {
+        return rejected(out, shape, ShapeReason::MissingNonce);
+    };
+    if nonce.is_empty() || nonce.len() > 128 || !nonce.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return rejected(out, shape, ShapeReason::BadNonceShape);
+    }
     let Some(qop) = values.get("qop").copied().filter(|v| valid_qop(v)) else {
-        return out;
+        return rejected(out, shape, ShapeReason::BadQop);
     };
-    if !values.get("nonce").is_some_and(|v| {
-        !v.is_empty() && v.len() <= 128 && v.bytes().all(|b| b.is_ascii_hexdigit())
-    }) {
-        return out;
-    }
     let algorithm = values.get("algorithm").copied();
-    if algorithm.is_some_and(|v| !valid_token(v, 16)) {
-        return out;
+    if algorithm.is_some_and(|v| v.len() > 16) {
+        return rejected(out, shape, ShapeReason::Oversized);
     }
-    out.code = "observed".into();
-    out.realm = Some(realm.into());
-    out.qop = Some(
-        qop.split(',')
-            .map(|v| v.trim_matches(' '))
-            .collect::<Vec<_>>()
-            .join(","),
-    );
-    out.algorithm = algorithm.map(str::to_owned);
+    if algorithm.is_some_and(|v| !valid_token(v, 16)) {
+        return rejected(out, shape, ShapeReason::BadParameterSyntax);
+    }
+    for key in ["stale", "charset", "userhash"] {
+        if values.get(key).is_some_and(|v| !valid_token(v, 32)) {
+            return rejected(out, shape, ShapeReason::BadParameterSyntax);
+        }
+    }
+    shape.reason = None;
+    out.shape = Some(shape);
+    if status == 401 {
+        out.code = "observed".into();
+        out.realm = Some(realm.into());
+        out.qop = Some(
+            qop.split(',')
+                .map(|v| v.trim_matches(' '))
+                .collect::<Vec<_>>()
+                .join(","),
+        );
+        out.algorithm = algorithm.map(str::to_owned);
+    }
     out
 }

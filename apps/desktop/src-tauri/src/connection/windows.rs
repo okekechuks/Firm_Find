@@ -450,18 +450,7 @@ impl Drop for ErasedHeader {
 }
 fn challenge_headers(request: &Handle, status: u16) -> crate::acquisition::ChallengeObservation {
     use crate::acquisition::{parse_challenge_headers, ChallengeObservation};
-    let failure = || {
-        ChallengeObservation::failure(
-            if (300..400).contains(&status) {
-                "redirect_blocked"
-            } else if status != 401 {
-                "unexpected_status"
-            } else {
-                "challenge_not_usable"
-            },
-            Some(status),
-        )
-    };
+    let failure = || ChallengeObservation::header_failure(Some(status), false);
     let mut bytes = 0;
     unsafe {
         WinHttpQueryHeaders(
@@ -473,7 +462,10 @@ fn challenge_headers(request: &Handle, status: u16) -> crate::acquisition::Chall
             ptr::null_mut(),
         );
     }
-    if bytes == 0 || bytes > 16386 {
+    if bytes > 16386 {
+        return ChallengeObservation::header_failure(Some(status), true);
+    }
+    if bytes == 0 {
         return failure();
     }
     let mut raw = ErasedWide(vec![0; (bytes as usize).div_ceil(2)]);

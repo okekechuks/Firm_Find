@@ -74,6 +74,9 @@ pub(crate) fn challenge_metadata(
     result
         .auth_challenge
         .unwrap_or_else(|| {
+            if result.code == "challenge_not_usable" {
+                return ChallengeObservation::header_failure(result.status, true);
+            }
             ChallengeObservation::failure(
                 match result.code.as_str() {
                     "timeout" => "timeout",

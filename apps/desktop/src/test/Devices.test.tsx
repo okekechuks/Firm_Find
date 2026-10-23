@@ -18,10 +18,10 @@ beforeEach(() => {
 
 it("requires separate challenge approval and renders only sanitized unverified metadata",async()=>{
   const user=userEvent.setup();const base={...result(),protocols:[{family:"asr_duster_xml"}]};checks.routes.mockResolvedValue(base);
-  checks.challengeApprove.mockResolvedValue("e".repeat(32));checks.challengeRead.mockResolvedValue({...base,authChallenge:{code:"observed",realm:"Synthetic realm",qop:"auth",algorithm:"MD5",noncePresent:true,setCookiePresent:false,otherSchemesPresent:false,label:"authentication challenge observed; unverified"}});
+  checks.challengeApprove.mockResolvedValue("e".repeat(32));checks.challengeRead.mockResolvedValue({...base,authChallenge:{shape:{headerCount:"1",scheme:"digest",parameters:[{name:"nonce",quoted:true}],otherParameterCount:0,reason:null},code:"observed",realm:"Synthetic realm",qop:"auth",algorithm:"MD5",noncePresent:true,setCookiePresent:false,otherSchemesPresent:false,label:"authentication challenge observed; unverified"}});
   render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));await user.click(screen.getByRole("button",{name:"Check Compatibility"}));
   expect(checks.challengeApprove).not.toHaveBeenCalled();await user.click(await screen.findByRole("button",{name:"Observe authentication challenge"}));
-  expect(checks.challengeRead).toHaveBeenCalledWith(expect.objectContaining({approvalToken:"e".repeat(32)}));expect(await screen.findByText(/authentication challenge observed; unverified.*Synthetic realm/)).toBeInTheDocument();expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();
+  expect(checks.challengeRead).toHaveBeenCalledWith(expect.objectContaining({approvalToken:"e".repeat(32)}));expect(await screen.findByText(/authentication challenge observed; unverified.*Synthetic realm/)).toBeInTheDocument();expect(screen.getByText(/Challenge shape: 1 header.*digest.*nonce quoted/)).toBeInTheDocument();expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();
 });
 it("challenge No causes zero read calls and leaves interface usable",async()=>{
   checks.routes.mockResolvedValue({...result(),protocols:[{family:"asr_duster_xml"}]});checks.challengeApprove.mockRejectedValue(new Error("Authentication challenge not approved."));

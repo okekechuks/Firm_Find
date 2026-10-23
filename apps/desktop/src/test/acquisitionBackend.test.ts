@@ -6,6 +6,12 @@ vi.mock("@tauri-apps/api/core",()=>({invoke:vi.fn(),isTauri:vi.fn()}));
 const id="a".repeat(64);
 const report=()=>({schemaVersion:1,deviceId:id,discoveryRevision:3,evaluatedAt:Date.now(),expiresAt:Date.now()+60000,fingerprint:{deviceId:id,windowsName:"USB Composite Device",transports:["usb","network"],usbVid:"1286",usbPid:"4E31",interfaceClasses:["Net"],endpoint:null,interfaceId:null,targetKind:"usb_or_network_device"},identity:{confidence:"unverified",verifiedManufacturer:null,verifiedFirmwareFamily:null,verifiedModel:null,verifiedHardwareRevision:null,verifiedFirmware:null,reportedModel:null,evidence:[]},protocols:[],candidates:[],capabilities:{},probe:{attempted:false,code:"not_approved",httpStatus:null,metadataTruncated:false},stages:compatibilityStageIds.map(id=>({id,state:id==="detected"?"observed":"not_implemented",reason:"No implementation"})),canObtain:false});
 beforeEach(()=>{vi.resetAllMocks();vi.mocked(isTauri).mockReturnValue(true);});
+it("C1 accepts only closed challenge shape facts and never unknown names or values",()=>{
+  const shape={headerCount:"1",scheme:"basic",parameters:[],otherParameterCount:0,reason:"non_digest"};
+  const authChallenge={code:"challenge_not_usable",httpStatus:401,realm:null,qop:null,algorithm:null,noncePresent:false,setCookiePresent:false,otherSchemesPresent:true,source:"endpoint_response",reliability:"observed",verification:"observed",label:"authentication challenge observed; unverified",shape};
+  expect(acquisitionReportSchema.safeParse({...report(),authChallenge}).success).toBe(true);
+  for(const change of [{scheme:"private-header-value"},{reason:"private-error"},{parameters:[{name:"private-name",quoted:true}]},{parameters:[{name:"nonce",quoted:true,value:"private-nonce"}]},{headerCount:"999"},{otherParameterCount:8193}])expect(acquisitionReportSchema.safeParse({...report(),authChallenge:{...authChallenge,shape:{...shape,...change}}}).success).toBe(false);
+});
 it("uses separate challenge commands and rejects missing or cross-device results",async()=>{
   const input={deviceId:id,endpoint:"http://192.168.100.1/",interfaceId:"synthetic",approvalToken:null as string|null,advancedEndpoint:false};
   const authChallenge={code:"observed",httpStatus:401,realm:"Synthetic",qop:"auth",algorithm:null,noncePresent:true,setCookiePresent:false,otherSchemesPresent:false,source:"endpoint_response",reliability:"observed",verification:"observed",label:"authentication challenge observed; unverified"};

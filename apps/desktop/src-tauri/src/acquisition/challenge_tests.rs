@@ -9,6 +9,52 @@ fn digest() -> String {
     format!("Digest realm=\"Synthetic realm\", nonce=\"{NONCE}\", qop=\"auth\"")
 }
 #[test]
+fn c1_synthetic_digest_token_extensions_and_exact_shape() {
+    for algorithm in ["MD5", "\"MD5\""] {
+        let header=format!("dIgEsT REALM=\"Synthetic realm\", nonce=\"{NONCE}\", qop=\"auth,auth-int\", algorithm={algorithm}, stale=false, charset=UTF-8, userhash=false, opaque=\"opaque_private_sentinel\", domain=\"domain_private_sentinel\", unknown_private_name=\"discard\"");
+        let r = parse_headers(401, &raw(&header));
+        assert_eq!(r.code, "observed");
+        assert_eq!(r.algorithm.as_deref(), Some("MD5"));
+        let expected = serde_json::json!({"headerCount":"1","scheme":"digest","parameters":[
+            {"name":"realm","quoted":true},{"name":"nonce","quoted":true},{"name":"qop","quoted":true},
+            {"name":"algorithm","quoted":algorithm.starts_with('"')},{"name":"stale","quoted":false},
+            {"name":"charset","quoted":false},{"name":"userhash","quoted":false},
+            {"name":"opaque","quoted":true},{"name":"domain","quoted":true}],"otherParameterCount":1,"reason":null});
+        let json = serde_json::to_value(&r).unwrap();
+        assert_eq!(json["shape"], expected);
+        for private in [
+            NONCE,
+            "opaque_private_sentinel",
+            "domain_private_sentinel",
+            "unknown_private_name",
+        ] {
+            assert!(!json.to_string().contains(private));
+        }
+    }
+}
+#[test]
+fn c1_synthetic_rejected_headers_have_exact_safe_shape() {
+    let cases=[
+        (b"HTTP/1.1 401 Unauthorized\r\n\r\n".to_vec(),"0",None,"no_header",vec![]),
+        (raw("Basic realm=\"private\""),"1",Some("basic"),"non_digest",vec!["realm"]),
+        (raw("Digest realm=\"Synthetic\", qop=\"auth\""),"1",Some("digest"),"missing_nonce",vec!["realm","qop"]),
+        (raw("Digest realm=\"Synthetic\", nonce=\"bad!\", qop=\"auth\""),"1",Some("digest"),"bad_nonce_shape",vec!["realm","nonce","qop"]),
+        (raw(&(digest()+", realm=\"duplicate\"")),"1",Some("digest"),"duplicate_parameter",vec!["realm","nonce","qop","realm"]),
+        (format!("HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: {}\r\nWWW-Authenticate: Basic\r\n\r\n",digest()).into_bytes(),"2",Some("digest"),"multiple_headers",vec!["realm","nonce","qop"]),
+        (raw(&format!("Digest realm=\"{}\"","x".repeat(2050))),"1",Some("digest"),"oversized",vec![]),
+    ];
+    for (bytes, count, scheme, reason, names) in cases {
+        let r = parse_headers(401, &bytes);
+        assert_eq!(r.code, "challenge_not_usable");
+        let shape = serde_json::to_value(&r).unwrap()["shape"].clone();
+        assert_eq!(
+            shape,
+            serde_json::json!({"headerCount":count,"scheme":scheme,"parameters":names.into_iter().map(|name|serde_json::json!({"name":name,"quoted":true})).collect::<Vec<_>>(),"otherParameterCount":0,"reason":reason})
+        );
+        assert!(r.realm.is_none() && r.qop.is_none() && r.algorithm.is_none());
+    }
+}
+#[test]
 fn challenge_synthetic_valid_case_space_and_optional_algorithm() {
     for value in [digest(),format!("dIgEsT   REALM = \"Synthetic realm\" , NONCE=\"{NONCE}\", QOP=\"auth, auth-int\", algorithm=\"MD5\"")] {
         let r=parse_headers(401,&raw(&value));
@@ -160,7 +206,13 @@ fn challenge_nonce_never_reaches_trace_report_diagnostics_or_errors() {
         &input,
         &proof,
         &AtomicBool::new(false),
-        |_, _, _| parse_headers(401, &raw(&digest())),
+        |_, _, _| {
+            parse_headers(
+                401,
+                &raw(&(digest()
+                    + ", opaque=\"opaque_private_sentinel\", domain=\"domain_private_sentinel\"")),
+            )
+        },
     )
     .unwrap();
     for output in [
@@ -168,7 +220,9 @@ fn challenge_nonce_never_reaches_trace_report_diagnostics_or_errors() {
         diagnostics(&r).to_string(),
         String::from_utf8(logs.lock().unwrap().clone()).unwrap(),
     ] {
-        assert!(!output.contains(NONCE));
+        for sentinel in [NONCE, "opaque_private_sentinel", "domain_private_sentinel"] {
+            assert!(!output.contains(sentinel));
+        }
     }
     let error = challenge::collect(
         &base,
@@ -180,7 +234,9 @@ fn challenge_nonce_never_reaches_trace_report_diagnostics_or_errors() {
         |_, _, _| panic!("stale proof"),
     )
     .unwrap_err();
-    assert!(!format!("{error:?}").contains(NONCE));
+    for sentinel in [NONCE, "opaque_private_sentinel", "domain_private_sentinel"] {
+        assert!(!format!("{error:?}").contains(sentinel));
+    }
 }
 
 fn context() -> (Device, DiscoveryRequest, AcquisitionCapabilityReport) {

@@ -2,6 +2,8 @@
 
 ## Current Stage 2A: credential-free challenge observation
 
+24 October C1 amendment: reviewer accepts initial software with C1 and conditionally releases the supervised hardware step after C1's full software gate. Parser additionally accepts quoted/unquoted token forms for algorithm/stale/charset/userhash; realm/nonce/qop/opaque/domain stay quoted. Opaque/domain values are discarded. Bounded shape facts (header-count bucket, scheme enum, fixed known parameter names/quoting, unknown-name count and fixed rejection reason) are shown in UI/report/diagnostics, never arbitrary names or values. Historical quoted-only and held-hardware statements below describe the pre-C1 delivery; no hardware result is claimed yet.
+
 23 October 2026: Stage 1 and the Stage 2A design are accepted. The released software adds exactly one separately approved request, `GET /login.cgi` without query, body, credentials, Authorization or Cookie. The closed ASR-family table now has four entries: root, static version, static menu and Challenge. Login, StatusRead and Logout remain unregistered. Earlier table counts below describe historical gates.
 
 `AuthChallenge { request: Challenge }` is an opaque, single-use approval bound to device, discovery revision, interface and normalized endpoint, expiring 30 seconds after its own native confirmation. Existing metadata/menu/strategy scopes cannot substitute for it or vice versa. A fresh same-endpoint/interface root observation must already recognize the candidate family; otherwise no challenge is sent. The shared connection lease, cancellation and route/subnet guards apply before dispatch and publication.
