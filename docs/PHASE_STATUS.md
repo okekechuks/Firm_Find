@@ -1,5 +1,13 @@
 # OBTAINER phase status
 
+## G1 WAL preflight correction — reviewer acceptance pending
+
+23 October 2026: reviewer accepts F1–F5 and F6 fallback; D6 required G1 for realistic WAL-mode newer databases. [G1 report](PHASE_7_5_G1_VERIFICATION.md) records raw-header preflight, shared supported-version constant, retained WAL-only post-open check, WAL/delete/invalid/short/locked regression coverage and actual verification results. This entry supersedes previous SQLite-preflight sidecar guarantees. Normal application data is audited read-only; tests use temporary databases only.
+
+[B4 pre-step plan](PHASE_7_5_B4_PRESTEP_PLAN.md) is approved as a plan only. Requested `callXML` citations and case-exact `objdashboard` discriminator are reverified against capture hashes and documented. No B4 implementation, menu request, new scope or parser is authorized. B2/B4/B5/B7/B8, physical OpenWrt and all five hardware firmware acquisitions remain pending; Phase 8 unstarted. Reviewer alone decides acceptance and performs any merge. No push, merge or tag.
+
+Local checks pass: 266 standard /267 isolated Rust tests, two doctests each; 146 frontend tests, lint, TypeScript/production build, both Clippy profiles and formatting. Normal database/settings/vault/saved-device/log snapshot identical. Main remains `369e74173c570009b47bfd4957a4852ed0856678`; ancestor check exits 0. Earlier entries below retain historical results; final G1 code revision and twenty-run evidence are supplied after verification.
+
 ## Phase 7.5 review fixes and D6 — reviewer acceptance pending
 
 23 October 2026: [F1–F6/D6 correction report](PHASE_7_5_REVIEW_D6.md) supersedes earlier D6 approval blockers. F1–F5 fixed; approved D6 read-only schema preflight preserves newer database bytes/journal/sidecars, supported-schema WAL and existing error mapping. F6 uses guideline's permitted fallback: original model scan unchanged because adding ASR/E-LINK also matches required family identifiers and brand-evidence predicates; no broad exceptions introduced. [B4 pre-step plan](PHASE_7_5_B4_PRESTEP_PLAN.md) written for review only.

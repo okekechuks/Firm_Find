@@ -2,8 +2,22 @@ use crate::connection::{EndpointResult, SavedRouter};
 use crate::discovery::DiscoverySnapshot;
 use crate::domain::{AuditEvent, Counts, Settings, Snapshot};
 use rusqlite::OptionalExtension;
-use rusqlite::{params, Connection, OpenFlags};
-use std::path::Path;
+use rusqlite::{params, Connection};
+use std::{fs::File, io::Read, path::Path};
+
+const SUPPORTED_SCHEMA_VERSION: u32 = 5;
+
+/// Inspect only main-file bytes: even a read-only SQLite connection can create WAL sidecars.
+/// Unreadable or invalid headers retain the existing SQLite open/error path.
+fn header_schema_version(path: &Path) -> Option<u32> {
+    let mut file = File::open(path).ok()?;
+    let mut header = [0_u8; 100];
+    file.read_exact(&mut header).ok()?;
+    if &header[..16] != b"SQLite format 3\0" {
+        return None;
+    }
+    Some(u32::from_be_bytes(header[60..64].try_into().ok()?))
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum StorageError {
@@ -21,26 +35,15 @@ pub struct Repository {
 
 impl Repository {
     pub fn open(path: &Path) -> Result<Self, StorageError> {
-        // Read-only preflight must precede any WAL or migration write.
-        // If SQLite cannot read the file, retain the existing read-write error path.
-        if path.exists() {
-            if let Ok(preflight) =
-                Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
-            {
-                if let Ok(version) =
-                    preflight.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
-                {
-                    if version > 5 {
-                        return Err(StorageError::NewerSchema);
-                    }
-                }
-            }
+        if header_schema_version(path).is_some_and(|version| version > SUPPORTED_SCHEMA_VERSION) {
+            return Err(StorageError::NewerSchema);
         }
         let mut connection = Connection::open(path)?;
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         connection.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
         let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 5 {
+        // A crash may leave a newer version only in WAL, absent from the main-file header.
+        if version > i64::from(SUPPORTED_SCHEMA_VERSION) {
             return Err(StorageError::NewerSchema);
         }
         if version == 0 {
@@ -624,6 +627,85 @@ mod tests {
             matches!(Repository::open(&path), Err(StorageError::Database(rusqlite::Error::SqliteFailure(e, _))) if e.code == rusqlite::ErrorCode::DatabaseBusy)
         );
         c.execute_batch("ROLLBACK;")?;
+        Ok(())
+    }
+
+    #[test]
+    fn g1_wal_newer_schema_refusal_preserves_entire_directory(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let path = temporary.path().join("wal-six.db");
+        let c = Connection::open(&path)?;
+        c.execute_batch("PRAGMA journal_mode=WAL; PRAGMA user_version=6;")?;
+        drop(c); // Last writer checkpoints and removes its sidecars.
+        let listing = || -> std::io::Result<Vec<std::ffi::OsString>> {
+            let mut entries = std::fs::read_dir(temporary.path())?
+                .map(|e| e.map(|e| e.file_name()))
+                .collect::<std::io::Result<Vec<_>>>()?;
+            entries.sort();
+            Ok(entries)
+        };
+        let before = std::fs::read(&path)?;
+        let directory_before = listing()?;
+        assert_eq!(
+            directory_before,
+            vec![std::ffi::OsString::from("wal-six.db")]
+        );
+        assert_eq!(&before[18..20], &[2, 2]); // SQLite WAL read/write format versions.
+        for _ in 0..2 {
+            assert!(matches!(
+                Repository::open(&path),
+                Err(StorageError::NewerSchema)
+            ));
+            assert_eq!(before, std::fs::read(&path)?);
+            assert_eq!(directory_before, listing()?);
+            assert_eq!(&std::fs::read(&path)?[18..20], &[2, 2]);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn g1_short_and_wrong_magic_headers_keep_existing_fallback(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        for (name, bytes) in [
+            ("short.db", b"SQLite format 3\0".to_vec()),
+            ("wrong.db", vec![b'X'; 100]),
+        ] {
+            let path = temporary.path().join(name);
+            std::fs::write(&path, bytes)?;
+            assert!(
+                matches!(Repository::open(&path), Err(StorageError::Database(rusqlite::Error::SqliteFailure(e, _))) if e.code == rusqlite::ErrorCode::NotADatabase)
+            );
+        }
+        let empty = temporary.path().join("empty.db");
+        std::fs::write(&empty, [])?;
+        assert_eq!(
+            Repository::open(&empty)?
+                .snapshot(temporary.path())?
+                .database_version,
+            5
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn g1_post_open_check_rejects_version_bump_only_in_wal(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let path = temporary.path().join("wal-pending.db");
+        let c = Connection::open(&path)?;
+        c.execute_batch("PRAGMA journal_mode=WAL; PRAGMA user_version=5; PRAGMA wal_checkpoint(TRUNCATE); PRAGMA wal_autocheckpoint=0; PRAGMA user_version=6;")?;
+        let header = std::fs::read(&path)?;
+        assert_eq!(u32::from_be_bytes(header[60..64].try_into()?), 5);
+        assert!(matches!(
+            Repository::open(&path),
+            Err(StorageError::NewerSchema)
+        ));
+        assert_eq!(
+            c.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))?,
+            6
+        );
         Ok(())
     }
 }
