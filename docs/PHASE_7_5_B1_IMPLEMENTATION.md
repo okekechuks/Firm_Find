@@ -42,8 +42,9 @@ D6a was characterization-only and passed while observing the existing WAL mutati
 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --features native-test-profile --locked --offline` | 0; 256 passed, 0 failed, 2 ignored; compile-fail doctest 1 passed. Run with normal Windows access for existing path-lease tests. |
 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings` | 0 |
 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings` | 0 |
+| `py scripts/verify-parallel-rust.py --runs 20 --output .tools/phase7-5-b1-implementation/final-parallel` | 0; 20/20 standard runs passed on code commit `2754a563284da658f24694e4a70036be96726a55`; each run reports 255 passed, 0 failed, 1 ignored and the compile-fail doctest passed. No tracked changes before or after any run. Computed records and log hashes are in `results.json`. |
 
-The required 20-run standard Rust check is executed after the implementation commit. `scripts/verify-parallel-rust.py` records only computed logs/results under `.tools/phase7-5-b1-implementation/final-parallel/`; it does not write verdict prose. Its result JSON contains the exact commit hash and each run's test counts and exit code.
+`scripts/verify-parallel-rust.py` records only computed logs/results under `.tools/phase7-5-b1-implementation/final-parallel/`; it does not write verdict prose. Its result JSON contains the exact commit hash and each run's test counts and exit code.
 
 ## Scope and handoff
 
