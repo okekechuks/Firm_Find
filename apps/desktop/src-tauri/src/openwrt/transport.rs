@@ -587,31 +587,43 @@ mod tests {
     #[test]
     fn blackhole_peer_cancellation_and_timeout_release_child_and_pipes() {
         use crate::adapters::{AdapterOperation, Cancellation, Stage};
-        use std::net::TcpListener;
+        use std::net::{TcpListener, TcpStream};
         // A loopback TCP sink exercises process teardown only, not protocol compatibility.
         for cancel in [true, false] {
-            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-            let port = listener.local_addr().unwrap().port();
+            let (listening_tx, listening_rx) = mpsc::channel();
             let (accepted_tx, accepted_rx) = mpsc::channel();
             let (release_tx, release_rx) = mpsc::channel();
             let sink = std::thread::spawn(move || {
+                let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+                listening_tx.send(listener.local_addr().unwrap()).unwrap();
                 let (stream, _) = listener.accept().unwrap();
                 accepted_tx.send(()).unwrap();
                 release_rx.recv().unwrap();
                 drop(stream);
             });
+            // Readiness is a server event, not a five-second race against accept.
+            let address = listening_rx.recv().unwrap();
             let cancellation = Cancellation::default();
-            let control = OperationControl::new(
-                cancellation.clone(),
-                Stage::Connection,
-                AdapterOperation::AuthorizedIdentityProbe,
-                Duration::from_millis(if cancel { 5000 } else { 750 }),
-            )
-            .unwrap();
-            let worker =
-                std::thread::spawn(move || observe("127.0.0.1".parse().unwrap(), port, &control));
-            accepted_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+            let worker_token = cancellation.clone();
+            let worker = std::thread::spawn(move || {
+                // Queue/setup time must not consume the client's operation budget.
+                let control = OperationControl::new(
+                    worker_token,
+                    Stage::Connection,
+                    AdapterOperation::AuthorizedIdentityProbe,
+                    Duration::from_millis(if cancel { 60_000 } else { 750 }),
+                )
+                .unwrap();
+                let result = observe(address.ip(), address.port(), &control);
+                // If a deadline expired before SSH connected, unblock our owned
+                // listener for cleanup. This loopback wake-up is not an SSH peer.
+                let _ = TcpStream::connect_timeout(&address, Duration::from_secs(1));
+                result
+            });
             if cancel {
+                // Only cancellation needs an established blackhole connection.
+                // Timeout may legitimately happen before SSH reaches accept.
+                accepted_rx.recv().unwrap();
                 cancellation.cancel();
             }
             let error = worker.join().unwrap().unwrap_err();

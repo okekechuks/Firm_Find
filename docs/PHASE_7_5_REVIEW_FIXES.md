@@ -2,6 +2,8 @@
 
 23 October 2026, Africa/Lagos. Branch `phase-7-5-acquisition-engine`; start `1703d87ed340c07e67cdb5d11c3032849830ae72`. Original Sprint A review: PASS WITH LIMITATIONS. Reviewer independently verified 231 standard / 232 isolated-profile Rust tests and standard Clippy at 1703d87. Original frontend, GUI and physical results remain Codex-reported; the results in this report are also Codex-executed, not independent review.
 
+Review update, 23 October: R1-R5 accepted at `09481b9`. Reviewer independently ran 242 standard / 243 isolated Rust tests, twenty parallel library runs, both Clippy profiles and formatting. Frontend/native/build/hardware results remain Codex-reported. The twenty-run series below is historical (240 tests); the final-revision replacement and B1 design gate are tracked in [R6-R10 follow-up](PHASE_7_5_R6_R10.md).
+
 ## Corrections and evidence
 
 All five findings were accepted. Before implementation, six assertions failed (R5 has two): captured fixture length, signal context, token-presence gate, virtual authorization time, BUSY/claim order and hostile confirmation name. Initial command exited 101; log `initial-tests.log`. R4's new clock helper initially retained the previous wall-elapsed behavior; R5's sanitizer initially retained raw text. They were deliberate nonfunctional test scaffolds before corrections, not claims that those functions existed in the original tree.
@@ -137,4 +139,6 @@ Machine-readable evidence: [review summary](evidence/phase-7-5-review-2026-10-23
 
 R1-R5 software and supervised reader checks PASS. Owner confirmed final router settings and firmware display unchanged. Part 1 re-review remains pending. Sprint A retains PASS WITH LIMITATIONS. No firmware file was acquired, so no acquisition capability is claimed. B1-B8 and Phase 8 remain NOT STARTED. Next step: re-review `git diff 1703d87..HEAD`; only acceptance allows B1 design, followed by its separate design approval gate.
 
-Final owner acknowledgement (23 October): "Settings and firmware unchanged" after the corrected USB read and earlier No test. This is owner-observed device preservation, not an independent dump of its internal database.
+Owner confirmations, 23 October 2026 (Africa/Lagos), given in this Codex conversation's hardware-check replies: "Unchanged; Wi-Fi off; USB ready" after Wi-Fi-on; "Settings and firmware unchanged" after the initial USB read; "Settings and firmware unchanged" after the corrected USB read and earlier No test. All owner-confirmation wording in this report refers only to the router's settings/firmware web display. It does not establish equality of internal storage or firmware bytes. Normal Windows application data equality is separately computed.
+
+R10 process correction: the preceding report and evidence were initially edited by ignored `finalize-review.py` and `record-owner-confirmation.py`. Those scripts modified exactly `docs/PHASE_7_5_REVIEW_FIXES.md`, `docs/PHASE_STATUS.md`, `docs/HARDWARE_TEST_MATRIX.md` and `docs/evidence/phase-7-5-review-2026-10-23.json`. They are retired; current wording is edited directly in the reviewed diff. No script supplies owner statements or review verdicts. The committed parallel runner writes only measured revision/count/exit/hash/timing data and logs under `.tools/`.

@@ -445,6 +445,24 @@ fn r2_visible_text_comments_and_script_strings_are_not_resource_attributes() {
     for body in [b"<p>js/base/ajax_calls.js js/base/xml_helper.js</p>".as_slice(),b"<!-- <script src='js/base/ajax_calls.js'></script><script src='js/base/xml_helper.js'></script> -->",b"<script>var example=\"<img src='js/base/ajax_calls.js'><img src='js/base/xml_helper.js'>\";</script>"] {assert!(recognize(body,None).is_empty());}
 }
 #[test]
+fn r8_stray_less_than_keeps_following_resources_candidate_only() {
+    let tags = "<script src='js/base/ajax_calls.js'></script><script src='js/base/xml_helper.js'></script>";
+    for prefix in ["a < b", "a < 4", "a <", "a < 💡"] {
+        let found = recognize(format!("{prefix}{tags}").as_bytes(), None);
+        assert_eq!(found.len(), 1, "stray text prefix: {prefix}");
+        assert_eq!(found[0].family, "asr_duster_xml");
+        assert_eq!(found[0].confidence, CapabilityState::Candidate);
+    }
+    // R8 must not alter the genuine captured page's candidate evidence.
+    let real = include_bytes!("../../fixtures/asr-root-redacted.html");
+    let mut prefixed = b"a < b".to_vec();
+    prefixed.extend_from_slice(real);
+    assert_eq!(
+        serde_json::to_value(recognize(real, None)).unwrap(),
+        serde_json::to_value(recognize(&prefixed, None)).unwrap()
+    );
+}
+#[test]
 fn r3_network_gate_cannot_rely_on_token_presence() {
     assert!(!include_str!("mod.rs").contains("if input.approval_token.is_some()"));
 }

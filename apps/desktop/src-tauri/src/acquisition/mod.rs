@@ -175,6 +175,15 @@ fn resource_attributes(page: &str) -> Vec<&str> {
             break;
         };
         at += next;
+        // A comparison or a truncated text fragment is not an opening tag.
+        // Resume at the next '<', rather than swallowing a following real tag.
+        if !bytes
+            .get(at + 1)
+            .is_some_and(|b| b.is_ascii_alphabetic() || matches!(b, b'/' | b'!'))
+        {
+            at += 1;
+            continue;
+        }
         if page[at..].starts_with("<!--") {
             let Some(end) = page[at + 4..].find("-->") else {
                 break;

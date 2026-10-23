@@ -588,7 +588,12 @@
       "httpStatus": null,
       "metadataTruncated": false
     },
-    "wifiOnOwnerSettingsFirmware": "unchanged; owner confirmed",
+    "wifiOnOwnerSettingsFirmware": {
+      "quote": "Unchanged; Wi-Fi off; USB ready",
+      "date": "2026-10-23",
+      "source": "Owner reply in this Codex conversation after Wi-Fi-on check",
+      "scope": "Router web display only; not internal storage or firmware bytes"
+    },
     "usbOnly": {
       "http200": true,
       "subnetConflict": false,
@@ -752,8 +757,18 @@
       "harnessExitCode": 1,
       "reason": "network change invalidated result; owned window closed after evidence capture"
     },
-    "usbOnlyInitialOwnerSettingsFirmware": "unchanged; owner confirmed",
-    "finalOwnerSettingsFirmware": "unchanged; owner explicitly confirmed after final corrected USB read and earlier No test",
+    "usbOnlyInitialOwnerSettingsFirmware": {
+      "quote": "Settings and firmware unchanged",
+      "date": "2026-10-23",
+      "source": "Owner reply in this Codex conversation after initial USB-only read",
+      "scope": "Router web display only; not internal storage or firmware bytes"
+    },
+    "finalOwnerSettingsFirmware": {
+      "quote": "Settings and firmware unchanged",
+      "date": "2026-10-23",
+      "source": "Owner reply in this Codex conversation to final corrected USB-read and earlier No-test preservation question",
+      "scope": "Router web display only; not internal storage or firmware bytes"
+    },
     "normalDataPreservedAfterAllChecks": true,
     "internalRouterDatabaseInspected": false,
     "allFourPhysicalFeatures": "UNKNOWN"
