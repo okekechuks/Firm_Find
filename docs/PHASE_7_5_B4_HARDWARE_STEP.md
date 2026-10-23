@@ -39,16 +39,17 @@ and repeated suites are pending at this commit.
 
 `scripts/verify-static-menu.mjs` is selected by
 `node scripts/verify-foundation.mjs --release-only --device-gui --acquisition-mg11-menu`.
-It uses an owned isolated profile, real React clicks and Rust IPC. It records
+It uses an owned isolated profile, real React popup navigation and Rust IPC. It records
 computed invocation outcomes and reads native dialog text through
 `scripts/read-native-dialog.ps1`. It never answers a native dialog.
 
 An existing root/version approval precedes the separate menu approval. The only
 new authorized device request is one `GET /xml/ui_mifi.xml`. A successful
-observation is followed immediately by a separate menu approval for the owner
+read outcome is followed immediately by a separate menu approval for the owner
 to decline. The harness checks that decline produces no second
 `read_static_menu` call, receipt or result. If the positive run hits a stop
-condition, it stops without another fetch or workaround. Native invocation
+condition, it stops device requests without another fetch or workaround; a
+separate No dialog remains a request-free rejection check. Native invocation
 counts plus proof/loopback tests support rejection evidence; no packet capture
 is claimed. Generated captures remain ignored; no screenshots are committed.
 
