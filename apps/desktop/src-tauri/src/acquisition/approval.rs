@@ -1,5 +1,5 @@
 //! Backend receipts follow the Phase 5 bound, expiring, single-use grant pattern.
-use super::strategy_api::{StrategyError, StrategyId, StrategyProbeApproval};
+use super::strategy_api::{StrategyError, StrategyId};
 use super::*;
 use std::{
     sync::Mutex,
@@ -170,7 +170,51 @@ impl ClaimedApproval {
         &self,
         strategy: StrategyId,
     ) -> Result<StrategyProbeApproval, StrategyError> {
-        StrategyProbeApproval::from_scope(self.scope.clone(), strategy)
+        match &self.scope {
+            ApprovalScope::StrategyProbe {
+                strategy: bound,
+                requests,
+            } if *bound == strategy && !requests.is_empty() && Instant::now() < self.deadline => {
+                Ok(StrategyProbeApproval {
+                    strategy,
+                    deadline: self.deadline,
+                })
+            }
+            _ => Err(StrategyError::ApprovalScopeMismatch),
+        }
+    }
+}
+
+/// Proof can only be minted by a claimed receipt inside this module.
+/// ```compile_fail,E0451
+/// use obtainer_lib::acquisition::{StrategyId, StrategyProbeApproval};
+/// let _ = StrategyProbeApproval { strategy: StrategyId::OfficialImage, deadline: std::time::Instant::now() };
+/// ```
+pub struct StrategyProbeApproval {
+    strategy: StrategyId,
+    deadline: Instant,
+}
+impl StrategyProbeApproval {
+    pub(crate) fn authorizes(&self, strategy: StrategyId) -> bool {
+        self.strategy == strategy && Instant::now() < self.deadline
+    }
+    #[cfg(test)]
+    pub(crate) fn for_test(strategy: StrategyId) -> Self {
+        let claimed = ClaimedApproval {
+            binding: Binding {
+                device: "test".into(),
+                revision: 1,
+                interface: "test".into(),
+                endpoint: "http://127.0.0.1/".into(),
+                advanced: false,
+            },
+            scope: ApprovalScope::StrategyProbe {
+                strategy,
+                requests: vec![super::RequestId::Root],
+            },
+            deadline: Instant::now() + Duration::from_secs(30),
+        };
+        claimed.strategy_probe(strategy).unwrap()
     }
 }
 

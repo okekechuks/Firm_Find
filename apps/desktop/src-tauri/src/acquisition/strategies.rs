@@ -83,7 +83,8 @@ impl AcquisitionStrategyRegistry {
             .map(|strategy| {
                 let definition = definition(strategy.id());
                 let applicability = strategy.applicability(&context);
-                let mut decision = capability(CapabilityState::Unknown, definition.reason, &[]);
+                let mut decision =
+                    capability(strategy.implementation_state(), definition.reason, &[]);
                 decision.missing_requirements = applicability
                     .missing
                     .iter()

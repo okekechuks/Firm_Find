@@ -30,7 +30,7 @@ pub enum ParserId {
 
 /// Closed table entries have private fields and no caller-facing constructor.
 ///
-/// ```compile_fail
+/// ```compile_fail,E0451
 /// use obtainer_lib::acquisition::request_registry::{RequestId, RequestSpec};
 /// let _ = RequestSpec {
 ///     id: RequestId::Login,

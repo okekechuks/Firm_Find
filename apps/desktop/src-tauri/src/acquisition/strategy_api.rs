@@ -1,6 +1,4 @@
-use super::{
-    approval::ApprovalScope, CapabilityState, DeviceIdentityAssessment, FirmwareAcquisitionStrategy,
-};
+use super::{CapabilityState, DeviceIdentityAssessment, FirmwareAcquisitionStrategy};
 use serde::{Deserialize, Serialize};
 
 /// Stable strategy identifiers. Serde names match the existing schema-1 wire IDs.
@@ -199,47 +197,15 @@ impl<'a> EvaluationContext<'a> {
     }
 }
 
-/// Opaque strategy-probe proof. No production path issues this scope in this phase.
-pub struct StrategyProbeApproval {
-    strategy: StrategyId,
-    scope: ApprovalScope,
-}
-
-impl StrategyProbeApproval {
-    #[allow(dead_code)] // No production code can construct this proof until a probe scope is reviewed.
-    pub(crate) fn from_scope(
-        scope: ApprovalScope,
-        strategy: StrategyId,
-    ) -> Result<Self, StrategyError> {
-        match scope {
-            ApprovalScope::StrategyProbe {
-                strategy: bound,
-                ref requests,
-            } if bound == strategy && !requests.is_empty() => Ok(Self { strategy, scope }),
-            _ => Err(StrategyError::ApprovalScopeMismatch),
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn for_test(strategy: StrategyId) -> Self {
-        Self {
-            strategy,
-            scope: ApprovalScope::StrategyProbe {
-                strategy,
-                requests: vec![super::request_registry::RequestId::Root],
-            },
-        }
-    }
-
-    pub(crate) fn authorizes(&self, strategy: StrategyId) -> bool {
-        self.strategy == strategy
-            && matches!(self.scope, ApprovalScope::StrategyProbe { strategy: bound, .. } if bound == strategy)
-    }
-}
+pub use super::approval::StrategyProbeApproval;
 
 pub trait AcquisitionStrategy: Send + Sync {
     fn id(&self) -> StrategyId;
     fn kind(&self) -> StrategyKind;
+    /// Current stubs share this state with their probe; no dispatch is performed.
+    fn implementation_state(&self) -> CapabilityState {
+        CapabilityState::NotImplemented
+    }
     fn qualified_requirements(&self) -> &'static [&'static str];
 
     fn applicability(&self, context: &EvaluationContext<'_>) -> Applicability {
@@ -259,11 +225,8 @@ pub trait AcquisitionStrategy: Send + Sync {
                 .map(|requirement| Requirement::Qualified(requirement)),
         );
         Applicability {
-            state: if missing.is_empty() {
-                CapabilityState::AvailableVerified
-            } else {
-                CapabilityState::Unknown
-            },
+            // Identity alone cannot qualify any acquisition implementation.
+            state: CapabilityState::Unknown,
             evidence_ids: vec![],
             missing,
         }

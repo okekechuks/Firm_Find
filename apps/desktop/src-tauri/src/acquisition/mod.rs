@@ -14,9 +14,9 @@ pub mod ipc;
 pub mod request_registry;
 mod strategies;
 mod strategy_api;
-pub use approval::ApprovalScope;
 use approval::Approvals;
 pub(crate) use approval::ClaimedApproval;
+pub use approval::{ApprovalScope, StrategyProbeApproval};
 pub use request_registry::{
     ParserId, ProtocolFamilyId, RequestEnvelope, RequestId, RequestRegistry, RequestSpec,
     RequestValidationError, ResponseType,
@@ -364,6 +364,7 @@ pub fn recognize(body: &[u8], server: Option<&str>) -> Vec<VendorProtocolCandida
                 .chain(
                     title
                         .contains("e-link")
+                        // Evidence text only; never a model or manufacturer selection branch.
                         .then(|| "Brand hint: e_link_oem".into()),
                 )
                 .collect(),
@@ -734,7 +735,7 @@ fn assess(
             ),
         );
     }
-    let stages = compatibility_stages(&identity, &probe, &capabilities);
+    let stages = compatibility_stages(&identity, &probe, &capabilities, &protocols);
     AcquisitionCapabilityReport {
         schema_version: 1,
         device_id: device.id.clone(),
@@ -756,6 +757,7 @@ fn compatibility_stages(
     identity: &DeviceIdentityAssessment,
     probe: &ProbeSummary,
     capabilities: &BTreeMap<String, Capability>,
+    protocols: &[VendorProtocolCandidate],
 ) -> Vec<CompatibilityStage> {
     let state_for = |key: &str| {
         capabilities
@@ -787,18 +789,26 @@ fn compatibility_stages(
             } else {
                 CompatibilityStageState::Unknown
             },
-            reason: "Exact identity requires fresh, consistent, endpoint-bound trusted evidence.".into(),
+            reason: "Exact identity requires fresh, consistent, endpoint-bound trusted evidence."
+                .into(),
         },
         CompatibilityStage {
             id: CompatibilityStageId::ManagementApi,
-            state: if probe.http_status.is_some() {
+            state: if probe.http_status.is_some() && !protocols.is_empty() {
                 CompatibilityStageState::Observed
             } else if probe.attempted {
                 CompatibilityStageState::Unknown
             } else {
                 CompatibilityStageState::NotChecked
             },
-            reason: "An endpoint response is only an observation; management support remains unverified.".into(),
+            reason: if probe.http_status.is_some() && protocols.is_empty() {
+                "A web server answered; no management family recognized"
+            } else if probe.http_status.is_some() {
+                "A recognized management family is only a candidate; support remains unverified."
+            } else {
+                "No management family response observed."
+            }
+            .into(),
         },
     ];
     for (id, key) in [

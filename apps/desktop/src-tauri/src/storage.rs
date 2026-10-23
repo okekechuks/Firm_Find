@@ -2,7 +2,7 @@ use crate::connection::{EndpointResult, SavedRouter};
 use crate::discovery::DiscoverySnapshot;
 use crate::domain::{AuditEvent, Counts, Settings, Snapshot};
 use rusqlite::OptionalExtension;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OpenFlags};
 use std::path::Path;
 
 #[derive(Debug, thiserror::Error)]
@@ -21,6 +21,21 @@ pub struct Repository {
 
 impl Repository {
     pub fn open(path: &Path) -> Result<Self, StorageError> {
+        // Read-only preflight must precede any WAL or migration write.
+        // If SQLite cannot read the file, retain the existing read-write error path.
+        if path.exists() {
+            if let Ok(preflight) =
+                Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+            {
+                if let Ok(version) =
+                    preflight.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
+                {
+                    if version > 5 {
+                        return Err(StorageError::NewerSchema);
+                    }
+                }
+            }
+        }
         let mut connection = Connection::open(path)?;
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         connection.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
@@ -536,8 +551,7 @@ mod tests {
     }
 
     #[test]
-    fn d6a_characterizes_newer_schema_wal_change_before_refusal(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn d6_newer_schema_is_refused_without_mutation() -> Result<(), Box<dyn std::error::Error>> {
         use rusqlite::OpenFlags;
         use std::fs;
         let temporary = tempfile::tempdir()?;
@@ -558,8 +572,58 @@ mod tests {
             .query_row("PRAGMA journal_mode", [], |row| row.get::<_, String>(0))?;
 
         assert_eq!(before_mode, "delete");
-        assert_eq!(after_mode, "wal");
-        assert_ne!(before_bytes, after_bytes);
+        assert_eq!(after_mode, "delete");
+        assert_eq!(before_bytes, after_bytes);
+        assert!(!Path::new(&format!("{}-wal", path.display())).exists());
+        assert!(!Path::new(&format!("{}-shm", path.display())).exists());
+        Ok(())
+    }
+    #[test]
+    fn d6_supported_database_keeps_wal_and_existing_rows() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let temporary = tempfile::tempdir()?;
+        let path = temporary.path().join("supported.db");
+        let mut repo = Repository::open(&path)?;
+        repo.save_settings(&Settings { theme: Theme::Dark })?;
+        drop(repo);
+        let c = Connection::open(&path)?;
+        c.execute_batch("PRAGMA journal_mode=DELETE;")?;
+        drop(c);
+        let repo = Repository::open(&path)?;
+        assert_eq!(repo.settings()?.theme, Theme::Dark);
+        assert_eq!(
+            repo.connection
+                .query_row("PRAGMA journal_mode", [], |r| r.get::<_, String>(0))?,
+            "wal"
+        );
+        assert_eq!(
+            repo.connection
+                .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))?,
+            5
+        );
+        Ok(())
+    }
+    #[test]
+    fn d6_invalid_file_preserves_existing_error_mapping() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let temporary = tempfile::tempdir()?;
+        let path = temporary.path().join("invalid.db");
+        std::fs::write(&path, b"this is not SQLite")?;
+        assert!(
+            matches!(Repository::open(&path), Err(StorageError::Database(rusqlite::Error::SqliteFailure(e, _))) if e.code == rusqlite::ErrorCode::NotADatabase)
+        );
+        Ok(())
+    }
+    #[test]
+    fn d6_locked_file_preserves_existing_error_mapping() -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let path = temporary.path().join("locked.db");
+        let c = Connection::open(&path)?;
+        c.execute_batch("CREATE TABLE retained(value); BEGIN EXCLUSIVE;")?;
+        assert!(
+            matches!(Repository::open(&path), Err(StorageError::Database(rusqlite::Error::SqliteFailure(e, _))) if e.code == rusqlite::ErrorCode::DatabaseBusy)
+        );
+        c.execute_batch("ROLLBACK;")?;
         Ok(())
     }
 }

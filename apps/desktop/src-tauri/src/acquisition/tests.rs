@@ -33,9 +33,12 @@ fn exact_identity_does_not_skip_independent_source_and_export_qualification() {
     );
     let candidates = AcquisitionStrategyRegistry::default().evaluate(&identity);
     assert_eq!(candidates.len(), 5);
-    assert!(candidates
-        .iter()
-        .all(|c| c.capability.state == CapabilityState::Unknown && !c.capability.executable));
+    assert!(
+        candidates
+            .iter()
+            .all(|c| c.capability.state == CapabilityState::NotImplemented
+                && !c.capability.executable)
+    );
     assert!(candidates[0]
         .capability
         .missing_requirements
@@ -155,10 +158,12 @@ fn mg11_no_longer_hits_a_hardcoded_global_failure() {
     assert_eq!(r.identity.confidence, "unverified");
     assert_eq!(r.identity.reported_model.as_deref(), Some("comFi MG11"));
     assert!(r.identity.verified_model.is_none());
-    assert!(r
-        .candidates
-        .iter()
-        .all(|c| c.capability.state == CapabilityState::Unknown && !c.capability.executable));
+    assert!(
+        r.candidates
+            .iter()
+            .all(|c| c.capability.state == CapabilityState::NotImplemented
+                && !c.capability.executable)
+    );
     assert_eq!(r.capabilities.len(), 16);
     assert_eq!(
         r.capabilities["deviceDetected"].state,
@@ -875,6 +880,7 @@ fn b6_report_has_eleven_ordered_stages_and_identity_does_not_advance_them() {
         &verified_identity,
         &unknown_report.probe,
         &unknown_report.capabilities,
+        &unknown_report.protocols,
     );
     assert_eq!(updated[1].state, CompatibilityStageState::Verified);
     for (index, (updated_stage, original_stage)) in
@@ -914,7 +920,11 @@ fn acquisition_model_selection_does_not_depend_on_user_label() {
 
 #[test]
 fn acquisition_runtime_has_no_hardware_model_name_special_cases() {
-    assert!(runtime_model_name_matches().is_empty());
+    assert!(
+        runtime_model_name_matches().is_empty(),
+        "{:?}",
+        runtime_model_name_matches()
+    );
 }
 
 fn runtime_model_name_matches() -> Vec<String> {
@@ -1005,4 +1015,84 @@ fn runtime_model_name_matches() -> Vec<String> {
 fn static_version_xml_rejects_entities_duplicates_and_unbalanced_wrappers() {
     let d = device();
     for body in [b"<!DOCTYPE RGW [<!ENTITY e SYSTEM 'file:///private'>]><RGW><firmware_version>&e;</firmware_version></RGW>".as_slice(),b"<RGW><firmware_version>A</firmware_version><firmware_version>B</firmware_version></RGW>",b"<RGW><firmware_version>A</firmware_version>",b"<?xml version='1.0'?><RGW><firmware_version>&evil;</firmware_version></RGW>"] {assert!(version_evidence(&d,"http://192.168.100.1/","usb",body).is_none());}
+}
+
+#[test]
+fn review_f1_default_cannot_qualify_from_identity_alone() {
+    struct Empty;
+    impl AcquisitionStrategy for Empty {
+        fn id(&self) -> StrategyId {
+            StrategyId::OfficialImage
+        }
+        fn kind(&self) -> StrategyKind {
+            StrategyKind::OfficialImage
+        }
+        fn qualified_requirements(&self) -> &'static [&'static str] {
+            &[]
+        }
+    }
+    let d = device();
+    let now = connection::now();
+    let identity = identity(
+        [
+            Attribute::Manufacturer,
+            Attribute::FirmwareFamily,
+            Attribute::Model,
+            Attribute::HardwareRevision,
+            Attribute::FirmwareVersion,
+        ]
+        .into_iter()
+        .map(|a| record(&d, a, "fixture", now))
+        .collect(),
+        now,
+        None,
+        None,
+    );
+    assert_eq!(
+        Empty
+            .applicability(&EvaluationContext::new(&identity))
+            .state,
+        CapabilityState::Unknown
+    );
+}
+#[test]
+fn review_f2_proof_constructor_is_not_a_bare_scope_factory() {
+    assert!(!include_str!("strategy_api.rs").contains("fn from_scope("));
+    assert!(include_str!("approval.rs").contains("compile_fail,E0451"));
+}
+#[test]
+fn review_f3_candidates_report_missing_implementation() {
+    let d = device();
+    let r = discover(&d, vec![], 4, &input(&d), &AtomicBool::new(false)).unwrap();
+    assert!(
+        r.candidates
+            .iter()
+            .all(|c| c.capability.state == CapabilityState::NotImplemented
+                && !c.capability.executable)
+    );
+}
+#[test]
+fn review_f4_web_response_requires_family_for_management_observation() {
+    let d = device();
+    for status in [200, 404, 500] {
+        let mut r = discover(&d, vec![], 4, &input(&d), &AtomicBool::new(false)).unwrap();
+        r.probe.attempted = true;
+        r.probe.http_status = Some(status);
+        let stages = compatibility_stages(&r.identity, &r.probe, &r.capabilities, &r.protocols);
+        assert_eq!(stages[2].state, CompatibilityStageState::Unknown);
+        assert_eq!(
+            stages[2].reason,
+            "A web server answered; no management family recognized"
+        );
+        let families = recognize(
+            include_bytes!("../../fixtures/asr-root-redacted.html"),
+            None,
+        );
+        let stages = compatibility_stages(&r.identity, &r.probe, &r.capabilities, &families);
+        assert_eq!(stages[2].state, CompatibilityStageState::Observed);
+    }
+}
+#[test]
+fn review_f5_private_field_doctest_pins_error() {
+    assert!(include_str!("request_registry.rs").contains("compile_fail,E0451"));
 }

@@ -1,5 +1,13 @@
 # OBTAINER phase status
 
+## Phase 7.5 review fixes and D6 — reviewer acceptance pending
+
+23 October 2026: [F1–F6/D6 correction report](PHASE_7_5_REVIEW_D6.md) supersedes earlier D6 approval blockers. F1–F5 fixed; approved D6 read-only schema preflight preserves newer database bytes/journal/sidecars, supported-schema WAL and existing error mapping. F6 uses guideline's permitted fallback: original model scan unchanged because adding ASR/E-LINK also matches required family identifiers and brand-evidence predicates; no broad exceptions introduced. [B4 pre-step plan](PHASE_7_5_B4_PRESTEP_PLAN.md) written for review only.
+
+Checks: 263 standard /264 isolated Rust tests and two doctests per profile pass; 146 frontend tests, lint, TypeScript/production frontend build, both Clippy profiles and formatting pass. Normal DB/WAL/settings/rows/saved devices/vault/log snapshot unchanged. Final revision and twenty-run outcome are recorded after the implementation commit. Main remains `369e74173c570009b47bfd4957a4852ed0856678`; `git merge-base --is-ancestor 369e741 HEAD` exits 0, so this branch is a fast-forward candidate. No merge, push or tag performed.
+
+Explicitly not done: B2 schema migration/artifact classes, B4 authenticated client, B5 binding, B7 registry, B8 worker, physical OpenWrt qualification, all five H01–H05 hardware firmware acquisitions. Acquisition remains disabled. Phase 8 unstarted. Reviewer decides acceptance and performs any merge; full Phase 7/7.5 completion is not declared here.
+
 ## Phase 7.5 B1/B3/B6 local implementation - PASS WITH LIMITATIONS
 
 23 October 2026: the owner accepted the revised design and authorized only local B1, B3, B6, the model-name scan and D6a characterization. Those items are implemented and verified in [the implementation report](PHASE_7_5_B1_IMPLEMENTATION.md). Latest checks: 255 standard Rust tests + 1 ignored, 256 isolated-profile Rust tests + 2 ignored, both doctest runs pass; both Clippy profiles and Rust formatting pass; frontend 146 tests, lint and production build pass. No physical device or Internet traffic was sent. B1 probes remain `not_implemented`, non-executable, and `canObtain` stays false. B3 is a validator/data registry only; it does not dispatch requests.
