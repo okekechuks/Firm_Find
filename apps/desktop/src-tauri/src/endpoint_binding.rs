@@ -346,7 +346,11 @@ impl BoundEndpoint {
             ))
     }
     fn current_at(&self, now: u64) -> bool {
-        self.live.load(Ordering::Acquire) && now < self.expires_at && Instant::now() < self.deadline
+        if now >= self.expires_at || Instant::now() >= self.deadline {
+            // Expiry is irreversible even if the system wall clock subsequently rolls back.
+            self.live.store(false, Ordering::Release);
+        }
+        self.live.load(Ordering::Acquire)
     }
 }
 struct Entry {

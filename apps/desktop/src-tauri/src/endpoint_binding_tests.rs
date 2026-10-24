@@ -66,7 +66,6 @@ fn stage4_material_and_freshness() {
     assert_eq!(first.expires_at, same.expires_at);
     registry.observe(&snapshot, &route, 2_000);
     assert!(first.current_at(2_001));
-    assert!(!first.current_at(first.expires_at));
     snapshot.status = DiscoveryStatus::Failed;
     snapshot.devices.clear();
     registry.observe(&snapshot, &route, 2_001);
@@ -223,6 +222,67 @@ fn stage4_canonical_fixed_vector_and_set_order() {
     let mut empty = vec![];
     optional(&mut empty, Some(vec![]));
     assert_ne!(absent, empty);
+    // Nontrivial reorder: the selected source is deliberately not the first address.
+    let (mut snapshot, selection, route) = fixture();
+    let n = &mut snapshot.devices[0].networks[0];
+    n.addresses.insert(0, "192.168.100.3".into());
+    n.prefixes.push(AddressPrefix {
+        address: "192.168.100.3".into(),
+        length: 24,
+    });
+    n.default_routes = vec![
+        crate::discovery::DefaultRoute {
+            gateway: "192.168.100.1".into(),
+            metric: 0,
+            family: "ipv4".into(),
+        },
+        crate::discovery::DefaultRoute {
+            gateway: "192.168.100.254".into(),
+            metric: 10,
+            family: "ipv4".into(),
+        },
+    ];
+    let other = NetworkAdapter {
+        id: "other-network".into(),
+        addresses: vec!["10.20.30.2".into()],
+        prefixes: vec![AddressPrefix {
+            address: "10.20.30.2".into(),
+            length: 24,
+        }],
+        link_up: true,
+        ..Default::default()
+    };
+    snapshot.devices[0].networks.push(other);
+    for name in ["A", "B"] {
+        snapshot.devices[0].interfaces.push(serde_json::from_value(serde_json::json!({"instanceId":format!("USB\\SYNTHETIC_{name}"),"parentInstanceId":"USB\\SYNTHETIC_PARENT","className":"Net","classGuid":"synthetic","interfaceClasses":[],"hardwareIds":[],"portName":null,"present":true,"manufacturer":null,"compatibleIds":[],"interfacePaths":[]})).unwrap());
+    }
+    let before = capture(&snapshot, &selection, &route).unwrap();
+    assert_eq!(before.source.ip, "192.168.100.2".parse::<IpAddr>().unwrap());
+    let registry = Registry::default();
+    let binding = registry.bind(&snapshot, &selection, &route, 1_000).unwrap();
+    snapshot.devices[0].networks.reverse();
+    snapshot.devices[0].interfaces.reverse();
+    for n in &mut snapshot.devices[0].networks {
+        n.addresses.reverse();
+        n.prefixes.reverse();
+        n.default_routes.reverse();
+    }
+    assert_eq!(before, capture(&snapshot, &selection, &route).unwrap());
+    registry.observe(&snapshot, &route, 1_001);
+    assert!(binding.current_at(1_001));
+    snapshot.devices[0].interfaces[0].parent_instance_id =
+        Some("USB\\OTHER_SYNTHETIC_PARENT".into());
+    registry.observe(&snapshot, &route, 1_002);
+    assert!(!binding.current_at(1_002));
+}
+
+#[test]
+fn stage4_expiry_cannot_be_reversed_by_wall_clock_rollback() {
+    let (snapshot, selection, route) = fixture();
+    let registry = Registry::default();
+    let bound = registry.bind(&snapshot, &selection, &route, 1_000).unwrap();
+    assert!(!bound.current_at(bound.expires_at));
+    assert!(!bound.current_at(1_001));
 }
 
 #[test]
