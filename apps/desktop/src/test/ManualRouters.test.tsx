@@ -12,6 +12,13 @@ const router: SavedRouter = {id: "a".repeat(64), address: "http://192.168.100.1/
 const response: EndpointResult = {code: "authentication_required", state: "authentication_required", message: "Authentication required; no credentials sent.", status: 401, server: "fixture", checkedAt: 1, elapsedMs: 12, resolvedAddress: "192.168.100.1", tls: "not_used"};
 beforeEach(() => { vi.mocked(backend.getManualRouters).mockResolvedValue([]); vi.mocked(backend.cancelEndpointProbe).mockResolvedValue(); });
 
+it("Stage 4 labels persisted plain HTTP observations without making a request", async () => {
+  vi.mocked(backend.getManualRouters).mockResolvedValue([{...router,lastResult:response}]);
+  render(<ManualRouters devices={[]} draft={null} onClose={vi.fn()}/>);
+  expect(await screen.findByText(/not cryptographically verified/)).toBeInTheDocument();
+  expect(backend.probeManagementEndpoint).not.toHaveBeenCalled();
+});
+
 it("validates manual input, displays backend rejection, saves normalized entries without probing", async () => {
   const close = vi.fn();
   const user = userEvent.setup();

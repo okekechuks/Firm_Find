@@ -95,6 +95,7 @@ export function ManualRouters({devices, draft, open = true, onClose, onDraftClos
         <p className="muted small">{state} · Identity unknown{router.deviceId ? " · Associated with selected Windows interface" : " · Interface chosen during check"}</p>
         {observation ? <div className="endpoint-observation"><p><strong>Last check: {observation.code.replaceAll("_", " ")}</strong>{observation.status ? ` · HTTP ${observation.status}` : ""} · {observation.elapsedMs} ms</p>
           <p className="muted small">{new Date(observation.checkedAt).toLocaleString()} · {observation.resolvedAddress ?? "No resolved endpoint recorded"} · TLS: {observation.tls.replaceAll("_", " ")}</p>
+          {observation.tls === "not_used" && observation.status !== null ? <p className="muted small">Plain HTTP: not cryptographically verified.</p> : null}
           {observation.server ? <p className="muted small">Server header (unverified): {observation.server}</p> : null}
           {!observations[router.id] ? <p className="muted small">Historical observation; check again to confirm current reachability.</p> : null}
         </div> : null}

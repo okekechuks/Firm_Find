@@ -245,6 +245,13 @@ fn scan_and_reply(
         openwrt.observe_discovery(snapshot);
     }
     // Events contain a revision only, never hardware identifiers.
+    if let Some(acquisition) = app.try_state::<crate::acquisition::Service>() {
+        acquisition.2.observe(
+            snapshot,
+            &crate::endpoint_binding::SystemRoute,
+            crate::connection::now(),
+        );
+    }
     let _ = app.emit("discovery-changed", snapshot.revision);
     for (run, reply) in replies {
         let mut response = snapshot.clone();

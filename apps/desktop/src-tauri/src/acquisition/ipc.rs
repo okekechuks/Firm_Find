@@ -122,9 +122,11 @@ pub async fn discover_firmware_routes(
 pub fn cancel_firmware_route_discovery(
     device_id: String,
     connections: tauri::State<'_, ConnectionService>,
+    service: tauri::State<'_, Service>,
 ) {
     if device_id.len() == 64 {
         connections.cancel(&format!("acquisition:{device_id}"));
+        service.2.invalidate(&device_id);
     }
 }
 
@@ -449,7 +451,7 @@ pub async fn approve_auth_challenge(
         .find(|d| d.id == input.device_id)
         .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
     cached_challenge_report(&service, device, snapshot.revision, &input)?;
-    let binding = approval::binding(device, snapshot.revision, &input)?;
+    let binding = approval::challenge_binding(&service, &snapshot, &input)?;
     let message = approval::challenge_confirmation(device, &binding);
     use tauri::Manager;
     let owner = app
@@ -498,7 +500,7 @@ pub async fn approve_auth_challenge(
         .find(|d| d.id == input.device_id)
         .ok_or_else(|| error("DEVICE_NOT_FOUND", "Select a current device."))?;
     cached_challenge_report(&service, device, current.revision, &input)?;
-    if approval::binding(device, current.revision, &input)? != binding {
+    if approval::challenge_binding(&service, &current, &input)? != binding {
         return Err(error("STALE_RESULT", "Device changed. Approve again."));
     }
     service.1.issue_challenge(binding, approved)
@@ -524,7 +526,7 @@ pub async fn read_auth_challenge(
     let lease = connections
         .begin(&format!("acquisition:{}", device.id))
         .map_err(|_| error("BUSY", "Another check is finishing."))?;
-    let binding = approval::binding(&device, snapshot.revision, &input)?;
+    let binding = approval::challenge_binding(&service, &snapshot, &input)?;
     let proof = service.1.claim_challenge(
         input.approval_token.as_deref().ok_or_else(|| {
             error(
@@ -535,7 +537,8 @@ pub async fn read_auth_challenge(
         &binding,
     )?;
     let live = discovery.shared_snapshot();
-    let (report, lease) = tauri::async_runtime::spawn_blocking(move || {
+    let publication_input = input.clone();
+    let outcome = tauri::async_runtime::spawn_blocking(move || {
         let networks = snapshot
             .devices
             .iter()
@@ -561,7 +564,7 @@ pub async fn read_auth_challenge(
                 )
             },
         )?;
-        Ok((report, lease))
+        Ok((report, lease, proof))
     })
     .await
     .map_err(|_| {
@@ -569,20 +572,27 @@ pub async fn read_auth_challenge(
             "WORKER_FAILED",
             "Authentication challenge worker unavailable.",
         )
-    })??;
+    })
+    .and_then(|result| result);
+    let (mut report, lease, proof) = match outcome {
+        Ok(value) => value,
+        Err(e) => {
+            service.2.invalidate(&publication_input.device_id);
+            return Err(e);
+        }
+    };
     let current = live
         .lock()
         .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
-    if current.revision != report.discovery_revision
-        || !current
-            .devices
-            .iter()
-            .any(|d| d.id == report.device_id && d.connected)
+    let final_binding = approval::challenge_binding(&service, &current, &publication_input)?;
+    proof.validate(&final_binding)?;
+    report.discovery_revision = current.revision;
+    if report
+        .auth_challenge
+        .as_ref()
+        .is_some_and(|c| matches!(c.code.as_str(), "timeout" | "cancelled"))
     {
-        return Err(error(
-            "STALE_RESULT",
-            "Device changed during challenge check.",
-        ));
+        service.2.invalidate(&report.device_id);
     }
     lease
         .if_current(|| {

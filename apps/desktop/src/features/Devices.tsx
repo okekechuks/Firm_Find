@@ -141,10 +141,11 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
   };
   const addresses = [...new Set(device.networks.flatMap(network => network.addresses))];
   const dns = [...new Set(device.networks.flatMap(network => network.dnsServers ?? []))];
+  const dhcp = [...new Set(device.networks.map(network => network.dhcpServer ?? "unknown"))];
   const routes = [...new Set(device.networks.flatMap(network => network.defaultRoutes?.map(route => route.gateway) ?? network.gateways))];
   return <dialog ref={dialog} className="device-info-dialog device-summary-dialog" aria-labelledby={titleId} onCancel={event => {event.preventDefault(); onClose();}}>
     <div className="section-heading"><h2 id={titleId}>{deviceName(device)}</h2><button className="icon-button" aria-label="Close device information" onClick={onClose}><X size={18}/></button></div>
-    <section className="device-network-summary" aria-label="Network info"><h3>Network info</h3><dl><div><dt>Local addresses</dt><dd>{addresses.join(", ") || "Not reported"}</dd></div><div><dt>DNS</dt><dd>{dns.join(", ") || "Not reported"}</dd></div><div><dt>Default routes</dt><dd>{routes.join(", ") || "Not reported"}</dd></div></dl></section>
+    <section className="device-network-summary" aria-label="Network info"><h3>Network info</h3><dl><div><dt>Local addresses</dt><dd>{addresses.join(", ") || "Not reported"}</dd></div><div><dt>DNS</dt><dd>{dns.join(", ") || "Not reported"}</dd></div><div><dt>DHCP server</dt><dd>{dhcp.join(", ") || "unknown"}</dd></div><div><dt>Default routes</dt><dd>{routes.join(", ") || "Not reported"}</dd></div></dl></section>
     {state === "checking" ? <progress className="compatibility-progress" aria-label="Verifying firmware extraction compatibility"/> : null}
     <details><summary>Device observations and management endpoint</summary>
       <p>Windows name: {device.displayName}. USB: {device.vendorId || "Unknown"} / {device.productId || "Unknown"}.</p>
@@ -159,6 +160,7 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
       <p>Identity: {report.identity.confidence}. Verified model: {report.identity.verifiedModel || "Unknown"}. Hardware revision: {report.identity.verifiedHardwareRevision || "Unknown"}. Firmware: {report.identity.verifiedFirmware || "Unknown"}.</p>
       {report.identity.reportedModel ? <p>User-reported model: {report.identity.reportedModel} (unverified).</p> : null}
       <p>Management family: {report.protocols.map(p => p.family.replaceAll("_"," ")).join(", ") || "Not established"}. {report.probe.attempted ? `Read-only endpoint check: ${report.probe.code.replaceAll("_"," ")}${report.probe.httpStatus ? ` (HTTP ${report.probe.httpStatus})` : ""}.` : "No network request made."}</p>
+      {report.probe.attempted && report.fingerprint.endpoint?.startsWith("http://") ? <p className="muted small">Plain HTTP: not cryptographically verified.</p> : null}
       {report.identity.evidence?.filter(e => e.attribute === "firmware_version" && (e.verification === "observed" || e.verification === "user_reported")).map(e => <p key={`${e.id}-${e.source}`}>{e.verification === "observed" ? "Endpoint-observed version" : "User-reported firmware"}: {e.value} (unverified).</p>)}
       {report.probe.code === "subnet_conflict" ? <p role="status">{report.probe.message}</p> : null}
       {report.probe.metadataTruncated ? <p className="muted small">Metadata limited to first 16 KiB.</p> : null}

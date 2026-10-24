@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## Stage 4 binding — verification in progress
+
+24 October 2026: four designs accepted with reviewer decisions recorded on `phase-7-5-design-track` at `387983b`. Implementation order is Stage 4, then Stage 3 after its design additions, Stage 5 after Stage 3 acceptance, and released Stage 6 host-only work. Earlier blanket implementation blockers below are historical.
+
+`phase-7-5-stage-4-binding` starts at `def0188`. [Stage 4 report](PHASE_7_5_STAGE_4_BINDING_VERIFICATION.md) documents the in-memory material binding, bounded Windows DHCP parser, new-auth-only scope stamp, cancellation/discovery integration, exact plain-HTTP qualifier and synthetic regressions. Final software exit gate is in progress. No schema change or new request; no firmware acquired. Supervised MG11 challenge remains held until owner explicitly confirms presence with USB connected and Wi-Fi off. No login, credentials, identity-read/logout client, real publisher, real sandbox or Phase 8 release.
+
 ## Stage 2A C1 — software PASS; supervised challenge PENDING
 
 24 October 2026: C1 commit `a76c98a` passes twenty default-parallel full-workspace runs (293 standard tests and two doctests each), 294 isolated tests/two doctests, both Clippy profiles, formatting, 156 frontend tests, lint, TypeScript/production frontend build and both optimized Windows executables. [Exact evidence](PHASE_7_5_STAGE_2A_CHALLENGE_VERIFICATION.md) records command exits, hashes and normal-data preservation.

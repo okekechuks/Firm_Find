@@ -15,6 +15,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   checks.approve.mockResolvedValue("c".repeat(32)); checks.routes.mockResolvedValue(result());checks.cancel.mockResolvedValue(undefined);checks.export.mockResolvedValue(true);
 });
+it("Stage 4 displays unknown DHCP separately from DNS and labels plain HTTP observations",async()=>{
+  checks.routes.mockResolvedValue({...result(),fingerprint:{endpoint:"http://192.0.2.1/"},probe:{attempted:true,code:"identity_unknown",httpStatus:200}});
+  const user=userEvent.setup();render(<Devices {...props}/>);await user.click(screen.getByRole("button",{name:"More info for Test MiFi"}));
+  expect(screen.getByText("DHCP server")).toBeInTheDocument();expect(screen.getByText("unknown",{exact:true})).toBeInTheDocument();
+  await user.click(screen.getByRole("button",{name:"Check Compatibility"}));expect(await screen.findByText(/not cryptographically verified/)).toBeInTheDocument();
+});
 
 it("requires separate challenge approval and renders only sanitized unverified metadata",async()=>{
   const user=userEvent.setup();const base={...result(),protocols:[{family:"asr_duster_xml"}]};checks.routes.mockResolvedValue(base);

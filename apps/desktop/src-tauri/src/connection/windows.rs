@@ -389,6 +389,70 @@ fn sockaddr(socket: SocketAddr) -> SOCKADDR_INET {
     out
 }
 
+pub(super) fn binding_route(
+    target: &Target,
+    network: &NetworkAdapter,
+) -> Result<crate::endpoint_binding::Route, crate::endpoint_binding::BindingError> {
+    use crate::endpoint_binding::{BindingError, Route};
+    let ip: IpAddr = target.host.parse().map_err(|_| BindingError)?;
+    let index = if ip.is_ipv6() {
+        network.ipv6_index
+    } else {
+        network.interface_index
+    };
+    let socket = match ip {
+        IpAddr::V4(v) => SocketAddr::from((v, target.port)),
+        IpAddr::V6(v) => SocketAddr::V6(std::net::SocketAddrV6::new(
+            v,
+            target.port,
+            0,
+            if v.is_unicast_link_local() { index } else { 0 },
+        )),
+    };
+    let destination = sockaddr(socket);
+    let mut best = windows_sys::Win32::NetworkManagement::IpHelper::MIB_IPFORWARD_ROW2::default();
+    let mut source = SOCKADDR_INET::default();
+    let code = unsafe {
+        windows_sys::Win32::NetworkManagement::IpHelper::GetBestRoute2(
+            ptr::null(),
+            0,
+            ptr::null(),
+            &destination,
+            0,
+            &mut best,
+            &mut source,
+        )
+    };
+    if code != 0 || index == 0 || best.InterfaceIndex != index {
+        return Err(BindingError);
+    }
+    fn address(value: &SOCKADDR_INET) -> Option<String> {
+        unsafe {
+            match value.si_family {
+                AF_INET => {
+                    Some(IpAddr::from(value.Ipv4.sin_addr.S_un.S_addr.to_ne_bytes()).to_string())
+                }
+                AF_INET6 => {
+                    let ip = std::net::Ipv6Addr::from(value.Ipv6.sin6_addr.u.Byte);
+                    let scope = value.Ipv6.Anonymous.sin6_scope_id;
+                    Some(if scope == 0 {
+                        ip.to_string()
+                    } else {
+                        format!("{ip}%{scope}")
+                    })
+                }
+                _ => None,
+            }
+        }
+    }
+    let gateway = address(&best.NextHop).filter(|v| v != "0.0.0.0" && v != "::");
+    Ok(Route {
+        source: address(&source).ok_or(BindingError)?,
+        gateway,
+        luid: unsafe { best.InterfaceLuid.Value },
+    })
+}
+
 struct Handle(*mut c_void);
 impl Handle {
     fn checked(value: *mut c_void) -> Result<Self, Box<EndpointResult>> {

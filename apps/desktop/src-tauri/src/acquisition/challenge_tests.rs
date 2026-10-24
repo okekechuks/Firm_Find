@@ -239,7 +239,7 @@ fn challenge_nonce_never_reaches_trace_report_diagnostics_or_errors() {
     }
 }
 
-fn context() -> (Device, DiscoveryRequest, AcquisitionCapabilityReport) {
+pub(super) fn context() -> (Device, DiscoveryRequest, AcquisitionCapabilityReport) {
     let mut d = super::tests::device();
     d.networks[0].gateways = vec!["192.168.100.1".into()];
     let input = DiscoveryRequest {
@@ -265,6 +265,14 @@ fn context() -> (Device, DiscoveryRequest, AcquisitionCapabilityReport) {
     base.probe.http_status = Some(200);
     base.protocols=recognize(br#"<script src="js/base/xml_helper.js"></script><script src="js/base/ajax_calls.js"></script>"#,None);
     (d, input, base)
+}
+#[test]
+fn stage4_conflicting_acquisition_identity_cannot_bootstrap_challenge() {
+    let (_, input, mut base) = context();
+    for confidence in ["conflicting", "ambiguous"] {
+        base.identity.confidence = confidence.into();
+        assert!(!challenge::root_matches(&base, 4, &input));
+    }
 }
 #[test]
 fn challenge_collector_requires_fresh_same_root_and_preserves_authority() {

@@ -109,6 +109,22 @@ pub fn now() -> u64 {
         .as_millis() as u64
 }
 
+/// Local route-table query only; never opens a socket or resolves a hostname.
+pub(crate) fn binding_route(
+    target: &Target,
+    network: &NetworkAdapter,
+) -> Result<crate::endpoint_binding::Route, crate::endpoint_binding::BindingError> {
+    #[cfg(windows)]
+    {
+        windows::binding_route(target, network)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (target, network);
+        Err(crate::endpoint_binding::BindingError)
+    }
+}
+
 /// One owner-approved root GET. Response bytes remain transient and are never logged.
 pub(crate) fn root_metadata(
     approval: &crate::acquisition::ClaimedApproval,

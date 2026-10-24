@@ -30,6 +30,8 @@ use windows_sys::{
 };
 
 const USB_INTERFACE: GUID = GUID::from_u128(0xa5dcbf10_6530_11d2_901f_00c04fb951ed);
+#[path = "dhcp.rs"]
+mod dhcp;
 const SERIAL_INTERFACE: GUID = GUID::from_u128(0x86e0d1e0_8089_11d0_9ce4_08003e301f73);
 const NET_INTERFACE: GUID = GUID::from_u128(0xcac88484_7515_4c03_82e6_71a87abac361);
 const MAX_BUFFER: usize = 4 * 1024 * 1024;
@@ -481,6 +483,7 @@ fn adapters() -> Result<Vec<NetworkAdapter>, String> {
                         gateways,
                         prefixes,
                         dns_servers,
+                        dhcp_server: dhcp::server(current, &buffer, required as usize),
                         virtual_interface,
                         luid: adapter.Luid.Value.to_string(),
                         ipv6_index: adapter.Ipv6IfIndex,

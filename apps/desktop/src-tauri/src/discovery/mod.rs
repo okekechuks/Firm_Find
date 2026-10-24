@@ -46,6 +46,9 @@ pub struct NetworkAdapter {
     pub prefixes: Vec<AddressPrefix>,
     #[serde(default)]
     pub dns_servers: Vec<String>,
+    /// Windows DHCPv4 observation only. None means unknown, never a DNS/gateway fallback.
+    #[serde(default)]
+    pub dhcp_server: Option<String>,
     #[serde(default)]
     pub luid: String,
     #[serde(default)]

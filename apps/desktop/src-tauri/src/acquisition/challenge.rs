@@ -163,6 +163,7 @@ pub(super) fn root_matches(
         .and_then(|v| connection::parse_address(v).ok())
         .map(|v| v.url);
     base.device_id == input.device_id
+        && !["conflicting", "ambiguous"].contains(&base.identity.confidence.as_str())
         && base.discovery_revision == revision
         && base.expires_at > connection::now()
         && base.probe.attempted
@@ -184,6 +185,12 @@ pub(super) fn collect(
     token: &AtomicBool,
     dispatch: impl FnOnce(&connection::Target, &str, &AuthChallengeApproval) -> ChallengeObservation,
 ) -> Result<AcquisitionCapabilityReport, DiscoveryError> {
+    if base.discovery_revision != revision {
+        return Err(error(
+            "STALE_RESULT",
+            "Root observation no longer matches this inventory.",
+        ));
+    }
     let binding = approval::binding(device, revision, input)?;
     proof.validate(&binding)?;
     if token.load(Ordering::Acquire) {

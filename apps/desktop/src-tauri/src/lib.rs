@@ -4,6 +4,7 @@ mod commands;
 pub mod connection;
 pub mod discovery;
 pub mod domain;
+pub mod endpoint_binding;
 pub mod library;
 mod native_test;
 pub mod openwrt;

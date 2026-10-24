@@ -1,5 +1,9 @@
 # Firmware acquisition engine
 
+## Stage 4: endpoint consistency binding
+
+24 October 2026 implementation: [accepted binding design](PHASE_7_5_STAGE_4_BINDING_DESIGN.md) and [verification evidence](PHASE_7_5_STAGE_4_BINDING_VERIFICATION.md). New AuthChallenge scopes bind an in-memory SHA-256 digest and generation of selected endpoint/interface/source/route/DHCP/association facts, rather than global discovery revision. Existing metadata/menu/strategy scopes retain their behavior. Rechecks and shared liveness reject material changes and cancellation; repeated scans do not renew expiry. Missing DHCP stays unknown and does not block the read-only scope. Plain HTTP remains **not cryptographically verified**. Historical Stage 2A scope wording below predates this correction. No authenticated read or new network request is released here.
+
 ## Current Stage 2A: credential-free challenge observation
 
 24 October C1 amendment: reviewer accepts initial software with C1 and conditionally releases the supervised hardware step after C1's full software gate. Parser additionally accepts quoted/unquoted token forms for algorithm/stale/charset/userhash; realm/nonce/qop/opaque/domain stay quoted. Opaque/domain values are discarded. Bounded shape facts (header-count bucket, scheme enum, fixed known parameter names/quoting, unknown-name count and fixed rejection reason) are shown in UI/report/diagnostics, never arbitrary names or values. Historical quoted-only and held-hardware statements below describe the pre-C1 delivery; no hardware result is claimed yet.

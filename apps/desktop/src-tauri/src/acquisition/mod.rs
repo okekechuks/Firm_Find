@@ -39,6 +39,7 @@ pub use strategy_api::{
 pub struct Service(
     pub std::sync::Mutex<BTreeMap<String, AcquisitionCapabilityReport>>,
     Approvals,
+    pub(crate) crate::endpoint_binding::Registry,
 );
 
 pub type IdentityEvidence = EvidenceRecord;

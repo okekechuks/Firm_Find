@@ -72,6 +72,7 @@ export const discoverySchema = z.object({
       linkUp: z.boolean(), addresses: z.array(z.string()), gateways: z.array(z.string()),
       prefixes: z.array(z.object({address: z.string(), length: z.number().int().min(0).max(128)})).optional(),
       dnsServers: z.array(z.string()).optional(), luid: z.string().optional(), ipv6Index: z.number().int().optional(),
+      dhcpServer: z.string().ip({version:"v4"}).nullable().optional(),
       virtualInterface: z.boolean().optional(), defaultRoutes: z.array(z.object({gateway: z.string(), metric: z.number().int(), family: z.enum(["ipv4", "ipv6"])})).optional(),
     })),
     identity: identitySchema.optional(),
