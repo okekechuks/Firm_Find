@@ -1,6 +1,6 @@
 # Stage 4 endpoint consistency binding
 
-24 October 2026, Africa/Lagos. Software verification in progress; this is not hardware qualification or Phase 7 completion.
+24 October 2026, Africa/Lagos. **DONE: Stage 4 software exit gate PASS**, awaiting reviewer acceptance. Hardware qualification is NOT DONE (owner hold). Nothing is disputed. Phase 7 is not complete.
 
 Branch: `phase-7-5-stage-4-binding`. Start: `def018836166151c0b781add711dcaa5d50efbdb`, the accepted challenge software tip. No merge, push, tag, history rewrite, dependency addition or schema change. Accepted design decisions were recorded separately on the design branch at `387983b397d748b35b7abc6646a14bfd1fad418d` and copied into the Stage 4 design here. Other stages are not included in this branch.
 
@@ -61,10 +61,44 @@ Command logs live in ignored `.tools/stage4-binding/`. Rust commands use `CARGO_
 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings` | 0; clean, final source (`clippy-standard-hardened.log`) |
 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings` | 0; clean (`clippy-isolated-hardened.log`) |
 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all -- --check` | 0; clean (`fmt-hardened.log`) |
-| `py scripts/verify-parallel-rust.py --runs 20 --output .tools/stage4-binding/final-20` | Pending final hardened commit; initial `179fc44` passed 20 runs with 305 tests and 2 doctests each (`code-20/results.json`) |
+| `py scripts/verify-parallel-rust.py --runs 20 --output .tools/stage4-binding/code-20` | 0; 20/20 on `179fc44b67c0888c39b98edf8ddd3d1ceea9c91e`, 305 tests + 2 doctests each; superseded by clock correction |
+| `py scripts/verify-parallel-rust.py --runs 20 --output .tools/stage4-binding/hardened-20` | 0; 20/20 on final code `3d2db2def0cf91f31061d33eff7165d635376611`, 306 tests + 2 doctests each; clean tracked tree throughout |
 
-Normal-data preservation uses a filesystem byte-hash audit, not a SQLite connection or a running normal application. Before: `.tools/stage4-binding/normal-before-files.json`, 12 files. No normal SQLite database is opened by the audit; no normal vault file is a test fixture. After the software gates, all 12 paths, sizes and SHA-256 values match (`normal-after-gates-files.json`): zero added, removed or changed files. No SQLite connection was made. Final post-repeat comparison is still required.
+Normal-data preservation uses a filesystem byte-hash audit, not a SQLite connection or a running normal application. Before: `.tools/stage4-binding/normal-before-files.json`, 12 files. The audit reads ordinary file bytes only; no normal database is opened through SQLite and no normal vault file is a test fixture. After all gates and the hardened twenty runs, all 12 paths, sizes and SHA-256 values match (`normal-after-hardened20-files.json`): zero added, removed or changed files, including DB/WAL/SHM and vault. Log SHA-256 values and counts in both repeat-run JSON files were independently recomputed and checked. No SQLite connection was made.
 
 Not run: native Windows release rebuilds, native GUI launch, physical discovery qualification, supervised challenge/No run or MiFi verification. Owner explicitly deferred hardware until they confirm presence with MG11 connected and PC Wi-Fi off. Prior replies are not reused as new presence. No hardware result or post-run owner confirmation is invented. This branch adds no network request; software suites exercise existing loopback transport only.
 
-Review: `git diff def018836166151c0b781add711dcaa5d50efbdb..phase-7-5-stage-4-binding`. End commit and clean-tree status will be supplied with final computed repeat-run evidence. Stage 3 design additions are next; authenticated client, real firmware/publisher work, real sandbox and Phase 8 remain blocked.
+The documentation-only delivery commit is subjected to the same final audit: `py scripts/verify-parallel-rust.py --runs 20 --output .tools/stage4-binding/final-20`. Its computed JSON pins the delivery end commit; delivery requires twenty exit-0 entries, unchanged HEAD and a clean tracked tree throughout. The final filesystem audit is `normal-after-final20-files.json`. These are computed records, not generated verdicts or owner statements.
+
+## Changed-file inventory and handoff
+
+The 24 changed paths are:
+
+```text
+apps/desktop/src-tauri/src/acquisition/approval.rs
+apps/desktop/src-tauri/src/acquisition/challenge.rs
+apps/desktop/src-tauri/src/acquisition/challenge_tests.rs
+apps/desktop/src-tauri/src/acquisition/ipc.rs
+apps/desktop/src-tauri/src/acquisition/mod.rs
+apps/desktop/src-tauri/src/connection.rs
+apps/desktop/src-tauri/src/connection/windows.rs
+apps/desktop/src-tauri/src/discovery/dhcp.rs
+apps/desktop/src-tauri/src/discovery/mod.rs
+apps/desktop/src-tauri/src/discovery/service.rs
+apps/desktop/src-tauri/src/discovery/windows.rs
+apps/desktop/src-tauri/src/endpoint_binding.rs
+apps/desktop/src-tauri/src/endpoint_binding_tests.rs
+apps/desktop/src-tauri/src/lib.rs
+apps/desktop/src/features/Devices.tsx
+apps/desktop/src/features/ManualRouters.tsx
+apps/desktop/src/test/Devices.test.tsx
+apps/desktop/src/test/ManualRouters.test.tsx
+apps/desktop/src/types/contracts.ts
+docs/FIRMWARE_ACQUISITION_ENGINE.md
+docs/PHASE_7_5_STAGE_4_BINDING_DESIGN.md
+docs/PHASE_7_5_STAGE_4_BINDING_VERIFICATION.md
+docs/PHASE_STATUS.md
+scripts/verify-binding-vectors.py
+```
+
+Review: `git diff def018836166151c0b781add711dcaa5d50efbdb..phase-7-5-stage-4-binding`. This branch remains unmerged; final end SHA and clean status are independently available from `git rev-parse phase-7-5-stage-4-binding`, `git status --short` and the delivery run JSON. No generated screenshots were committed. Next released work is Stage 3 design additions and isolated implementation; authenticated client, real firmware/publisher work, real sandbox and Phase 8 remain blocked.
