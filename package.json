@@ -7,6 +7,7 @@
     "apps/desktop"
   ],
   "scripts": {
+    "test:dns-build": "python -B scripts/test-dns-build.py",
     "test:catalogue": "python scripts/refresh-official-catalogue.py --upstream apps/desktop/src-tauri/assets/official --check",
     "test:official-acquisition": "node scripts/verify-foundation.mjs --official-acquisition",
     "test:library-upgrade": "node scripts/verify-foundation.mjs --stage3-upgrade",

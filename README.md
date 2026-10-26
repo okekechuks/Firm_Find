@@ -1,12 +1,12 @@
 ﻿# OBTAINER
 
-OBTAINER is a Windows app for understanding connected routers and MiFi devices and preserving firmware files. It can download selected official OpenWrt images, verify them, save them in Library and inspect their basic structure. Supported customization and build work is progressing; generic device extraction and flashing are unavailable.
+OBTAINER is a Windows app for understanding connected routers and MiFi devices and preserving firmware files. It can download selected official OpenWrt images, verify them, save them in Library and inspect their basic structure. A separate helper can build a DNS-customized image for one OpenWrt profile. Generic device extraction and flashing are unavailable.
 
 ## Current status
 
 **Windows beta release sprint — 0.2.0-beta.1 candidate.** Library's Official Firmware popup supports exact OpenWrt 25.12.6 images for TP-Link Archer C7 v5/v2 and Ubiquiti UniFi AC Lite. A real firmware download, verification, Library save, analysis and restart have passed through the Windows interface. This downloads a release image; it does not extract the firmware installed on your connected device. [Current results and limitations](docs/RELEASE_SPRINT_VERIFICATION.md).
 
-The analyzer identifies basic formats and saves a report without running or recursively unpacking the image. Connected-device support remains separate: unknown hardware stays unknown, and no firmware flashing is enabled. Release artifacts and supported DNS build qualification are being completed; Phase 7.5 is not marked complete.
+The analyzer identifies basic formats and saves a report without running or recursively unpacking the image. Connected-device support remains separate: unknown hardware stays unknown, and no firmware flashing is enabled. A real Archer C7 v5 DNS image build and offline readback passed through the separate [source helper](docs/DNS_BUILD_BETA.md); physical installation is unqualified and desktop Rebuild stays disabled. Installers are built and core Windows CI is green. Phase 7.5 is not marked complete. [Beta download and usage notes](docs/RELEASE_0_2_0_BETA_1.md).
 
 The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can save a router address, check whether its management page responds, and review a separate support assessment for DNS, Wi-Fi user limits, APN and USSD.
 
@@ -20,7 +20,7 @@ The redesigned desktop has six sections: **Overview, Connected Devices, Library,
 
 You can preserve a verified backup of a Library image and restore a copy with `_DEFAULT` added to its name. Restoring never installs firmware on a router. Delete removes a selected item from its list while preserving stored bytes and history for recovery. Storage changes show a copy plan, verify the files and take effect after restart; previous files stay preserved.
 
-Device refresh, saved appearance, hot reload and restart recovery work. GUI implementation and verification details are in the [GUI report](docs/GUI_REDESIGN_VERIFICATION.md). Firmware extraction, customization and installation remain future work. Storing a file does not establish that it is safe or compatible with a router.
+Device refresh, saved appearance, hot reload and restart recovery work. GUI implementation and verification details are in the [GUI report](docs/GUI_REDESIGN_VERIFICATION.md). General firmware extraction, desktop customization and installation remain future work; only the separate exact-target DNS helper is qualified at the software level. Storing a file does not establish that it is safe or compatible with a router.
 
 The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) retain the supplied development sequence and existing project structure.
 

@@ -21,6 +21,8 @@ jobs:
       - run: npm ci
       - name: Verify pinned official-source signatures and exact catalogue
         run: npm run test:catalogue
+      - name: DNS build input validation (no device or build network requests)
+        run: npm run test:dns-build
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -39,3 +41,15 @@ jobs:
           path: |
             target/release/bundle/nsis/*.exe
             target/release/bundle/msi/*.msi
+            target/release/obtainer.exe
+  dns-helper:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install isolated-worker test prerequisites
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y bubblewrap zstd squashfs-tools
+      - name: Synthetic build-worker and kernel isolation regressions (no firmware download)
+        run: python -B scripts/test-dns-build.py

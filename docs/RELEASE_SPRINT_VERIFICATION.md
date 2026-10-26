@@ -1,4 +1,4 @@
-# Windows beta release sprint — executable milestone 1
+# Windows beta release sprint — executable milestones
 
 26 October 2026. Integration branch `release/windows-beta-2026-10-28` starts at `5c303437d6538755c9013ef123277a55807de90f`, retaining Stage 3 and independently accepted Stage 4 `f9e7115` and all original branches. App version `0.2.0-beta.1`; MSI version mapping `0.2.0.1`. No main merge or normal-data migration was performed. The owner's emergency sprint releases official-image acquisition, bounded analysis and supported build work; it does not establish physical device support.
 
@@ -58,10 +58,63 @@ Normal `%LOCALAPPDATA%\OBTAINER` was audited as ordinary file bytes only: databa
 
 Four generated Stage 3 debug library/symbol files were moved to an owned E: archive with before/after SHA-256 verification, not deleted. Exact computed inventory: `.tools/sprint/generated-symbols-archive.json`. Existing release dependency cache was copied to E: without copying production/test executables or old installer bundles. Source/history, original production executable and user data were not replaced. Compiler output/temp moved to E: to retain 15 GiB on their actual output volume; C: OS headroom was separately checked.
 
-**E: subsequently disappeared during DNS build qualification.** Its installers, cache, archived symbols and tools are temporarily inaccessible; they are not claimed as currently accessible retained artifacts. Source, verification evidence, real acquired image copy and normal data remain on C:. Owner was asked to reconnect E:. The next independent checkpoint is remote CI artifact retention plus resumed build qualification. Do not treat a local build log as proof of artifact availability after drive loss.
+**E: disappeared during DNS build qualification and was reconnected by the owner on 26 October.** All four archived build files were rehashed after reconnection and matched. The installer, MSI and portable executable were then copied to `.tools/release-artifacts/0.2.0-beta.1/` in the original C: repository, with independent source/destination hash equality; its `artifacts.json` records sizes, hashes and source commit. No normal app data moved. The new `normal-after-restoration.json` audit again matches all 12 files / 5,611,701 bytes. A real acquired input copy also remains on C:.
+
+## Published core checkpoint
+
+Executable milestone **`cc2173e6fb611dfaf0fb87dfc77e54caf4c358d2`**, "Acquire pinned official firmware and persist bounded analysis", is pushed to the public release integration branch. [Windows Actions run 40313207839](https://github.com/okekechuks/Firm_Find/actions/runs/40313207839) completed **successfully**, including both Rust profiles, frontend, signature verification, both native builds and the production executable safeguard. Its actual NSIS/MSI artifact was also downloaded to `.tools/sprint/ci-core-installers/`. CI's installers are a separate build from the local binaries; their hashes are not assumed equal.
+
+The committed computed-evidence runner executed **20 consecutive default-parallel standard suites at `cc2173e`**, each exit 0, **351 passed / 2 ignored plus 2 doctests**. The tracked tree and commit remained unchanged through every run. Evidence: `.tools/sprint/parallel-cc2173e/results.json` and each hashed command log. The first run rebuilt the application crate; no serial test workaround was used. This repeat result applies to that exact core commit, not an untested future commit. Subsequent DNS helper work does not change Rust/frontend runtime source.
+
+## Real DNS build milestone
+
+On 26 October, the complete source helper command below exited **0**. This uses actual signed-release tools and real firmware, not a simulated result:
+
+```powershell
+py -B scripts/build-openwrt-dns.py --input .tools/sprint/acquired/openwrt-25.12.6-ath79-generic-tplink_archer-c7-v5-squashfs-sysupgrade.bin --tool-archive E:/OBTAINER-Builds/openwrt-tools-25.12.6/openwrt-imagebuilder-25.12.6-ath79-generic.Linux-x86_64.tar.zst --dns 1.1.1.1 9.9.9.9 --work-root E:/OBTAINER-Builds/dns-image-builds
+```
+
+Owned run `d2f32850677a4dc0a16e474edc4c4212`; log `.tools/sprint/dns-live-readback-fixed.log`:
+
+```text
+output: openwrt-25.12.6-obtainer-dns-ath79-generic-tplink_archer-c7-v5-squashfs-sysupgrade.bin
+bytes: 6947110
+SHA-256: 51946949707eca1a71d4bc77511952b45f447bf8918933dfcdd7b0f15883f4b3
+input SHA-256 before/after: 0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d
+tool archive SHA-256: 6f40746139c833336e67b03d5bdb0501d3a80fb789bf7e5b7a9b9984b83a5e23
+worker SHA-256: 083a9c5936bacd607f5924a10dbdcff96b56fec46e9c42404da111f1fb16e663
+DNS defaults bytes: 324
+DNS defaults SHA-256: fd3cf8725e5e1d25dea33d8a544a3d9e665328cc6af99f9999ddd14f413d8109
+verified SquashFS offset: 2751134
+```
+
+The output, report, defaults and logs were retained on E: and copied to `.tools/sprint/custom-dns-build/` on C: with independent hash equality. The successful Linux workspace was removed only after ownership checks; `pgrep -af openwrt-dns-worker` exited 1 (none remaining). `normal-after-dns-build.json` again matches all 12 files / 5,611,701 bytes.
+
+The helper requires exact signature-qualified source and tool hashes. It builds from the trusted ImageBuilder/package set, rather than patching or executing the input. Package signatures remain enabled; all repositories are restricted to the official HTTPS release family. Only the fixed upstream DNS defaults script is accepted. The host's normal Linux user maps to namespace uid 0 for package ownership, with all capabilities dropped before the builder and no host root privilege. A narrowly checked compression resource change retains format options and root ownership, limiting compression to one worker / 256 MiB; the report records makefile hashes before and after. Overall time, memory, file, process and log limits remain enforced.
+
+A separate offline namespace reads only the generated defaults file, with read-only image access, no host drives, a distinct network namespace, one decoder worker, bounded queues/output and a 512 MiB limit. Its exact 324-byte output matched the requested DNS defaults. Analysis/readback execute no image contents; only the trusted tool/package build runs code. Physical device requests: **zero**. The generated image is a **custom build with unknown installability**, not official firmware or physical qualification. GUI Rebuild remains disabled; the working path is the [source helper](DNS_BUILD_BETA.md). Imported output remains an unverified user input in Library. LAN-advertised DNS, Wi-Fi, APN and USSD are unchanged.
+
+### Helper failures and regression evidence
+
+- WSL path interpretation: fixed explicit `--exec` and forward-slash `wslpath` arguments.
+- Safe TAR extraction initially rejected publisher-specific absolute links. Only 20 exact pinned SDK name/target pairs are omitted; no absolute link is created. Unknown links and traversal still fail.
+- Missing distro `zstd`/`unzip` and private-namespace tool lookup were resolved normally. No `FORCE=1` or signature bypass.
+- E: disappeared during an attempt; no output was admitted. Owner reconnected it and inputs/archive hashes were rechecked.
+- APK produced 121 ownership errors and exited 2. A failing-first test now verifies scoped uid mapping, zero effective capabilities and host file ownership still belonging to the original non-root user.
+- Compression defaulted to 12 workers and failed the enforced memory limit. A failing-first exact-invocation test covers the resource-only patch; memory limits were not raised.
+- Decoder thread creation also failed under its cap. A real **synthetic** SquashFS readback test failed first, then passed with one worker/bounded queues. A fresh complete real-image run then passed as recorded above.
+- Failing-first path validation rejects UNC, traversal and alternate streams; reparse ancestors and unavailable/remote drives are refused before input resolution/opening.
+
+`npm.cmd run test:dns-build` exited **0**: **13 tests, 4 passed / 9 explicit Linux skips** on Windows. `wsl -d Ubuntu --exec python3 -B /mnt/c/Users/chuka/OneDrive/Documents/Firm_Find/.tools/release-sprint/scripts/test-dns-build.py` exited **0: 13 passed**. These include cancellation/timeout reaping and subsequent requests, archive traversal/absolute links, injection, script contract, real synthetic SquashFS readback, kernel-observed isolation, uid mapping and compression limits. Logs include `dns-ownership-before.log`, `dns-compressor-before.log`, `dns-readback-before.log`, `dns-tests-readback-fixed.log`, `dns-windows-final.log`. Fixtures are synthetic; live build evidence above is separate.
+
+### Source changes
+
+Core `cc2173e`: `library/{admission,analysis,db,files,ipc,mod,official,tests}.rs`, native `lib.rs`, `build.rs`, capability/command permissions; five public `assets/official/` files; frontend `FirmwareAnalysisDialog.tsx`, `OfficialImageDialog.tsx`, `FirmwareLibrary.tsx`, `backend.ts`, `types/{library,official}.ts`, `OfficialFirmware.test.tsx`; `refresh-official-catalogue.py`, `verify-foundation.mjs`, `verify-official-acquisition.mjs`; coordinated version/config, workflow, Git attributes and status/README. Exact 42-file inventory: `git show --name-only cc2173e`.
+
+DNS milestone adds `scripts/build-openwrt-dns.py`, `scripts/openwrt-dns-worker.py`, `scripts/test-dns-build.py`, `docs/DNS_BUILD_BETA.md`, `docs/RELEASE_0_2_0_BETA_1.md`; updates `package.json`, `.github/workflows/windows.yml`, `README.md`, `docs/PHASE_STATUS.md` and this report. No Rust/frontend runtime, storage schema, normal database or device authorization changes occur in this milestone. The handoff/release manifest identifies the final source commit and CI rather than claiming a self-referential commit here.
 
 ## Remaining release gates
 
-Push this executable milestone and run Windows CI to completion; record its actual URL/outcome in the handoff. A prior green Stage 4 run is not this branch's result. Retain installable artifacts somewhere accessible after the AI subscription ends. Supported DNS customization/build qualification continues separately; no custom image has yet passed. GUI Rebuild and all physical firmware writes remain disabled. Wi-Fi/APN/USSD physical support and MG11 firmware extraction remain unsupported/unqualified. Phase 7.5 is not complete, and no universal-router support is claimed.
+Run the final helper/workflow commit through CI, retain the beta in a GitHub prerelease and record exact source/build hashes. The green core run is not automatically the helper commit's CI result. GUI Rebuild and physical firmware writes remain disabled. Physical Wi-Fi/APN/USSD, MG11 extraction and authenticated physical qualification remain unsupported/unqualified. Phase 7.5 is incomplete; no universal support is claimed. [Beta notes](RELEASE_0_2_0_BETA_1.md) distinguish desktop features from the separate helper.
 
 References: [OpenWrt release signing](https://openwrt.org/docs/guide-user/security/release_signatures), [actual 25.12.6 target](https://downloads.openwrt.org/releases/25.12.6/targets/ath79/generic/), [Tauri WiX version override](https://v2.tauri.app/reference/config/#wixconfig).

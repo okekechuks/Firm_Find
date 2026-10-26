@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## Emergency beta — acquisition, analysis and DNS build demonstrated
+
+26 October 2026: core `cc2173e` has green [Windows CI 40313207839](https://github.com/okekechuks/Firm_Find/actions/runs/40313207839), both native builds, 351 standard/352 isolated Rust tests, 164 frontend tests and an actual isolated native download → Library → analysis → restart run. Twenty consecutive default-parallel standard runs at that exact commit passed (351 tests plus two doctests each). The separate Windows/WSL DNS helper then produced a genuine 6,947,110-byte Archer C7 v5 OpenWrt image, SHA-256 `51946949707eca1a71d4bc77511952b45f447bf8918933dfcdd7b0f15883f4b3`, with exact offline defaults readback and original input preserved. All 13 Linux helper tests pass; Windows runs four and explicitly skips nine Linux checks. Normal data stays byte-identical; zero physical requests. [Commands/results](RELEASE_SPRINT_VERIFICATION.md).
+
+Emergency sprint authorization releases this integrated beta work; sequential review holds below describe historical checkpoints. Final helper CI/release remains a separate delivery gate. Desktop Rebuild is disabled; DNS image creation uses the documented source helper. Physical Wi-Fi/APN/USSD, MG11 extraction/authenticated physical qualification, generic repacking and flashing remain unavailable. Custom-image installability is unknown. **Phase 7.5 remains incomplete; no universal support or Phase 8 completion is claimed.**
+
 ## Emergency release sprint — 26 October 2026
 
 Owner releases implementation-first integration on `release/windows-beta-2026-10-28`, preserving existing phase numbering/history and accepted Stage 4. Stage 3 persistence is retained at base `5c30343`. [Executable milestone 1](RELEASE_SPRINT_VERIFICATION.md) records actual official OpenWrt image acquisition through Windows GUI, immutable Library admission, source provenance and bounded metadata analysis/restart. Standard/isolated Rust: 351/352 + two doctests each; frontend: 164; Clippy/lint/build pass. Both installer formats built. Normal 12 data files remain byte-identical; no normal SQLite connection or real migration.
