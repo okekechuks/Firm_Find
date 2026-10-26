@@ -4,7 +4,7 @@ OBTAINER is a Windows app for understanding connected routers and MiFi devices a
 
 ## Current status
 
-**Windows beta release sprint — 0.2.0-beta.1 candidate.** Library's Official Firmware popup supports exact OpenWrt 25.12.6 images for TP-Link Archer C7 v5/v2 and Ubiquiti UniFi AC Lite. A real firmware download, verification, Library save, analysis and restart have passed through the Windows interface. This downloads a release image; it does not extract the firmware installed on your connected device. [Current results and limitations](docs/RELEASE_SPRINT_VERIFICATION.md).
+**Windows beta 0.2.0-beta.1 is available.** [Download setup, MSI or portable EXE](https://github.com/okekechuks/Firm_Find/releases/tag/v0.2.0-beta.1). Binaries are unsigned; checksums and source are included. Library's Official Firmware popup supports exact OpenWrt 25.12.6 images for TP-Link Archer C7 v5/v2 and Ubiquiti UniFi AC Lite. A real firmware download, verification, Library save, analysis and restart have passed through the Windows interface. This downloads a release image; it does not extract the firmware installed on your connected device. [Current results and limitations](docs/RELEASE_SPRINT_VERIFICATION.md).
 
 The analyzer identifies basic formats and saves a report without running or recursively unpacking the image. Connected-device support remains separate: unknown hardware stays unknown, and no firmware flashing is enabled. A real Archer C7 v5 DNS image build and offline readback passed through the separate [source helper](docs/DNS_BUILD_BETA.md); physical installation is unqualified and desktop Rebuild stays disabled. Installers are built and core Windows CI is green. Phase 7.5 is not marked complete. [Beta download and usage notes](docs/RELEASE_0_2_0_BETA_1.md).
 

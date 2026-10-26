@@ -113,8 +113,24 @@ Core `cc2173e`: `library/{admission,analysis,db,files,ipc,mod,official,tests}.rs
 
 DNS milestone adds `scripts/build-openwrt-dns.py`, `scripts/openwrt-dns-worker.py`, `scripts/test-dns-build.py`, `docs/DNS_BUILD_BETA.md`, `docs/RELEASE_0_2_0_BETA_1.md`; updates `package.json`, `.github/workflows/windows.yml`, `README.md`, `docs/PHASE_STATUS.md` and this report. No Rust/frontend runtime, storage schema, normal database or device authorization changes occur in this milestone. The handoff/release manifest identifies the final source commit and CI rather than claiming a self-referential commit here.
 
-## Remaining release gates
+## Published beta and final delivery
 
-Run the final helper/workflow commit through CI, retain the beta in a GitHub prerelease and record exact source/build hashes. The green core run is not automatically the helper commit's CI result. GUI Rebuild and physical firmware writes remain disabled. Physical Wi-Fi/APN/USSD, MG11 extraction and authenticated physical qualification remain unsupported/unqualified. Phase 7.5 is incomplete; no universal support is claimed. [Beta notes](RELEASE_0_2_0_BETA_1.md) distinguish desktop features from the separate helper.
+**Release source:** `7433c96b379dd70d1481f06d645ff7f49570d9fe`, "Build qualified OpenWrt DNS images in isolated bounded workers". [Final Actions run 40356416405](https://github.com/okekechuks/Firm_Find/actions/runs/40356416405) completed **successfully**, including Windows verification and the independent Ubuntu 22.04 job's 13 actual helper tests. Standard Rust: 351 passed / 2 ignored; isolated: 352 passed / 3 ignored; two doctests per profile. Frontend: 164 passed. Formatting, both Clippy profiles, lint, TypeScript/build, signed catalogue checks, production build/installers, dedicated native-test build and production hash safeguard all pass. Logs: `.tools/sprint/ci-final.log`, `final-ci-watch.log`. One nonblocking Actions annotation remains: older action majors target Node 20 and the runner forces Node 24. No application console error was observed in native verification.
+
+**[Published unsigned prerelease v0.2.0-beta.1](https://github.com/okekechuks/Firm_Find/releases/tag/v0.2.0-beta.1).** The tag resolves exactly to `7433c96`; no main merge/history rewrite. Its CI-produced files are retained on C: at `C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\release-artifacts\0.2.0-beta.1-ci\` and uploaded as release assets:
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `obtainer.exe` | 17742848 | `93f5a27fd604724a86b8c95a34e2731ca3c889243eec69cc14530e42a05c1df7` |
+| `OBTAINER_0.2.0-beta.1_x64-setup.exe` | 4236621 | `35c9128e530e88d746dd223820bd5dada51bc5f227a47389dd9686128bc0317f` |
+| `OBTAINER_0.2.0-beta.1_x64_en-US.msi` | 6045696 | `d43a48325c12f8d3b407cc9477176a64b3c1174181d02343d46b4e45e62d3440` |
+
+`Get-AuthenticodeSignature` returned **NotSigned** for all three. `SHA256SUMS.txt` and `release-manifest.json` accompany them, recording exact source, CI URL and computed lengths/hashes. All five server-side GitHub asset digests/sizes matched the retained files; every asset is uploaded, and the release is public/non-draft/prerelease. An anonymous HTTPS download of `SHA256SUMS.txt` matched local bytes. Source is retained in the public branch and immutable release tag; GitHub supplies source archives. Running the desktop does not depend on an AI session. The separate helper and guide are part of that tagged source, not a hidden temporary tool or an enabled desktop Rebuild action.
+
+After publication, `normal-after-publish.json` still matches **12 files / 5,611,701 bytes**. Original normal data, storage location, original production executable and other worktrees remain preserved. This closing documentation update changes no executable/helper source; it records the already verified immutable release rather than restarting test cycles for documentation alone.
+
+## Outstanding functionality
+
+GUI Rebuild and physical firmware writes remain disabled. Physical Wi-Fi/APN/USSD, MG11 extraction and authenticated physical qualification remain unsupported/unqualified. The generated DNS image's installation/boot behavior has not been tested on hardware. Phase 7.5 is incomplete; no universal support is claimed. [Beta notes](RELEASE_0_2_0_BETA_1.md) distinguish desktop features from the separate helper. The next product gate is explicit physical qualification on supported hardware, not enabling unknown-device extraction.
 
 References: [OpenWrt release signing](https://openwrt.org/docs/guide-user/security/release_signatures), [actual 25.12.6 target](https://downloads.openwrt.org/releases/25.12.6/targets/ath79/generic/), [Tauri WiX version override](https://v2.tauri.app/reference/config/#wixconfig).
