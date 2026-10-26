@@ -5,7 +5,11 @@ use rusqlite::OptionalExtension;
 use rusqlite::{params, Connection};
 use std::{fs::File, io::Read, path::Path};
 
-const SUPPORTED_SCHEMA_VERSION: u32 = 5;
+const SUPPORTED_SCHEMA_VERSION: u32 = 6;
+pub(crate) mod schema6;
+
+#[cfg(test)]
+mod schema6_tests;
 
 /// Inspect only main-file bytes: even a read-only SQLite connection can create WAL sidecars.
 /// Unreadable or invalid headers retain the existing SQLite open/error path.
@@ -19,6 +23,22 @@ fn header_schema_version(path: &Path) -> Option<u32> {
     Some(u32::from_be_bytes(header[60..64].try_into().ok()?))
 }
 
+fn connect_supported(path: &Path, maximum: u32) -> Result<Connection, StorageError> {
+    if header_schema_version(path).is_some_and(|version| version > maximum) {
+        return Err(StorageError::NewerSchema);
+    }
+    let connection = Connection::open(path)?;
+    connection.busy_timeout(std::time::Duration::from_secs(5))?;
+    let actual: u32 = connection.pragma_query_value(None, "user_version", |r| r.get(0))?;
+    if actual > maximum {
+        return Err(StorageError::NewerSchema);
+    }
+    connection.execute_batch(
+        "PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;",
+    )?;
+    Ok(connection)
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum StorageError {
     #[error("Database operation failed")]
@@ -27,6 +47,16 @@ pub enum StorageError {
     Settings(#[from] serde_json::Error),
     #[error("This database was created by a newer OBTAINER version")]
     NewerSchema,
+    #[error("Library upgrade needs your approval before existing data can be opened")]
+    UpgradeConsentRequired,
+    #[error("Cannot upgrade library; existing data unchanged. {0}")]
+    UpgradeRefused(&'static str),
+    #[error("Library upgrade incomplete. Existing data and the verified backup are retained. Restart this version after releasing other database readers; workers remain unavailable.")]
+    UpgradeIncomplete,
+    #[error("Local database file operation failed")]
+    File(#[from] std::io::Error),
+    #[error(transparent)]
+    Library(#[from] crate::library::LibraryError),
 }
 
 pub struct Repository {
@@ -35,51 +65,63 @@ pub struct Repository {
 
 impl Repository {
     pub fn open(path: &Path) -> Result<Self, StorageError> {
-        if header_schema_version(path).is_some_and(|version| version > SUPPORTED_SCHEMA_VERSION) {
+        let _admission = schema6::admission_lock(path)?;
+        Self::open_locked(path)
+    }
+    fn open_locked(path: &Path) -> Result<Self, StorageError> {
+        if header_schema_version(path).is_some_and(|v| v > SUPPORTED_SCHEMA_VERSION) {
             return Err(StorageError::NewerSchema);
         }
-        let mut connection = Connection::open(path)?;
-        connection.busy_timeout(std::time::Duration::from_secs(5))?;
-        connection.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
-        let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        // A crash may leave a newer version only in WAL, absent from the main-file header.
-        if version > i64::from(SUPPORTED_SCHEMA_VERSION) {
-            return Err(StorageError::NewerSchema);
+        if schema6::has_pending(path)? {
+            return Err(StorageError::UpgradeIncomplete);
         }
+        if header_schema_version(path).is_some_and(|version| version < SUPPORTED_SCHEMA_VERSION) {
+            return Err(StorageError::UpgradeConsentRequired);
+        }
+        let mut connection = connect_supported(path, SUPPORTED_SCHEMA_VERSION)?;
+        let version: u32 = connection.pragma_query_value(None, "user_version", |r| r.get(0))?;
+        let mut fresh_marker = None;
         if version == 0 {
-            let transaction = connection.transaction()?;
-            transaction.execute_batch(include_str!("../migrations/001_foundation.sql"))?;
-            transaction.pragma_update(None, "user_version", 1)?;
-            transaction.commit()?;
+            let tables:u32=connection.query_row("SELECT COUNT(*) FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%'",[],|r|r.get(0))?;
+            if tables != 0 {
+                return Err(StorageError::UpgradeConsentRequired);
+            }
+            let mut marker = schema6::begin_fresh(path)?;
+            schema6::initialize(&mut connection)?;
+            marker.committed();
+            fresh_marker = Some(marker);
+        } else if version < SUPPORTED_SCHEMA_VERSION {
+            return Err(StorageError::UpgradeConsentRequired);
         }
-        if version < 2 {
-            let transaction = connection.transaction()?;
-            transaction.execute_batch(include_str!("../migrations/002_discovery.sql"))?;
-            transaction.pragma_update(None, "user_version", 2)?;
-            transaction.commit()?;
-        }
-        if version < 3 {
-            let transaction = connection.transaction()?;
-            transaction.execute_batch(include_str!("../migrations/003_profiles.sql"))?;
-            transaction.pragma_update(None, "user_version", 3)?;
-            transaction.commit()?;
-        }
-        if version < 4 {
-            let transaction = connection.transaction()?;
-            transaction.execute_batch(include_str!("../migrations/004_firmware_library.sql"))?;
-            transaction.pragma_update(None, "user_version", 4)?;
-            transaction.commit()?;
-        }
-        if version < 5 {
-            let transaction = connection.transaction()?;
-            transaction.execute_batch(include_str!("../migrations/005_desktop_workspace.sql"))?;
-            transaction.pragma_update(None, "user_version", 5)?;
-            transaction.commit()?;
+        schema6::validate_and_repair(&mut connection)?;
+        if let Some(marker) = fresh_marker.as_mut() {
+            schema6::checkpoint(&connection, path)?;
+            marker.complete()?;
         }
         Ok(Self { connection })
     }
 
+    pub(crate) fn ensure_ready(&self) -> Result<(), StorageError> {
+        let path = self
+            .connection
+            .path()
+            .filter(|s| !s.is_empty())
+            .ok_or(StorageError::UpgradeIncomplete)?;
+        let path = Path::new(path);
+        let version: u32 = self
+            .connection
+            .pragma_query_value(None, "user_version", |r| r.get(0))?;
+        if version != SUPPORTED_SCHEMA_VERSION
+            || header_schema_version(path) != Some(SUPPORTED_SCHEMA_VERSION)
+            || schema6::has_pending(path)?
+        {
+            return Err(StorageError::UpgradeIncomplete);
+        }
+        Ok(())
+    }
+
     pub fn record_startup(&mut self) -> Result<(), StorageError> {
+        self.ensure_ready()?;
         let transaction = self.connection.transaction()?;
         transaction.execute("UPDATE devices SET connected = 0", [])?;
         transaction.execute(
@@ -91,6 +133,7 @@ impl Repository {
     }
 
     pub fn save_discovery(&mut self, inventory: &DiscoverySnapshot) -> Result<(), StorageError> {
+        self.ensure_ready()?;
         use std::collections::BTreeMap;
         let before: BTreeMap<String, (String, bool)> = self
             .connection
@@ -397,7 +440,7 @@ mod tests {
         connection.execute_batch(include_str!("../migrations/002_discovery.sql"))?;
         connection.execute_batch("PRAGMA user_version=2; UPDATE settings SET value='{\"theme\":\"dark\"}'; INSERT INTO devices VALUES('preserved-device','Existing MiFi',1); INSERT INTO manual_routers VALUES('preserved-router','http://192.168.100.1/','Owner label',NULL,'preserved-device',1,NULL);")?;
         drop(connection);
-        let mut repo = Repository::open(&path)?;
+        let mut repo = schema6::open_with_upgrade(&path, |_| true)?.unwrap();
         let settings = repo.settings()?;
         let routers = repo.routers()?;
         let mut registry = crate::profiles::Registry::bundled();
@@ -490,12 +533,12 @@ mod tests {
             ["a".repeat(64)],
         )?;
         drop(connection);
-        let mut repository = Repository::open(&path)?;
+        let mut repository = schema6::open_with_upgrade(&path, |_| true)?.unwrap();
         assert_eq!(repository.settings()?.theme, Theme::Dark);
         repository.record_startup()?;
         repository.save_discovery(&DiscoverySnapshot::default())?;
         let snapshot = repository.snapshot(temporary.path())?;
-        assert_eq!(snapshot.database_version, 5);
+        assert_eq!(snapshot.database_version, 6);
         assert_eq!(snapshot.counts.artifacts, 1);
         assert!(snapshot.recent_events.iter().any(|e| e.kind == "existing"));
         assert_eq!(
@@ -526,7 +569,7 @@ mod tests {
         }
         let repository = Repository::open(&path)?;
         let snapshot = repository.snapshot(temporary.path())?;
-        assert_eq!(snapshot.database_version, 5);
+        assert_eq!(snapshot.database_version, 6);
         assert_eq!(snapshot.settings.theme, Theme::Dark);
         assert_eq!(snapshot.recent_events.len(), 2);
         assert_eq!(snapshot.counts.devices, 0);
@@ -560,7 +603,7 @@ mod tests {
         let temporary = tempfile::tempdir()?;
         let path = temporary.path().join("schema-six.db");
         let connection = Connection::open(&path)?;
-        connection.pragma_update(None, "user_version", 6)?;
+        connection.pragma_update(None, "user_version", 7)?;
         drop(connection);
 
         let before_bytes = fs::read(&path)?;
@@ -602,7 +645,7 @@ mod tests {
         assert_eq!(
             repo.connection
                 .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))?,
-            5
+            6
         );
         Ok(())
     }
@@ -623,8 +666,12 @@ mod tests {
         let path = temporary.path().join("locked.db");
         let c = Connection::open(&path)?;
         c.execute_batch("CREATE TABLE retained(value); BEGIN EXCLUSIVE;")?;
+        assert!(matches!(
+            Repository::open(&path),
+            Err(StorageError::UpgradeConsentRequired)
+        ));
         assert!(
-            matches!(Repository::open(&path), Err(StorageError::Database(rusqlite::Error::SqliteFailure(e, _))) if e.code == rusqlite::ErrorCode::DatabaseBusy)
+            matches!(connect_supported(&path,6), Err(StorageError::Database(rusqlite::Error::SqliteFailure(e, _))) if e.code == rusqlite::ErrorCode::DatabaseBusy)
         );
         c.execute_batch("ROLLBACK;")?;
         Ok(())
@@ -636,7 +683,7 @@ mod tests {
         let temporary = tempfile::tempdir()?;
         let path = temporary.path().join("wal-six.db");
         let c = Connection::open(&path)?;
-        c.execute_batch("PRAGMA journal_mode=WAL; PRAGMA user_version=6;")?;
+        c.execute_batch("PRAGMA journal_mode=WAL; PRAGMA user_version=7;")?;
         drop(c); // Last writer checkpoints and removes its sidecars.
         let listing = || -> std::io::Result<Vec<std::ffi::OsString>> {
             let mut entries = std::fs::read_dir(temporary.path())?
@@ -684,7 +731,7 @@ mod tests {
             Repository::open(&empty)?
                 .snapshot(temporary.path())?
                 .database_version,
-            5
+            6
         );
         Ok(())
     }
@@ -695,17 +742,36 @@ mod tests {
         let temporary = tempfile::tempdir()?;
         let path = temporary.path().join("wal-pending.db");
         let c = Connection::open(&path)?;
-        c.execute_batch("PRAGMA journal_mode=WAL; PRAGMA user_version=5; PRAGMA wal_checkpoint(TRUNCATE); PRAGMA wal_autocheckpoint=0; PRAGMA user_version=6;")?;
+        c.execute_batch("PRAGMA journal_mode=WAL; PRAGMA user_version=6; PRAGMA wal_checkpoint(TRUNCATE); PRAGMA wal_autocheckpoint=0; PRAGMA user_version=7;")?;
         let header = std::fs::read(&path)?;
-        assert_eq!(u32::from_be_bytes(header[60..64].try_into()?), 5);
+        assert_eq!(u32::from_be_bytes(header[60..64].try_into()?), 6);
         assert!(matches!(
             Repository::open(&path),
             Err(StorageError::NewerSchema)
         ));
         assert_eq!(
             c.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))?,
-            6
+            7
         );
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod old_version_preflight {
+    use super::*;
+    #[test]
+    fn stage3_old_schema_five_preflight_refuses_six_without_sqlite_sidecars() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("schema6.db");
+        drop(Repository::open(&path).unwrap());
+        let before = std::fs::read(&path).unwrap();
+        assert!(matches!(
+            connect_supported(&path, 5),
+            Err(StorageError::NewerSchema)
+        ));
+        assert_eq!(before, std::fs::read(&path).unwrap());
+        assert!(!path.with_file_name("schema6.db-wal").exists());
+        assert!(!path.with_file_name("schema6.db-shm").exists());
     }
 }

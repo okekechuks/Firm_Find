@@ -1,7 +1,9 @@
+mod admission;
 mod db;
 pub mod desktop;
 pub(crate) mod files;
 pub mod ipc;
+mod manifest_contract;
 pub mod types;
 use crate::{connection::now, storage::Repository};
 use files::*;
@@ -83,6 +85,7 @@ impl LibraryService {
         max: u64,
         notify: Notify,
     ) -> Result<Self> {
+        lock(&repo)?.ensure_ready().map_err(|_|LibraryError::new("UPGRADE_INCOMPLETE","Library upgrade is incomplete. Finish recovery with this version before starting library jobs."))?;
         if max == 0 || max > 8 * 1024 * 1024 * 1024 {
             return Err(LibraryError::new(
                 "INVALID_LIMIT",
@@ -657,14 +660,16 @@ impl Inner {
         drop(_fence);
         self.progress(id, 0, size, "checking_vault")?;
         last = Instant::now();
-        let checked = hash_file(&blob, self.max, cancel, |bytes| {
-            if last.elapsed() >= Duration::from_millis(100) {
-                self.progress(id, bytes, size, "checking_vault")?;
-                last = Instant::now();
-            }
-            Ok(())
-        });
-        let (lease, actual, actual_size) = match checked {
+        let checked = self
+            .vault
+            .verify_published(&hash, self.max, cancel, |bytes| {
+                if last.elapsed() >= Duration::from_millis(100) {
+                    self.progress(id, bytes, size, "checking_vault")?;
+                    last = Instant::now();
+                }
+                Ok(())
+            });
+        let proof = match checked {
             Ok(v) => v,
             Err(e) if e.code == "CANCELLED" => return Err(e),
             Err(e) => {
@@ -672,15 +677,21 @@ impl Inner {
                 return Err(e);
             }
         };
-        if actual != hash || actual_size != size {
+        if proof.hash() != hash || proof.size() != size {
             let error=LibraryError::new("HASH_MISMATCH","Existing vault content is corrupted. It was preserved and was not reused or overwritten.");
-            self.mark_bad_duplicate(&hash, size, Some(actual), Some(actual_size), &error);
+            self.mark_bad_duplicate(
+                &hash,
+                size,
+                Some(proof.hash().into()),
+                Some(proof.size()),
+                &error,
+            );
             return Err(error);
         }
         let _fence = lock(&self.finalize)?;
         cancelled(cancel)?;
-        lock(&self.repo)?.commit_library_import(id, &hash, size, &Vault::key(&hash), duplicate)?;
-        drop(lease);
+        lock(&self.repo)?.commit_library_import(id, &proof, duplicate)?;
+        drop(proof);
         Ok(())
     }
     fn mark_bad_duplicate(

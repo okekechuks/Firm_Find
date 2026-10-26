@@ -464,6 +464,23 @@ fn database_failure_after_publication_preserves_orphan_and_retry_reuses_verified
     assert_eq!(failed.error_code.as_deref(), Some("DATABASE_UNAVAILABLE"));
     assert_eq!(s.list(&LibraryQuery::default()).unwrap().total, 0);
     let hash = failed.related_artifact.unwrap();
+    for table in [
+        "artifact_blobs",
+        "artifact_occurrences",
+        "firmware_admissions",
+        "artifact_blob_state",
+    ] {
+        assert_eq!(
+            repo.lock()
+                .unwrap()
+                .connection
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r
+                    .get::<_, u32>(0))
+                .unwrap(),
+            0,
+            "{table} rolls back with the failed import"
+        );
+    }
     assert!(s.inner.vault.blob(&hash).unwrap().0.exists());
     repo.lock()
         .unwrap()
@@ -522,7 +539,19 @@ fn restart_recovers_partial_and_published_jobs_without_false_success() {
 }
 #[test]
 fn jobs_enforce_transitions_and_cannot_commit_after_cancellation() {
-    let (_dir, repo, _s) = setup();
+    let (dir, repo, service) = setup();
+    let fixture = source(dir.path(), "cancel-proof.bin", b"harmless cancel proof");
+    let imported = completed(&service, &fixture);
+    let proof = service
+        .inner
+        .vault
+        .verify_published(
+            imported.related_artifact.as_deref().unwrap(),
+            DEFAULT_MAX,
+            &AtomicBool::new(false),
+            |_| Ok(()),
+        )
+        .unwrap();
     let id = nonce().unwrap();
     let mut repo = repo.lock().unwrap();
     repo.create_library_job(
@@ -543,9 +572,7 @@ fn jobs_enforce_transitions_and_cannot_commit_after_cancellation() {
     assert!(repo
         .library_transition(&id, JobStatus::Running, None)
         .is_err());
-    assert!(repo
-        .commit_library_import(&id, &"a".repeat(64), 0, "invalid", false)
-        .is_err());
+    assert!(repo.commit_library_import(&id, &proof, false).is_err());
 }
 #[test]
 fn metadata_search_pagination_manifest_privacy_and_no_overwrite() {
@@ -726,8 +753,10 @@ fn nonempty_schema_three_upgrade_and_repeated_startup_preserve_all_legacy_rows()
     .unwrap();
     drop(c);
     for _ in 0..2 {
-        let r = Repository::open(&path).unwrap();
-        assert_eq!(r.snapshot(dir.path()).unwrap().database_version, 5);
+        let r = crate::storage::schema6::open_with_upgrade(&path, |_| true)
+            .unwrap()
+            .unwrap();
+        assert_eq!(r.snapshot(dir.path()).unwrap().database_version, 6);
         assert_eq!(
             r.connection
                 .query_row("SELECT COUNT(*) FROM jobs WHERE id='old-job'", [], |r| r
@@ -1218,7 +1247,9 @@ fn gui_schema_four_upgrade_preserves_existing_rows_and_theme_exactly() {
         .unwrap();
     drop(c);
     for _ in 0..2 {
-        let repo = Repository::open(&path).unwrap();
+        let repo = crate::storage::schema6::open_with_upgrade(&path, |_| true)
+            .unwrap()
+            .unwrap();
         assert_eq!(
             repo.connection
                 .query_row("SELECT value FROM settings LIMIT 1", [], |r| r
@@ -1251,6 +1282,163 @@ fn gui_schema_four_upgrade_preserves_existing_rows_and_theme_exactly() {
             42
         );
         assert!(repo.desktop_preferences().unwrap().auto_refresh);
-        assert_eq!(repo.snapshot(dir.path()).unwrap().database_version, 5);
+        assert_eq!(repo.snapshot(dir.path()).unwrap().database_version, 6);
     }
+}
+
+#[test]
+fn stage3_user_import_has_separate_immutable_occurrence_and_unverified_class() {
+    let (dir, repo, service) = setup();
+    let p = source(
+        dir.path(),
+        "arbitrary-not-official.bin",
+        b"harmless stage3 class test",
+    );
+    let first = completed(&service, &p);
+    let hash = first.related_artifact.unwrap();
+    completed(&service, &p);
+    let repo = repo.lock().unwrap();
+    let class: String = repo
+        .connection
+        .query_row(
+            "SELECT artifact_class FROM firmware_admissions WHERE sha256=?1",
+            [&hash],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(class, "user_imported_unverified");
+    assert_eq!(repo.connection.query_row("SELECT COUNT(*) FROM artifact_occurrences WHERE blob_sha256=?1 AND artifact_class='user_imported_unverified' AND provenance_kind='user_import'", [&hash], |r|r.get::<_,u32>(0)).unwrap(), 2);
+    assert_eq!(
+        repo.connection
+            .query_row(
+                "SELECT COUNT(*) FROM artifact_blobs WHERE sha256=?1",
+                [&hash],
+                |r| r.get::<_, u32>(0)
+            )
+            .unwrap(),
+        1
+    );
+}
+
+#[test]
+fn stage3_same_bytes_require_independent_occurrence_and_do_not_reclassify_configuration() {
+    let (dir, repo, service) = setup();
+    let bytes = b"harmless shared class fixture";
+    let hash = format!("{:x}", Sha256::digest(bytes));
+    {
+        let c = &repo.lock().unwrap().connection;
+        c.execute(
+            "INSERT INTO artifact_blobs VALUES(?1,?2)",
+            rusqlite::params![hash, bytes.len()],
+        )
+        .unwrap();
+        c.execute("INSERT INTO artifact_occurrences(occurrence_id,blob_sha256,artifact_class,provenance_kind,acquisition_occurrence_id,collected_at) VALUES('synthetic-config',?1,'configuration_backup','synthetic','synthetic-config',1)",[&hash]).unwrap();
+        assert_eq!(
+            c.query_row("SELECT COUNT(*) FROM firmware_artifacts", [], |r| r
+                .get::<_, u32>(0))
+                .unwrap(),
+            0
+        );
+    }
+    completed(&service, &source(dir.path(), "local assertion.bin", bytes));
+    let c = &repo.lock().unwrap().connection;
+    assert_eq!(c.query_row("SELECT artifact_class FROM artifact_occurrences WHERE occurrence_id='synthetic-config'",[],|r|r.get::<_,String>(0)).unwrap(),"configuration_backup");
+    assert_eq!(
+        c.query_row("SELECT COUNT(*) FROM artifact_blobs", [], |r| r
+            .get::<_, u32>(0))
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        c.query_row("SELECT COUNT(*) FROM artifact_occurrences", [], |r| r
+            .get::<_, u32>(0))
+            .unwrap(),
+        2
+    );
+}
+#[test]
+fn stage3_legacy_restore_and_reimport_preserve_admission_class() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("data");
+    fs::create_dir(&root).unwrap();
+    let path = root.join("fixture.db");
+    let c = rusqlite::Connection::open(&path).unwrap();
+    for sql in [
+        include_str!("../../migrations/001_foundation.sql"),
+        include_str!("../../migrations/002_discovery.sql"),
+        include_str!("../../migrations/003_profiles.sql"),
+        include_str!("../../migrations/004_firmware_library.sql"),
+        include_str!("../../migrations/005_desktop_workspace.sql"),
+    ] {
+        c.execute_batch(sql).unwrap();
+    }
+    let bytes = b"harmless legacy restore fixture";
+    let hash = format!("{:x}", Sha256::digest(bytes));
+    c.execute(
+        "INSERT INTO firmware_artifacts VALUES(?1,?2)",
+        rusqlite::params![hash, bytes.len()],
+    )
+    .unwrap();
+    c.execute(
+        "INSERT INTO artifact_details(sha256,storage_key,first_imported_at) VALUES(?1,?2,1)",
+        rusqlite::params![hash, Vault::key(&hash)],
+    )
+    .unwrap();
+    c.execute_batch("PRAGMA user_version=5;").unwrap();
+    drop(c);
+    let repo = Arc::new(Mutex::new(
+        crate::storage::schema6::open_with_upgrade(&path, |_| true)
+            .unwrap()
+            .unwrap(),
+    ));
+    let service =
+        LibraryService::start(Arc::clone(&repo), root, DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    fs::write(service.inner.vault.blob(&hash).unwrap().0, bytes).unwrap();
+    assert_eq!(
+        wait(&service, &service.create_backup(&hash).unwrap().id).status,
+        JobStatus::Completed
+    );
+    let backup = service.backups().unwrap().remove(0);
+    assert_eq!(
+        wait(
+            &service,
+            &service.restore_backup(&backup.id, true).unwrap().id
+        )
+        .status,
+        JobStatus::Completed
+    );
+    completed(&service, &source(dir.path(), "reimport.bin", bytes));
+    let c = &repo.lock().unwrap().connection;
+    assert_eq!(
+        c.query_row("SELECT artifact_class FROM firmware_admissions", [], |r| {
+            r.get::<_, String>(0)
+        })
+        .unwrap(),
+        "legacy_unclassified"
+    );
+    assert_eq!(
+        c.query_row(
+            "SELECT COUNT(*) FROM artifact_occurrences WHERE artifact_class='legacy_unclassified'",
+            [],
+            |r| r.get::<_, u32>(0)
+        )
+        .unwrap(),
+        1
+    );
+    assert_eq!(c.query_row("SELECT COUNT(*) FROM artifact_occurrences WHERE artifact_class='user_imported_unverified'",[],|r|r.get::<_,u32>(0)).unwrap(),1);
+}
+
+#[test]
+fn stage3_misaddressed_bytes_cannot_mint_published_blob_proof() {
+    let (_dir, _repo, service) = setup();
+    let expected = "a".repeat(64);
+    fs::write(
+        service.inner.vault.blob(&expected).unwrap().0,
+        b"harmless wrongly addressed bytes",
+    )
+    .unwrap();
+    assert!(
+        matches!(service.inner.vault.verify_published(&expected,DEFAULT_MAX,&AtomicBool::new(false),|_|Ok(())),Err(e) if e.code=="HASH_MISMATCH")
+    );
+    assert_eq!(service.list(&LibraryQuery::default()).unwrap().total, 0);
 }

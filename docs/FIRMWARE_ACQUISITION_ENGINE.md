@@ -1,8 +1,18 @@
 # Firmware acquisition engine
 
+## Current Stage 3 integration — 26 October 2026
+
+Stage 4 software is independently accepted at `f9e7115`, including its live-stamp and inventory-freshness corrections and green CI `40273674930`. Stage 3 completion uses that exact base on separate branch `phase-7-5-stage-3-artifact-completion`; accepted acquisition/binding/CI source remains unchanged. The accepted artifact/schema design now has classified neutral blobs, independent occurrences and firmware admissions, consent-gated backup/migration and restart recovery, with only the sealed unverified user-import consumer implemented. The four-entry read-only request registry is unchanged. No authenticated MG11 request, firmware acquisition or physical write is added.
+
+Normal storage has not been migrated or moved. [Current Stage 3 evidence](PHASE_7_5_STAGE_3_VERIFICATION.md) and [database-preservation report](PHASE_7_5_STAGE_3_DATABASE_PRESERVATION.md) cover the isolated implementation and its remaining review gate. Other producer consumers and manifest-2 export remain held. MG11 physical challenge remains pending, separately supervised and explicitly authorized. Earlier branch/status entries below are historical.
+
 ## Stage 4: endpoint consistency binding
 
 24 October 2026 implementation: [accepted binding design](PHASE_7_5_STAGE_4_BINDING_DESIGN.md) and [verification evidence](PHASE_7_5_STAGE_4_BINDING_VERIFICATION.md). New AuthChallenge scopes bind an in-memory SHA-256 digest and generation of selected endpoint/interface/source/route/DHCP/association facts, rather than global discovery revision. Existing metadata/menu/strategy scopes retain their behavior. Rechecks and shared liveness reject material changes and cancellation; repeated scans do not renew expiry. Missing DHCP stays unknown and does not block the read-only scope. Plain HTTP remains **not cryptographically verified**. Historical Stage 2A scope wording below predates this correction. No authenticated read or new network request is released here.
+
+## Stage 3 classification implementation candidate
+
+24 October: separate `phase-7-5-stage-3-artifacts` implements consent-gated additive schema 6, verified WAL-aware VACUUM backup, persistent incomplete-upgrade admission, typed file proof and sealed unverified user import. Other producer/manifest-2 contracts have no consumers. Existing firmware backups restore retained admission without reclassification. Normal data has not been migrated. [Stage 3 evidence](PHASE_7_5_STAGE_3_VERIFICATION.md); real migration and all later acquisition releases remain separately gated. Stage 4 is accepted on its own branch at `5817cfe`, not merged here. Historical entries below describe earlier releases.
 
 ## Current Stage 2A: credential-free challenge observation
 

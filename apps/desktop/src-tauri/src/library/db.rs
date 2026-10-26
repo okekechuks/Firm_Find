@@ -155,14 +155,15 @@ impl Repository {
         self.connection.execute("UPDATE job_details SET artifact_sha256=?2,recovery_info='Published bytes may be retained if metadata commit is interrupted.' WHERE job_id=?1",params![id,hash])?;
         Ok(())
     }
-    pub fn commit_library_import(
+    pub(super) fn commit_library_import(
         &mut self,
         id: &str,
-        hash: &str,
-        size: u64,
-        key: &str,
+        proof: &super::files::VerifiedPublishedBlob,
         duplicate: bool,
     ) -> Result<()> {
+        let hash = proof.hash();
+        let size = proof.size();
+        let key = super::files::Vault::key(hash);
         let tx = self.connection.transaction()?;
         let running:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM jobs j JOIN job_details d ON d.job_id=j.id WHERE j.id=?1 AND j.status='running' AND d.cancel_requested=0)",[id],|r|r.get(0))?;
         if !running {
@@ -176,18 +177,7 @@ impl Repository {
             [hash],
             |r| r.get(0),
         )?;
-        tx.execute(
-            "INSERT OR IGNORE INTO firmware_artifacts VALUES(?1,?2)",
-            params![hash, size],
-        )?;
-        let old: u64 = tx.query_row(
-            "SELECT size_bytes FROM firmware_artifacts WHERE sha256=?1",
-            [hash],
-            |r| r.get(0),
-        )?;
-        if old != size {
-            return Err(LibraryError::new("METADATA_CONFLICT","Stored artifact size disagrees with verified content. Existing metadata was preserved."));
-        }
+        super::admission::admit_import_or_restore(&tx, id, proof)?;
         tx.execute("INSERT INTO artifact_details(sha256,storage_key,integrity_status,first_imported_at,last_verified_at) VALUES(?1,?2,'verified',?3,?3) ON CONFLICT(sha256) DO UPDATE SET storage_key=excluded.storage_key,storage_status='present',integrity_status='verified',last_verified_at=excluded.last_verified_at",params![hash,key,now()])?;
         tx.execute("INSERT INTO artifact_imports SELECT job_id,?2,original_filename,?3,'user_import','unverified',description,device_id,job_id FROM job_details WHERE job_id=?1",params![id,hash,now()])?;
         tx.execute(
@@ -326,7 +316,7 @@ impl Repository {
             [],
             |r| r.get(0),
         )?;
-        let sql=format!("SELECT a.sha256,a.size_bytes,d.storage_status,d.integrity_status,d.first_imported_at,d.last_verified_at,d.format,(SELECT COUNT(*) FROM artifact_imports i WHERE i.artifact_sha256=a.sha256),COALESCE((SELECT display_name FROM artifact_presentation p WHERE p.sha256=a.sha256),(SELECT original_filename FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'Legacy artifact'),COALESCE((SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'unknown'),COALESCE((SELECT kind FROM artifact_presentation p WHERE p.sha256=a.sha256),CASE (SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1) WHEN 'user_import' THEN 'imported_original' WHEN 'official_vendor_download' THEN 'imported_original' WHEN 'authorized_device_acquisition' THEN 'extracted' WHEN 'generated_build' THEN 'build_output' ELSE 'unknown' END),(SELECT associated_device_id FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND i.associated_device_id IS NOT NULL ORDER BY imported_at DESC,import_id DESC LIMIT 1) FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition} ORDER BY {order} LIMIT 25 OFFSET {}",page*25);
+        let sql=format!("SELECT a.sha256,a.size_bytes,d.storage_status,d.integrity_status,d.first_imported_at,d.last_verified_at,d.format,(SELECT COUNT(*) FROM artifact_imports i WHERE i.artifact_sha256=a.sha256),COALESCE((SELECT display_name FROM artifact_presentation p WHERE p.sha256=a.sha256),(SELECT original_filename FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'Legacy artifact'),COALESCE((SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1),'unknown'),COALESCE((SELECT kind FROM artifact_presentation p WHERE p.sha256=a.sha256),CASE (SELECT source_category FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 ORDER BY imported_at,import_id LIMIT 1) WHEN 'user_import' THEN 'imported_original' WHEN 'official_vendor_download' THEN 'imported_original' WHEN 'authorized_device_acquisition' THEN 'extracted' WHEN 'generated_build' THEN 'build_output' ELSE 'unknown' END),(SELECT associated_device_id FROM artifact_imports i WHERE i.artifact_sha256=a.sha256 AND i.associated_device_id IS NOT NULL ORDER BY imported_at DESC,import_id DESC LIMIT 1),(SELECT artifact_class FROM firmware_admissions f WHERE f.sha256=a.sha256) FROM firmware_artifacts a JOIN artifact_details d USING(sha256){condition} ORDER BY {order} LIMIT 25 OFFSET {}",page*25);
         let mut s = self.connection.prepare(&sql)?;
         let artifacts = s
             .query_map(values, |r| {
@@ -343,6 +333,7 @@ impl Repository {
                     source_category: r.get(9)?,
                     kind: r.get(10)?,
                     associated_device_id: r.get(11)?,
+                    artifact_class: r.get(12)?,
                 })
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;

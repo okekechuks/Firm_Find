@@ -86,6 +86,18 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
         )
         .into());
     }
+    let directory = match &profile {
+        Some(test) => test.root.join("data"),
+        None => startup::local_data()?.join("OBTAINER"),
+    };
+    let Some(repository) = storage::schema6::open_with_upgrade(
+        &directory.join("obtainer.db"),
+        startup::confirm_library_upgrade,
+    )
+    .map_err(std::io::Error::other)?
+    else {
+        return Ok(());
+    };
     if let Some(test) = &profile {
         for window in &mut context.config_mut().app.windows {
             window.data_directory = Some(test.root.join("webview"));
@@ -97,10 +109,6 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             let simulation_enabled = profile.as_ref().is_some_and(|p| p.simulator);
             let openwrt_lab_enabled = profile.as_ref().is_some_and(|p| p.openwrt_lab);
             let simulation_owner = profile.as_ref().map(|p| p.id.clone()).unwrap_or_default();
-            let directory = profile
-                .as_ref()
-                .map(|p| p.root.join("data"))
-                .unwrap_or(app.path().local_data_dir()?.join("OBTAINER"));
             let test_profile = profile.as_ref().map(|p| domain::NativeTestInfo {
                 run_id: p.id.clone(),
                 discovery_source: "windows_observed".into(),
@@ -122,7 +130,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
                 .try_init()
                 .map_err(|error| std::io::Error::other(error.to_string()))?;
             app.manage(guard);
-            let mut repository = storage::Repository::open(&directory.join("obtainer.db"))?;
+            let mut repository = repository;
             let mut profiles = profiles::Registry::bundled();
             repository.install_registry(&mut profiles)?;
             #[cfg(feature = "native-test-profile")]

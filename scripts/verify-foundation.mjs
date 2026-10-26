@@ -163,7 +163,7 @@ async function verify(label, extended = false) {
   originalSettings ??= before.settings;
   assert.deepEqual(before.settings, originalSettings);
   assert.equal(path.normalize(before.dataDirectory).toLowerCase(), path.join(profile.root,'data').toLowerCase());
-  assert.equal(before.databaseVersion, 5);
+  assert.equal(before.databaseVersion, 6);
   assert.equal(before.testProfile.runId,profile.id);assert.equal(before.testProfile.discoverySource,'windows_observed');assert.equal(before.testProfile.simulatedAdapters,false);
   assert.equal(await client.evaluate("document.querySelector('.native-test-notice')?.dataset.testRunId"),profile.id);
   if(label==='dev-reopen'){assert.notEqual(cleanupProcess(profile,env).status,0);record('active test ownership prevents cleanup');}
@@ -176,6 +176,22 @@ async function verify(label, extended = false) {
   assert.equal(await client.evaluate("document.querySelectorAll('nav[aria-label=\"Main navigation\"] a').length"),6);
   for(const [page,heading] of navigation) {await screen(page,heading);await screenshot(label+'-'+page);}
   record(label+': exactly six primary navigation destinations');
+
+  if(process.argv.includes('--stage3-upgrade')) {
+    await screen('firmware','Library');
+    await until(()=>client.evaluate("document.querySelector('.artifact-card h3')?.textContent === 'harmless-migration-fixture.bin'"),'Migrated fixture did not render in Library');
+    assert.equal(await client.evaluate("document.querySelectorAll('.artifact-card').length"),1);
+    await screenshot(label+'-loaded-library');
+    await click('.artifact-card');
+    await until(()=>client.evaluate("document.querySelector('.firmware-actions button')?.disabled === false"),'Migrated fixture details IPC did not finish');
+    await click('.firmware-actions button');
+    await until(()=>client.evaluate("document.querySelector('dialog[aria-label=\"Customize firmware\"]')?.open === true"),'Customization modal did not open');
+    assert.equal(await client.evaluate("document.querySelectorAll('.customization-dialog input[role=\"switch\"]:disabled').length"),4);
+    assert.equal(await client.evaluate("document.querySelector('.customization-dialog .dialog-actions .primary-button')?.disabled"),true);
+    await screenshot(label+'-disabled-customization');
+    await click('[aria-label="Close customization"]');
+    record(label+': migrated harmless file rendered; details IPC and customization modal work; all four features and rebuild remain disabled');
+  }
 
   await screen('devices', 'Connected Devices');
   let discovery;
@@ -363,13 +379,44 @@ async function chooseAppearance(theme) {
 }
 let succeeded=false;let baselineCaptured=false;
 try {
-  probeNormal(root,evidence,'before');baselineCaptured=true;record('normal schema/settings/artifact/job/profile/router/vault baseline captured read-only');
-  const startupProbe=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/verify-startup.ps1'),'-Binary',path.join(root,'target/release/obtainer.exe')],{env,windowsHide:true,encoding:'utf8',timeout:30000});
-  await writeFile(path.join(evidence,'production-startup-error.json'),startupProbe);
-  assert.equal(JSON.parse(startupProbe).exitCode,1);
-  record('ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data');
-  verifyActivationGuards(root,profile,env,record);
-  if (process.argv.includes('--release-only')) {
+  probeNormal(root,evidence,'before');baselineCaptured=true;record('normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite');
+  // Stage 3 qualification launches only the dedicated native-test executable.
+  // It must never invoke the production binary against the owner's data directory.
+  if(!process.argv.includes('--stage3-upgrade')) {
+    const startupProbe=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/verify-startup.ps1'),'-Binary',path.join(root,'target/release/obtainer.exe')],{env,windowsHide:true,encoding:'utf8',timeout:30000});
+    await writeFile(path.join(evidence,'production-startup-error.json'),startupProbe);
+    assert.equal(JSON.parse(startupProbe).exitCode,1);
+    record('ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data');
+    verifyActivationGuards(root,profile,env,record);
+  }
+  if (process.argv.includes('--stage3-upgrade')) {
+    const fixture=operation=>JSON.parse(execFileSync('py',[path.join(root,'scripts/stage3-native-fixture.py'),operation,profile.id],{env,windowsHide:true,encoding:'utf8'}));
+    const before=fixture('create');
+    await writeFile(path.join(evidence,'stage3-before-no.json'),JSON.stringify(before,null,2));
+    const answer=(launch,value)=>JSON.parse(execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/answer-isolated-library-upgrade.ps1'),'-LauncherProcessId',String(launch.process.pid),'-RunId',profile.id,'-Answer',value],{env,windowsHide:true,encoding:'utf8',timeout:45000}));
+    await clean();
+    const declined=start('release');
+    const no=answer(declined,'No');
+    await writeFile(path.join(evidence,'stage3-native-no.json'),JSON.stringify(no,null,2));
+    await clean();
+    const afterNo=fixture('snapshot');
+    assert.deepEqual(afterNo,before,'Native No changed fixture data or directories');
+    await writeFile(path.join(evidence,'stage3-after-no.json'),JSON.stringify(afterNo,null,2));
+    record('isolated native migration dialog: default No, explicit No, complete data/directory byte preservation');
+    const approved=start('release');
+    const yes=answer(approved,'Yes');
+    await writeFile(path.join(evidence,'stage3-native-yes.json'),JSON.stringify(yes,null,2));
+    await verify('stage3-upgraded'); await closeWindow();
+    const inspected=fixture('inspect');
+    assert.equal(inspected.version,6);assert.equal(inspected.theme,'dark');
+    assert.equal(inspected.artifact[2],'legacy_unclassified');
+    assert.deepEqual(inspected.artifact.slice(0,2),inspected.backupArtifact);
+    assert.equal(inspected.artifact[0],inspected.blobSha256);
+    assert.equal(inspected.backupVersion,5);assert.deepEqual(inspected.backupIntegrity,[['ok']]);assert.deepEqual(inspected.backupForeignKeys,[]);
+    await writeFile(path.join(evidence,'stage3-upgrade-inspection.json'),JSON.stringify(inspected,null,2));
+    record('isolated native Yes: schema 6, preserved harmless blob/settings/legacy class, verified schema-5 backup');
+    start('release'); await verify('stage3-reopened'); await closeWindow();
+  } else if (process.argv.includes('--release-only')) {
     await clean(); start('release'); await verify('production'); await closeWindow();
   } else if (process.argv.includes('--watch-usb')) {
     await clean(); start('dev'); await connect(); await connected();
@@ -452,7 +499,7 @@ try {
     await writeFile(path.join(evidence, `launch-${index}-${launch.kind}.txt`), launch.output);
     commands[index].exitCode = launch.exitCode;
   }
-  if(baselineCaptured){probeNormal(root,evidence,'after');record('normal database rows/file hashes and vault blobs unchanged after isolated native suite');}
+  if(baselineCaptured){probeNormal(root,evidence,'after');record('normal application file bytes unchanged after isolated native suite');}
   if(succeeded){const cleanup=cleanupProcess(profile,env);await writeFile(path.join(evidence,'cleanup.json'),JSON.stringify({status:cleanup.status,stdout:cleanup.stdout,stderr:cleanup.stderr},null,2));assert.equal(cleanup.status,0,'Test cleanup retained files; inspect cleanup.json');record('owned isolated run cleaned after all processes stopped',{runId:profile.id});}
   else console.log('Failed test run retained: '+profile.root);
   await writeFile(path.join(evidence, 'console.json'), JSON.stringify(consoleEvents, null, 2));

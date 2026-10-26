@@ -2,7 +2,7 @@
 use std::io;
 
 #[cfg(windows)]
-fn local_data() -> io::Result<std::path::PathBuf> {
+pub(crate) fn local_data() -> io::Result<std::path::PathBuf> {
     use windows_sys::Win32::{
         System::Com::CoTaskMemFree,
         UI::Shell::{FOLDERID_LocalAppData, SHGetKnownFolderPath},
@@ -25,6 +25,51 @@ fn local_data() -> io::Result<std::path::PathBuf> {
             .map_err(io::Error::other);
         CoTaskMemFree(raw.cast());
         result
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn local_data() -> io::Result<std::path::PathBuf> {
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "Native OBTAINER startup requires Windows.",
+    ))
+}
+
+pub(crate) fn confirm_library_upgrade(plan: &crate::storage::schema6::UpgradePlan) -> bool {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::*;
+        let retained = plan
+            .retained_backup
+            .as_ref()
+            .map(|p| {
+                format!(
+                    "\nAn interrupted upgrade may use its retained backup:\n{}\n",
+                    p.display()
+                )
+            })
+            .unwrap_or_default();
+        let message=format!("Upgrade or finish recovering this local OBTAINER library?\n\nIf a new upgrade is needed, a verified database backup will be kept at:\n{}\n{}\nThis upgrade is one-way. Older OBTAINER versions cannot open upgraded data. Firmware files and the configured Library folder will not be moved.\n\nYes: verify the backup and upgrade or finish recovery before opening the app.\nNo: close without opening or changing the database.",plan.backup_path.display(),retained);
+        let text: Vec<u16> = message
+            .replace('\0', " ")
+            .encode_utf16()
+            .chain(Some(0))
+            .collect();
+        let title: Vec<u16> = "OBTAINER - upgrade library\0".encode_utf16().collect();
+        unsafe {
+            MessageBoxW(
+                std::ptr::null_mut(),
+                text.as_ptr(),
+                title.as_ptr(),
+                MB_YESNO | MB_DEFBUTTON2 | MB_ICONWARNING | MB_TASKMODAL,
+            ) == IDYES
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = plan;
+        false
     }
 }
 

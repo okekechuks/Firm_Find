@@ -447,3 +447,41 @@ pub fn dialog(_: bool, _: isize) -> Result<Option<PathBuf>> {
         "Native file selection requires Windows.",
     ))
 }
+
+/// Constructed only by hashing a published vault file, with its file and directory
+/// leases retained until the metadata transaction has completed. Never a caller hash.
+pub(super) struct VerifiedPublishedBlob {
+    _file: File,
+    _directories: Vec<File>,
+    hash: String,
+    size: u64,
+}
+impl VerifiedPublishedBlob {
+    pub(super) fn hash(&self) -> &str {
+        &self.hash
+    }
+    pub(super) fn size(&self) -> u64 {
+        self.size
+    }
+}
+impl Vault {
+    pub(super) fn verify_published(
+        &self,
+        expected: &str,
+        max: u64,
+        cancel: &AtomicBool,
+        progress: impl FnMut(u64) -> Result<()>,
+    ) -> Result<VerifiedPublishedBlob> {
+        let (path, directories) = self.blob(expected)?;
+        let (file, hash, size) = hash_file(&path, max, cancel, progress)?;
+        if hash != expected {
+            return Err(LibraryError::new("HASH_MISMATCH", "Published vault bytes do not match their content address. Existing bytes were retained."));
+        }
+        Ok(VerifiedPublishedBlob {
+            _file: file,
+            _directories: directories,
+            hash,
+            size,
+        })
+    }
+}

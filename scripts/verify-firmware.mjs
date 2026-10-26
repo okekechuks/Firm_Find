@@ -39,7 +39,7 @@ export async function interruptFirmwareImport(client,{pid,record,evidence}){
  interruptedId=job.id;await writeFile(path.join(evidence,'interrupted-import.json'),JSON.stringify({jobId:job.id,source:'harmless generated 256 MiB bytes'},null,2));record('Phase 4: actual copying job recorded before forced termination',{jobId:job.id});
 }
 export async function verifyFirmware(client,{label,pid,record,evidence}){
- await prepare();const invoke=api(client);const snapshot=await invoke('get_snapshot');assert.equal(snapshot.databaseVersion,5);assert.equal(snapshot.testProfile.runId,profile.id);assert.equal(path.normalize(snapshot.dataDirectory).toLowerCase(),path.join(profile.root,'data').toLowerCase());await checkShutdown(client,record);
+ await prepare();const invoke=api(client);const snapshot=await invoke('get_snapshot');assert.equal(snapshot.databaseVersion,6);assert.equal(snapshot.testProfile.runId,profile.id);assert.equal(path.normalize(snapshot.dataDirectory).toLowerCase(),path.join(profile.root,'data').toLowerCase());await checkShutdown(client,record);
  if(recoveredInterrupted){const j=await invoke('get_library_job',{id:recoveredInterrupted.id});assert.equal(j.status,'failed');assert.equal(j.errorCode,'INTERRUPTED');assert.equal(j.finishedAt,recoveredInterrupted.finishedAt);record(label+': repeated startup keeps interrupted job terminal without rerunning it');}
  if(label!=='dev-reopen'){
   const saved=await invoke('get_firmware_artifact',{sha256:hash});assert.equal(saved.artifact.sizeBytes,bytes.length);assert(saved.imports.length>=2);assert.equal(saved.artifact.integrityStatus,'not_checked');

@@ -53,3 +53,14 @@ it("reports a saved manifest separately from activity-log failure",async()=>{
 it("reports cancelled export without claiming a file was saved",async()=>{
  vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue({...empty,total:1,artifacts:[artifact]});vi.mocked(backend.exportArtifactManifest).mockResolvedValue({saved:false,activityRecorded:false,warning:null});const user=userEvent.setup();render(<FirmwareLibrary desktop/>);await user.click(await screen.findByRole("button",{name:/harmless.bin/}));await user.click(await screen.findByRole("button",{name:"Export Manifest"}));expect(await screen.findByText("Manifest export cancelled.")).toBeInTheDocument();
 });
+
+it("labels imported content unverified in customization without enabling a build",async()=>{
+ const user=userEvent.setup();
+ vi.mocked(backend.listFirmwareArtifacts).mockResolvedValue({...empty,total:1,artifacts:[artifact]});
+ vi.mocked(backend.getFirmwareArtifact).mockResolvedValue({...details,artifact:{...artifact,artifactClass:"user_imported_unverified"}});
+ render(<FirmwareLibrary desktop/>);await user.click(await screen.findByRole("button",{name:/harmless.bin/}));
+ await user.click(await screen.findByRole("button",{name:"Customize Firmware"}));
+ const popup=await screen.findByRole("dialog",{name:"Customize firmware"});
+ expect(popup).toHaveTextContent("User-provided, unverified");
+ expect(within(popup).getByRole("button",{name:/Rebuild firmware/})).toBeDisabled();
+});

@@ -146,6 +146,7 @@ pub struct FirmwareArtifact {
     pub kind: String,
     pub original_filename: String,
     pub source_category: String,
+    pub artifact_class: String,
     pub associated_device_id: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -228,4 +229,30 @@ pub struct ActivityEvent {
     pub job_id: Option<String>,
     pub artifact_sha256: Option<String>,
     pub severity: String,
+}
+
+/// Content class and provenance are separate from display kind or integrity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArtifactClass {
+    OfficialImageDownload,
+    DeviceFirmwareExport,
+    PhysicalFlashDump,
+    UserImportedUnverified,
+    ConfigurationBackup,
+    MetadataReport,
+    LegacyUnclassified,
+}
+impl ArtifactClass {
+    pub fn text(self) -> &'static str {
+        match self {
+            Self::OfficialImageDownload => "official_image_download",
+            Self::DeviceFirmwareExport => "device_firmware_export",
+            Self::PhysicalFlashDump => "physical_flash_dump",
+            Self::UserImportedUnverified => "user_imported_unverified",
+            Self::ConfigurationBackup => "configuration_backup",
+            Self::MetadataReport => "metadata_report",
+            Self::LegacyUnclassified => "legacy_unclassified",
+        }
+    }
 }

@@ -11,7 +11,7 @@ export function createTestProfile(workspace) {
 }
 export function probeNormal(workspace,evidence,phase) {
   const output=path.join(evidence,'normal-data-'+phase+'.json');
-  execFileSync('py',[path.join(workspace,'scripts/probe-native-isolation.py'),output,...(phase==='after'?[path.join(evidence,'normal-data-before.json')]:[])],{windowsHide:true});
+  execFileSync('py',[path.join(workspace,'scripts/audit-data-bytes.py'),output,...(phase==='after'?[path.join(evidence,'normal-data-before.json')]:[])],{windowsHide:true});
 }
 export async function assertOwned(profile,file=profile.root) {
   assert(/^[a-f0-9]{32}$/.test(profile.id));const relative=path.relative(profile.root,path.resolve(file));assert(!relative.startsWith('..')&&!path.isAbsolute(relative));
