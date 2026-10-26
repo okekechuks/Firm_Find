@@ -1,5 +1,76 @@
 # Stage 4 endpoint consistency binding
 
+## Independent-review correction of `5817cfe` — 26 October 2026
+
+Current disposition: local correction checks PASS; independent acceptance and the physical gate remain pending. This section supersedes the earlier software disposition below. Branch `phase-7-5-stage-4-review-fixes` starts at `5817cfe61e3a5a7740ade968fd63e0e2890b6343`; the original branch and separate artifact/authentication worktrees are preserved. No merge or privileged operation is released. Published-commit CI and repeat-run evidence are supplied with the handoff, not inferred from these local checks.
+
+### R1 — require the material stamp throughout the collector
+
+Confirmed defect: `AuthChallengeApproval::validate` accepted a supplied basic binding with `auth=None`. `challenge::collect` constructed exactly that basic binding, although the claimed proof itself carried a stamp. Validation now requires the supplied stamp to equal the expected stamp and requires both to be live. The collector receives the actual stamped binding from `read_auth_challenge`, checks device/interface/normalized endpoint/advanced-mode selection against the request, and revalidates after dispatch. It does not construct an unstamped replacement. Shared revocation, receipt expiry, claim-once behavior and the transport's single dispatch remain enforced.
+
+Added deterministic synthetic tests for missing, mismatched, expired and revoked stamps; replay; request substitution; no dispatch on missing stamp; and the existing controlled invalidation-during-dispatch regression. Expiry is forced through a test-only deadline setter, without timing sleeps.
+
+### R2 — separate new approval admission from existing operation validation
+
+Confirmed defect: the cached-binding return preceded cancelled/status/timestamp validation. `Registry::bind` now rejects failed/starting/cancelled inventories and absent/future/60-second-old timestamps **before** capture or cached reuse. This is the admission path used before issuing a native approval and before claiming a new request. Rejection does not revoke an already live grant or renew its deadline.
+
+`Registry::validate_existing` cannot mint or renew a binding. It observes successful inventories to revoke material changes, then requires the retained stamp to belong to this registry and remain live. Failed/cancelled refreshes preserve only the original grant's bounded lifetime. `AuthChallengeApproval::validate_publication` uses this path instead of calling `bind` to publish an already claimed operation. It checks the mandatory stamp before and after the registry check. New approvals still need a fresh successful inventory; disconnected/conflicting/materially changed successful inventories revoke existing grants.
+
+Synthetic regressions cover cached admission under every invalid inventory condition, preservation without generation/deadline renewal, fresh/degraded cache reuse, revocation on material change, expiry, foreign registry rejection, and the actual claimed-proof publication path after failed/cancelled scans. No route sockets or physical device requests are used.
+
+### R3 — Windows CI hash safeguard
+
+Actual failed run: [40100911818](https://github.com/okekechuks/Firm_Find/actions/runs/40100911818), job `120892683482`, commit `5817cfe`. Tests, Clippy and the production Tauri installer build passed there; `build:native-tests` exited 1 at `scripts/build-native-tests.ps1:6`: `Get-FileHash` was not recognized in the Windows PowerShell subprocess launched by npm. The outer Actions shell was PowerShell 7 on Windows Server 2025. The log establishes cmdlet unavailability; no unverified module-path diagnosis is claimed.
+
+`production-executable-guard.ps1` hashes through .NET SHA-256 with disposed streams/providers. `build-native-tests.ps1` retains the before-build digest, compares the production executable after the isolated build, and rejects changed or missing production bytes. No safeguard is removed. `test-production-executable-guard.ps1` deliberately makes `Get-FileHash` unusable and checks a known SHA-256 vector, unchanged bytes, mutation and deletion using one disposable file. Windows CI runs that regression in the same Windows PowerShell used by the native-test build.
+
+### R4 — physical evidence and unchanged boundaries
+
+**Physical Stage 4 gate: PENDING.** The previous supervised MG11 attempt stopped waiting for root approval; it did not reach a successful authentication-challenge read. No challenge status, cookie observation, after-test owner statement or successful physical binding qualification is inferred. This correction performs no MG11 request and collects no new owner confirmation. Credentials, login, authenticated identity reads, firmware extraction and configuration writes remain unauthorized; `canObtain` stays false. No merge or downstream authenticated operation may proceed before independent acceptance of this correction.
+
+### Failing-first evidence
+
+Local logs are under `.tools/stage4-review-fixes/.tools/review-evidence/` relative to the original repository root; they contain computed command output, not generated verdicts or owner wording.
+
+- Before the Rust fixes, `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline review_r -- --nocapture` exited 101: `review_r1_missing_stamp_rejected` failed and R2 reported cached admissions for `failed`, `cancelled`, `missing_time`, `future_time` and `stale_time`. The mismatched/expired/revoked cases already passed. That broad filter also selected an existing library test which failed on sandbox-denied ancestor handles (OS 5); it is distinguished from the two reproduced defects. See `rust-red.log`.
+- The guard regression first exited 1 because the new guard helper did not exist (`guard-red.log`); this is a test-first missing API, not a claimed reproduction of the CI environment. The actual cmdlet failure is recorded by the Actions run above. After implementation, the same regression exits 0 with `Get-FileHash` unusable (`guard-green.log`).
+
+### Verification results
+
+All local commands below exited 0. Rust commands use the existing repository wrapper, with the shared local `CARGO_HOME`, `RUSTUP_HOME` and `CARGO_TARGET_DIR`, `CARGO_INCREMENTAL=0`, `CARGO_BUILD_JOBS=1`, and at least 15 GiB free before each build. The standard test count is superseded/pinned by the post-commit repeat evidence because the foreign-registry assertion was strengthened afterward; isolated tests and both Clippy checks include that assertion. No production code changed after these checks. Rust tests ran outside the sandbox because existing directory-lease regressions require ancestor handles denied inside it. Test storage is disposable; HTTP peers are owned loopback fixtures.
+
+| Exact command | Actual local outcome | Log |
+| --- | --- | --- |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --locked --offline` | 314 passed, 1 ignored; 2 doctests passed | `rust-standard-final.log` |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 test --workspace --features native-test-profile --locked --offline` | 315 passed, 2 ignored; 2 doctests passed | `rust-isolated-final.log` |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --locked --offline -- -D warnings` | clean | `clippy-standard.log` |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 clippy --workspace --all-targets --features native-test-profile --locked --offline -- -D warnings` | clean | `clippy-isolated.log` |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rust.ps1 fmt --all -- --check` | clean | `fmt.log` |
+| `npm.cmd test` | 158 passed, 17 files | `frontend.log` |
+| `npm.cmd run lint` | clean | `lint.log` |
+| `npm.cmd run build` | TypeScript and Vite production build passed | `frontend-build.log` |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-production-executable-guard.ps1` | known vector, unchanged/mutated/deleted fixtures checked with cmdlet unusable | `guard-green.log` |
+
+Post-commit commands: `python scripts/verify-parallel-rust.py --runs 20 --output .tools/review-evidence/final-20` records each standard-suite run with its exact HEAD, exit code, test counts and log SHA-256. The published branch's [Windows verification check](https://github.com/okekechuks/Firm_Find/actions?query=branch%3Aphase-7-5-stage-4-review-fixes) runs both test/Clippy profiles, frontend checks, the guard regression, `npm run tauri build` (installers) and `npm run build:native-tests` (the dedicated isolated binary plus production-byte comparison). Computed `ci-final.json` under the same local evidence directory and the handoff identify the actual run URL, SHA and conclusion. Neither optimized Windows build nor GUI was rerun locally for this correction; cloud builds do not prove a rendered GUI or physical qualification.
+
+Preservation: the already committed `scripts/audit-data-bytes.py` on preserved authentication worktree `3280294` was invoked there as `python scripts/audit-data-bytes.py .tools/stage4-review/before.json` and `python scripts/audit-data-bytes.py .tools/stage4-review/after-local.json .tools/stage4-review/before.json`, both exit 0. These ordinary byte audits make two independent passes, refuse reparse points and never import/connect to SQLite. **All 12 normal application files, 5,611,701 bytes, match by path, size and SHA-256**, including persisted database/settings/saved-device records and managed data. This proves byte preservation, not a new logical database audit. No normal GUI launch, storage relocation or schema change occurred. Final post-verification comparison is retained as `after-final.json` beside these snapshots.
+
+### Changed files
+
+- `apps/desktop/src-tauri/src/acquisition/approval.rs`: mandatory stamp, selection check, publication validation and regressions.
+- `apps/desktop/src-tauri/src/acquisition/challenge.rs`: stamped collector input and pre/post validation.
+- `apps/desktop/src-tauri/src/acquisition/challenge_tests.rs`: pass the stamped test context.
+- `apps/desktop/src-tauri/src/acquisition/ipc.rs`: carry the actual binding through worker/publication.
+- `apps/desktop/src-tauri/src/endpoint_binding.rs`: fresh admission, existing-operation validation and test-only deadline control.
+- `apps/desktop/src-tauri/src/endpoint_binding_tests.rs`: invalid cached admission and existing-operation regressions.
+- `scripts/build-native-tests.ps1`: retain production-executable safeguard without `Get-FileHash`.
+- `scripts/production-executable-guard.ps1`: SHA-256 and unchanged-executable checks.
+- `scripts/test-production-executable-guard.ps1`: isolated hash/mutation/deletion regression.
+- `.github/workflows/windows.yml`: run the guard regression in Windows PowerShell.
+- `docs/PHASE_7_5_STAGE_4_BINDING_VERIFICATION.md` and `docs/PHASE_STATUS.md`: current correction evidence and gate state.
+
+## Original Stage 4 delivery (historical)
+
 24 October 2026, Africa/Lagos. **DONE: Stage 4 software exit gate PASS**, awaiting reviewer acceptance. Hardware qualification is NOT DONE (owner hold). Nothing is disputed. Phase 7 is not complete.
 
 Branch: `phase-7-5-stage-4-binding`. Start: `def018836166151c0b781add711dcaa5d50efbdb`, the accepted challenge software tip. No merge, push, tag, history rewrite, dependency addition or schema change. Accepted design decisions were recorded separately on the design branch at `387983b397d748b35b7abc6646a14bfd1fad418d` and copied into the Stage 4 design here. Other stages are not included in this branch.

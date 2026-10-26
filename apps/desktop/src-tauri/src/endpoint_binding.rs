@@ -317,6 +317,10 @@ impl PartialEq for BoundEndpoint {
 impl Eq for BoundEndpoint {}
 impl BoundEndpoint {
     #[cfg(test)]
+    pub(crate) fn expire_for_test(&mut self) {
+        self.deadline = Instant::now();
+    }
+    #[cfg(test)]
     pub(crate) fn synthetic() -> Self {
         static GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
@@ -379,6 +383,19 @@ impl Registry {
         provider: &impl RouteProvider,
         now: u64,
     ) -> Result<BoundEndpoint, BindingError> {
+        // Admission to a NEW approval always needs a fresh successful inventory,
+        // including cache hits. Refusal must not revoke an existing operation.
+        if snapshot.cancelled
+            || !matches!(
+                snapshot.status,
+                DiscoveryStatus::Ready | DiscoveryStatus::Degraded
+            )
+            || snapshot
+                .scanned_at
+                .is_none_or(|t| t > now || now - t >= LIFETIME_MS)
+        {
+            return Err(BindingError);
+        }
         let mut state = self.0.lock().map_err(|_| BindingError)?;
         let facts = match capture(snapshot, selection, provider) {
             Ok(f) => f,
@@ -393,17 +410,6 @@ impl Registry {
             }
         }
         state.entries.remove(&selection.device);
-        if snapshot.cancelled
-            || !matches!(
-                snapshot.status,
-                DiscoveryStatus::Ready | DiscoveryStatus::Degraded
-            )
-            || snapshot
-                .scanned_at
-                .is_none_or(|t| t > now || now - t >= LIFETIME_MS)
-        {
-            return Err(BindingError);
-        }
         state.entries.retain(|_, e| e.bound.current_at(now));
         if state.entries.len() >= 64 {
             return Err(BindingError);
@@ -437,6 +443,24 @@ impl Registry {
             },
         );
         Ok(bound)
+    }
+    /// Recheck only existing authority, without creating, renewing or recovering it.
+    /// Failed/cancelled scans preserve its original bounded lifetime; successful
+    /// observations still revoke material changes through shared liveness.
+    pub(crate) fn validate_existing(
+        &self,
+        snapshot: &DiscoverySnapshot,
+        provider: &impl RouteProvider,
+        now: u64,
+        bound: &BoundEndpoint,
+    ) -> Result<(), BindingError> {
+        self.observe(snapshot, provider, now);
+        let state = self.0.lock().map_err(|_| BindingError)?;
+        if bound.current_at(now) && state.entries.values().any(|entry| entry.bound == *bound) {
+            Ok(())
+        } else {
+            Err(BindingError)
+        }
     }
     pub(crate) fn observe(
         &self,

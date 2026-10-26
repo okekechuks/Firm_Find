@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## Stage 4 independent review — local corrections PASS; acceptance PENDING
+
+26 October 2026: reviewer findings against `5817cfe` are corrected on `phase-7-5-stage-4-review-fixes`. [Focused report](PHASE_7_5_STAGE_4_BINDING_VERIFICATION.md) records the reproduced missing-stamp and cached-inventory bypasses, mandatory stamped collector wiring, separate new-approval/existing-operation checks and the Windows CI hash safeguard regression. Local checks: 314 standard/315 isolated Rust tests plus two doctests per profile, both Clippy profiles, formatting, 158 frontend tests, lint, TypeScript/production frontend build and executable-guard regression pass. Published-commit repeat and CI outcomes are pinned in computed evidence and the handoff; local success alone does not establish green CI. All 12 normal-data files remain byte-identical; no normal SQLite connection. The original branch and separate worktrees are preserved. No merge or privileged/authenticated operation is released pending independent acceptance.
+
+Physical binding/challenge qualification stays PENDING: the prior MG11 attempt stopped at root approval and never established a successful challenge read. No new device requests, credentials, login, firmware extraction or configuration writes are authorized by this review. Historical dispositions below do not override this gate.
+
 ## Stage 4 binding — software PASS; review pending
 
 24 October 2026: four designs accepted with reviewer decisions recorded on `phase-7-5-design-track` at `387983b`. Implementation order is Stage 4, then Stage 3 after its design additions, Stage 5 after Stage 3 acceptance, and released Stage 6 host-only work. Earlier blanket implementation blockers below are historical.

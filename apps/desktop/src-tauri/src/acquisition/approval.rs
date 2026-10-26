@@ -15,6 +15,18 @@ pub(super) struct Binding {
     advanced: bool,
     auth: Option<crate::endpoint_binding::BoundEndpoint>,
 }
+impl Binding {
+    pub(super) fn matches_request(&self, input: &DiscoveryRequest) -> bool {
+        self.device == input.device_id
+            && Some(self.interface.as_str()) == input.interface_id.as_deref()
+            && self.advanced == input.advanced_endpoint
+            && input
+                .endpoint
+                .as_deref()
+                .and_then(|v| connection::parse_address(v).ok())
+                .is_some_and(|target| self.endpoint == target.url)
+    }
+}
 pub(super) fn binding(
     device: &Device,
     revision: u64,
@@ -274,6 +286,10 @@ fn challenge_scope(binding: &Binding) -> Result<ApprovalScope, DiscoveryError> {
 pub(crate) struct AuthChallengeApproval(ClaimedApproval, AtomicBool);
 impl AuthChallengeApproval {
     #[cfg(test)]
+    pub(super) fn binding_for_test(&self) -> &Binding {
+        &self.0.binding
+    }
+    #[cfg(test)]
     pub(super) fn for_test(device: &Device, revision: u64, input: &DiscoveryRequest) -> Self {
         let b = test_challenge_binding(binding(device, revision, input).unwrap());
         let a = Approvals::default();
@@ -282,9 +298,8 @@ impl AuthChallengeApproval {
     }
     pub(super) fn validate(&self, binding: &Binding) -> Result<(), DiscoveryError> {
         let expected = &self.0.binding;
-        // The collector receives its immutable device selection. IPC additionally compares
-        // a fresh material snapshot before dispatch and publication. Shared liveness covers
-        // removals/cancellation observed while the transport is running.
+        // Every caller must present the expected live material stamp. Basic metadata
+        // bindings cannot substitute for authentication-challenge bindings.
         if challenge_scope(expected).ok().as_ref() != Some(&self.0.scope)
             || expected.device != binding.device
             || expected.interface != binding.interface
@@ -293,7 +308,7 @@ impl AuthChallengeApproval {
             || binding
                 .auth
                 .as_ref()
-                .is_some_and(|b| Some(b) != expected.auth.as_ref() || !b.current())
+                .is_none_or(|b| Some(b) != expected.auth.as_ref() || !b.current())
             || Instant::now() >= self.0.deadline
         {
             return Err(error(
@@ -302,6 +317,32 @@ impl AuthChallengeApproval {
             ));
         }
         Ok(())
+    }
+    pub(super) fn validate_publication(
+        &self,
+        service: &Service,
+        snapshot: &crate::discovery::DiscoverySnapshot,
+        binding: &Binding,
+    ) -> Result<(), DiscoveryError> {
+        self.validate(binding)?;
+        service
+            .2
+            .validate_existing(
+                snapshot,
+                &crate::endpoint_binding::SystemRoute,
+                connection::now(),
+                binding
+                    .auth
+                    .as_ref()
+                    .ok_or_else(|| error("BINDING_CHANGED", "Material binding required."))?,
+            )
+            .map_err(|_| {
+                error(
+                    "BINDING_CHANGED",
+                    "Endpoint consistency changed before publication.",
+                )
+            })?;
+        self.validate(binding)
     }
     pub(crate) fn take_target(&self, target: &connection::Target, interface: &str) -> bool {
         challenge_scope(&self.0.binding).ok().as_ref() == Some(&self.0.scope)
@@ -340,6 +381,128 @@ pub(super) fn challenge_confirmation(device: &Device, binding: &Binding) -> Stri
 #[cfg(test)]
 mod challenge_scope_tests {
     use super::*;
+    fn review_proof() -> (Service, Binding, AuthChallengeApproval) {
+        let (snapshot, input, _) = bound_fixture();
+        let service = Service::default();
+        let bound = challenge_binding_with(&service, &snapshot, &input, &FakeRoute).unwrap();
+        let receipt = service.1.issue_challenge(bound.clone(), true).unwrap();
+        let proof = service.1.claim_challenge(&receipt, &bound).unwrap();
+        assert!(service.1.claim_challenge(&receipt, &bound).is_err());
+        assert!(proof.validate(&bound).is_ok());
+        (service, bound, proof)
+    }
+    #[test]
+    fn review_r1_missing_stamp_rejected() {
+        let (_service, mut bound, proof) = review_proof();
+        bound.auth = None;
+        assert!(proof.validate(&bound).is_err());
+    }
+    #[test]
+    fn review_r1_mismatched_stamp_rejected() {
+        let (_service, mut bound, proof) = review_proof();
+        bound.auth = Some(crate::endpoint_binding::BoundEndpoint::synthetic());
+        assert!(proof.validate(&bound).is_err());
+    }
+    #[test]
+    fn review_r1_expired_stamp_rejected() {
+        let (_service, mut bound, proof) = review_proof();
+        bound.auth.as_mut().unwrap().expire_for_test();
+        assert!(proof.validate(&bound).is_err());
+    }
+    #[test]
+    fn review_r1_revoked_stamp_rejected() {
+        let (service, bound, proof) = review_proof();
+        service.2.invalidate(&bound.device);
+        assert!(proof.validate(&bound).is_err());
+        assert!(!proof.take_target(
+            &connection::parse_address(&bound.endpoint).unwrap(),
+            &bound.interface
+        ));
+    }
+    #[test]
+    fn review_r1_collector_requires_stamp_and_exact_request_selection() {
+        let (snapshot, input, base) = bound_fixture();
+        let service = Service::default();
+        let bound = challenge_binding_with(&service, &snapshot, &input, &FakeRoute).unwrap();
+        let receipt = service.1.issue_challenge(bound.clone(), true).unwrap();
+        let proof = service.1.claim_challenge(&receipt, &bound).unwrap();
+        let mut missing = bound.clone();
+        missing.auth = None;
+        assert!(super::super::challenge::collect(
+            &base,
+            &missing,
+            4,
+            &input,
+            &proof,
+            &AtomicBool::new(false),
+            |_, _, _| panic!("missing stamp must not dispatch")
+        )
+        .is_err());
+        for change in 0..4 {
+            let mut substituted = input.clone();
+            match change {
+                0 => substituted.device_id = "other-device".into(),
+                1 => substituted.interface_id = Some("other-interface".into()),
+                2 => substituted.endpoint = Some("http://192.168.100.3/".into()),
+                _ => substituted.advanced_endpoint = true,
+            }
+            assert!(super::super::challenge::collect(
+                &base,
+                &bound,
+                4,
+                &substituted,
+                &proof,
+                &AtomicBool::new(false),
+                |_, _, _| panic!("substitution must not dispatch")
+            )
+            .is_err());
+        }
+    }
+    #[test]
+    fn review_r2_claimed_publication_survives_failed_scan_without_readmission() {
+        for cancelled in [false, true] {
+            let (snapshot, input, base) = bound_fixture();
+            let service = Service::default();
+            let bound = challenge_binding_with(&service, &snapshot, &input, &FakeRoute).unwrap();
+            let receipt = service.1.issue_challenge(bound.clone(), true).unwrap();
+            let proof = service.1.claim_challenge(&receipt, &bound).unwrap();
+            let report = super::super::challenge::collect(
+                &base,
+                &bound,
+                4,
+                &input,
+                &proof,
+                &AtomicBool::new(false),
+                |target, interface, proof| {
+                    assert!(proof.take_target(target, interface));
+                    assert!(!proof.take_target(target, interface));
+                    ChallengeObservation::failure("challenge_not_usable", Some(401))
+                },
+            )
+            .unwrap();
+            assert!(!report.can_obtain);
+            let mut failed = snapshot.clone();
+            failed.revision += 1;
+            failed.cancelled = cancelled;
+            failed.status = if cancelled {
+                crate::discovery::DiscoveryStatus::Ready
+            } else {
+                crate::discovery::DiscoveryStatus::Failed
+            };
+            failed.devices.clear();
+            assert!(challenge_binding_with(&service, &failed, &input, &FakeRoute).is_err());
+            // Production publication path. Failed/cancelled scans must not invoke
+            // SystemRoute or create another binding from the incomplete inventory.
+            proof
+                .validate_publication(&service, &failed, &bound)
+                .unwrap();
+            assert!(service.1.claim_challenge(&receipt, &bound).is_err());
+            service.2.invalidate(&input.device_id);
+            assert!(proof
+                .validate_publication(&service, &failed, &bound)
+                .is_err());
+        }
+    }
     struct FakeRoute;
     impl crate::endpoint_binding::RouteProvider for FakeRoute {
         fn route(
@@ -427,7 +590,7 @@ mod challenge_scope_tests {
         let mut calls = 0;
         let result = super::super::challenge::collect(
             &base,
-            &snapshot.devices[0],
+            &bound,
             4,
             &input,
             &proof,
@@ -445,7 +608,7 @@ mod challenge_scope_tests {
         let proof = service.1.claim_challenge(&receipt, &fresh).unwrap();
         let report = super::super::challenge::collect(
             &base,
-            &snapshot.devices[0],
+            &fresh,
             4,
             &input,
             &proof,

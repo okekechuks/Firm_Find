@@ -51,6 +51,94 @@ impl RouteProvider for Route {
 }
 
 #[test]
+fn review_r2_cached_binding_cannot_admit_new_approval_from_bad_inventory() {
+    let mut accepted = vec![];
+    for case in [
+        "failed",
+        "starting",
+        "cancelled",
+        "missing_time",
+        "future_time",
+        "stale_time",
+    ] {
+        let (mut snapshot, selection, route) = fixture();
+        snapshot.scanned_at = Some(60_000);
+        let registry = Registry::default();
+        let live = registry
+            .bind(&snapshot, &selection, &route, 61_000)
+            .unwrap();
+        match case {
+            "failed" => snapshot.status = DiscoveryStatus::Failed,
+            "starting" => snapshot.status = DiscoveryStatus::Starting,
+            "cancelled" => snapshot.cancelled = true,
+            "missing_time" => snapshot.scanned_at = None,
+            "future_time" => snapshot.scanned_at = Some(61_002),
+            _ => snapshot.scanned_at = Some(1_001),
+        }
+        if registry.bind(&snapshot, &selection, &route, 61_001).is_ok() {
+            accepted.push(case);
+        }
+        // Rejecting a NEW approval must not revoke a still-live approved operation.
+        assert!(live.current_at(61_001), "case {case}");
+        assert_eq!(live.expires_at, 120_000);
+    }
+    assert!(
+        accepted.is_empty(),
+        "invalid cached admissions: {accepted:?}"
+    );
+}
+
+#[test]
+fn review_r2_existing_operation_preserved_without_new_authority_or_renewal() {
+    let (mut snapshot, selection, route) = fixture();
+    snapshot.scanned_at = Some(60_000);
+    let registry = Registry::default();
+    let bound = registry
+        .bind(&snapshot, &selection, &route, 61_000)
+        .unwrap();
+    let expiry = bound.expires_at;
+    let mut failed = snapshot.clone();
+    failed.status = DiscoveryStatus::Failed;
+    failed.devices.clear();
+    let mut cancelled = failed.clone();
+    cancelled.status = DiscoveryStatus::Ready;
+    cancelled.cancelled = true;
+    for bad in [failed, cancelled] {
+        assert!(registry.bind(&bad, &selection, &route, 61_001).is_err());
+        registry
+            .validate_existing(&bad, &route, 61_001, &bound)
+            .unwrap();
+        assert_eq!(bound.expires_at, expiry);
+        assert_eq!(registry.0.lock().unwrap().generation, 1);
+    }
+    snapshot.scanned_at = Some(61_002);
+    snapshot.status = DiscoveryStatus::Degraded;
+    let same = registry
+        .bind(&snapshot, &selection, &route, 61_002)
+        .unwrap();
+    assert_eq!(same.stamp(), bound.stamp());
+    assert_eq!(same.expires_at, expiry);
+    let mut changed = snapshot.clone();
+    changed.devices[0].networks[0].dhcp_server = Some("192.168.100.1".into());
+    assert!(registry
+        .validate_existing(&changed, &route, 61_003, &bound)
+        .is_err());
+    assert!(!bound.current_at(61_003));
+    assert_eq!(registry.0.lock().unwrap().generation, 1);
+    let fresh = registry
+        .bind(&snapshot, &selection, &route, 61_004)
+        .unwrap();
+    assert_ne!(fresh.stamp(), bound.stamp());
+    assert!(Registry::default()
+        .validate_existing(&snapshot, &route, 61_005, &fresh)
+        .is_err());
+    assert!(fresh.current_at(61_005));
+    assert!(registry
+        .validate_existing(&snapshot, &route, fresh.expires_at, &fresh)
+        .is_err());
+}
+
+#[test]
 fn stage4_material_and_freshness() {
     let (mut snapshot, selection, route) = fixture();
     let registry = Registry::default();

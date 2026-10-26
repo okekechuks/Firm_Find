@@ -201,7 +201,7 @@ fn challenge_nonce_never_reaches_trace_report_diagnostics_or_errors() {
     let proof = AuthChallengeApproval::for_test(&d, 4, &input);
     let r = challenge::collect(
         &base,
-        &d,
+        proof.binding_for_test(),
         4,
         &input,
         &proof,
@@ -226,7 +226,7 @@ fn challenge_nonce_never_reaches_trace_report_diagnostics_or_errors() {
     }
     let error = challenge::collect(
         &base,
-        &d,
+        proof.binding_for_test(),
         5,
         &input,
         &proof,
@@ -280,7 +280,7 @@ fn challenge_collector_requires_fresh_same_root_and_preserves_authority() {
     let proof = AuthChallengeApproval::for_test(&d, 4, &input);
     let r = challenge::collect(
         &base,
-        &d,
+        proof.binding_for_test(),
         4,
         &input,
         &proof,
@@ -307,7 +307,7 @@ fn challenge_collector_requires_fresh_same_root_and_preserves_authority() {
         };
         let r = challenge::collect(
             &b,
-            &d,
+            proof.binding_for_test(),
             4,
             &input,
             &proof,
@@ -322,7 +322,7 @@ fn challenge_collector_requires_fresh_same_root_and_preserves_authority() {
     }
     assert!(challenge::collect(
         &base,
-        &d,
+        proof.binding_for_test(),
         4,
         &input,
         &proof,
@@ -332,7 +332,7 @@ fn challenge_collector_requires_fresh_same_root_and_preserves_authority() {
     .is_err());
     assert!(challenge::collect(
         &base,
-        &d,
+        proof.binding_for_test(),
         5,
         &input,
         &proof,

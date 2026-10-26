@@ -549,7 +549,7 @@ pub async fn read_auth_challenge(
             .collect::<Vec<_>>();
         let report = super::challenge::collect(
             &base,
-            &device,
+            &binding,
             snapshot.revision,
             &input,
             &proof,
@@ -564,7 +564,7 @@ pub async fn read_auth_challenge(
                 )
             },
         )?;
-        Ok((report, lease, proof))
+        Ok((report, lease, proof, binding))
     })
     .await
     .map_err(|_| {
@@ -574,7 +574,7 @@ pub async fn read_auth_challenge(
         )
     })
     .and_then(|result| result);
-    let (mut report, lease, proof) = match outcome {
+    let (mut report, lease, proof, binding) = match outcome {
         Ok(value) => value,
         Err(e) => {
             service.2.invalidate(&publication_input.device_id);
@@ -584,8 +584,9 @@ pub async fn read_auth_challenge(
     let current = live
         .lock()
         .map_err(|_| error("DISCOVERY_UNAVAILABLE", "Refresh discovery."))?;
-    let final_binding = approval::challenge_binding(&service, &current, &publication_input)?;
-    proof.validate(&final_binding)?;
+    // Revalidate an already claimed operation; never mint a new approval from a
+    // failed/cancelled inventory just to publish its bounded observation.
+    proof.validate_publication(&service, &current, &binding)?;
     report.discovery_revision = current.revision;
     if report
         .auth_challenge

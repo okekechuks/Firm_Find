@@ -178,7 +178,7 @@ pub(super) fn root_matches(
 }
 pub(super) fn collect(
     base: &AcquisitionCapabilityReport,
-    device: &Device,
+    binding: &approval::Binding,
     revision: u64,
     input: &DiscoveryRequest,
     proof: &AuthChallengeApproval,
@@ -191,8 +191,13 @@ pub(super) fn collect(
             "Root observation no longer matches this inventory.",
         ));
     }
-    let binding = approval::binding(device, revision, input)?;
-    proof.validate(&binding)?;
+    proof.validate(binding)?;
+    if !binding.matches_request(input) {
+        return Err(error(
+            "TARGET_MISMATCH",
+            "Request differs from the approved selection.",
+        ));
+    }
     if token.load(Ordering::Acquire) {
         return Err(error("CANCELLED", "Challenge check cancelled."));
     }
@@ -214,7 +219,7 @@ pub(super) fn collect(
         .map_err(|_| error("REQUEST_DENIED", "Challenge request is not registered."))?;
     let observation =
         dispatch(&target, input.interface_id.as_deref().unwrap_or(""), proof).sanitized();
-    proof.validate(&binding)?;
+    proof.validate(binding)?;
     if token.load(Ordering::Acquire) {
         return Err(error("CANCELLED", "Challenge check cancelled."));
     }
