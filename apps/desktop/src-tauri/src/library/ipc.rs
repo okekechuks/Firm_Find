@@ -1,5 +1,52 @@
 use super::*;
 use tauri::Manager;
+#[tauri::command]
+pub async fn list_official_sources() -> Result<Vec<official::OfficialSource>> {
+    official::catalogue()
+}
+#[tauri::command]
+pub async fn start_official_download(
+    source_id: String,
+    confirm_exact_target: bool,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<JobRecord> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        service.acquire_official(&source_id, confirm_exact_target)
+    })
+    .await
+    .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn get_official_provenance(
+    sha256: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<Vec<official::OfficialSource>> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || service.official_provenance(&sha256))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn start_firmware_analysis(
+    sha256: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<JobRecord> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || service.analyze(&sha256))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn get_firmware_analysis(
+    sha256: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<Option<analysis::AnalysisReport>> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || service.analysis_report(&sha256))
+        .await
+        .map_err(worker_error)?
+}
 fn owner(app: &tauri::AppHandle) -> isize {
     #[cfg(windows)]
     {

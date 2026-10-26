@@ -19,6 +19,8 @@ jobs:
           targets: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@v2
       - run: npm ci
+      - name: Verify pinned official-source signatures and exact catalogue
+        run: npm run test:catalogue
       - run: npm run lint
       - run: npm test
       - run: npm run build

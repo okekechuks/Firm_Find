@@ -457,6 +457,12 @@ pub(super) struct VerifiedPublishedBlob {
     size: u64,
 }
 impl VerifiedPublishedBlob {
+    pub(super) fn reader(&self) -> Result<File> {
+        use std::io::Seek;
+        let mut file = self._file.try_clone()?;
+        file.rewind()?;
+        Ok(file)
+    }
     pub(super) fn hash(&self) -> &str {
         &self.hash
     }

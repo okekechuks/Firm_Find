@@ -1,5 +1,6 @@
 import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema,importSchema } from "../types/library";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { officialSourceSchema,analysisReportSchema } from "../types/official";
 import { z } from "zod";
 import { acquisitionReportSchema, type AcquisitionRequest } from "../types/acquisition";
 import { listen } from "@tauri-apps/api/event";
@@ -16,6 +17,23 @@ import {
 
 export function hasDesktopBackend(): boolean {
   return isTauri();
+}
+
+export async function listOfficialSources() {
+  if(!hasDesktopBackend())throw new Error("Official firmware downloads require the Windows app.");
+  return z.array(officialSourceSchema).max(100).parse(await invoke("list_official_sources"));
+}
+export async function startOfficialDownload(sourceId:string,confirmExactTarget:boolean) {
+  return jobSchema.parse(await invoke("start_official_download",{sourceId,confirmExactTarget}));
+}
+export async function getOfficialProvenance(sha256:string) {
+  return z.array(officialSourceSchema).max(50).parse(await invoke("get_official_provenance",{sha256}));
+}
+export async function startFirmwareAnalysis(sha256:string) {
+  return jobSchema.parse(await invoke("start_firmware_analysis",{sha256}));
+}
+export async function getFirmwareAnalysis(sha256:string) {
+  return analysisReportSchema.nullable().parse(await invoke("get_firmware_analysis",{sha256}));
 }
 
 export async function getSnapshot() {

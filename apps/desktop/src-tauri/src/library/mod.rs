@@ -1,9 +1,11 @@
 mod admission;
+pub mod analysis;
 mod db;
 pub mod desktop;
 pub(crate) mod files;
 pub mod ipc;
 mod manifest_contract;
+pub mod official;
 pub mod types;
 use crate::{connection::now, storage::Repository};
 use files::*;
@@ -28,6 +30,14 @@ struct Selection {
     preview: FileSelection,
 }
 enum Task {
+    Analyze {
+        job: String,
+        hash: String,
+    },
+    Official {
+        job: String,
+        source: Box<official::QualifiedSource>,
+    },
     Import {
         job: String,
         selection: Selection,
@@ -79,6 +89,63 @@ fn lock<T>(m: &Mutex<T>) -> Result<std::sync::MutexGuard<'_, T>> {
     })
 }
 impl LibraryService {
+    pub fn acquire_official(
+        &self,
+        source_id: &str,
+        confirm_exact_target: bool,
+    ) -> Result<JobRecord> {
+        self.ensure_open()?;
+        let source = official::qualify(source_id, confirm_exact_target)?;
+        let entry = source.entry();
+        if entry.size_bytes > self.inner.max {
+            return Err(LibraryError::new(
+                "FILE_TOO_LARGE",
+                "Approved image exceeds the configured Library limit.",
+            ));
+        }
+        free_space(&self.inner.vault.root, entry.size_bytes)?;
+        let mut controls = lock(&self.inner.controls)?;
+        self.ensure_open()?;
+        if controls.len() >= 16 {
+            return Err(LibraryError::new(
+                "QUEUE_FULL",
+                "Wait for an existing Library job to finish.",
+            ));
+        }
+        let id = nonce()?;
+        lock(&self.inner.repo)?.create_library_job(
+            &id,
+            "official_image_download",
+            entry.size_bytes,
+            JobInput {
+                filename: Some(&entry.filename),
+                description: Some(&entry.id),
+                hash: Some(&entry.sha256),
+                ..Default::default()
+            },
+        )?;
+        controls.insert(id.clone(), Arc::new(AtomicBool::new(false)));
+        if self
+            .inner
+            .sender
+            .try_send(Task::Official {
+                job: id.clone(),
+                source: Box::new(source),
+            })
+            .is_err()
+        {
+            controls.remove(&id);
+            lock(&self.inner.repo)?.library_transition(
+                &id,
+                JobStatus::Failed,
+                Some(&LibraryError::new(
+                    "QUEUE_FULL",
+                    "Download was not queued; no request sent.",
+                )),
+            )?;
+        }
+        lock(&self.inner.repo)?.library_job(&id)
+    }
     pub fn start(
         repo: Arc<Mutex<Repository>>,
         root: PathBuf,
@@ -494,6 +561,11 @@ impl LibraryService {
         // Explicitly exclude source paths, descriptions, device identifiers and credentials.
         let sources:Vec<_>=d.imports.iter().map(|i|serde_json::json!({"originalFilename":i.original_filename,"importedAt":i.imported_at,"sourceCategory":i.source_category,"provenanceStatus":i.provenance_status})).collect();
         let manifest = serde_json::json!({"manifestSchemaVersion":1,"applicationVersion":env!("CARGO_PKG_VERSION"),"sha256":hash,"sizeBytes":d.artifact.size_bytes,"format":d.artifact.format,"integrityStatus":d.artifact.integrity_status,"lastVerifiedAt":d.artifact.last_verified_at,"sourceCount":d.artifact.source_count,"sources":sources,"omittedSourceCount":d.artifact.source_count.saturating_sub(d.imports.len() as u64),"notice":"Unsigned checksum metadata; not proof of authenticity, safety, compatibility or flashing support."});
+        let mut manifest = manifest;
+        manifest["officialSources"] = serde_json::to_value(self.official_provenance(hash)?)
+            .map_err(|_| {
+                LibraryError::new("EXPORT_FAILED", "Source provenance serialization failed.")
+            })?;
         let temp = parent.join(format!(".obtainer-{}.tmp", nonce()?));
         let result = (|| -> Result<ManifestExportResult> {
             let mut f = new_file(&temp)?;
@@ -536,7 +608,9 @@ impl Inner {
     }
     fn execute(&self, task: Task) {
         let id = match &task {
-            Task::Import { job, .. }
+            Task::Analyze { job, .. }
+            | Task::Official { job, .. }
+            | Task::Import { job, .. }
             | Task::Verify { job, .. }
             | Task::Backup { job, .. }
             | Task::Restore { job, .. }
@@ -554,6 +628,8 @@ impl Inner {
             let started = lock(&self.repo)?.library_transition(&id, JobStatus::Running, None)?;
             (self.notify)(started);
             match task {
+                Task::Analyze { hash, .. } => self.run_analysis(&id, &hash, &flag),
+                Task::Official { source, .. } => self.run_official(&id, *source, &flag),
                 Task::Import { selection, .. } => self.run_import(&id, selection, &flag),
                 Task::Verify { hash, .. } => self.run_verify(&id, &hash, &flag),
                 Task::Backup { hash, .. } => self.run_backup(&id, &hash, &flag),
@@ -694,6 +770,51 @@ impl Inner {
         drop(proof);
         Ok(())
     }
+    fn run_official(
+        &self,
+        id: &str,
+        source: official::QualifiedSource,
+        cancel: &AtomicBool,
+    ) -> Result<()> {
+        let entry = source.entry();
+        let stage = self.vault.stage(id)?;
+        let mut output = new_file(&stage)?;
+        let mut last = Instant::now();
+        self.progress(id, 0, entry.size_bytes, "downloading_official_image")?;
+        official::download(&source, &mut output, cancel, |bytes| {
+            if last.elapsed() >= Duration::from_millis(100) {
+                self.progress(id, bytes, entry.size_bytes, "downloading_official_image")?;
+                last = Instant::now();
+            }
+            Ok(())
+        })?;
+        output.flush()?;
+        output.sync_all()?;
+        drop(output);
+        self.progress(id, 0, entry.size_bytes, "verifying_official_hash")?;
+        let (file, hash, size) = hash_file(&stage, entry.size_bytes, cancel, |_| Ok(()))?;
+        drop(file);
+        if hash != entry.sha256 || size != entry.size_bytes {
+            return Err(LibraryError::new("OFFICIAL_HASH_MISMATCH","Downloaded bytes disagree with the signed-release catalogue. Nothing admitted to Library."));
+        }
+        let (blob, _guards) = self.vault.blob(&hash)?;
+        let fence = lock(&self.finalize)?;
+        cancelled(cancel)?;
+        let duplicate = match fs::hard_link(&stage, &blob) {
+            Ok(()) => false,
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => true,
+            Err(e) => return Err(e.into()),
+        };
+        drop(fence);
+        let proof = self
+            .vault
+            .verify_published(&hash, self.max, cancel, |_| Ok(()))?;
+        source.verify(&proof)?;
+        let _fence = lock(&self.finalize)?;
+        cancelled(cancel)?;
+        lock(&self.repo)?.commit_official_download(id, &proof, duplicate, &source)?;
+        Ok(())
+    }
     fn mark_bad_duplicate(
         &self,
         hash: &str,
@@ -790,7 +911,7 @@ impl Inner {
     fn recover(&self) -> Result<()> {
         let pending: Vec<String> = {
             let repo = lock(&self.repo)?;
-            let mut q=repo.connection.prepare("SELECT id FROM jobs WHERE kind IN ('firmware_import','integrity_verify','firmware_backup','backup_restore','library_relocation') AND status IN ('pending','running')")?;
+            let mut q=repo.connection.prepare("SELECT id FROM jobs WHERE kind IN ('firmware_import','integrity_verify','firmware_backup','backup_restore','library_relocation','official_image_download','firmware_analysis') AND status IN ('pending','running')")?;
             let rows = q.query_map([], |r| r.get(0))?;
             rows.collect::<rusqlite::Result<Vec<_>>>()?
         };

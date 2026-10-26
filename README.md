@@ -1,10 +1,12 @@
 ﻿# OBTAINER
 
-OBTAINER is a Windows app intended to help owners keep unsupported routers and MiFi devices useful. It helps people understand connected devices and preserve copies of firmware files. Later phases aim to add supported changes such as custom DNS, Wi-Fi user limits, APN settings and router-hosted USSD, plus firmware inspection and selected OpenWrt builds.
+OBTAINER is a Windows app for understanding connected routers and MiFi devices and preserving firmware files. It can download selected official OpenWrt images, verify them, save them in Library and inspect their basic structure. Supported customization and build work is progressing; generic device extraction and flashing are unavailable.
 
 ## Current status
 
-**Phase 7.5 is underway.** More Info now checks separate firmware acquisition routes and explains what is missing. With your approval, it can inspect a local management page for candidate device-family signals. An unknown result keeps the device visible; it does not prove that firmware is impossible to obtain. Obtain Firmware stays disabled until an implemented route is qualified. This first slice acquires no firmware and changes no router settings. [Progress and evidence](docs/PHASE_7_5_VERIFICATION.md).
+**Windows beta release sprint — 0.2.0-beta.1 candidate.** Library's Official Firmware popup supports exact OpenWrt 25.12.6 images for TP-Link Archer C7 v5/v2 and Ubiquiti UniFi AC Lite. A real firmware download, verification, Library save, analysis and restart have passed through the Windows interface. This downloads a release image; it does not extract the firmware installed on your connected device. [Current results and limitations](docs/RELEASE_SPRINT_VERIFICATION.md).
+
+The analyzer identifies basic formats and saves a report without running or recursively unpacking the image. Connected-device support remains separate: unknown hardware stays unknown, and no firmware flashing is enabled. Release artifacts and supported DNS build qualification are being completed; Phase 7.5 is not marked complete.
 
 The app finds relevant Windows device candidates, groups related USB interfaces, and explains what is known or still uncertain. You can save a router address, check whether its management page responds, and review a separate support assessment for DNS, Wi-Fi user limits, APN and USSD.
 

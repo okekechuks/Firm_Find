@@ -15,6 +15,7 @@ export const manifestExportSchema=z.object({saved:z.boolean(),activityRecorded:z
 export type FileSelection=z.infer<typeof selectionSchema>;
 export type LibraryPage=z.infer<typeof libraryPageSchema>;
 export type ArtifactDetails=z.infer<typeof detailsSchema>;
+export type FirmwareArtifact=z.infer<typeof artifactSchema>;
 export type LibraryQuery={search?:string;integrity?:string|null;source?:string|null;fromDate?:number|null;toDate?:number|null;page?:number;kind?:string|null;sort?:string};
 
 export const desktopPreferencesSchema=z.object({autoRefresh:z.boolean(),notifyCompleted:z.boolean(),notifyFailed:z.boolean(),notifyDevices:z.boolean(),libraryDirectory:z.string().nullable()});

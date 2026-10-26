@@ -189,6 +189,11 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            library::ipc::list_official_sources,
+            library::ipc::start_official_download,
+            library::ipc::get_official_provenance,
+            library::ipc::start_firmware_analysis,
+            library::ipc::get_firmware_analysis,
             acquisition::ipc::approve_firmware_route_probe,
             acquisition::ipc::approve_static_menu,
             acquisition::ipc::approve_auth_challenge,

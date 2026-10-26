@@ -92,15 +92,94 @@ pub(super) fn admit_import_or_restore(
     }
 }
 
-/// Reserved sealed contracts: there are deliberately no production constructors
-/// or consumers for these producers in Stage 3. A nonfirmware receipt has no
-/// conversion into the firmware admission API.
+pub(super) fn admit_official(
+    tx: &Transaction<'_>,
+    job: &str,
+    proof: &VerifiedPublishedBlob,
+    source: &super::official::QualifiedSource,
+) -> Result<()> {
+    source.verify(proof)?;
+    let entry = source.entry();
+    let valid:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM jobs j JOIN job_details d ON d.job_id=j.id WHERE j.id=?1 AND j.kind='official_image_download' AND j.status='running' AND d.cancel_requested=0 AND d.artifact_sha256=?2 AND d.total_bytes=?3 AND d.original_filename=?4 AND d.description=?5)",params![job,entry.sha256,entry.size_bytes,entry.filename,entry.id],|r|r.get(0))?;
+    if !valid {
+        return Err(conflict());
+    }
+    let size: Option<u64> = tx
+        .query_row(
+            "SELECT size_bytes FROM artifact_blobs WHERE sha256=?1",
+            [proof.hash()],
+            |r| r.get(0),
+        )
+        .optional()?;
+    match size {
+        None => {
+            tx.execute(
+                "INSERT INTO artifact_blobs VALUES(?1,?2)",
+                params![proof.hash(), proof.size()],
+            )?;
+        }
+        Some(size) if size != proof.size() => return Err(conflict()),
+        _ => {}
+    }
+    let occurrence = format!("official:{job}");
+    let reference = serde_json::to_string(entry).map_err(|_| conflict())?;
+    tx.execute("INSERT INTO artifact_occurrences(occurrence_id,blob_sha256,artifact_class,provenance_kind,source_reference,acquisition_occurrence_id,job_id,collected_at) VALUES(?1,?2,'official_image_download','official_vendor_download',?3,?1,?4,?5)",params![occurrence,proof.hash(),reference,job,now()])?;
+    let member: bool = tx.query_row(
+        "SELECT EXISTS(SELECT 1 FROM firmware_artifacts WHERE sha256=?1)",
+        [proof.hash()],
+        |r| r.get(0),
+    )?;
+    if !member {
+        tx.execute(
+            "INSERT INTO firmware_admissions VALUES(?1,?2,'official_image_download')",
+            params![proof.hash(), occurrence],
+        )?;
+        tx.execute(
+            "INSERT INTO firmware_artifacts VALUES(?1,?2)",
+            params![proof.hash(), proof.size()],
+        )?;
+    }
+    retained_membership(tx, proof)
+}
+
+pub(super) fn admit_analysis_report(
+    tx: &Transaction<'_>,
+    job: &str,
+    input: &str,
+    proof: &VerifiedPublishedBlob,
+) -> Result<()> {
+    let valid:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM jobs j JOIN job_details d ON d.job_id=j.id JOIN firmware_artifacts a ON a.sha256=d.artifact_sha256 WHERE j.id=?1 AND j.kind='firmware_analysis' AND j.status='running' AND d.cancel_requested=0 AND a.sha256=?2)",params![job,input],|r|r.get(0))?;
+    if !valid {
+        return Err(conflict());
+    }
+    let size: Option<u64> = tx
+        .query_row(
+            "SELECT size_bytes FROM artifact_blobs WHERE sha256=?1",
+            [proof.hash()],
+            |r| r.get(0),
+        )
+        .optional()?;
+    match size {
+        None => {
+            tx.execute(
+                "INSERT INTO artifact_blobs VALUES(?1,?2)",
+                params![proof.hash(), proof.size()],
+            )?;
+        }
+        Some(size) if size != proof.size() => return Err(conflict()),
+        _ => {}
+    }
+    let occurrence = format!("analysis:{job}");
+    tx.execute("INSERT INTO artifact_occurrences(occurrence_id,blob_sha256,artifact_class,provenance_kind,source_reference,acquisition_occurrence_id,job_id,collected_at) VALUES(?1,?2,'metadata_report','bounded_format_analysis',?3,?1,?4,?5)",params![occurrence,proof.hash(),format!("analysis:{input}"),job,now()])?;
+    Ok(())
+}
+
+/// Remaining reserved producers have no production consumers. Official images
+/// and bounded reports use the constrained proof checks above; neither can
+/// instantiate these device-export, dump or configuration contracts.
 #[allow(dead_code)]
 mod reserved {
     use super::*;
-    pub(super) struct OfficialImageProducer {
-        private: (),
-    }
     pub(super) struct DeviceExportProducer {
         private: (),
     }
@@ -131,7 +210,6 @@ mod reserved {
             }
         };
     }
-    producer!(OfficialImageProducer, ArtifactClass::OfficialImageDownload);
     producer!(DeviceExportProducer, ArtifactClass::DeviceFirmwareExport);
     producer!(PhysicalDumpProducer, ArtifactClass::PhysicalFlashDump);
     impl sealed::Sealed for ConfigurationProducer {}

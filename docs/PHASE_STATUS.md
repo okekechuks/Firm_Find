@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## Emergency release sprint — 26 October 2026
+
+Owner releases implementation-first integration on `release/windows-beta-2026-10-28`, preserving existing phase numbering/history and accepted Stage 4. Stage 3 persistence is retained at base `5c30343`. [Executable milestone 1](RELEASE_SPRINT_VERIFICATION.md) records actual official OpenWrt image acquisition through Windows GUI, immutable Library admission, source provenance and bounded metadata analysis/restart. Standard/isolated Rust: 351/352 + two doctests each; frontend: 164; Clippy/lint/build pass. Both installer formats built. Normal 12 data files remain byte-identical; no normal SQLite connection or real migration.
+
+E: build drive disappeared afterward; local artifacts there are temporarily inaccessible. Remote CI retention and supported DNS image-build qualification are the next release gates. No physical MG11 challenge, authenticated read, device extraction, generic repacking or flashing is claimed. GUI Rebuild/Wi-Fi/APN/USSD remain disabled. This supersedes sequential code-release pauses only within the emergency sprint's authorized scope; historical evidence remains below. Phase 7.5 remains incomplete.
+
 ## Current decision — 26 October 2026
 
 **Stage 4 SOFTWARE PASS, independently accepted at `f9e711510522ecf5b2e935640052efe51c7679fd`.** The owner reports reviewer acceptance of R1/R2/R3 and green Windows Actions run `40273674930`. Preserve that implementation and its evidence. The MG11 physical authentication-challenge gate remains **PENDING**; the earlier attempt stopped at root approval and is not a successful challenge.

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-start-official-download"
+description = "Enables the start_official_download command without any pre-configured scope."
+commands.allow = ["start_official_download"]
+
+[[permission]]
+identifier = "deny-start-official-download"
+description = "Denies the start_official_download command without any pre-configured scope."
+commands.deny = ["start_official_download"]

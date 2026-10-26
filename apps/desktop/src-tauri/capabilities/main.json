@@ -9,6 +9,11 @@
     "windows"
   ],
   "permissions": [
+    "allow-list-official-sources",
+    "allow-start-official-download",
+    "allow-get-official-provenance",
+    "allow-start-firmware-analysis",
+    "allow-get-firmware-analysis",
     "allow-approve-firmware-route-probe",
     "allow-approve-static-menu",
     "allow-approve-auth-challenge",

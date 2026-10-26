@@ -1,12 +1,14 @@
 {
   "name": "obtainer-workspace",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0-beta.1",
   "type": "module",
   "workspaces": [
     "apps/desktop"
   ],
   "scripts": {
+    "test:catalogue": "python scripts/refresh-official-catalogue.py --upstream apps/desktop/src-tauri/assets/official --check",
+    "test:official-acquisition": "node scripts/verify-foundation.mjs --official-acquisition",
     "test:library-upgrade": "node scripts/verify-foundation.mjs --stage3-upgrade",
     "dev:simulator": "node scripts/dev-simulator.mjs",
     "test:simulator": "node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui --phase5 --phase6",

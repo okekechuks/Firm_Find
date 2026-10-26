@@ -67,6 +67,151 @@ fn review_restore_existing_artifact_preserves_its_name_and_kind() {
 }
 
 #[test]
+fn sprint_analysis_reports_persist_separately_and_never_admit_report_as_firmware() {
+    let (d, repo, s) = setup();
+    let bytes = b"\x27\x05\x19\x56harmless synthetic analysis hsqs";
+    let original = completed(&s, &source(d.path(), "synthetic-analysis.bin", bytes));
+    let hash = original.related_artifact.unwrap();
+    let analyzed = wait(&s, &s.analyze(&hash).unwrap().id);
+    assert_eq!(analyzed.status, JobStatus::Completed, "{analyzed:?}");
+    assert_eq!(analyzed.related_artifact.as_deref(), Some(hash.as_str()));
+    let report = s.analysis_report(&hash).unwrap().unwrap();
+    assert_eq!(report.input_sha256, hash);
+    assert_eq!(report.format, "U-Boot legacy");
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .connection
+            .query_row("SELECT COUNT(*) FROM firmware_artifacts", [], |r| r
+                .get::<_, i64>(0))
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .connection
+            .query_row(
+                "SELECT COUNT(*) FROM artifact_occurrences WHERE artifact_class='metadata_report'",
+                [],
+                |r| r.get::<_, i64>(0)
+            )
+            .unwrap(),
+        1
+    );
+    let root = s.inner.root.clone();
+    s.stop();
+    drop(s);
+    drop(repo);
+    let repo = Arc::new(Mutex::new(Repository::open(&root.join("test.db")).unwrap()));
+    let reopened = LibraryService::start(repo, root, DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    assert_eq!(
+        reopened
+            .analysis_report(&hash)
+            .unwrap()
+            .unwrap()
+            .input_sha256,
+        hash
+    );
+    assert_eq!(
+        fs::read(reopened.inner.vault.blob(&hash).unwrap().0).unwrap(),
+        bytes
+    );
+    reopened.stop();
+}
+
+#[test]
+fn sprint_unapproved_official_source_queues_nothing_and_cannot_promote_import() {
+    let (d, repo, s) = setup();
+    assert!(s
+        .acquire_official("https://attacker.invalid/image.bin", true)
+        .is_err());
+    assert!(s
+        .acquire_official(&official::catalogue().unwrap()[0].id, false)
+        .is_err());
+    assert!(s.jobs().unwrap().is_empty());
+    let original = completed(
+        &s,
+        &source(
+            d.path(),
+            "synthetic-official-negative.bin",
+            b"not official firmware",
+        ),
+    );
+    let hash = original.related_artifact.unwrap();
+    let proof = s
+        .inner
+        .vault
+        .verify_published(&hash, DEFAULT_MAX, &AtomicBool::new(false), |_| Ok(()))
+        .unwrap();
+    let source = official::qualify(&official::catalogue().unwrap()[0].id, true).unwrap();
+    let mut repo = repo.lock().unwrap();
+    let tx = repo.connection.transaction().unwrap();
+    assert!(admission::admit_official(&tx, &original.id, &proof, &source).is_err());
+    tx.rollback().unwrap();
+    drop(repo);
+    assert!(s.official_provenance(&hash).unwrap().is_empty());
+    assert_eq!(
+        s.details(&hash).unwrap().artifact.artifact_class,
+        "user_imported_unverified"
+    );
+    s.stop();
+}
+
+#[test]
+fn sprint_interrupted_download_and_analysis_fail_without_retry_or_admission() {
+    let (_dir, repo, s) = setup();
+    let root = s.inner.root.clone();
+    let mut ids = Vec::new();
+    for kind in ["official_image_download", "firmware_analysis"] {
+        let id = nonce().unwrap();
+        repo.lock()
+            .unwrap()
+            .create_library_job(
+                &id,
+                kind,
+                32,
+                JobInput {
+                    filename: Some("synthetic-interrupted.bin"),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        repo.lock()
+            .unwrap()
+            .library_transition(&id, JobStatus::Running, None)
+            .unwrap();
+        fs::write(
+            s.inner.vault.stage(&id).unwrap(),
+            b"harmless incomplete bytes",
+        )
+        .unwrap();
+        ids.push(id);
+    }
+    s.stop();
+    drop(s);
+    let reopened =
+        LibraryService::start(Arc::clone(&repo), root, DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    for id in ids {
+        let job = reopened.job(&id).unwrap();
+        assert_eq!(job.status, JobStatus::Failed);
+        assert_eq!(job.error_code.as_deref(), Some("INTERRUPTED"));
+        assert!(!reopened.inner.vault.stage(&id).unwrap().exists());
+    }
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .connection
+            .query_row("SELECT COUNT(*) FROM firmware_artifacts", [], |r| r
+                .get::<_, i64>(0))
+            .unwrap(),
+        0
+    );
+    assert!(reopened.inner.controls.lock().unwrap().is_empty());
+    reopened.stop();
+}
+
+#[test]
 fn review_hash_lookup_never_selects_a_filename_match() {
     let (d, repo, s) = setup();
     let original = completed(&s, &source(d.path(), "first.bin", b"first harmless blob"));

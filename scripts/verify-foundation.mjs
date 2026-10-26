@@ -3,6 +3,7 @@ import { verifyAdapters } from "./verify-adapters.mjs";
 import { verifySimulator } from "./verify-simulator.mjs";
 import { verifyOpenWrt } from "./verify-openwrt.mjs";
 import { verifyDeviceGUI } from "./verify-device-gui.mjs";
+import { verifyOfficialAcquisition } from "./verify-official-acquisition.mjs";
 // Exercises the actual Windows Tauri dev command and release executable through native WebView2.
 import assert from 'node:assert/strict';
 import { verifyDiscovery, watchUsb } from './verify-discovery.mjs';
@@ -382,14 +383,23 @@ try {
   probeNormal(root,evidence,'before');baselineCaptured=true;record('normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite');
   // Stage 3 qualification launches only the dedicated native-test executable.
   // It must never invoke the production binary against the owner's data directory.
-  if(!process.argv.includes('--stage3-upgrade')) {
+  if(!process.argv.includes('--stage3-upgrade')&&!process.argv.includes('--official-acquisition')) {
     const startupProbe=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/verify-startup.ps1'),'-Binary',path.join(root,'target/release/obtainer.exe')],{env,windowsHide:true,encoding:'utf8',timeout:30000});
     await writeFile(path.join(evidence,'production-startup-error.json'),startupProbe);
     assert.equal(JSON.parse(startupProbe).exitCode,1);
     record('ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data');
     verifyActivationGuards(root,profile,env,record);
   }
-  if (process.argv.includes('--stage3-upgrade')) {
+  if(process.argv.includes('--official-acquisition')) {
+    await clean();start('release');await verify('official-before');
+    const hash=await verifyOfficialAcquisition(client,{root,profile,evidence,record,screenshot});
+    await closeWindow();
+    start('release');await verify('official-reopened');
+    const report=await invoke('get_firmware_analysis',{sha256:hash});assert.equal(report.inputSha256,hash);
+    const provenance=await invoke('get_official_provenance',{sha256:hash});assert.equal(provenance[0].sha256,hash);
+    record('official image, exact source provenance and bounded report remain accessible after native restart');
+    await closeWindow();
+  } else if (process.argv.includes('--stage3-upgrade')) {
     const fixture=operation=>JSON.parse(execFileSync('py',[path.join(root,'scripts/stage3-native-fixture.py'),operation,profile.id],{env,windowsHide:true,encoding:'utf8'}));
     const before=fixture('create');
     await writeFile(path.join(evidence,'stage3-before-no.json'),JSON.stringify(before,null,2));

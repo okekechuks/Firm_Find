@@ -161,6 +161,25 @@ impl Repository {
         proof: &super::files::VerifiedPublishedBlob,
         duplicate: bool,
     ) -> Result<()> {
+        self.commit_firmware(id, proof, duplicate, None)
+    }
+    pub(super) fn commit_official_download(
+        &mut self,
+        id: &str,
+        proof: &super::files::VerifiedPublishedBlob,
+        duplicate: bool,
+        source: &super::official::QualifiedSource,
+    ) -> Result<()> {
+        source.verify(proof)?;
+        self.commit_firmware(id, proof, duplicate, Some(source))
+    }
+    fn commit_firmware(
+        &mut self,
+        id: &str,
+        proof: &super::files::VerifiedPublishedBlob,
+        duplicate: bool,
+        source: Option<&super::official::QualifiedSource>,
+    ) -> Result<()> {
         let hash = proof.hash();
         let size = proof.size();
         let key = super::files::Vault::key(hash);
@@ -177,9 +196,13 @@ impl Repository {
             [hash],
             |r| r.get(0),
         )?;
-        super::admission::admit_import_or_restore(&tx, id, proof)?;
+        if let Some(source) = source {
+            super::admission::admit_official(&tx, id, proof, source)?;
+        } else {
+            super::admission::admit_import_or_restore(&tx, id, proof)?;
+        }
         tx.execute("INSERT INTO artifact_details(sha256,storage_key,integrity_status,first_imported_at,last_verified_at) VALUES(?1,?2,'verified',?3,?3) ON CONFLICT(sha256) DO UPDATE SET storage_key=excluded.storage_key,storage_status='present',integrity_status='verified',last_verified_at=excluded.last_verified_at",params![hash,key,now()])?;
-        tx.execute("INSERT INTO artifact_imports SELECT job_id,?2,original_filename,?3,'user_import','unverified',description,device_id,job_id FROM job_details WHERE job_id=?1",params![id,hash,now()])?;
+        tx.execute("INSERT INTO artifact_imports SELECT job_id,?2,original_filename,?3,?4,?5,description,device_id,job_id FROM job_details WHERE job_id=?1",params![id,hash,now(),if source.is_some(){"official_vendor_download"}else{"user_import"},if source.is_some(){"pinned_release_source"}else{"unverified"}])?;
         tx.execute(
             "UPDATE artifact_details SET removed_at=NULL WHERE sha256=?1",
             [hash],
@@ -199,7 +222,7 @@ impl Repository {
             "UPDATE jobs SET status='completed' WHERE id=?1 AND status='running'",
             [id],
         )?;
-        tx.execute("UPDATE job_details SET finished_at=?2,updated_at=?2,progress_bytes=total_bytes,stage='completed',message=?3 WHERE job_id=?1",params![id,now(),if duplicate{"Identical bytes already stored; import occurrence recorded."}else{"Import completed. Integrity verified; authenticity and device compatibility remain unverified."}])?;
+        tx.execute("UPDATE job_details SET finished_at=?2,updated_at=?2,progress_bytes=total_bytes,stage='completed',message=?3 WHERE job_id=?1",params![id,now(),if source.is_some(){"Official image acquired. Exact release hash verified against the signature-verified catalogue; connected hardware compatibility and installability remain unknown."}else if duplicate{"Identical bytes already stored; import occurrence recorded."}else{"Import completed. Integrity verified; authenticity and device compatibility remain unverified."}])?;
         event(
             &tx,
             "firmware_imported",

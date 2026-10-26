@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-official-provenance"
+description = "Enables the get_official_provenance command without any pre-configured scope."
+commands.allow = ["get_official_provenance"]
+
+[[permission]]
+identifier = "deny-get-official-provenance"
+description = "Denies the get_official_provenance command without any pre-configured scope."
+commands.deny = ["get_official_provenance"]

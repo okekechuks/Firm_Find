@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-list-official-sources"
+description = "Enables the list_official_sources command without any pre-configured scope."
+commands.allow = ["list_official_sources"]
+
+[[permission]]
+identifier = "deny-list-official-sources"
+description = "Denies the list_official_sources command without any pre-configured scope."
+commands.deny = ["list_official_sources"]
