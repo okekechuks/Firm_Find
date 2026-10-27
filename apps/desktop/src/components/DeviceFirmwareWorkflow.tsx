@@ -61,7 +61,7 @@ export function DeviceFirmwareWorkflow({deviceId,revision,connected}:{deviceId:s
       </>:null}</section>:null}
       <details><summary>Acquisition strategies and remaining stages</summary>{workflow.strategies.map(s=><p key={s.strategy}>{s.name}: {human(s.capability.state)}. {s.capability.reason}</p>)}<dl>{workflow.stages.map(s=><div key={s.id}><dt>{human(s.id)}: {human(s.state)}</dt><dd>{s.reason} {s.nextAction}</dd></div>)}</dl></details>
       <details><summary>Customization and rebuild readiness</summary><ul>{workflow.configuration.map(s=><li key={s.id}>{human(s.id)}: {human(s.state)} — {s.reason}</li>)}</ul><p>Live configuration and firmware-image changes use separate authorization. Required builder inputs, size limits, partition preservation and signatures are not qualified by extraction.</p></details>
-      <button className="secondary-button" disabled={busy} onClick={()=>setRefresh(r=>r+1)}>Refresh workflow</button>
     </>:null}
+    <button className="secondary-button" disabled={busy} onClick={()=>setRefresh(r=>r+1)}>Refresh workflow</button>
   </section>;
 }

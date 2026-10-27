@@ -37,6 +37,12 @@ const snapshot: Snapshot = {
     },
   ],
 };
+it("labels synthetic workflow identity explicitly without implying physical qualification",async()=>{
+  vi.mocked(getSnapshot).mockResolvedValue({...snapshot,testProfile:{runId:"c".repeat(32),discoverySource:"synthetic_workflow_fixture",simulatedAdapters:false}});
+  render(<App/>);
+  const banner=await screen.findByText(/SOFTWARE WORKFLOW FIXTURE/);
+  expect(banner).toHaveTextContent("no physical device identity or acquisition has been verified");
+});
 const inventory: DiscoverySnapshot = {
   revision: 1, scannedAt: 1_792_000_000_000, status: "ready", watching: true, warnings: [], devices: [],
 };
