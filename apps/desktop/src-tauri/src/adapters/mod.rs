@@ -1,4 +1,3 @@
-+
 mod auth;
 mod bootstrap;
 mod contracts;
