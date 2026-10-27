@@ -1,8 +1,10 @@
 # OBTAINER phase status
 
-## Beta 2 filesystem extraction — native qualification in progress
+## Beta 2 filesystem extraction — native qualification passed
 
-27 October 2026: isolated `feature/firmware-extraction` branch from Beta 1 source adds real SquashFS extraction, one gzip wrapper backend, persistent Library manifests, folder/text browsing and selected-file TAR export. Standalone isolated extraction of the actual Archer C7 v5 image produced 869 files and 128 directories; corrected native end-to-end verification and Windows CI remain release gates. [Actual evidence and initial failures](FIRMWARE_EXTRACTION_VERIFICATION.md). Beta 1 remains unchanged. No schema migration or physical firmware acquisition is claimed; MG11 firmware-read qualification and Phase 7.5 remain incomplete.
+**[v0.2.0-beta.2 published](https://github.com/okekechuks/Firm_Find/releases/tag/v0.2.0-beta.2)** from qualified source `e4524e80ac38ff0702e0917fc9a8f314d2f1ad82`, with CI-built installers/EXE, checksums and the actual extraction manifest. Uploaded asset sizes and SHA-256 values were checked against the downloaded CI artifacts before publication. Main and Beta 1 are preserved.
+
+27 October 2026: isolated `feature/firmware-extraction` branch, source `e4524e8`, passed actual Windows download → cancel/retry extraction → browsing/text preview → restart → selected-file export. The official Archer C7 v5 image produced 869 ordinary files, 128 directories and 13,411,262 bytes. A local gzip wrapper produced the same verified files. Standard/isolated Rust: 366/367 passed plus two doctests each; frontend: 167; both Clippy profiles, formatting, lint, TypeScript and both native builds pass. Normal data remains byte-identical. [Actual evidence, hashes and initial failures](FIRMWARE_EXTRACTION_VERIFICATION.md). [Windows CI 40475441212](https://github.com/okekechuks/Firm_Find/actions/runs/40475441212) passed both jobs and both native builds. Beta 1 remains unchanged. No schema migration or physical firmware acquisition is claimed; MG11 firmware-read qualification and Phase 7.5 remain incomplete.
 
 ## Emergency beta — acquisition, analysis and DNS build demonstrated
 

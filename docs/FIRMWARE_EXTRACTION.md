@@ -24,6 +24,8 @@ Windows app requires WSL distribution **Ubuntu**, qualified here on **Ubuntu 26.
 
 Use the distribution's signed package repositories. The app checks these exact installed binary hashes before launching a parser. It does not install packages, fetch tools, or fall back to direct host extraction. Different/missing tools produce `WORKER_UNAVAILABLE`; additional platforms need independent qualification and an explicit pin update.
 
+The following is the qualified reference environment, not an instruction to downgrade a maintained system. Do not downgrade security-patched tools to match these pins. Local `dpkg --verify squashfs-tools bubblewrap` returned no discrepancies. The package index already lists a newer bubblewrap security-update build (`0.11.1-1ubuntu0.3`); that different binary has not been qualified in this beta. Keep updated systems patched and treat extraction as unavailable there until a new pin passes qualification.
+
 ```sh
 sudo apt-get update
 sudo apt-get install python3 squashfs-tools=1:4.7.5-1 bubblewrap=0.11.1-1
@@ -31,6 +33,8 @@ sha256sum /usr/bin/unsquashfs /usr/bin/bwrap
 ```
 
 Upstream tools are not bundled into the Windows installer. Squashfs-tools is GPL-2.0-or-later; bubblewrap is LGPL-2.0-or-later. Source and documentation: [Squashfs-tools 4.7.5](https://github.com/plougher/squashfs-tools/tree/master/Documentation/4.7.5), [bubblewrap](https://github.com/containers/bubblewrap). Ubuntu package provenance is independent of the source firmware's OpenWrt release signature.
+
+Qualified shared-library packages, recorded with `dpkg-query -W` and `ldd` on the trusted installed tools: `libc6 2.43-2ubuntu2`, `liblzma5 5.8.3-1`, `libzstd1 1.5.7+dfsg-3`, `liblz4-1 1.10.0-8`, `liblzo2-2 2.10-3build2`, `zlib1g 1:1.3.dfsg+really1.3.1-1ubuntu3`, `libxxhash0 0.8.3-2build1`, `libselinux1 3.9-4build1`, `libcap2 1:2.75-10ubuntu2`, `libpcre2-8-0 10.46-1build1`. The two executable hashes are enforced; these distribution library versions are qualification evidence, not a claim of a fully reproducible container. Package copyright files independently confirmed the two tool licenses.
 
 ## Isolation and supervision
 
@@ -53,3 +57,5 @@ Browse/preview reopens the retained manifest and validates the bundle's content 
 ## Physical acquisition status
 
 MG11 user-reported software remains `MF69_AM802L_ZX_DD_N_241106_EU`; this extraction feature adds no authenticated identity evidence. `acquisition/strategies.rs::AcquisitionStrategyRegistry::can_obtain()` remains false for physical acquisition. The documented-export and storage-read strategies have no qualified MG11 implementation. No legitimate MG11 firmware-export endpoint or raw partition-read interface has been demonstrated; physical authentication-challenge qualification remains pending. No credentials, login, privileged read, configuration write, reset or flashing occurs in this workstream. Official OpenWrt bytes and their extracted files are not MG11 firmware.
+
+Public-source check, 27 October 2026: Movingcomm's [MG11 product page](https://www.movingcomm.com/products/mg11-4g-wifi-6-mifi.html) lists ASR1803 and offers a product-specification PDF in Data Download. That page provides no firmware image or documented installed-firmware export procedure. Its marketing specifications do not verify the owner's particular unit or revision. Searches for the exact user-reported software identifier did not establish an official image. This is a bounded research result, not proof that no vendor-supported route exists. The next physical prerequisite remains reviewed identity/read-interface evidence or an exact vendor-supplied image; no login or undocumented request was attempted.

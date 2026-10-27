@@ -4,7 +4,7 @@ OBTAINER is a Windows app for understanding connected routers and MiFi devices a
 
 ## Current status
 
-**Filesystem extraction — 0.2.0-beta.2 candidate.** Library's analysis popup adds Extract Contents, folder browsing, small text previews and selected-file TAR export. Supported routes are SquashFS and a bounded gzip wrapper containing SquashFS. Extraction requires the qualified WSL Ubuntu tools; unavailable tools produce an explicit error. [Setup and limits](docs/FIRMWARE_EXTRACTION.md). Release qualification is recorded in [the extraction report](docs/FIRMWARE_EXTRACTION_VERIFICATION.md).
+**[Windows Beta 2 is available](https://github.com/okekechuks/Firm_Find/releases/tag/v0.2.0-beta.2).** Library's analysis popup adds Extract Contents, folder browsing, small text previews and selected-file TAR export. Supported routes are SquashFS and a bounded gzip wrapper containing SquashFS. Extraction requires the qualified WSL Ubuntu tools; unavailable tools produce an explicit error. [Setup and limits](docs/FIRMWARE_EXTRACTION.md). Actual desktop extraction, restart and export passed; [verification and hashes](docs/FIRMWARE_EXTRACTION_VERIFICATION.md).
 
 Library's Official Firmware popup supports exact OpenWrt 25.12.6 images for TP-Link Archer C7 v5/v2 and Ubiquiti UniFi AC Lite. This downloads a release image; it does not read the firmware installed on your connected device. [Beta 1 results](docs/RELEASE_SPRINT_VERIFICATION.md).
 
