@@ -73,7 +73,9 @@ fn inspect(mut file: File, hash: &str, size: u64, cancel: &AtomicBool) -> Result
             }
         }
     }
-    let format = if bytes.get(257..262) == Some(b"ustar") {
+    let format = if bytes.starts_with(&[0x1f, 0x8b]) {
+        "gzip wrapper".into()
+    } else if bytes.get(257..262) == Some(b"ustar") {
         "tar archive".into()
     } else {
         regions

@@ -53,6 +53,13 @@ pub(super) fn event(
     Ok(())
 }
 impl Repository {
+    pub(super) fn workflow_jobs(&self, device: &str) -> Result<Vec<JobRecord>> {
+        let mut statement = self.connection.prepare(&format!("{JOB_SQL} WHERE d.device_id=?1 OR d.artifact_sha256 IN (SELECT artifact_sha256 FROM job_details WHERE device_id=?1) ORDER BY d.created_at DESC,j.id DESC LIMIT 100"))?;
+        let rows = statement
+            .query_map([device], job)?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(rows)
+    }
     pub fn library_job(&self, id: &str) -> Result<JobRecord> {
         self.connection
             .query_row(&format!("{JOB_SQL} WHERE j.id=?1"), [id], job)
@@ -216,7 +223,7 @@ impl Repository {
             tx.execute("INSERT INTO artifact_presentation SELECT ?2,original_filename,'restored_default' FROM job_details WHERE job_id=?1 ON CONFLICT(sha256) DO UPDATE SET display_name=excluded.display_name,kind=excluded.kind",params![id,hash])?;
         }
         tx.execute("INSERT INTO integrity_checks(artifact_sha256,job_id,expected_size,actual_size,actual_sha256,status,verified_at) VALUES(?1,?2,?3,?3,?1,'verified',?4)",params![hash,id,size,now()])?;
-        tx.execute("UPDATE job_details SET artifact_sha256=?2,import_id=?1,duplicate=?3,recovery_info=NULL WHERE job_id=?1",params![id,hash,duplicate])?;
+        tx.execute("UPDATE job_details SET artifact_sha256=?2,import_id=?1,duplicate=?3,recovery_info=CASE WHEN device_id IS NOT NULL AND EXISTS(SELECT 1 FROM jobs WHERE id=?1 AND kind='official_image_download') THEN recovery_info ELSE NULL END WHERE job_id=?1",params![id,hash,duplicate])?;
         // Metadata and successful job publication share a single transaction.
         tx.execute(
             "UPDATE jobs SET status='completed' WHERE id=?1 AND status='running'",

@@ -1006,6 +1006,13 @@ h1 {
 .device-color-key span:nth-child(2)::before { background:var(--error); }
 .device-color-key span:nth-child(3)::before { background:var(--success); }
 .device-summary-dialog { max-width:620px; }
+.device-firmware-workflow { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.device-firmware-workflow p, .device-firmware-workflow dd, .device-firmware-workflow li { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.device-firmware-workflow details, .workflow-source { margin: 14px 0; padding: 12px; border: 1px solid var(--line); border-radius: 9px; }
+.device-firmware-workflow select { width: 100%; margin: 8px 0; }
+.device-firmware-workflow button { margin: 5px 5px 5px 0; }
+.device-firmware-workflow progress { display: block; width: 100%; }
+.workflow-path { color: var(--muted); }
 .device-summary-dialog>details, .acquisition-results>details { margin:12px 0; padding:10px 0; border-top:1px solid var(--line); font-size:12px; }
 .device-summary-dialog>details label { display:block; margin:10px 0; font-size:12px; }
 .device-summary-dialog>details input:not([type=checkbox]), .device-summary-dialog>details select { display:block; width:100%; margin-top:6px; }

@@ -398,7 +398,7 @@ pub fn recognize(body: &[u8], server: Option<&str>) -> Vec<VendorProtocolCandida
     candidates
 }
 
-fn identity(
+pub(crate) fn identity(
     evidence: Vec<IdentityEvidence>,
     now: u64,
     endpoint: Option<&str>,

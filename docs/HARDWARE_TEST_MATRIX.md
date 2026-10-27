@@ -1,5 +1,19 @@
 # Phase 7.5 hardware matrix
 
+## Universal workflow integration — 27 October 2026
+
+No new physical requests in this task. A synthetic identity plus a genuine public image tests software integration only; it does not qualify any row below.
+
+| ID | Hardware identity | Firmware source / acquired bytes | Extraction | Customization | Rebuild | Installation / recovery |
+|---|---|---|---|---|---|---|
+| H01 | Existing USB/RNDIS and candidate management evidence; exact model/revision/installed firmware unverified | No qualified installed-image source/export/storage read; no acquired physical firmware bytes | Pending genuine compatible firmware | Unqualified | Unqualified | Both unqualified; no execution |
+| H02 | Older CPE2000B revision, owner-reported; no physical qualification | Unknown / none | Pending | Unqualified | Unqualified | Unqualified |
+| H03 | Newer CPE2000B revision, independent of H02; no physical qualification | Unknown / none; cannot inherit H02 route | Pending | Unqualified | Unqualified | Unqualified |
+| H04 | DWR-930-M owner-reported; no physical qualification | Unknown / none | Pending | Unqualified | Unqualified | Unqualified |
+| H05 | MF968 owner-reported; no OEM/hardware assumption | Unknown / none | Pending | Unqualified | Unqualified | Unqualified |
+
+Existing dated physical observations below are preserved. Software-tested official-image paths remain distinct from installed-device acquisition.
+
 Updated 23 October 2026. Observations and reports are not verified hardware identities. H02 and H03 are independent targets. No reset, flash, privileged maintenance, live USSD or device write is permitted by this phase.
 
 | ID | Owner-reported target | Detection / identity evidence | Management | Acquisition / analysis | Gate |

@@ -11,6 +11,7 @@ export const destinations: Destination[] = [
 ];
 export function pageFromHash(): Page {
   const id = window.location.hash.slice(1);
+  if (/^firmware\/[a-f0-9]{64}$/.test(id)) return "firmware";
   if (id === "compatibility") return id;
   if (id === "analysis" || id === "builder") return "firmware";
   return destinations.find(d => d.id === id)?.id ?? "dashboard";

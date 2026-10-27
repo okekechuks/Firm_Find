@@ -21,7 +21,7 @@ pub fn run() -> tauri::Result<()> {
     native_test::reject_overrides(false)?;
     if std::env::args_os()
         .skip(1)
-        .any(|a| a == "--simulator" || a == "--openwrt-lab")
+        .any(|a| a == "--simulator" || a == "--openwrt-lab" || a == "--workflow-lab")
     {
         return Err(std::io::Error::other(
             "Simulation requires the dedicated isolated native-test executable.",
@@ -36,6 +36,7 @@ struct NativeProfile {
     id: String,
     simulator: bool,
     openwrt_lab: bool,
+    workflow_lab: bool,
     _owner: Box<dyn std::any::Any + Send + Sync>,
 }
 
@@ -51,9 +52,11 @@ pub fn run_native_test() -> tauri::Result<()> {
     }
     let simulator = args.iter().any(|arg| arg == "--simulator");
     let openwrt_lab = args.iter().any(|arg| arg == "--openwrt-lab");
+    let workflow_lab = args.iter().any(|arg| arg == "--workflow-lab");
     if args
         .iter()
-        .any(|arg| arg != "--simulator" && arg != "--openwrt-lab")
+        .any(|arg| arg != "--simulator" && arg != "--openwrt-lab" && arg != "--workflow-lab")
+        || (workflow_lab && (simulator || openwrt_lab))
         || args.iter().collect::<std::collections::BTreeSet<_>>().len() != args.len()
     {
         return Err(std::io::Error::other(
@@ -67,6 +70,7 @@ pub fn run_native_test() -> tauri::Result<()> {
         id: run.id.clone(),
         simulator,
         openwrt_lab,
+        workflow_lab,
         _owner: Box::new(run),
     }))
 }
@@ -108,10 +112,16 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
         .setup(move |app| {
             let simulation_enabled = profile.as_ref().is_some_and(|p| p.simulator);
             let openwrt_lab_enabled = profile.as_ref().is_some_and(|p| p.openwrt_lab);
+            let workflow_lab_enabled = profile.as_ref().is_some_and(|p| p.workflow_lab);
             let simulation_owner = profile.as_ref().map(|p| p.id.clone()).unwrap_or_default();
             let test_profile = profile.as_ref().map(|p| domain::NativeTestInfo {
                 run_id: p.id.clone(),
-                discovery_source: "windows_observed".into(),
+                discovery_source: if workflow_lab_enabled {
+                    "synthetic_workflow_fixture"
+                } else {
+                    "windows_observed"
+                }
+                .into(),
                 simulated_adapters: false,
                 simulation_available: if simulation_enabled { Some(true) } else { None },
             });
@@ -176,6 +186,20 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
                 .lock()
                 .map_err(|_| std::io::Error::other("Workspace lock unavailable"))?
                 .record_startup()?;
+            #[cfg(feature = "native-test-profile")]
+            let discovery = if workflow_lab_enabled {
+                let snapshot = library::workflow::lab::seed(
+                    &mut *repository
+                        .lock()
+                        .map_err(|_| std::io::Error::other("Workspace lock unavailable"))?,
+                    connection::now(),
+                )
+                .map_err(std::io::Error::other)?;
+                discovery::DiscoveryService::workflow_lab(snapshot)
+            } else {
+                discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?
+            };
+            #[cfg(not(feature = "native-test-profile"))]
             let discovery =
                 discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
             app.manage(discovery);
@@ -189,6 +213,8 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            library::workflow::ipc::get_device_workflow,
+            library::workflow::ipc::start_device_firmware_acquisition,
             library::ipc::list_official_sources,
             library::ipc::start_official_download,
             library::ipc::get_official_provenance,

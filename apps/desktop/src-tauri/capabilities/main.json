@@ -9,6 +9,8 @@
     "windows"
   ],
   "permissions": [
+    "allow-get-device-workflow",
+    "allow-start-device-firmware-acquisition",
     "allow-list-official-sources",
     "allow-start-official-download",
     "allow-get-official-provenance",

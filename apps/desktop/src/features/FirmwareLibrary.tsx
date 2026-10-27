@@ -12,13 +12,14 @@ import { useWorkspace, isActiveJob } from "../lib/workspace-context";
 import type { ArtifactDetails,FileSelection,JobRecord,LibraryPage } from "../types/library";
 import { JobRows } from "./Jobs";
 const human=(s:string)=>s.replaceAll("_"," ");
+const linkedArtifact=()=>window.location.hash.match(/^#firmware\/([a-f0-9]{64})$/)?.[1]??"";
 export function FirmwareLibrary({desktop}:{desktop:boolean}) {
   const [officialOpen,setOfficialOpen]=useState(false);
   const [analysisOpen,setAnalysisOpen]=useState(false);
   const workspace=useWorkspace();
   const [kind,setKind]=useState(()=>sessionStorage.getItem("obtainer-library-type")??"");const [sort,setSort]=useState("newest");const [customize,setCustomize]=useState(false);const [deleting,setDeleting]=useState(false);const [fileBusy,setFileBusy]=useState(false);
   const revision=useLibraryFeed(desktop);const [page,setPage]=useState<LibraryPage|null>(null);const [search,setSearch]=useState("");const [integrity,setIntegrity]=useState("");const [source,setSource]=useState("");const [from,setFrom]=useState("");const [to,setTo]=useState("");const [index,setIndex]=useState(0);
-  const [selection,setSelection]=useState<FileSelection|null>(null);const [description,setDescription]=useState("");const [choosing,setChoosing]=useState(false);const [submitting,setSubmitting]=useState(false);const [error,setError]=useState<string|null>(null);const [listError,setListError]=useState<string|null>(null);const [notice,setNotice]=useState<string|null>(null);const [selected,setSelected]=useState("");const [details,setDetails]=useState<ArtifactDetails|null>(null);const [deviceModels,setDeviceModels]=useState<Record<string,string>>({});const [jobs,setJobs]=useState<JobRecord[]>([]);const [,setJobId]=useState("");const [refresh,setRefresh]=useState(0);
+  const [selection,setSelection]=useState<FileSelection|null>(null);const [description,setDescription]=useState("");const [choosing,setChoosing]=useState(false);const [submitting,setSubmitting]=useState(false);const [error,setError]=useState<string|null>(null);const [listError,setListError]=useState<string|null>(null);const [notice,setNotice]=useState<string|null>(null);const [selected,setSelected]=useState(linkedArtifact);const [details,setDetails]=useState<ArtifactDetails|null>(null);const [deviceModels,setDeviceModels]=useState<Record<string,string>>({});const [jobs,setJobs]=useState<JobRecord[]>([]);const [,setJobId]=useState("");const [refresh,setRefresh]=useState(0);
   const active=useRef(false);const chooseRun=useRef(0);
   useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
   useEffect(()=>()=>{if(selection)void discardFirmwareSelection(selection.ticket).catch(()=>{});},[selection]);

@@ -3,9 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { Devices } from "../features/Devices";
 import type { DiscoverySnapshot } from "../types/contracts";
+import { workflowFixture } from "./workflow-fixture";
 
-const checks = vi.hoisted(() => ({routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn(),menuApprove:vi.fn(),menuRead:vi.fn(),challengeApprove:vi.fn(),challengeRead:vi.fn()}));
-vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export,approveStaticMenu:checks.menuApprove,readStaticMenu:checks.menuRead,approveAuthChallenge:checks.challengeApprove,readAuthChallenge:checks.challengeRead}));
+const checks = vi.hoisted(() => ({workflow:vi.fn(),routes: vi.fn(), cancel: vi.fn(), approve: vi.fn(), export: vi.fn(),menuApprove:vi.fn(),menuRead:vi.fn(),challengeApprove:vi.fn(),challengeRead:vi.fn()}));
+vi.mock("../lib/backend", async original => ({...await original<typeof import("../lib/backend")>(), getDeviceWorkflow:checks.workflow, approveFirmwareRouteProbe: checks.approve, discoverFirmwareRoutes: checks.routes, cancelFirmwareRouteDiscovery: checks.cancel, exportAcquisitionDiagnostics: checks.export,approveStaticMenu:checks.menuApprove,readStaticMenu:checks.menuRead,approveAuthChallenge:checks.challengeApprove,readAuthChallenge:checks.challengeRead}));
 const stageIds = ["detected","exact_identity","management_api","official_image","firmware_export","physical_read","firmware_acquired","filesystem_extracted","customization","rebuild","installation"] as const;
 const defaultStages = stageIds.map(id => ({id,state:id === "detected" ? "observed" : "not_implemented",reason:"No implementation is available."}));
 function result() {
@@ -13,6 +14,7 @@ function result() {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  checks.workflow.mockImplementation(async()=>workflowFixture(inventory.devices[0]));
   checks.approve.mockResolvedValue("c".repeat(32)); checks.routes.mockResolvedValue(result());checks.cancel.mockResolvedValue(undefined);checks.export.mockResolvedValue(true);
 });
 it("Stage 4 displays unknown DHCP separately from DNS and labels plain HTTP observations",async()=>{

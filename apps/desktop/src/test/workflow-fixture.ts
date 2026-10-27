@@ -1,0 +1,7 @@
+// Synthetic UI contract fixture. It is not hardware evidence.
+import type { Device } from "../types/contracts";
+import type { DeviceWorkflow } from "../types/workflow";
+export function workflowFixture(device:Device,revision=4):DeviceWorkflow {
+  const stages=["discovery","identification","acquisition","analysis","extraction","customization","rebuild","installation","recovery"].map(id=>({id,state:"unknown" as const,reasonCode:"NO_QUALIFIED_SOURCE",reason:"No qualified firmware source for this exact device and revision.",evidence:[],nextAction:"Qualify an approved identity reader and firmware source.",executable:false}));
+  return {device,binding:{deviceId:device.id,revision,identityDigest:"d".repeat(64),expiresAt:Date.now()+60000},identity:{confidence:"unverified",verifiedManufacturer:null,verifiedFirmwareFamily:null,verifiedModel:null,verifiedHardwareRevision:null,verifiedFirmware:null,reportedModel:"Reported MiFi",evidence:[]},selectedProfile:null,adapter:null,stages,strategies:(["official_image","documented_export","authorized_storage_read","manufacturer_package","external_laboratory"] as const).map(strategy=>({strategy,name:strategy,provenanceKind:strategy,capability:{state:"not_implemented",reason:"No qualified route.",evidence:[],missingRequirements:["Exact identity"],executable:false}})),officialSources:[],artifacts:[],jobs:[],configuration:[{...stages[0],id:"router_dns"}]};
+}

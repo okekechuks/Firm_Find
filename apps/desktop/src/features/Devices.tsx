@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Search, Usb, RefreshCw, X, LockKeyhole } from "lucide-react";
+import { Search, Usb, RefreshCw, X } from "lucide-react";
+import { DeviceFirmwareWorkflow } from "../components/DeviceFirmwareWorkflow";
 import { deviceStatus } from "../lib/device-status";
 import { approveAuthChallenge, readAuthChallenge, approveStaticMenu, readStaticMenu, approveFirmwareRouteProbe, cancelFirmwareRouteDiscovery, discoverFirmwareRoutes, errorMessage, exportAcquisitionDiagnostics } from "../lib/backend";
 import type { Device, DiscoverySnapshot } from "../types/contracts";
@@ -179,6 +180,7 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
     </section> : null}
     {message ? <p role={state === "error" ? "alert" : "status"}>{message}</p> : null}
     {!device.connected ? <p role="status">Device disconnected. Reconnect it to verify compatibility.</p> : null}
-    <div className="dialog-actions">{state === "checking" ? <button className="secondary-button" onClick={() => void cancelFirmwareRouteDiscovery(device.id).catch(e => setMessage(errorMessage(e)))}>Cancel check</button> : null}<button className="secondary-button" disabled={!device.connected || state === "checking"} onClick={() => void verify()}>Check Compatibility</button><button className="primary-button" disabled={!report?.canObtain}><LockKeyhole size={15}/>Obtain Firmware</button></div>
+    <div className="dialog-actions">{state === "checking" ? <button className="secondary-button" onClick={() => void cancelFirmwareRouteDiscovery(device.id).catch(e => setMessage(errorMessage(e)))}>Cancel check</button> : null}<button className="secondary-button" disabled={!device.connected || state === "checking"} onClick={() => void verify()}>Check Compatibility</button></div>
+    <DeviceFirmwareWorkflow deviceId={device.id} revision={revision} connected={device.connected}/>
   </dialog>;
 }

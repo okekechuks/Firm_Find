@@ -1,6 +1,8 @@
 fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+            "get_device_workflow",
+            "start_device_firmware_acquisition",
             "list_official_sources",
             "start_official_download",
             "get_official_provenance",

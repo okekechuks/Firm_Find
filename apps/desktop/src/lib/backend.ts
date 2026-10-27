@@ -1,4 +1,5 @@
 import { extractionReportSchema } from "../types/extraction";
+import { workflowSchema, type WorkflowBinding } from "../types/workflow";
 import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema,importSchema } from "../types/library";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { officialSourceSchema,analysisReportSchema } from "../types/official";
@@ -18,6 +19,14 @@ import {
 
 export function hasDesktopBackend(): boolean {
   return isTauri();
+}
+export async function getDeviceWorkflow(deviceId:string) {
+  requireDesktop();const result=workflowSchema.parse(await invoke("get_device_workflow",{deviceId}));
+  if(result.device.id!==deviceId)throw new Error("Workflow belongs to another device.");
+  return result;
+}
+export async function startDeviceFirmwareAcquisition(binding:WorkflowBinding,sourceId:string,confirmed:boolean) {
+  requireDesktop();return jobSchema.parse(await invoke("start_device_firmware_acquisition",{binding,sourceId,confirmed}));
 }
 
 export async function listOfficialSources() {

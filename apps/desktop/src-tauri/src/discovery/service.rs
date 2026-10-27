@@ -25,6 +25,17 @@ pub struct DiscoveryService {
 }
 
 impl DiscoveryService {
+    #[cfg(feature = "native-test-profile")]
+    pub(crate) fn workflow_lab(snapshot: DiscoverySnapshot) -> Self {
+        let (sender, _receiver) = mpsc::sync_channel(1);
+        Self {
+            snapshot: Arc::new(Mutex::new(snapshot)),
+            sender,
+            stopped: Arc::new(AtomicBool::new(false)),
+            worker: Mutex::new(None),
+            generation: Arc::new(Mutex::new(0)),
+        }
+    }
     pub fn start(
         app: tauri::AppHandle,
         repository: Arc<Mutex<Repository>>,

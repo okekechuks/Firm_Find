@@ -8,6 +8,7 @@ pub mod ipc;
 mod manifest_contract;
 pub mod official;
 pub mod types;
+pub mod workflow;
 use crate::{connection::now, storage::Repository};
 use files::*;
 use std::{
@@ -42,6 +43,7 @@ enum Task {
     Official {
         job: String,
         source: Box<official::QualifiedSource>,
+        fence: Option<workflow::AcquisitionFence>,
     },
     Import {
         job: String,
@@ -99,6 +101,14 @@ impl LibraryService {
         source_id: &str,
         confirm_exact_target: bool,
     ) -> Result<JobRecord> {
+        self.queue_official(source_id, confirm_exact_target, None)
+    }
+    fn queue_official(
+        &self,
+        source_id: &str,
+        confirm_exact_target: bool,
+        fence: Option<workflow::AcquisitionFence>,
+    ) -> Result<JobRecord> {
         self.ensure_open()?;
         let source = official::qualify(source_id, confirm_exact_target)?;
         let entry = source.entry();
@@ -111,6 +121,19 @@ impl LibraryService {
         free_space(&self.inner.vault.root, entry.size_bytes)?;
         let mut controls = lock(&self.inner.controls)?;
         self.ensure_open()?;
+        if let Some(fence) = &fence {
+            if let Some(existing) = lock(&self.inner.repo)?
+                .workflow_jobs(&fence.binding.device_id)?
+                .into_iter()
+                .find(|j| {
+                    j.kind == "official_image_download"
+                        && j.related_artifact.as_deref() == Some(&entry.sha256)
+                        && !j.status.terminal()
+                })
+            {
+                return Ok(existing);
+            }
+        }
         if controls.len() >= 16 {
             return Err(LibraryError::new(
                 "QUEUE_FULL",
@@ -126,9 +149,18 @@ impl LibraryService {
                 filename: Some(&entry.filename),
                 description: Some(&entry.id),
                 hash: Some(&entry.sha256),
-                ..Default::default()
+                device: fence.as_ref().map(|f| f.binding.device_id.as_str()),
             },
         )?;
+        if let Some(fence) = &fence {
+            let receipt = serde_json::to_string(&fence.binding).map_err(|_| {
+                LibraryError::new("INVALID_BINDING", "Cannot retain workflow binding.")
+            })?;
+            lock(&self.inner.repo)?.connection.execute(
+                "UPDATE job_details SET recovery_info=?2 WHERE job_id=?1",
+                rusqlite::params![id, receipt],
+            )?;
+        }
         controls.insert(id.clone(), Arc::new(AtomicBool::new(false)));
         if self
             .inner
@@ -136,6 +168,7 @@ impl LibraryService {
             .try_send(Task::Official {
                 job: id.clone(),
                 source: Box::new(source),
+                fence,
             })
             .is_err()
         {
@@ -639,7 +672,9 @@ impl Inner {
             match task {
                 Task::Extract { hash, .. } => self.run_extraction(&id, &hash, &flag),
                 Task::Analyze { hash, .. } => self.run_analysis(&id, &hash, &flag),
-                Task::Official { source, .. } => self.run_official(&id, *source, &flag),
+                Task::Official { source, fence, .. } => {
+                    self.run_official(&id, *source, &flag, fence)
+                }
                 Task::Import { selection, .. } => self.run_import(&id, selection, &flag),
                 Task::Verify { hash, .. } => self.run_verify(&id, &hash, &flag),
                 Task::Backup { hash, .. } => self.run_backup(&id, &hash, &flag),
@@ -785,8 +820,14 @@ impl Inner {
         id: &str,
         source: official::QualifiedSource,
         cancel: &AtomicBool,
+        acquisition_fence: Option<workflow::AcquisitionFence>,
     ) -> Result<()> {
         let entry = source.entry();
+        if let Some(fence) = &acquisition_fence {
+            let repo = lock(&self.repo)?;
+            let snapshot = lock(&fence.live)?;
+            workflow::validate_acquisition(&repo, &snapshot, &fence.binding, &entry.id, now())?;
+        }
         let stage = self.vault.stage(id)?;
         let mut output = new_file(&stage)?;
         let mut last = Instant::now();
@@ -822,7 +863,18 @@ impl Inner {
         source.verify(&proof)?;
         let _fence = lock(&self.finalize)?;
         cancelled(cancel)?;
-        lock(&self.repo)?.commit_official_download(id, &proof, duplicate, &source)?;
+        let mut repo = lock(&self.repo)?;
+        // Repository then inventory is the established publication lock order.
+        // Hold both through the transaction so disconnect cannot race admission.
+        let inventory = acquisition_fence
+            .as_ref()
+            .map(|f| lock(&f.live))
+            .transpose()?;
+        if let (Some(fence), Some(snapshot)) = (&acquisition_fence, &inventory) {
+            workflow::validate_acquisition(&repo, snapshot, &fence.binding, &entry.id, now())?;
+        }
+        cancelled(cancel)?;
+        repo.commit_official_download(id, &proof, duplicate, &source)?;
         Ok(())
     }
     fn mark_bad_duplicate(

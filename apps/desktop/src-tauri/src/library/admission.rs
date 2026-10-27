@@ -123,7 +123,7 @@ pub(super) fn admit_official(
     }
     let occurrence = format!("official:{job}");
     let reference = serde_json::to_string(entry).map_err(|_| conflict())?;
-    tx.execute("INSERT INTO artifact_occurrences(occurrence_id,blob_sha256,artifact_class,provenance_kind,source_reference,acquisition_occurrence_id,job_id,collected_at) VALUES(?1,?2,'official_image_download','official_vendor_download',?3,?1,?4,?5)",params![occurrence,proof.hash(),reference,job,now()])?;
+    tx.execute("INSERT INTO artifact_occurrences(occurrence_id,blob_sha256,artifact_class,provenance_kind,source_reference,acquisition_occurrence_id,device_id,job_id,collected_at) SELECT ?1,?2,'official_image_download','official_vendor_download',?3,?1,(SELECT id FROM devices WHERE id=d.device_id),?4,?5 FROM job_details d WHERE d.job_id=?4",params![occurrence,proof.hash(),reference,job,now()])?;
     let member: bool = tx.query_row(
         "SELECT EXISTS(SELECT 1 FROM firmware_artifacts WHERE sha256=?1)",
         [proof.hash()],
