@@ -52,6 +52,13 @@ export async function verifyUniversalWorkflow(client,{profile,evidence,record,sc
   for(const e of report.entries.filter(e=>e.kind==='file'))assert.equal(hash(bytes.subarray(e.offset,e.offset+e.size)),e.sha256);
   await until(()=>evaluate("document.querySelector('.extraction-section')?.innerText.includes('Browse Extracted Files')"),'Workflow tree not rendered');await click('etc/');await click('openwrt_release');
   await until(()=>evaluate("document.querySelector('.extraction-preview')?.innerText.includes('25.12.6')"),'Extracted firmware text not rendered');
+  // A real integrity job emits background Library events. Those must refresh
+  // state without unmounting the user's existing file browser/preview.
+  const integrity=await invoke('verify_firmware_integrity',{sha256:source.sha256});
+  await until(async()=>{const job=await invoke('get_library_job',{id:integrity.id});assert.notEqual(job.status,'failed');return job.status==='completed';},'Integrity background job did not finish');
+  await until(()=>evaluate("Array.from(document.querySelectorAll('.notification-toast')).some(t=>t.innerText.includes('Integrity verification complete'))"),'Background event was not consumed by React');
+  await until(()=>evaluate("document.querySelector('[aria-label=\"Device firmware workflow\"]').getAttribute('aria-busy')==='false'"),'Background workflow reload did not finish');
+  assert(await evaluate("document.querySelector('.extraction-preview')?.innerText.includes('25.12.6')"),'Background refresh destroyed the selected file preview');
   await evaluate("document.querySelector('.extraction-preview').scrollIntoView({block:'center'})");
   await screenshot(reopened?'workflow-reopened-tree':'workflow-real-tree');
   workflow=await invoke('get_device_workflow',{deviceId:id});assert(workflow.artifacts[0].extracted);assert(workflow.artifacts[0].analysis);assert.equal(workflow.stages.find(s=>s.id==='rebuild').executable,false);

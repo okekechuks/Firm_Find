@@ -5,6 +5,7 @@ import { DeviceFirmwareWorkflow } from "../components/DeviceFirmwareWorkflow";
 import { workflowFixture } from "./workflow-fixture";
 import type { Device } from "../types/contracts";
 import type { DeviceWorkflow } from "../types/workflow";
+import { LibraryRevisionContext } from "../lib/workspace-context";
 const api=vi.hoisted(()=>({get:vi.fn(),acquire:vi.fn(),analysis:vi.fn(),cancel:vi.fn()}));
 vi.mock("../lib/backend",async original=>({...await original<typeof import("../lib/backend")>(),getDeviceWorkflow:api.get,startDeviceFirmwareAcquisition:api.acquire,startFirmwareAnalysis:api.analysis,cancelLibraryJob:api.cancel}));
 const unknown={state:"UNKNOWN" as const,controlPlane:null,canRead:false,canWrite:false,canVerify:false,canRollback:false,confidence:0,evidence:[]};
@@ -41,4 +42,17 @@ it("shows backend errors without claiming success or retrying a download",async(
   render(<DeviceFirmwareWorkflow deviceId={device.id} revision={4} connected/>);
   await user.click(await screen.findByRole("checkbox",{name:/Approve this exact target/}));await user.click(screen.getByRole("button",{name:"Obtain Firmware"}));
   expect(await screen.findByRole("alert")).toHaveTextContent("Binding expired");expect(api.acquire).toHaveBeenCalledTimes(1);
+});
+it("retains the current view during background refresh and clears consent for a changed binding",async()=>{
+  const w=qualified();api.get.mockResolvedValue(w);const user=userEvent.setup();
+  const view=render(<LibraryRevisionContext.Provider value={0}><DeviceFirmwareWorkflow deviceId={device.id} revision={4} connected/></LibraryRevisionContext.Provider>);
+  const checkbox=await screen.findByRole("checkbox",{name:/Approve this exact target/});await user.click(checkbox);
+  let finish!:(value:DeviceWorkflow)=>void;
+  api.get.mockReturnValueOnce(new Promise<DeviceWorkflow>(resolve=>{finish=resolve;}));
+  view.rerender(<LibraryRevisionContext.Provider value={1}><DeviceFirmwareWorkflow deviceId={device.id} revision={4} connected/></LibraryRevisionContext.Provider>);
+  await waitFor(()=>expect(api.get).toHaveBeenCalledTimes(2));
+  expect(checkbox).toBeInTheDocument();expect(checkbox).toBeChecked();
+  finish({...w,binding:{...w.binding,identityDigest:"e".repeat(64)}});
+  await waitFor(()=>expect(checkbox).not.toBeChecked());
+  expect(screen.getByRole("button",{name:"Obtain Firmware"})).toBeDisabled();expect(api.acquire).not.toHaveBeenCalled();
 });
