@@ -31,6 +31,8 @@ pub struct Stage {
     pub evidence: Vec<String>,
     pub next_action: String,
     pub executable: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub job: Option<JobRecord>,
 }
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -247,6 +249,7 @@ fn stage(
         evidence: evidence.to_vec(),
         next_action: next.into(),
         executable,
+        job: None,
     }
 }
 pub(super) fn validate_acquisition(
@@ -358,7 +361,7 @@ impl LibraryService {
             }
         }
         let a = artifacts.first();
-        let stages = vec![
+        let mut stages = vec![
             stage("discovery", if current(snapshot, &device, time) {CapabilityState::Observed} else {CapabilityState::Unknown}, "WINDOWS_OBSERVATION", "Windows inventory observes connection hardware; this is not verified router identity.", "Connect/power on device and refresh.", false, &ids),
             stage("identification", if identity.confidence == "verified" {CapabilityState::AvailableVerified} else {CapabilityState::Unknown}, "EXACT_IDENTITY_REQUIRED", "Observed and user-reported fields remain separate from trusted identity. Conflicting or missing revisions block acquisition.", "Qualify an approved exact identity reader for this firmware family.", false, &ids),
             stage("acquisition", if !artifacts.is_empty() {CapabilityState::CompletedVerified} else if !sources.is_empty() {CapabilityState::RequiresApproval} else {CapabilityState::Unknown}, if sources.is_empty() {"NO_QUALIFIED_SOURCE"} else {"OFFICIAL_TARGET_IMAGE"}, "Official images, installed-device dumps, settings snapshots and imported files retain distinct provenance. No physical firmware-read route is enabled.", "Review exact source and explicitly approve the public HTTPS download.", !sources.is_empty(), &ids),
@@ -370,6 +373,40 @@ impl LibraryService {
             stage("recovery", CapabilityState::Unknown, "RECOVERY_UNQUALIFIED", "No device-specific recovery route is qualified by this workflow.", "Document and independently qualify exact-hardware recovery.", false, &ids),
         ];
         let configuration = ["router_dns", "client_dns", "apn", "wifi_client_limit", "ussd", "modem_parameters", "overlay", "configuration_replacement", "packages", "filesystem_inputs", "preserved_partitions", "layout_constraints"].into_iter().map(|id| stage(id, CapabilityState::NotImplemented, "NO_WORKFLOW_EXECUTOR", "No qualified executor for this device/image. Live configuration and firmware customization require separate authorization.", "Qualify the exact platform capability and its verification/recovery contract.", false, &ids)).collect();
+        for stage in &mut stages {
+            let kind = match stage.id.as_str() {
+                "acquisition" => "official_image_download",
+                "analysis" => "firmware_analysis",
+                "extraction" => "firmware_extraction",
+                _ => continue,
+            };
+            stage.job = jobs
+                .iter()
+                .find(|job| {
+                    job.kind == kind
+                        && if kind == "official_image_download" {
+                            job.device_id.as_deref() == Some(id)
+                        } else {
+                            a.is_some_and(|a| {
+                                job.related_artifact.as_deref() == Some(&a.artifact.sha256)
+                            })
+                        }
+                })
+                .cloned();
+            if let Some(job) = &stage.job {
+                if matches!(job.status, JobStatus::Failed | JobStatus::Cancelled)
+                    && stage.state != CapabilityState::CompletedVerified
+                {
+                    stage.state = CapabilityState::Failed;
+                    stage.reason_code = job
+                        .error_code
+                        .clone()
+                        .unwrap_or_else(|| job.status.text().to_uppercase());
+                    stage.reason.clone_from(&job.message);
+                    stage.next_action = "Resolve the reported cause, refresh current evidence and explicitly retry. Prior verified outputs remain preserved.".into();
+                }
+            }
+        }
         Ok(WorkflowRecord {
             device,
             binding,

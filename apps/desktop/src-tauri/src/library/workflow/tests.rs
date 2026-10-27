@@ -145,3 +145,73 @@ fn denial_stale_approval_and_protected_host_create_no_job_or_artifact() {
     assert!(result.configuration.iter().all(|s| !s.executable));
     service.stop();
 }
+#[test]
+fn stage_progress_and_failure_are_projected_from_durable_jobs() {
+    let (dir, repo, snapshot) = setup();
+    let repo = Arc::new(Mutex::new(repo));
+    let service = LibraryService::start(
+        repo.clone(),
+        dir.path().into(),
+        DEFAULT_MAX,
+        Arc::new(|_| {}),
+    )
+    .unwrap();
+    // Synthetic job metadata only: no task, transport or successful artifact.
+    let id = "2".repeat(32);
+    lock(&repo)
+        .unwrap()
+        .create_library_job(
+            &id,
+            "official_image_download",
+            1,
+            JobInput {
+                device: Some(lab::ID),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    lock(&repo)
+        .unwrap()
+        .library_transition(&id, JobStatus::Running, None)
+        .unwrap();
+    let value = serde_json::to_value(
+        service
+            .device_workflow(&snapshot, lab::ID, &profiles::Registry::bundled())
+            .unwrap(),
+    )
+    .unwrap();
+    let acquisition = value["stages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["id"] == "acquisition")
+        .unwrap();
+    assert_eq!(acquisition["job"]["status"], "running");
+    lock(&repo)
+        .unwrap()
+        .library_transition(
+            &id,
+            JobStatus::Failed,
+            Some(&LibraryError::new(
+                "SYNTHETIC_INTERRUPTION",
+                "Synthetic interrupted operation; no image admitted.",
+            )),
+        )
+        .unwrap();
+    let value = serde_json::to_value(
+        service
+            .device_workflow(&snapshot, lab::ID, &profiles::Registry::bundled())
+            .unwrap(),
+    )
+    .unwrap();
+    let acquisition = value["stages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["id"] == "acquisition")
+        .unwrap();
+    assert_eq!(acquisition["state"], "failed");
+    assert_eq!(acquisition["reasonCode"], "SYNTHETIC_INTERRUPTION");
+    assert!(value["artifacts"].as_array().unwrap().is_empty());
+    service.stop();
+}

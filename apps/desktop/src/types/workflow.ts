@@ -6,7 +6,7 @@ import { artifactSchema, jobSchema } from "./library";
 import { officialSourceSchema, analysisReportSchema } from "./official";
 const hash=z.string().regex(/^[a-f0-9]{64}$/);
 export const workflowBindingSchema=z.object({deviceId:hash,revision:z.number().int().nonnegative(),identityDigest:hash,expiresAt:z.number().int().nonnegative()}).strict();
-const stage=z.object({id:z.string(),state:acquisitionStateSchema,reasonCode:z.string(),reason:z.string(),evidence:z.array(z.string()).max(256),nextAction:z.string(),executable:z.boolean()}).strict();
+const stage=z.object({id:z.string(),state:acquisitionStateSchema,reasonCode:z.string(),reason:z.string(),evidence:z.array(z.string()).max(256),nextAction:z.string(),executable:z.boolean(),job:jobSchema.optional()}).strict();
 export const workflowSchema=z.object({
   device:discoverySchema.shape.devices.element,binding:workflowBindingSchema,
   identity:z.object({confidence:z.enum(["conflicting","verified","unverified"]),verifiedManufacturer:z.string().nullable(),verifiedFirmwareFamily:z.string().nullable(),verifiedModel:z.string().nullable(),verifiedHardwareRevision:z.string().nullable(),verifiedFirmware:z.string().nullable(),reportedModel:z.string().nullable(),evidence:z.array(evidenceSchema).max(256)}).strict(),

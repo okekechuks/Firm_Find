@@ -30,6 +30,7 @@ export async function verifyUniversalWorkflow(client,{profile,evidence,record,sc
     await until(async()=>{workflow=await invoke('get_device_workflow',{deviceId:id});return Boolean(workflow.artifacts[0]?.analysis);},'Automatic bounded analysis did not complete');
     assert.equal(workflow.artifacts[0].source.sha256,source.sha256);assert.equal(workflow.artifacts[0].artifact.artifactClass,'official_image_download');assert.equal(workflow.artifacts[0].artifact.associatedDeviceId,id);
     await until(()=>evaluate("Array.from(document.querySelectorAll('dialog button')).some(b=>b.textContent.trim()==='Extract Contents'&&!b.disabled)"),'Direct extraction action not available');
+    await evaluate("document.querySelector('[aria-label=\"Acquired firmware\"]').scrollIntoView({block:'start'})");
     await screenshot('workflow-acquired-analyzed');
     await click('Extract Contents');
     await until(()=>evaluate("Array.from(document.querySelectorAll('dialog button')).some(b=>b.textContent.trim()==='Cancel extraction'&&!b.disabled)"),'Extraction Cancel not rendered');
@@ -51,8 +52,10 @@ export async function verifyUniversalWorkflow(client,{profile,evidence,record,sc
   for(const e of report.entries.filter(e=>e.kind==='file'))assert.equal(hash(bytes.subarray(e.offset,e.offset+e.size)),e.sha256);
   await until(()=>evaluate("document.querySelector('.extraction-section')?.innerText.includes('Browse Extracted Files')"),'Workflow tree not rendered');await click('etc/');await click('openwrt_release');
   await until(()=>evaluate("document.querySelector('.extraction-preview')?.innerText.includes('25.12.6')"),'Extracted firmware text not rendered');
+  await evaluate("document.querySelector('.extraction-preview').scrollIntoView({block:'center'})");
   await screenshot(reopened?'workflow-reopened-tree':'workflow-real-tree');
   workflow=await invoke('get_device_workflow',{deviceId:id});assert(workflow.artifacts[0].extracted);assert(workflow.artifacts[0].analysis);assert.equal(workflow.stages.find(s=>s.id==='rebuild').executable,false);
+  for(const stage of ['acquisition','analysis','extraction'])assert.equal(workflow.stages.find(s=>s.id===stage).job.status,'completed',stage);
   await writeFile(path.join(evidence,reopened?'workflow-restart.json':'workflow-completed.json'),JSON.stringify({workflow,sourceSha256:hash(original),manifestSha256,bundleSha256:hash(bytes),physicalDeviceSuccess:false},null,2));
   if(reopened) {
     await evaluate("document.querySelector('.device-firmware-workflow a').click()");
