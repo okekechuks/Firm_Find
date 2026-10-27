@@ -293,3 +293,48 @@ pub async fn relocate_firmware_library(
         .await
         .map_err(worker_error)?
 }
+
+#[tauri::command]
+pub async fn start_firmware_extraction(
+    sha256: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<JobRecord> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.extract(&sha256))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn get_firmware_extraction(
+    sha256: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<Option<extraction::ExtractionReport>> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.extraction_report(&sha256))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn read_extracted_text(
+    sha256: String,
+    path: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<String> {
+    let s = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || s.extraction_text(&sha256, &path))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
+pub async fn export_extracted_files(
+    sha256: String,
+    paths: Vec<String>,
+    app: tauri::AppHandle,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<bool> {
+    let s = service.inner().clone();
+    let hwnd = owner(&app);
+    tauri::async_runtime::spawn_blocking(move || s.export_extraction(&sha256, &paths, hwnd))
+        .await
+        .map_err(worker_error)?
+}

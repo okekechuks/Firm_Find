@@ -1,5 +1,9 @@
 # OBTAINER phase status
 
+## Beta 2 filesystem extraction — native qualification in progress
+
+27 October 2026: isolated `feature/firmware-extraction` branch from Beta 1 source adds real SquashFS extraction, one gzip wrapper backend, persistent Library manifests, folder/text browsing and selected-file TAR export. Standalone isolated extraction of the actual Archer C7 v5 image produced 869 files and 128 directories; corrected native end-to-end verification and Windows CI remain release gates. [Actual evidence and initial failures](FIRMWARE_EXTRACTION_VERIFICATION.md). Beta 1 remains unchanged. No schema migration or physical firmware acquisition is claimed; MG11 firmware-read qualification and Phase 7.5 remain incomplete.
+
 ## Emergency beta — acquisition, analysis and DNS build demonstrated
 
 26 October 2026: core `cc2173e` has green [Windows CI 40313207839](https://github.com/okekechuks/Firm_Find/actions/runs/40313207839), both native builds, 351 standard/352 isolated Rust tests, 164 frontend tests and an actual isolated native download → Library → analysis → restart run. Twenty consecutive default-parallel standard runs at that exact commit passed (351 tests plus two doctests each). The separate Windows/WSL DNS helper then produced a genuine 6,947,110-byte Archer C7 v5 OpenWrt image, SHA-256 `51946949707eca1a71d4bc77511952b45f447bf8918933dfcdd7b0f15883f4b3`, with exact offline defaults readback and original input preserved. All 13 Linux helper tests pass; Windows runs four and explicitly skips nine Linux checks. Normal data stays byte-identical; zero physical requests. [Commands/results](RELEASE_SPRINT_VERIFICATION.md).

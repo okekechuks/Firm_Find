@@ -1,10 +1,12 @@
 ﻿# OBTAINER
 
-OBTAINER is a Windows app for understanding connected routers and MiFi devices and preserving firmware files. It can download selected official OpenWrt images, verify them, save them in Library and inspect their basic structure. A separate helper can build a DNS-customized image for one OpenWrt profile. Generic device extraction and flashing are unavailable.
+OBTAINER is a Windows app for understanding connected routers and MiFi devices and preserving firmware files. Download a supported official image or import your own, then analyze it, unpack a supported filesystem, browse its files and export files you select. A separate helper can build a DNS-customized image for one OpenWrt profile. Reading installed firmware from a generic connected device and flashing remain unavailable.
 
 ## Current status
 
-**Windows beta release sprint — 0.2.0-beta.1 candidate.** Library's Official Firmware popup supports exact OpenWrt 25.12.6 images for TP-Link Archer C7 v5/v2 and Ubiquiti UniFi AC Lite. A real firmware download, verification, Library save, analysis and restart have passed through the Windows interface. This downloads a release image; it does not extract the firmware installed on your connected device. [Current results and limitations](docs/RELEASE_SPRINT_VERIFICATION.md).
+**Filesystem extraction — 0.2.0-beta.2 candidate.** Library's analysis popup adds Extract Contents, folder browsing, small text previews and selected-file TAR export. Supported routes are SquashFS and a bounded gzip wrapper containing SquashFS. Extraction requires the qualified WSL Ubuntu tools; unavailable tools produce an explicit error. [Setup and limits](docs/FIRMWARE_EXTRACTION.md). Release qualification is recorded in [the extraction report](docs/FIRMWARE_EXTRACTION_VERIFICATION.md).
+
+Library's Official Firmware popup supports exact OpenWrt 25.12.6 images for TP-Link Archer C7 v5/v2 and Ubiquiti UniFi AC Lite. This downloads a release image; it does not read the firmware installed on your connected device. [Beta 1 results](docs/RELEASE_SPRINT_VERIFICATION.md).
 
 The analyzer identifies basic formats and saves a report without running or recursively unpacking the image. Connected-device support remains separate: unknown hardware stays unknown, and no firmware flashing is enabled. A real Archer C7 v5 DNS image build and offline readback passed through the separate [source helper](docs/DNS_BUILD_BETA.md); physical installation is unqualified and desktop Rebuild stays disabled. Installers are built and core Windows CI is green. Phase 7.5 is not marked complete. [Beta download and usage notes](docs/RELEASE_0_2_0_BETA_1.md).
 
@@ -20,7 +22,7 @@ The redesigned desktop has six sections: **Overview, Connected Devices, Library,
 
 You can preserve a verified backup of a Library image and restore a copy with `_DEFAULT` added to its name. Restoring never installs firmware on a router. Delete removes a selected item from its list while preserving stored bytes and history for recovery. Storage changes show a copy plan, verify the files and take effect after restart; previous files stay preserved.
 
-Device refresh, saved appearance, hot reload and restart recovery work. GUI implementation and verification details are in the [GUI report](docs/GUI_REDESIGN_VERIFICATION.md). General firmware extraction, desktop customization and installation remain future work; only the separate exact-target DNS helper is qualified at the software level. Storing a file does not establish that it is safe or compatible with a router.
+Device refresh, saved appearance, hot reload and restart recovery work. GUI implementation and verification details are in the [GUI report](docs/GUI_REDESIGN_VERIFICATION.md). Physical firmware acquisition, generic repacking and installation remain future work; the separate exact-target DNS helper is qualified at the software level. Unpacking a file does not establish that it is safe or compatible with a router.
 
 The [master plan](RFS_MASTER_PLAN.md), [phased roadmap](docs/IMPLEMENTATION_ROADMAP.md), and [phase tracker](docs/PHASE_STATUS.md) retain the supplied development sequence and existing project structure.
 

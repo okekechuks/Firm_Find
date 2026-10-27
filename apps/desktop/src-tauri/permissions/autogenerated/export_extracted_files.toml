@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-export-extracted-files"
+description = "Enables the export_extracted_files command without any pre-configured scope."
+commands.allow = ["export_extracted_files"]
+
+[[permission]]
+identifier = "deny-export-extracted-files"
+description = "Denies the export_extracted_files command without any pre-configured scope."
+commands.deny = ["export_extracted_files"]

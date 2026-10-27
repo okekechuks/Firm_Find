@@ -1587,3 +1587,80 @@ fn stage3_misaddressed_bytes_cannot_mint_published_blob_proof() {
     );
     assert_eq!(service.list(&LibraryQuery::default()).unwrap().total, 0);
 }
+
+#[test]
+fn extraction_blobs_and_reports_survive_library_relocation_without_firmware_admission() {
+    let (d, repo, s) = setup();
+    let original = completed(&s, &source(d.path(), "synthetic.bin", b"synthetic source"));
+    let hash = original.related_artifact.unwrap();
+    assert_eq!(
+        wait(&s, &s.analyze(&hash).unwrap().id).status,
+        JobStatus::Completed
+    );
+    // Synthetic non-firmware data blob with the same schema relationship as an extraction bundle.
+    let raw = b"synthetic unclassified extracted bytes";
+    let bundle_hash = format!("{:x}", Sha256::digest(raw));
+    fs::write(s.inner.vault.blob(&bundle_hash).unwrap().0, raw).unwrap();
+    repo.lock()
+        .unwrap()
+        .connection
+        .execute(
+            "INSERT INTO artifact_blobs VALUES(?1,?2)",
+            rusqlite::params![bundle_hash, raw.len()],
+        )
+        .unwrap();
+    let parent = d.path().join("relocation-with-derived-data");
+    fs::create_dir(&parent).unwrap();
+    let plan = s.plan_directory(&parent, Some(d.path())).unwrap();
+    assert_eq!(plan.file_count, 3);
+    assert_eq!(
+        wait(&s, &s.relocate(&plan.ticket, true).unwrap().id).status,
+        JobStatus::Completed
+    );
+    assert_eq!(
+        fs::read(Path::new(&plan.destination).join(Vault::key(&bundle_hash))).unwrap(),
+        raw
+    );
+    assert_eq!(
+        repo.lock()
+            .unwrap()
+            .connection
+            .query_row("SELECT COUNT(*) FROM firmware_artifacts", [], |r| r
+                .get::<_, u64>(0))
+            .unwrap(),
+        1
+    );
+    s.stop();
+    drop(s);
+    let reopened =
+        LibraryService::start(repo, d.path().join("data"), DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    assert!(reopened.analysis_report(&hash).unwrap().is_some());
+}
+#[test]
+fn repeated_extraction_start_reuses_pending_job_and_cancellation_is_supported() {
+    let (d, repo, s) = setup();
+    let original = completed(&s, &source(d.path(), "synthetic.bin", b"synthetic source"));
+    let hash = original.related_artifact.unwrap();
+    let id = nonce().unwrap();
+    repo.lock()
+        .unwrap()
+        .create_library_job(
+            &id,
+            "firmware_extraction",
+            16,
+            JobInput {
+                hash: Some(&hash),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(s.extract(&hash).unwrap().id, id);
+    assert!(s.cancel(&id).unwrap().cancel_requested);
+    s.stop();
+    drop(s);
+    let reopened =
+        LibraryService::start(repo, d.path().join("data"), DEFAULT_MAX, Arc::new(|_| {})).unwrap();
+    let job = reopened.job(&id).unwrap();
+    assert_eq!(job.status, JobStatus::Failed);
+    assert_eq!(job.error_code.as_deref(), Some("INTERRUPTED"));
+}

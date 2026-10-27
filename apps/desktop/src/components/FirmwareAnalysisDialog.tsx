@@ -1,3 +1,4 @@
+import { FirmwareExtraction } from "./FirmwareExtraction";
 import { useEffect,useRef,useState } from "react";
 import { X } from "lucide-react";
 import { errorMessage,getFirmwareAnalysis,getOfficialProvenance,startFirmwareAnalysis,cancelLibraryJob } from "../lib/backend";
@@ -20,10 +21,11 @@ export function FirmwareAnalysisDialog({artifact,jobs,onClose}:{artifact:Firmwar
     <div className="section-heading"><h2>Firmware analysis</h2><button className="icon-button" aria-label="Close firmware analysis" onClick={onClose}><X size={18}/></button></div>
     <p>{artifact.originalFilename} · {formatBytes(artifact.sizeBytes)}</p>
     {sources[0]?<p>Official target: {sources[0].vendor} {sources[0].model} {sources[0].revision} · OpenWrt {sources[0].version}</p>:null}
-    <p className="muted small">Bounded format inspection. Recursive extraction and image execution are disabled.</p>
+    <p className="muted small">Analyze identifies format signatures. Extract Contents unpacks supported filesystems separately.</p>
     {error?<p role="alert">{error}</p>:null}
     {report?<><dl><dt>Format</dt><dd>{report.format}</dd><dt>Inspected</dt><dd>{formatBytes(report.scannedBytes)} of {formatBytes(report.inputBytes)}{report.scanTruncated?" (scan capped)":""}</dd><dt>Sample entropy</dt><dd>{report.sampledEntropy.toFixed(3)} bits/byte</dd><dt>Analyzed</dt><dd>{new Date(report.analyzedAt).toLocaleString()}</dd></dl><details><summary>Observed format signatures ({report.regions.length})</summary><ul>{report.regions.map(item=><li key={`${item.offset}-${item.format}`}>{item.format} · offset {item.offset.toLocaleString()}</li>)}</ul></details><p>Hardware compatibility: unverified</p></>:<p>No analysis report yet.</p>}
     {job?<div role="status"><p>{job.message||"Analyzing…"}</p><progress aria-label="Firmware analysis progress" max={Math.max(job.totalBytes,1)} value={job.progressBytes}/></div>:null}
+    <FirmwareExtraction key={artifact.sha256} sha256={artifact.sha256} jobs={jobs}/>
     <div className="dialog-actions"><button className="secondary-button" onClick={onClose}>Close</button>{active?<button className="secondary-button" onClick={()=>void cancel()}>Cancel analysis</button>:<button className="primary-button" disabled={busy} onClick={()=>void run()}>{report?"Analyze again":"Analyze firmware"}</button>}</div>
   </section></dialog>;
 }

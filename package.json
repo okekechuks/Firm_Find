@@ -1,7 +1,7 @@
 {
   "name": "obtainer-workspace",
   "private": true,
-  "version": "0.2.0-beta.1",
+  "version": "0.2.0-beta.2",
   "type": "module",
   "workspaces": [
     "apps/desktop"
@@ -23,6 +23,8 @@
     "test:foundation": "node scripts/verify-foundation.mjs",
     "build:native-tests": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-native-tests.ps1",
     "tauri": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1",
-    "test:gui": "node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui"
+    "test:gui": "node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui",
+    "test:extraction-worker": "python -B scripts/test-firmware-extraction.py",
+    "test:extraction-native": "node scripts/verify-foundation.mjs --official-acquisition --firmware-extraction"
   }
 }
