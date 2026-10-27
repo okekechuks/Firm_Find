@@ -59,7 +59,9 @@ export async function verifyUniversalWorkflow(client,{profile,evidence,record,sc
   await until(()=>evaluate("Array.from(document.querySelectorAll('.notification-toast')).some(t=>t.innerText.includes('Integrity verification complete'))"),'Background event was not consumed by React');
   await until(()=>evaluate("document.querySelector('[aria-label=\"Device firmware workflow\"]').getAttribute('aria-busy')==='false'"),'Background workflow reload did not finish');
   assert(await evaluate("document.querySelector('.extraction-preview')?.innerText.includes('25.12.6')"),'Background refresh destroyed the selected file preview');
-  await evaluate("document.querySelector('.extraction-preview').scrollIntoView({block:'center'})");
+  const viewport=await evaluate("new Promise(resolve=>{const p=document.querySelector('.extraction-preview');p.scrollIntoView({block:'center',behavior:'instant'});requestAnimationFrame(()=>requestAnimationFrame(()=>{const r=p.getBoundingClientRect();resolve({connected:p.isConnected,top:r.top,bottom:r.bottom,width:r.width,height:r.height,viewportHeight:innerHeight,dialogScrollTop:document.querySelector('dialog').scrollTop,text:p.innerText});}));})");
+  assert(viewport.connected&&viewport.width>0&&viewport.height>0&&viewport.top>=0&&viewport.bottom<=viewport.viewportHeight,JSON.stringify(viewport));
+  await writeFile(path.join(evidence,reopened?'workflow-reopened-viewport.json':'workflow-viewport.json'),JSON.stringify(viewport,null,2));
   await screenshot(reopened?'workflow-reopened-tree':'workflow-real-tree');
   workflow=await invoke('get_device_workflow',{deviceId:id});assert(workflow.artifacts[0].extracted);assert(workflow.artifacts[0].analysis);assert.equal(workflow.stages.find(s=>s.id==='rebuild').executable,false);
   for(const stage of ['acquisition','analysis','extraction'])assert.equal(workflow.stages.find(s=>s.id===stage).job.status,'completed',stage);

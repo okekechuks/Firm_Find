@@ -1,16 +1,18 @@
 # OBTAINER phase status
 
-## Universal device-to-firmware workflow — implementation under verification
+## Universal device-to-firmware workflow — software integration verified; physical gates open
 
 27 October 2026: `feature/universal-firmware-workflow` connects selected-device evidence to unique qualified official sources, explicit approval, immutable associated Library admission, automatic bounded analysis and direct supported extraction/browsing. Persistent jobs/reports reconstruct progress after restart. Expired, conflicting, protected or changed-device authority fails closed; unsupported physical devices receive exact missing requirements. Customization/rebuild/install/recovery remain backend-disabled pending their independent qualifications. [Implementation and actual verification status](UNIVERSAL_FIRMWARE_WORKFLOW_VERIFICATION.md).
 
-Software fixture identity and genuine downloaded image tests are distinct from physical device success. H01–H05 acquisition remains unqualified. Phase 7.5 and the full product remain incomplete. Main remains at the healthy reviewed merge; no new release tag or production-readiness claim.
+Final runtime source `2dd43108feec5f588bbff3d3f5e012d4bb1c038a`: 379 standard/380 isolated Rust tests and two doctests per profile, 176 frontend tests, both Clippy profiles, formatting, lint, TypeScript/production frontend build and both optimized Windows executables pass. [CI 40586111702](https://github.com/okekechuks/Firm_Find/actions/runs/40586111702) is fully green. Actual isolated native device-view download → associated Library → automatic analysis → GUI Cancel/retry extraction → browsing/text → restart/direct Library link passed with independently checked original and all 869 file hashes. A visual audit caught a background-refresh reset; the corrected runtime preserves the selected preview during actual integrity-job events on both launches, with on-screen viewport and screenshot checks. Stage-level durable job states survived restart; normal data remained byte-identical. Broader native raw/gzip/TRX/resource/export regressions passed after fixing owned Save-dialog automation.
 
-## Independent Beta 2 review — P0 main restored, corrections under verification
+Software fixture identity and genuine downloaded image tests are distinct from physical device success. H01–H05 acquisition remains unqualified. Phase 7.5 and the full product remain incomplete. Main remains at `d5d0541`; new work is on the dedicated branch, with no merge, new release tag or production-readiness claim.
+
+## Independent Beta 2 review — P0 restored; extraction corrections qualified for review
 
 27 October 2026: invalid leading `+` removed in `653da84`; Beta 2 and main histories merged in `d5d05413d30c01f189968526be2ac80979387bd5` and main fast-forwarded without rewriting history. [Main CI 40524198759](https://github.com/okekechuks/Firm_Find/actions/runs/40524198759) passed both jobs and both Windows builds. Tags and all Beta 2 release assets are unchanged; release evidence links now use permanent `fb490ec…` URLs.
 
-Separate `fix/beta2-extraction-hardening` source qualifies maintained bubblewrap, a combined staging budget, export-name preflight and a narrow TRX v1 route. Final native/CI verification is underway; [correction details and current gates](BETA_2_REVIEW_CORRECTIONS.md). Physical MG11 challenge awaits current owner supervision; no installed firmware acquired. Phase 7.5 and the full project remain incomplete.
+Separate `fix/beta2-extraction-hardening` source qualifies maintained bubblewrap, a combined staging budget, export-name preflight and a narrow TRX v1 route. Standalone correction CI and integrated Windows/WSL native qualification passed; the new TRX route awaits independent acceptance. [Correction evidence, exact hashes, initial failures and current gates](BETA_2_REVIEW_CORRECTIONS.md). Physical MG11 challenge awaits current owner supervision; no installed firmware acquired. Phase 7.5 and the full project remain incomplete.
 
 ## Beta 2 filesystem extraction — native qualification passed
 
