@@ -43,37 +43,48 @@ $readyDeadline=[DateTime]::UtcNow.AddSeconds(15)
 $filenameHandle=[IntPtr]::Zero
 $edit=$null
 while([DateTime]::UtcNow -lt $readyDeadline){
- $filenameHandle=[ObtainerDialog]::GetDlgItem($handle,1148)
- if($filenameHandle -eq [IntPtr]::Zero){$filenameHandle=[ObtainerDialog]::FindControl($handle,1001,'Edit')}
- if($filenameHandle -ne [IntPtr]::Zero){break}
  $dialog=[Windows.Automation.AutomationElement]::FromHandle($handle)
  $all=$dialog.FindAll([Windows.Automation.TreeScope]::Descendants,[Windows.Automation.Condition]::TrueCondition)
  foreach($element in $all){
-  if($element.Current.ControlType -eq [Windows.Automation.ControlType]::Edit -and ($element.Current.Name -match '^File name' -or $element.Current.AutomationId -eq '1148')){$edit=$element;break}
+  if($element.Current.ControlType -eq [Windows.Automation.ControlType]::Edit -and ($element.Current.Name -match '^File name' -or $element.Current.AutomationId -in @('1148','1001'))){$edit=$element;break}
  }
  if($null -ne $edit){break}
+ $filenameHandle=[ObtainerDialog]::GetDlgItem($handle,1148)
+ if($filenameHandle -eq [IntPtr]::Zero){$filenameHandle=[ObtainerDialog]::FindControl($handle,1001,'Edit')}
+ if($filenameHandle -ne [IntPtr]::Zero){break}
  Start-Sleep -Milliseconds 150
 }
+$valueEntered=$false
 if($null -ne $edit){
  $pattern=$null
  if($edit.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern,[ref]$pattern)){
   ([Windows.Automation.ValuePattern]$pattern).SetValue($SelectedPath)
+  if(([Windows.Automation.ValuePattern]$pattern).Current.Value -ne $SelectedPath){throw 'Owned filename control did not retain the requested path'}
+  $valueEntered=$true
  }else{$filenameHandle=[IntPtr]$edit.Current.NativeWindowHandle}
 }
-if($filenameHandle -ne [IntPtr]::Zero){
+if(-not $valueEntered -and $filenameHandle -ne [IntPtr]::Zero){
  $combo=[ObtainerDialog]::FindWindowEx($filenameHandle,[IntPtr]::Zero,'ComboBox',$null)
  if($combo -ne [IntPtr]::Zero){$filenameHandle=$combo}
  $editHandle=[ObtainerDialog]::FindWindowEx($filenameHandle,[IntPtr]::Zero,'Edit',$null)
  if($editHandle -ne [IntPtr]::Zero){$filenameHandle=$editHandle}
  [void][ObtainerDialog]::SendMessage($filenameHandle,0x000C,[IntPtr]::Zero,$SelectedPath)
-}elseif($null -eq $edit){throw ('Native filename control did not become ready. '+[ObtainerDialog]::Children($handle))}
+}elseif(-not $valueEntered -and $null -eq $edit){throw ('Native filename control did not become ready. '+[ObtainerDialog]::Children($handle))}
 $button=[ObtainerDialog]::FindControl($handle,1,'Button')
 $openDeadline=[DateTime]::UtcNow.AddSeconds(10)
 while($button -ne [IntPtr]::Zero -and -not [ObtainerDialog]::IsWindowEnabled($button) -and [DateTime]::UtcNow -lt $openDeadline){Start-Sleep -Milliseconds 50}
 if($button -ne [IntPtr]::Zero -and -not [ObtainerDialog]::IsWindowEnabled($button)){throw 'Owned native Open/Save button did not become enabled'}
-# Send the owned dialog its default IDOK command; acknowledge closure rather than
-# treating a queued child-button click as proof of a completed selection.
-$invoked=[ObtainerDialog]::PostMessage($handle,0x0111,[IntPtr]1,$button)
+# Modern DirectUI dialogs own their command action. Invoke the actual owned
+# Open/Save control rather than synthesizing an IDOK notification to its parent.
+$invoked=$false
+if($button -ne [IntPtr]::Zero){
+ $buttonElement=[Windows.Automation.AutomationElement]::FromHandle($button)
+ $invokePattern=$null
+ if($buttonElement.TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern,[ref]$invokePattern)){
+  ([Windows.Automation.InvokePattern]$invokePattern).Invoke()
+  $invoked=$true
+ }else{$invoked=[ObtainerDialog]::PostMessage($button,0x00F5,[IntPtr]::Zero,[IntPtr]::Zero)}
+}
 if(-not $invoked){throw 'Native Open/Save could not be invoked'}
 $closeDeadline=[DateTime]::UtcNow.AddSeconds(10)
 while([ObtainerDialog]::IsWindow($handle) -and [DateTime]::UtcNow -lt $closeDeadline){Start-Sleep -Milliseconds 50}
