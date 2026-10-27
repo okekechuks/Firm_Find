@@ -411,7 +411,7 @@ impl LibraryService {
         drop(test);
         fs::remove_file(probe)?;
         let repo = lock(&self.inner.repo)?;
-        let (count,bytes)=repo.connection.query_row("SELECT COUNT(*),COALESCE(SUM(a.size_bytes),0) FROM firmware_artifacts a JOIN artifact_details d USING(sha256) WHERE d.storage_key<>''",[],|r|Ok((r.get(0)?,r.get(1)?)))?;
+        let (count,bytes)=repo.connection.query_row("SELECT COUNT(*),COALESCE(SUM(a.size_bytes),0) FROM artifact_blobs a LEFT JOIN artifact_details d USING(sha256) WHERE (d.sha256 IS NULL OR d.storage_key<>'')",[],|r|Ok((r.get(0)?,r.get(1)?)))?;
         drop(repo);
         free_space(folder, bytes)?;
         let plan = StoragePlan {
@@ -460,7 +460,7 @@ impl LibraryService {
             })?;
         let current = {
             let repo = lock(&self.inner.repo)?;
-            repo.connection.query_row("SELECT COUNT(*),COALESCE(SUM(a.size_bytes),0) FROM firmware_artifacts a JOIN artifact_details d USING(sha256) WHERE d.storage_key<>''",[],|r|Ok((r.get::<_,u64>(0)?,r.get::<_,u64>(1)?)))?
+            repo.connection.query_row("SELECT COUNT(*),COALESCE(SUM(a.size_bytes),0) FROM artifact_blobs a LEFT JOIN artifact_details d USING(sha256) WHERE (d.sha256 IS NULL OR d.storage_key<>'')",[],|r|Ok((r.get::<_,u64>(0)?,r.get::<_,u64>(1)?)))?
         };
         if current != (plan.file_count, plan.bytes) {
             return Err(LibraryError::new("PLAN_CHANGED","Library contents changed. Select the destination again to review an updated copy plan."));
@@ -590,7 +590,7 @@ impl Inner {
         target.sync_all()?;
         drop(target);
         self.progress(id, 0, size, "verifying")?;
-        let (_lease, hash, n) = hash_file(stage, self.max, cancel, |bytes| {
+        let (_lease, hash, n) = hash_file(stage, size, cancel, |bytes| {
             if last.elapsed() >= Duration::from_millis(100) {
                 self.progress(id, bytes, size, "verifying")?;
                 last = Instant::now();
@@ -658,7 +658,7 @@ impl Inner {
         let vault = Vault::open(destination)?;
         let files = {
             let repo = lock(&self.repo)?;
-            let mut q=repo.connection.prepare("SELECT a.sha256,a.size_bytes FROM firmware_artifacts a JOIN artifact_details d USING(sha256) WHERE d.storage_key<>'' ORDER BY a.sha256")?;
+            let mut q=repo.connection.prepare("SELECT a.sha256,a.size_bytes FROM artifact_blobs a LEFT JOIN artifact_details d USING(sha256) WHERE (d.sha256 IS NULL OR d.storage_key<>'') ORDER BY a.sha256")?;
             let rows = q
                 .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, u64>(1)?)))?
                 .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -674,7 +674,7 @@ impl Inner {
             self.copy_checked(id, &source, &stage, &hash, size, cancel)?;
             let (final_path, _dest) = vault.blob(&hash)?;
             fs::hard_link(&stage, &final_path)?;
-            let (_lease, actual, n) = hash_file(&final_path, self.max, cancel, |_| Ok(()))?;
+            let (_lease, actual, n) = hash_file(&final_path, size, cancel, |_| Ok(()))?;
             if actual != hash || n != size {
                 return Err(LibraryError::new(
                     "HASH_MISMATCH",

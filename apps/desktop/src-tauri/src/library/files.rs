@@ -376,6 +376,12 @@ pub fn diagnostics_dialog(owner: isize) -> Result<Option<PathBuf>> {
     #[cfg(not(windows))]
     dialog(true, owner)
 }
+pub fn extraction_dialog(owner: isize) -> Result<Option<PathBuf>> {
+    #[cfg(windows)]
+    return dialog_named(true, owner, Some("Export selected extracted files"));
+    #[cfg(not(windows))]
+    dialog(true, owner)
+}
 #[cfg(windows)]
 fn dialog_named(save: bool, owner: isize, title_override: Option<&str>) -> Result<Option<PathBuf>> {
     use windows_sys::Win32::UI::Controls::Dialogs::*;
@@ -389,14 +395,19 @@ fn dialog_named(save: bool, owner: isize, title_override: Option<&str>) -> Resul
         .encode_utf16()
         .chain(Some(0))
         .collect();
-    let filter: Vec<u16> = if save {
+    let extraction = title_override == Some("Export selected extracted files");
+    let filter: Vec<u16> = if extraction {
+        "TAR archive\0*.tar\0\0"
+    } else if save {
         "JSON manifest\0*.json\0\0"
     } else {
         "Binary files\0*.bin;*.img;*.fw\0All files\0*.*\0\0"
     }
     .encode_utf16()
     .collect();
-    let extension: Vec<u16> = "json\0".encode_utf16().collect();
+    let extension: Vec<u16> = (if extraction { "tar\0" } else { "json\0" })
+        .encode_utf16()
+        .collect();
     let mut info: OPENFILENAMEW = unsafe { std::mem::zeroed() };
     info.lStructSize = std::mem::size_of::<OPENFILENAMEW>() as u32;
     info.hwndOwner = owner as _;

@@ -1,6 +1,6 @@
 [package]
 name = "obtainer"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 description = "OBTAINER Windows firmware workspace"
 edition = "2021"
 publish = false

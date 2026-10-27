@@ -1,3 +1,4 @@
+import { verifyExtraction } from "./verify-extraction.mjs";
 import { verifyGUI, verifyGUIRestart, configureGUIEvidence } from "./verify-gui.mjs";
 import { verifyAdapters } from "./verify-adapters.mjs";
 import { verifySimulator } from "./verify-simulator.mjs";
@@ -393,11 +394,13 @@ try {
   if(process.argv.includes('--official-acquisition')) {
     await clean();start('release');await verify('official-before');
     const hash=await verifyOfficialAcquisition(client,{root,profile,evidence,record,screenshot});
+    if(process.argv.includes('--firmware-extraction'))await verifyExtraction(client,{root,profile,evidence,record,screenshot,pid:processes().apps[0].id,hash});
     await closeWindow();
     start('release');await verify('official-reopened');
     const report=await invoke('get_firmware_analysis',{sha256:hash});assert.equal(report.inputSha256,hash);
     const provenance=await invoke('get_official_provenance',{sha256:hash});assert.equal(provenance[0].sha256,hash);
     record('official image, exact source provenance and bounded report remain accessible after native restart');
+    if(process.argv.includes('--firmware-extraction'))await verifyExtraction(client,{root,profile,evidence,record,screenshot,pid:processes().apps[0].id,hash,reopened:true});
     await closeWindow();
   } else if (process.argv.includes('--stage3-upgrade')) {
     const fixture=operation=>JSON.parse(execFileSync('py',[path.join(root,'scripts/stage3-native-fixture.py'),operation,profile.id],{env,windowsHide:true,encoding:'utf8'}));

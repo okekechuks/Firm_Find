@@ -23,6 +23,8 @@ jobs:
         run: npm run test:catalogue
       - name: DNS build input validation (no device or build network requests)
         run: npm run test:dns-build
+      - name: Extraction boundary regressions (synthetic input only)
+        run: npm run test:extraction-worker
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -53,3 +55,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y bubblewrap zstd squashfs-tools
       - name: Synthetic build-worker and kernel isolation regressions (no firmware download)
         run: python -B scripts/test-dns-build.py
+
+      - name: Extraction parser and supervisor regressions (synthetic input only)
+        run: python -B scripts/test-firmware-extraction.py

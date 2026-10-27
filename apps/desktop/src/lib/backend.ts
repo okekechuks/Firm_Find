@@ -1,3 +1,4 @@
+import { extractionReportSchema } from "../types/extraction";
 import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema,importSchema } from "../types/library";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { officialSourceSchema,analysisReportSchema } from "../types/official";
@@ -163,3 +164,8 @@ export async function readStaticMenu(input:AcquisitionRequest) {
   if(report.deviceId!==input.deviceId || report.fingerprint.deviceId!==input.deviceId)throw new Error("Menu report belongs to another target.");
   return report;
 }
+
+export async function startFirmwareExtraction(sha256: string) { return jobSchema.parse(await invoke("start_firmware_extraction", {sha256})); }
+export async function getFirmwareExtraction(sha256: string) { return extractionReportSchema.nullable().parse(await invoke("get_firmware_extraction", {sha256})); }
+export async function readExtractedText(sha256: string, path: string): Promise<string> { const result = await invoke("read_extracted_text", {sha256,path}); if(typeof result!=="string") throw new Error("Invalid text response"); return result; }
+export async function exportExtractedFiles(sha256: string, paths: string[]): Promise<boolean> { const result = await invoke("export_extracted_files", {sha256,paths}); if(typeof result!=="boolean") throw new Error("Invalid export response"); return result; }

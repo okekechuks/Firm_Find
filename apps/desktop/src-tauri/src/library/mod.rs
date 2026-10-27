@@ -2,6 +2,7 @@ mod admission;
 pub mod analysis;
 mod db;
 pub mod desktop;
+pub mod extraction;
 pub(crate) mod files;
 pub mod ipc;
 mod manifest_contract;
@@ -30,6 +31,10 @@ struct Selection {
     preview: FileSelection,
 }
 enum Task {
+    Extract {
+        job: String,
+        hash: String,
+    },
     Analyze {
         job: String,
         hash: String,
@@ -448,6 +453,9 @@ impl LibraryService {
             "firmware_backup",
             "backup_restore",
             "library_relocation",
+            "firmware_analysis",
+            "official_image_download",
+            "firmware_extraction",
         ]
         .contains(&job.kind.as_str())
         {
@@ -608,7 +616,8 @@ impl Inner {
     }
     fn execute(&self, task: Task) {
         let id = match &task {
-            Task::Analyze { job, .. }
+            Task::Extract { job, .. }
+            | Task::Analyze { job, .. }
             | Task::Official { job, .. }
             | Task::Import { job, .. }
             | Task::Verify { job, .. }
@@ -628,6 +637,7 @@ impl Inner {
             let started = lock(&self.repo)?.library_transition(&id, JobStatus::Running, None)?;
             (self.notify)(started);
             match task {
+                Task::Extract { hash, .. } => self.run_extraction(&id, &hash, &flag),
                 Task::Analyze { hash, .. } => self.run_analysis(&id, &hash, &flag),
                 Task::Official { source, .. } => self.run_official(&id, *source, &flag),
                 Task::Import { selection, .. } => self.run_import(&id, selection, &flag),
@@ -911,7 +921,7 @@ impl Inner {
     fn recover(&self) -> Result<()> {
         let pending: Vec<String> = {
             let repo = lock(&self.repo)?;
-            let mut q=repo.connection.prepare("SELECT id FROM jobs WHERE kind IN ('firmware_import','integrity_verify','firmware_backup','backup_restore','library_relocation','official_image_download','firmware_analysis') AND status IN ('pending','running')")?;
+            let mut q=repo.connection.prepare("SELECT id FROM jobs WHERE kind IN ('firmware_import','integrity_verify','firmware_backup','backup_restore','library_relocation','official_image_download','firmware_analysis','firmware_extraction') AND status IN ('pending','running')")?;
             let rows = q.query_map([], |r| r.get(0))?;
             rows.collect::<rusqlite::Result<Vec<_>>>()?
         };

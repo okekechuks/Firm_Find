@@ -68,6 +68,10 @@
     "allow-get-device-adapter-matches",
     "allow-get-device-compatibility",
     "allow-validate-device-profile",
-    "allow-record-device-observation"
+    "allow-record-device-observation",
+    "allow-start-firmware-extraction",
+    "allow-get-firmware-extraction",
+    "allow-read-extracted-text",
+    "allow-export-extracted-files"
   ]
 }

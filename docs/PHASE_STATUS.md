@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## Beta 2 filesystem extraction — native qualification passed
+
+**[v0.2.0-beta.2 published](https://github.com/okekechuks/Firm_Find/releases/tag/v0.2.0-beta.2)** from qualified source `e4524e80ac38ff0702e0917fc9a8f314d2f1ad82`, with CI-built installers/EXE, checksums and the actual extraction manifest. Uploaded asset sizes and SHA-256 values were checked against the downloaded CI artifacts before publication. Main and Beta 1 are preserved.
+
+27 October 2026: isolated `feature/firmware-extraction` branch, source `e4524e8`, passed actual Windows download → cancel/retry extraction → browsing/text preview → restart → selected-file export. The official Archer C7 v5 image produced 869 ordinary files, 128 directories and 13,411,262 bytes. A local gzip wrapper produced the same verified files. Standard/isolated Rust: 366/367 passed plus two doctests each; frontend: 167; both Clippy profiles, formatting, lint, TypeScript and both native builds pass. Normal data remains byte-identical. [Actual evidence, hashes and initial failures](FIRMWARE_EXTRACTION_VERIFICATION.md). [Windows CI 40475441212](https://github.com/okekechuks/Firm_Find/actions/runs/40475441212) passed both jobs and both native builds. Beta 1 remains unchanged. No schema migration or physical firmware acquisition is claimed; MG11 firmware-read qualification and Phase 7.5 remain incomplete.
+
 ## Emergency beta — acquisition, analysis and DNS build demonstrated
 
 26 October 2026: core `cc2173e` has green [Windows CI 40313207839](https://github.com/okekechuks/Firm_Find/actions/runs/40313207839), both native builds, 351 standard/352 isolated Rust tests, 164 frontend tests and an actual isolated native download → Library → analysis → restart run. Twenty consecutive default-parallel standard runs at that exact commit passed (351 tests plus two doctests each). The separate Windows/WSL DNS helper then produced a genuine 6,947,110-byte Archer C7 v5 OpenWrt image, SHA-256 `51946949707eca1a71d4bc77511952b45f447bf8918933dfcdd7b0f15883f4b3`, with exact offline defaults readback and original input preserved. All 13 Linux helper tests pass; Windows runs four and explicitly skips nine Linux checks. Normal data stays byte-identical; zero physical requests. [Commands/results](RELEASE_SPRINT_VERIFICATION.md).
