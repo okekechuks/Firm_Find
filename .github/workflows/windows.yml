@@ -58,3 +58,16 @@ jobs:
 
       - name: Extraction parser and supervisor regressions (synthetic input only)
         run: python -B scripts/test-firmware-extraction.py
+  extraction-worker-qualified:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:26.04
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install maintained tools in disposable qualification container
+        run: apt-get update && apt-get install --no-install-recommends -y python3 bubblewrap squashfs-tools util-linux passwd
+      - name: Run every extraction regression as an ordinary user
+        run: |
+          useradd --create-home extraction-ci
+          runuser -u extraction-ci -- python3 -B scripts/test-firmware-extraction.py

@@ -185,6 +185,8 @@ class Parsing(unittest.TestCase):
 class Linux(unittest.TestCase):
     def test_root_is_read_only_and_only_work_has_writable_file_storage(self):
         if not shutil.which("bwrap"):self.skipTest("bubblewrap unavailable")
+        if b"--disable-userns" not in subprocess.run(["bwrap","--help"],capture_output=True).stdout:
+            self.skipTest("This runner's older bubblewrap lacks the required sandbox primitive; qualified Ubuntu 26.04 CI/WSL runs this test")
         with tempfile.TemporaryDirectory() as tmp:
             image=Path(tmp)/"synthetic-input"
             image.write_bytes(b"synthetic input")
