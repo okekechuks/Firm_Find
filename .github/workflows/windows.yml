@@ -59,7 +59,9 @@ jobs:
       - name: Extraction parser and supervisor regressions (synthetic input only)
         run: python -B scripts/test-firmware-extraction.py
   extraction-worker-qualified:
-    runs-on: ubuntu-latest
+    # Keep modern tools in the disposable container; use the established
+    # namespace-capable host rather than altering a host AppArmor policy.
+    runs-on: ubuntu-22.04
     container:
       image: ubuntu:26.04
       options: --privileged
