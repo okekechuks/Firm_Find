@@ -35,3 +35,15 @@ it("reports unavailable workers without inventing a successful tree", async () =
   expect(await screen.findByRole("alert")).toHaveTextContent("Worker unavailable");
   expect(screen.queryByText("Browse Extracted Files")).not.toBeInTheDocument();
 });
+it("shows actionable dependency failures from persistent jobs",async()=>{
+  render(<FirmwareExtraction sha256={hash} jobs={[{...job,status:"failed",errorCode:"WORKER_UNAVAILABLE",message:"Set up WSL Ubuntu with qualified extraction tools."}]}/>);
+  expect(await screen.findByRole("alert")).toHaveTextContent("Set up WSL Ubuntu");
+  expect(screen.queryByText("Browse Extracted Files")).not.toBeInTheDocument();
+});
+it("identifies individual unexportable names and keeps selection disabled",async()=>{
+  api.getFirmwareExtraction.mockResolvedValue({...report,entries:[{path:"café",kind:"file",size:1,exportError:"Cannot export this Unicode filename as USTAR."}]});
+  render(<FirmwareExtraction sha256={hash} jobs={[]}/>);
+  expect(await screen.findByRole("checkbox",{name:"Select café for export"})).toBeDisabled();
+  expect(screen.getByText("Cannot export this Unicode filename as USTAR.")).toBeVisible();
+  expect(screen.getByRole("button",{name:"Export Extracted Files"})).toBeDisabled();
+});

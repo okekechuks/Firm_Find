@@ -22,6 +22,8 @@ pub struct Entry {
     pub link_target: Option<String>,
     #[serde(default)]
     pub offset: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub export_error: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -39,6 +41,20 @@ pub struct ByteRegion {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ContainerInfo {
+    pub format: String,
+    pub version: u32,
+    pub flags: u32,
+    pub length: u64,
+    pub partition_offsets: Vec<u64>,
+    pub crc32: String,
+    pub parser: String,
+    pub source_commit: String,
+    pub source_sha256: String,
+    pub parser_sha256: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ExtractionReport {
     pub unextracted_regions: Vec<ByteRegion>,
     pub version: u32,
@@ -46,6 +62,8 @@ pub struct ExtractionReport {
     pub input_bytes: u64,
     pub region: Region,
     pub container: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container_info: Option<ContainerInfo>,
     pub expanded_bytes: u64,
     pub extractor: String,
     pub tool_sha256: String,
@@ -97,7 +115,7 @@ fn safe_name(name: &str) -> bool {
         && name.split('/').count() <= 32
         && !name
             .chars()
-            .any(|c| c.is_control() || "\\:*?\"<>|".contains(c))
+            .any(|c| c.is_control() || matches!(c,'\u{061c}'|'\u{200e}'|'\u{200f}'|'\u{202a}'..='\u{202e}'|'\u{2066}'..='\u{2069}') || "\\:*?\"<>|".contains(c))
         && name.split('/').all(|p| {
             let base = p.split('.').next().unwrap_or("").to_ascii_lowercase();
             !p.is_empty()
@@ -138,8 +156,8 @@ fn validate_bundle(
             .checked_add(report.region.length)
             .is_none_or(|end| end > report.expanded_bytes)
         || !(1..=6).contains(&report.region.compression)
-        || !matches!(report.container.as_str(), "raw" | "gzip")
-        || (report.container == "raw" && report.expanded_bytes != size)
+        || !matches!(report.container.as_str(), "raw" | "gzip" | "trx")
+        || (report.container != "gzip" && report.expanded_bytes != size)
         || (report.container == "gzip" && report.expanded_bytes > MAX_OUTPUT)
         || report.extractor != "unsquashfs 4.7.5"
         || report.tool_sha256 != "003a7e9d70fbdcd05dfe132101c4b7bbb19a217976777f5393573eff21ddc202"
@@ -150,6 +168,36 @@ fn validate_bundle(
         || report.entries.len() > 20000
         || report.total_bytes > MAX_OUTPUT
     {
+        return Err(invalid());
+    }
+    if report.container == "trx" {
+        let info = report.container_info.as_ref().ok_or_else(invalid)?;
+        if info.format != "trx"
+            || info.version != 1
+            || info.flags != 0
+            || info.length <= 28
+            || info.length > size
+            || info.partition_offsets.is_empty()
+            || info.partition_offsets.len() > 3
+            || info
+                .partition_offsets
+                .iter()
+                .any(|offset| *offset < 28 || *offset >= info.length)
+            || info.partition_offsets.windows(2).any(|w| w[0] >= w[1])
+            || info.partition_offsets.last() != Some(&report.region.offset)
+            || report.region.offset + report.region.length > info.length
+            || info.crc32.len() != 8
+            || !info.crc32.bytes().all(|b| b.is_ascii_hexdigit())
+            || info.parser != "OpenWrt otrx"
+            || info.source_commit != "e3853149fb18dfa55f10c10c9aaf99c329747365"
+            || info.source_sha256
+                != "e2ef4e7a08f84543945fec83c43bdebfdb1c252da1c440ebb90454913ec2dc3e"
+            || info.parser_sha256
+                != "66b870899eca6a12079668c23cdd95db069978afc9af5bcbc3681cd9c1e968e5"
+        {
+            return Err(invalid());
+        }
+    } else if report.container_info.is_some() {
         return Err(invalid());
     }
     let end = report.region.offset + report.region.length;
@@ -183,6 +231,11 @@ fn validate_bundle(
     let mut count = 0;
     for entry in &mut report.entries {
         cancelled(cancel)?;
+        entry.export_error = if entry.kind == "file" {
+            tar_parts(&entry.path).err().map(|e| e.message)
+        } else {
+            None
+        };
         if !safe_name(&entry.path) || !names.insert(entry.path.to_lowercase()) {
             return Err(invalid());
         }
@@ -253,7 +306,7 @@ fn validate_bundle(
 }
 fn expected_isolation() -> serde_json::Value {
     serde_json::json!({"network":false,"hostDrives":false,"capabilities":"0000000000000000",
-        "tmpfsBytes":268435456,"maxBytes":MAX_OUTPUT,"maxEntries":20000,"maxDepth":32})
+        "tmpfsBytes":268435456,"spaceReserveBytes":33554432,"rootReadOnly":true,"maxBytes":MAX_OUTPUT,"maxEntries":20000,"maxDepth":32})
 }
 fn require_publishable_job(tx: &rusqlite::Transaction<'_>, id: &str, hash: &str) -> Result<()> {
     let allowed: bool = tx.query_row("SELECT EXISTS(SELECT 1 FROM jobs j JOIN job_details d ON d.job_id=j.id WHERE j.id=?1 AND j.kind='firmware_extraction' AND j.status='running' AND d.cancel_requested=0 AND d.artifact_sha256=?2)", params![id,hash], |r| r.get(0))?;
@@ -332,11 +385,19 @@ impl LibraryService {
             &AtomicBool::new(false),
             |_| Ok(()),
         )?;
-        let report: ExtractionReport =
+        let mut report: ExtractionReport =
             serde_json::from_reader(proof.reader()?).map_err(|_| invalid())?;
         if report.input_sha256 != hash || report.version != 1 || !valid_hash(&report.bundle_sha256)
         {
             return Err(invalid());
+        }
+        // Derive eligibility for older immutable reports without rewriting them.
+        for entry in &mut report.entries {
+            entry.export_error = if entry.kind == "file" {
+                tar_parts(&entry.path).err().map(|e| e.message)
+            } else {
+                None
+            };
         }
         Ok(Some(report))
     }
@@ -379,12 +440,8 @@ impl LibraryService {
         Ok(text)
     }
     pub fn export_extraction(&self, hash: &str, paths: &[String], owner: isize) -> Result<bool> {
-        if paths.is_empty() {
-            return Err(LibraryError::new(
-                "SELECT_FILES",
-                "Select files to export. Nothing is selected automatically.",
-            ));
-        }
+        let report = self.extraction_report(hash)?.ok_or_else(invalid)?;
+        validate_export_paths(&report, paths)?;
         if self.inner.dialog_open.swap(true, Ordering::AcqRel) {
             return Err(LibraryError::new(
                 "DIALOG_BUSY",
@@ -417,22 +474,7 @@ impl LibraryService {
         }
         let _guard = guard_directories(destination.parent().ok_or_else(invalid)?)?;
         let report = self.extraction_report(hash)?.ok_or_else(invalid)?;
-        let mut selected = HashSet::new();
-        if paths.is_empty() || paths.len() > 20000 {
-            return Err(invalid());
-        }
-        let mut entries = Vec::new();
-        for path in paths {
-            if !selected.insert(path) {
-                return Err(invalid());
-            }
-            let entry = report
-                .entries
-                .iter()
-                .find(|e| e.path == *path && e.kind == "file")
-                .ok_or_else(invalid)?;
-            entries.push(entry);
-        }
+        let entries = validate_export_paths(&report, paths)?;
         let proof = self.inner.vault.verify_published(
             &report.bundle_sha256,
             MAX_OUTPUT + MAX_MANIFEST + 10,
@@ -471,18 +513,53 @@ impl LibraryService {
         Ok(())
     }
 }
-fn write_tar_header(out: &mut impl Write, path: &str, size: u64) -> Result<()> {
-    if !safe_name(path) {
-        return Err(invalid());
+fn validate_export_paths<'a>(
+    report: &'a ExtractionReport,
+    paths: &[String],
+) -> Result<Vec<&'a Entry>> {
+    if paths.is_empty() || paths.len() > 20000 {
+        return Err(LibraryError::new(
+            "SELECT_FILES",
+            "Select ordinary files for export; nothing is selected automatically.",
+        ));
     }
-    let mut h = [0u8; 512];
-    let (prefix, name) = if path.len() <= 100 {
-        ("", path)
-    } else {
-        path.rsplit_once('/')
-            .filter(|(p, n)| p.len() <= 155 && n.len() <= 100)
-            .ok_or_else(invalid)?
+    let mut seen = HashSet::new();
+    let mut entries = vec![];
+    for path in paths {
+        if !seen.insert(path) {
+            return Err(invalid());
+        }
+        let entry = report
+            .entries
+            .iter()
+            .find(|e| e.path == *path && e.kind == "file")
+            .ok_or_else(invalid)?;
+        tar_parts(path)?;
+        entries.push(entry);
+    }
+    Ok(entries)
+}
+fn tar_parts(path: &str) -> Result<(&str, &str)> {
+    let error = || {
+        LibraryError::new("UNEXPORTABLE_FILENAME",&format!("Cannot export {:?}: USTAR requires a safe ASCII name of at most 100 bytes, or a prefix of at most 155 bytes and name of at most 100 bytes. Original filename is retained.",path.escape_debug().to_string()))
     };
+    if !safe_name(path) || !path.is_ascii() {
+        return Err(error());
+    }
+    if path.len() <= 100 {
+        return Ok(("", path));
+    }
+    for (index, _) in path.rmatch_indices('/') {
+        let (prefix, name) = (&path[..index], &path[index + 1..]);
+        if prefix.len() <= 155 && name.len() <= 100 {
+            return Ok((prefix, name));
+        }
+    }
+    Err(error())
+}
+fn write_tar_header(out: &mut impl Write, path: &str, size: u64) -> Result<()> {
+    let (prefix, name) = tar_parts(path)?;
+    let mut h = [0u8; 512];
     h[..name.len()].copy_from_slice(name.as_bytes());
     h[345..345 + prefix.len()].copy_from_slice(prefix.as_bytes());
     h[100..108].copy_from_slice(b"0000600\0");
@@ -692,7 +769,11 @@ fn run_worker(work: &Path, hash: &str, size: u64, cancel: &AtomicBool) -> Result
             }
             let code = fs::read_to_string(work.join("error.txt")).unwrap_or_default();
             let (code, message) = match code.as_str() {
-                "worker_unavailable" => ("WORKER_UNAVAILABLE", "Qualified WSL Ubuntu extraction tools are unavailable or their hashes changed."),
+                "" | "worker_unavailable" => ("WORKER_UNAVAILABLE", "Extraction needs WSL Ubuntu with qualified extraction tools: squashfs-tools 4.7.5 and Ubuntu bubblewrap 0.11.1-1ubuntu0.3. The worker could not start, or a required tool is missing, incompatible or fails its integrity check. Update/install compatible tools; your firmware stays preserved."),
+                "resource_exhausted" => ("EXTRACTION_RESOURCES", "Extraction exceeded its combined temporary-space, memory or process resource budget. No new extraction was published; original firmware and existing results remain preserved."),
+                "trx_worker_unavailable" => ("WORKER_UNAVAILABLE", "TRX extraction needs the separately qualified OpenWrt otrx parser. Install the pinned parser from the worker setup guide; no unsandboxed fallback is used."),
+                "unsupported_container_version" => ("UNSUPPORTED_CONTAINER_VERSION", "This container version or its flags are not qualified for extraction."),
+                "unsupported_nested_format" => ("UNSUPPORTED_NESTED_FORMAT", "The container is recognized, but its nested filesystem or wrapper is unsupported. UBI/UBIFS and gzip-wrapped TRX are not qualified; no new extraction was published."),
                 "unsupported_format" => ("UNSUPPORTED_FORMAT", "No supported filesystem found within the bounded scan. Unknown or encrypted content remains unextracted."),
                 "unsupported_compression" => ("UNSUPPORTED_COMPRESSION", "This filesystem compression is unsupported."),
                 "corrupt_image" => ("CORRUPT_IMAGE", "Filesystem headers are invalid, truncated or ambiguous."),
@@ -925,5 +1006,57 @@ mod tests {
         assert_eq!(bytes[156], b'0');
         assert_eq!(bytes.len(), 512);
         assert!(write_tar_header(&mut vec![], "../bad", 1).is_err());
+    }
+    #[test]
+    fn ustar_rejects_unicode_bidi_and_overlong_individual_names() {
+        for path in ["café", "cafe\u{301}", "etc/a\u{202e}txt", &"a".repeat(101)] {
+            assert!(write_tar_header(&mut vec![], path, 1).is_err(), "{path:?}");
+        }
+    }
+    #[test]
+    fn ustar_can_split_at_an_earlier_separator() {
+        let path = format!("{}/{}/{}", "a".repeat(130), "b".repeat(50), "c".repeat(40));
+        assert!(write_tar_header(&mut vec![], &path, 1).is_ok());
+    }
+    #[test]
+    fn export_preflight_identifies_bad_files_and_refuses_links() {
+        let mut report: ExtractionReport = serde_json::from_value(synthetic_report()).unwrap();
+        let path = "x".repeat(101);
+        report.entries[1].path = path.clone();
+        let error = validate_export_paths(&report, std::slice::from_ref(&path)).unwrap_err();
+        assert_eq!(error.code, "UNEXPORTABLE_FILENAME");
+        assert!(error.message.contains(&path));
+        report.entries[1].path = "safe".into();
+        report.entries[1].kind = "symlink_metadata".into();
+        assert!(validate_export_paths(&report, &["safe".into()]).is_err());
+        assert!(validate_export_paths(&report, &[]).is_err());
+    }
+    #[test]
+    fn trx_manifest_requires_pinned_parser_and_contained_root_partition() {
+        let mut report = synthetic_report();
+        report["container"] = "trx".into();
+        report["region"]["offset"] = 28.into();
+        report["region"]["length"] = 996.into();
+        report["status"] = "partially_extracted".into();
+        report["unextractedRegions"] = serde_json::json!([{"offset":0,"length":28}]);
+        report["containerInfo"] = serde_json::json!({"format":"trx","version":1,"flags":0,"length":1024,"partitionOffsets":[28],"crc32":"12345678","parser":"OpenWrt otrx","sourceCommit":"e3853149fb18dfa55f10c10c9aaf99c329747365","sourceSha256":"e2ef4e7a08f84543945fec83c43bdebfdb1c252da1c440ebb90454913ec2dc3e","parserSha256":"66b870899eca6a12079668c23cdd95db069978afc9af5bcbc3681cd9c1e968e5"});
+        assert!(synthetic_bundle(&report, b"test", false).is_ok());
+        for (field, value) in [
+            ("version", serde_json::json!(2)),
+            ("flags", serde_json::json!(1)),
+            ("length", serde_json::json!(999)),
+            ("partitionOffsets", serde_json::json!([60, 28])),
+            ("parserSha256", serde_json::json!("a".repeat(64))),
+            ("crc32", serde_json::json!("not-hex")),
+        ] {
+            let mut invalid_report = report.clone();
+            invalid_report["containerInfo"][field] = value;
+            assert!(
+                synthetic_bundle(&invalid_report, b"test", false).is_err(),
+                "{field}"
+            );
+        }
+        report["containerInfo"] = serde_json::Value::Null;
+        assert!(synthetic_bundle(&report, b"test", false).is_err());
     }
 }

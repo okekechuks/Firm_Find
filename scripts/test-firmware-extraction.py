@@ -1,5 +1,7 @@
 """Synthetic extraction regressions. Real firmware qualification is separate."""
 import gzip
+import errno
+import binascii
 import importlib.util
 import io
 import json
@@ -7,10 +9,12 @@ import os
 from pathlib import Path
 import shutil
 import struct
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("worker", Path(__file__).with_name("firmware-extract-worker.py"))
@@ -26,7 +30,30 @@ def synthetic_superblock(**changes):
     return struct.pack("<5I6H8Q", *values) + bytes(1024 - 96)
 
 
+def synthetic_trx(offsets=(28,60,0),version=1):
+    raw=bytearray(struct.pack("<7I",0x30524448,60+1024,0,version<<16,*offsets)+bytes(32)+synthetic_superblock())
+    struct.pack_into("<I",raw,8,binascii.crc32(raw[12:]) ^ 0xffffffff)
+    return bytes(raw)
+
+
 class Parsing(unittest.TestCase):
+    def test_trx_requires_bounded_header_crc_version_and_ordered_partitions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            image=Path(tmp)/"synthetic.trx"
+            image.write_bytes(synthetic_trx())
+            self.assertEqual(worker.trx_header(image)["partitionOffsets"],[28,60])
+            for raw in [synthetic_trx(offsets=(28,20,0)),synthetic_trx(offsets=(28,0,60)),synthetic_trx(version=2),synthetic_trx()[:-1],synthetic_trx()[:-1]+b"x"]:
+                image.write_bytes(raw)
+                with self.assertRaises(worker.Refusal):worker.trx_header(image)
+
+    def test_gzip_cannot_bypass_trx_validation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)
+            (p/"image.gz").write_bytes(gzip.compress(synthetic_trx()))
+            original_path=worker.Path
+            with patch.object(worker,"Path",side_effect=lambda value:p/"expanded.bin" if value=="/work/expanded.bin" else original_path(value)),self.assertRaisesRegex(worker.Refusal,"unsupported_nested_format"):
+                worker.GzipSquashfsBackend.prepare(p/"image.gz")
+
     def region(self, raw):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "synthetic.bin"
@@ -60,6 +87,24 @@ class Parsing(unittest.TestCase):
     def test_empty_success_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp, self.assertRaises(worker.Refusal):
             worker.collect_tree(Path(tmp))
+
+    def test_combined_budget_reserves_decoder_overhead_and_rounds_entries(self):
+        worker.reserve_space(120 * 1024**2, 96 * 1024**2, 4)
+        with self.assertRaisesRegex(worker.Refusal, "resource_exhausted"):
+            worker.reserve_space(128 * 1024**2, 128 * 1024**2, 4)
+        with self.assertRaisesRegex(worker.Refusal, "resource_exhausted"):
+            worker.reserve_space(128 * 1024**2, 64 * 1024**2, 20000)
+
+    def test_unicode_normalization_collisions_and_bidi_names_are_refused(self):
+        for name in ["etc/abc\u202etxt", "etc/\u2066name", "etc/\u200fconfig"]:
+            with self.subTest(name=repr(name)), self.assertRaises(worker.Refusal):
+                worker.safe_name(name)
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp)
+            (p / "caf\u00e9").write_bytes(b"one")
+            (p / "cafe\u0301").write_bytes(b"two")
+            with self.assertRaises(worker.Refusal):
+                worker.collect_tree(p)
 
     def test_limits_and_hashes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -105,6 +150,9 @@ class Parsing(unittest.TestCase):
                 worker.supervise(Path(tmp), "a"*64, 1)
         with patch.object(worker.Path, "open", side_effect=OSError(28, "synthetic disk full")), self.assertRaises(OSError):
             worker.GzipSquashfsBackend.prepare(Path("synthetic.gz"))
+        self.assertTrue(worker.resource_error(OSError(errno.ENOSPC, "synthetic full tmpfs")))
+        self.assertTrue(worker.resource_error(MemoryError()))
+        self.assertFalse(worker.resource_error(OSError(errno.EIO, "synthetic corrupt storage")))
 
     def test_timeout_and_lost_owner_kill_and_reap(self):
         for lost in [False, True]:
@@ -135,6 +183,65 @@ class Parsing(unittest.TestCase):
 
 @unittest.skipUnless(sys.platform.startswith("linux"), "Linux kernel namespace tests")
 class Linux(unittest.TestCase):
+    def test_root_is_read_only_and_only_work_has_writable_file_storage(self):
+        if not shutil.which("bwrap"):self.skipTest("bubblewrap unavailable")
+        with tempfile.TemporaryDirectory() as tmp:
+            image=Path(tmp)/"synthetic-input"
+            image.write_bytes(b"synthetic input")
+            command=worker.sandbox(Path(worker.__file__).resolve(),image)
+            command=command[:command.index("/usr/bin/python3")]+["/usr/bin/python3","-I","-B","-c",
+                "import os,pathlib; assert os.statvfs('/').f_flag & os.ST_RDONLY; assert not os.statvfs('/work').f_flag & os.ST_RDONLY; pathlib.Path('/work/allowed').write_text('synthetic'); assert not pathlib.Path('/mnt/c').exists(); assert not pathlib.Path('/home').exists()"]
+            result=subprocess.run(command,capture_output=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stderr.decode())
+
+    def test_privileged_or_writable_parser_is_not_qualified_even_with_matching_hash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            binary=Path(tmp)/"synthetic-parser"
+            binary.write_bytes(b"synthetic executable")
+            expected=worker.digest(binary)
+            for mode,allowed in [(stat.S_IFREG|0o755,True),(stat.S_IFREG|0o4755,False),(stat.S_IFREG|0o2755,False),(stat.S_IFREG|0o777,False),(stat.S_IFLNK|0o755,False)]:
+                with patch.object(worker.Path,"lstat",return_value=SimpleNamespace(st_mode=mode,st_uid=0)),patch.object(worker.os,"getxattr",side_effect=OSError(errno.ENODATA,"synthetic no capabilities")):
+                    self.assertEqual(worker.qualified_binary(binary,expected),allowed)
+            with patch.object(worker.Path,"lstat",return_value=SimpleNamespace(st_mode=stat.S_IFREG|0o755,st_uid=0)),patch.object(worker.os,"getxattr",return_value=b"synthetic capability"):
+                self.assertFalse(worker.qualified_binary(binary,expected))
+
+    def test_near_limit_gzip_and_tree_share_one_real_tmpfs_budget(self):
+        if not shutil.which("mksquashfs") or not subprocess.run(["unsquashfs", "-version"],capture_output=True).stdout.startswith(b"unsquashfs version 4.7.5"):
+            self.skipTest("Qualified fixture generator unavailable")
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp)
+            tree = p / "source"
+            tree.mkdir()
+            for i in range(4):
+                with (tree / str(i)).open("wb") as file:
+                    file.truncate(32 * 1024**2)
+            for count, expected in [(4, "resource_exhausted"), (3, None)]:
+                if count == 3:
+                    (tree / "3").unlink()
+                image = p / f"synthetic-{count}.sqfs"
+                subprocess.run(["mksquashfs",str(tree),str(image),"-noappend","-processors","1","-quiet"],check=True,stdout=subprocess.DEVNULL)
+                with image.open("r+b") as file:
+                    file.truncate(120 * 1024**2)
+                wrapped = p / f"synthetic-{count}.gz"
+                with image.open("rb") as source, gzip.open(wrapped,"wb") as output:
+                    shutil.copyfileobj(source,output,65536)
+                original_hash = worker.digest(wrapped)
+                command = worker.sandbox(Path(worker.__file__).resolve(),wrapped) + ["--sha256",original_hash,"--size",str(wrapped.stat().st_size)]
+                with (p / f"output-{count}").open("w+b") as output:
+                    result = subprocess.run(command,stdout=output,stderr=subprocess.PIPE,timeout=120)
+                    if expected:
+                        self.assertNotEqual(result.returncode,0)
+                        self.assertEqual(result.stderr.strip(),expected.encode())
+                        self.assertEqual(output.tell(),0,"Failure must not return a successful bundle")
+                    else:
+                        self.assertEqual(result.returncode,0,result.stderr)
+                        output.seek(0)
+                        header=output.read(10)
+                        report=json.loads(output.read(struct.unpack("<I",header[6:])[0]))
+                        self.assertEqual(report["totalBytes"],96 * 1024**2)
+                        self.assertEqual(report["fileCount"],3)
+                self.assertEqual(worker.digest(wrapped),original_hash)
+
     def test_links_are_metadata_and_never_followed(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp)

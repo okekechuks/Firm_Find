@@ -1664,3 +1664,57 @@ fn repeated_extraction_start_reuses_pending_job_and_cancellation_is_supported() 
     assert_eq!(job.status, JobStatus::Failed);
     assert_eq!(job.error_code.as_deref(), Some("INTERRUPTED"));
 }
+
+#[test]
+fn extracted_export_preserves_existing_destination_and_refuses_internal_paths() {
+    let (d, repo, s) = setup();
+    let original = completed(
+        &s,
+        &source(d.path(), "synthetic-export-source.bin", &[0; 1024]),
+    );
+    let hash = original.related_artifact.unwrap();
+    // Explicitly synthetic persisted report exercises export, not a decoder claim.
+    let bytes = b"synthetic exported text\n";
+    let bundle = format!("{:x}", Sha256::digest(bytes));
+    fs::write(s.inner.vault.blob(&bundle).unwrap().0, bytes).unwrap();
+    let report = serde_json::json!({"unextractedRegions":[],"version":1,"inputSha256":hash,"inputBytes":1024,
+        "region":{"format":"squashfs","offset":0,"length":1024,"compression":4},"container":"raw","expandedBytes":1024,
+        "extractor":"synthetic export fixture","toolSha256":"0".repeat(64),
+        "entries":[{"path":"safe.txt","kind":"file","size":bytes.len(),"sha256":bundle,"linkTarget":null,"offset":0}],
+        "totalBytes":bytes.len(),"fileCount":1,"directoryCount":0,"filesystemRoots":["/"],"workerExit":0,"status":"extracted_verified","limitations":[],"isolation":{},"bundleSha256":bundle,"createdAt":1});
+    let raw = serde_json::to_vec(&report).unwrap();
+    let report_hash = format!("{:x}", Sha256::digest(&raw));
+    fs::write(s.inner.vault.blob(&report_hash).unwrap().0, &raw).unwrap();
+    {
+        let repo = repo.lock().unwrap();
+        for (sha, size) in [(&bundle, bytes.len()), (&report_hash, raw.len())] {
+            repo.connection
+                .execute(
+                    "INSERT INTO artifact_blobs VALUES(?1,?2)",
+                    rusqlite::params![sha, size],
+                )
+                .unwrap();
+        }
+        repo.connection.execute("INSERT INTO artifact_occurrences(occurrence_id,blob_sha256,artifact_class,provenance_kind,source_reference,acquisition_occurrence_id,collected_at) VALUES('synthetic-export',?1,'metadata_report','isolated_filesystem_extraction',?2,'synthetic-export',1)",rusqlite::params![report_hash,format!("extraction:{hash}")]).unwrap();
+    }
+    let destination = d.path().join("existing.tar");
+    fs::write(&destination, b"owner bytes remain").unwrap();
+    assert!(s
+        .export_extraction_path(&hash, &["safe.txt".into()], &destination)
+        .is_err());
+    assert_eq!(fs::read(&destination).unwrap(), b"owner bytes remain");
+    assert!(s
+        .export_extraction_path(
+            &hash,
+            &["safe.txt".into()],
+            &s.inner.root.join("internal.tar")
+        )
+        .is_err());
+    assert!(!s.inner.root.join("internal.tar").exists());
+    assert_eq!(s.list(&LibraryQuery::default()).unwrap().total, 1);
+    assert!(!fs::read_dir(d.path()).unwrap().any(|entry| entry
+        .unwrap()
+        .file_name()
+        .to_string_lossy()
+        .starts_with(".obtainer-export-")));
+}

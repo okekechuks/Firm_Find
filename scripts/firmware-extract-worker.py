@@ -7,6 +7,8 @@ manifest followed by ordinary file bytes; no archive links reach Windows.
 import argparse
 import hashlib
 import gzip
+import errno
+import binascii
 import json
 import os
 from pathlib import Path
@@ -17,14 +19,19 @@ import struct
 import subprocess
 import sys
 import time
+import unicodedata
 
 MAX_INPUT = 512 * 1024**2
 MAX_BYTES = 128 * 1024**2
 MAX_ENTRIES = 20000
 MAX_MANIFEST = 8 * 1024**2
+TMPFS_BYTES = 256 * 1024**2
+SPACE_RESERVE = 32 * 1024**2
+OTRX_BINARY_SHA = "66b870899eca6a12079668c23cdd95db069978afc9af5bcbc3681cd9c1e968e5"
+OTRX_SOURCE_SHA = "e2ef4e7a08f84543945fec83c43bdebfdb1c252da1c440ebb90454913ec2dc3e"
 TOOLS = {
     "/usr/bin/unsquashfs": "003a7e9d70fbdcd05dfe132101c4b7bbb19a217976777f5393573eff21ddc202",
-    "/usr/bin/bwrap": "8e19e40e7d5f7a7e8b488c7926feb040eab6ed10c58fa360e266d2f70670e92b",
+    "/usr/bin/bwrap": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6",
 }
 
 
@@ -37,30 +44,72 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def qualified_binary(path, expected_hash):
+    try:
+        meta=path.lstat()
+        if not stat.S_ISREG(meta.st_mode) or meta.st_uid!=0 or meta.st_mode & (stat.S_ISUID | stat.S_ISGID | 0o022) or not meta.st_mode & 0o111:
+            return False
+        try:
+            if os.getxattr(path,"security.capability"):
+                return False
+        except OSError as error:
+            if error.errno not in (errno.ENODATA,errno.ENOTSUP):raise
+        return digest(path)==expected_hash
+    except OSError:
+        return False
+
+
 def safe_name(name):
     parts = name.split("/")
     if (not name or len(name.encode("utf-8")) > 240 or len(parts) > 32
             or any(p in ("", ".", "..") or p.endswith((" ", ".")) for p in parts)
-            or any(ord(c) < 32 or ord(c) == 127 or c in '\\:*?"<>|' for c in name)
+            or any(unicodedata.category(c) in ("Cc", "Cf") or c in '\\:*?"<>|' for c in name)
             or any(re.fullmatch(r"(?i)(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?", p) for p in parts)):
         raise Refusal("unsafe_path")
     return name
 
 
-def squashfs_region(image):
+def reserve_space(staged_bytes, tree_bytes, entries):
+    # Account for simultaneously retained decompression output, data, one page
+    # per entry (rounding/inodes/directories), plus bounded listing/scratch slack.
+    if min(staged_bytes, tree_bytes, entries) < 0 or staged_bytes + tree_bytes + entries * 4096 + SPACE_RESERVE > TMPFS_BYTES:
+        raise Refusal("resource_exhausted")
+
+
+def resource_error(error):
+    return isinstance(error, MemoryError) or isinstance(error, OSError) and error.errno in (errno.ENOSPC, errno.ENOMEM, errno.EDQUOT, errno.EFBIG, errno.EAGAIN)
+
+
+def run_tool(command, output=None, listing=False):
+    import resource
+    def listing_limit():
+        resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_MANIFEST,) * 2)
+    result = subprocess.run(command, stdout=output if output is not None else subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL, timeout=100,
+                            preexec_fn=listing_limit if listing else None, check=False)
+    if result.returncode:
+        free = os.statvfs("/work")
+        if result.returncode in (-signal.SIGXFSZ, -signal.SIGXCPU, -signal.SIGKILL) or free.f_bavail * free.f_frsize < SPACE_RESERVE // 2:
+            raise Refusal("resource_exhausted")
+        raise Refusal("extraction_failed")
+
+
+def squashfs_region(image, start_offset=0, end_offset=None):
     """SquashFS v4 little-endian superblock, not a magic-only match."""
-    size = image.stat().st_size
+    size = image.stat().st_size if end_offset is None else end_offset
     with image.open("rb") as stream:
-        scan = stream.read(min(size, 32 * 1024**2))
+        stream.seek(start_offset)
+        scan = stream.read(min(size - start_offset, 32 * 1024**2))
         candidates = []
         start = 0
         seen = False
         while True:
-            offset = scan.find(b"hsqs", start)
-            if offset < 0:
+            relative = scan.find(b"hsqs", start)
+            if relative < 0:
                 break
             seen = True
-            start = offset + 4
+            start = relative + 4
+            offset = start_offset + relative
             stream.seek(offset)
             raw = stream.read(96)
             if len(raw) != 96:
@@ -91,9 +140,10 @@ def collect_tree(root):
         parent, prefix = pending.pop()
         for item in sorted(os.scandir(parent), key=lambda item: item.name):
             name = safe_name(prefix + item.name)
-            if name.casefold() in names:
+            folded = unicodedata.normalize("NFC", name).casefold()
+            if folded in names:
                 raise Refusal("colliding_paths")
-            names.add(name.casefold())
+            names.add(folded)
             meta = item.stat(follow_symlinks=False)
             entry = {"path": name, "kind": "directory", "size": 0, "sha256": None, "linkTarget": None}
             if stat.S_ISDIR(meta.st_mode):
@@ -130,8 +180,12 @@ class SquashfsBackend:
     def prepare(image):
         return image
 
+    @staticmethod
+    def inspect(image):
+        return squashfs_region(image), None
 
-class GzipSquashfsBackend:
+
+class GzipSquashfsBackend(SquashfsBackend):
     """One bounded gzip layer followed by the same validated SquashFS parser."""
     name = "gzip"
 
@@ -149,11 +203,69 @@ class GzipSquashfsBackend:
                 if total > MAX_BYTES:
                     raise Refusal("output_limit")
                 destination.write(chunk)
+        with output.open("rb") as source:
+            if source.read(4) == b"HDR0":
+                raise Refusal("unsupported_nested_format")
         return output
 
 
+def trx_header(image):
+    size=image.stat().st_size
+    with image.open("rb") as source:
+        raw=source.read(28)
+        if len(raw)!=28 or size > MAX_INPUT:
+            raise Refusal("corrupt_image")
+        magic,length,expected_crc,flags_version,*offsets=struct.unpack("<7I",raw)
+        if magic!=0x30524448 or not 28 < length <= size:
+            raise Refusal("corrupt_image")
+        if flags_version != 0x10000:
+            raise Refusal("unsupported_container_version")
+        parts=[offset for offset in offsets if offset]
+        if not parts or offsets != parts + [0]*(3-len(parts)) or parts != sorted(set(parts)) or any(not 28 <= offset < length for offset in parts):
+            raise Refusal("corrupt_image")
+        source.seek(12)
+        remaining=length-12
+        crc=0
+        while remaining:
+            chunk=source.read(min(remaining,65536))
+            if not chunk: raise Refusal("corrupt_image")
+            crc=binascii.crc32(chunk,crc)
+            remaining-=len(chunk)
+        if crc ^ 0xffffffff != expected_crc:
+            raise Refusal("corrupt_image")
+    return {"format":"trx","version":1,"flags":0,"length":length,"partitionOffsets":parts,
+            "crc32":f"{expected_crc:08x}","parser":"OpenWrt otrx",
+            "sourceCommit":"e3853149fb18dfa55f10c10c9aaf99c329747365",
+            "sourceSha256":OTRX_SOURCE_SHA,"parserSha256":OTRX_BINARY_SHA}
+
+
+class TrxBackend(SquashfsBackend):
+    name="trx"
+
+    @staticmethod
+    def accepts(prefix):
+        return prefix.startswith(b"HDR0")
+
+    @staticmethod
+    def inspect(image):
+        info=trx_header(image)
+        if not Path("/otrx").is_file():
+            raise Refusal("trx_worker_unavailable")
+        # Literal read-only subcommand; create/extract and caller arguments are unreachable.
+        run_tool(["/otrx","check",str(image)])
+        root=info["partitionOffsets"][-1]
+        with image.open("rb") as source:
+            source.seek(root)
+            if source.read(4)!=b"hsqs":
+                raise Refusal("unsupported_nested_format")
+        region=squashfs_region(image,root,info["length"])
+        if region["offset"]!=root:
+            raise Refusal("corrupt_image")
+        return region,info
+
+
 # Explicit plugin registry. Recognition does not advertise unsupported formats.
-BACKENDS = (GzipSquashfsBackend, SquashfsBackend)
+BACKENDS = (TrxBackend, GzipSquashfsBackend, SquashfsBackend)
 
 
 def inner(expected, size):
@@ -168,7 +280,7 @@ def inner(expected, size):
     resource.setrlimit(resource.RLIMIT_NPROC, (64,) * 2)
     status = Path("/proc/self/status").read_text()
     caps = re.search(r"^CapEff:\s+([0-9a-f]+)$", status, re.MULTILINE)
-    if not caps or int(caps[1], 16) or Path("/mnt/c").exists() or Path("/home").exists():
+    if not caps or int(caps[1], 16) or Path("/mnt/c").exists() or Path("/home").exists() or not os.statvfs("/").f_flag & os.ST_RDONLY:
         raise Refusal("worker_unavailable")
     if any(name != "lo" for _, name in __import__("socket").if_nameindex()):
         raise Refusal("worker_unavailable")
@@ -176,13 +288,13 @@ def inner(expected, size):
         prefix = source.read(4)
     backend = next(plugin for plugin in BACKENDS if plugin.accepts(prefix))
     filesystem_image = backend.prepare(image)
-    region = squashfs_region(filesystem_image)
+    region,container_info = backend.inspect(filesystem_image)
     root = Path("/work/tree")
     # List inside the same sandbox. Reject ambiguous text listing rather than
     # guessing names; links and special files are excluded before extraction.
     with Path("/work/listing").open("wb") as listing:
-        subprocess.run(["/usr/bin/unsquashfs", "-lln", "-max-depth", "33", "-o", str(region["offset"]),
-                        str(filesystem_image)], stdout=listing, stderr=subprocess.DEVNULL, check=True, timeout=20)
+        run_tool(["/usr/bin/unsquashfs", "-lln", "-max-depth", "33", "-o", str(region["offset"]),
+                  str(filesystem_image)], output=listing, listing=True)
     with Path("/work/listing").open("rb") as listing:
         raw_listing = listing.read(MAX_MANIFEST + 1)
     if len(raw_listing) > MAX_MANIFEST:
@@ -216,13 +328,17 @@ def inner(expected, size):
             excluded.append({"path": name, "kind": "symlink_metadata" if target is not None else "special_omitted",
                              "size": 0, "sha256": None, "linkTarget": target})
     Path("/work/exclude").write_text("".join(e["path"] + "\n" for e in excluded))
+    staged_bytes = 0 if filesystem_image == image else filesystem_image.stat().st_size
+    reserve_space(staged_bytes, listed_bytes, len(observed))
+    remaining = os.statvfs("/work")
+    if listed_bytes + len(observed) * 4096 + SPACE_RESERVE > remaining.f_bavail * remaining.f_frsize:
+        raise Refusal("resource_exhausted")
     # Dropped capabilities prohibit device creation. Strict errors prohibit
     # publishing any partial tree after a special-file/permission failure.
     command = ["/usr/bin/unsquashfs", "-processors", "1", "-data-queue", "16", "-frag-queue", "16",
                "-strict-errors", "-no-xattrs", "-no-progress", "-max-depth", "33", "-d", str(root),
                "-no-wildcards", "-exclude-file", "/work/exclude", "-o", str(region["offset"]), str(filesystem_image)]
-    with Path("/work/tool.log").open("wb") as log:
-        subprocess.run(command, stdout=log, stderr=log, check=True, timeout=100)
+    run_tool(command)
     entries, total = collect_tree(root)
     if {e["path"] for e in entries} != {name for name, kind in observed.items() if kind in ("-", "d")}:
         raise Refusal("incomplete_tree")
@@ -240,7 +356,11 @@ def inner(expected, size):
                               "Links retained as metadata only; xattrs and ownership not restored.",
                               "No nested extraction, executable launch, hardware compatibility or rebuild authorization."],
               "isolation": {"network": False, "hostDrives": False, "capabilities": "0000000000000000",
-                            "tmpfsBytes": 268435456, "maxBytes": MAX_BYTES, "maxEntries": MAX_ENTRIES, "maxDepth": 32}}
+                            "tmpfsBytes": TMPFS_BYTES, "spaceReserveBytes": SPACE_RESERVE, "rootReadOnly": True,
+                            "maxBytes": MAX_BYTES, "maxEntries": MAX_ENTRIES, "maxDepth": 32}}
+    if container_info is not None:
+        report["containerInfo"]=container_info
+        report["limitations"][0]="Only the direct SquashFS root partition of TRX v1 is unpacked; kernel, loader, padding and other regions remain unextracted."
     raw = json.dumps(report, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
     if len(raw) > MAX_MANIFEST:
         raise Refusal("manifest_limit")
@@ -260,9 +380,12 @@ def sandbox(script, image):
     for path in ("/usr", "/bin", "/lib", "/lib64"):
         if Path(path).exists():
             command += ["--ro-bind", path, path]
+    optional=Path("/opt/obtainer-tools/otrx")
+    if qualified_binary(optional,OTRX_BINARY_SHA):
+        command += ["--ro-bind",str(optional),"/otrx"]
     command += ["--proc", "/proc", "--dev", "/dev", "--size", "268435456", "--tmpfs", "/work",
                 "--ro-bind", str(script), "/worker.py", "--ro-bind", str(image), "/input.bin",
-                "--chdir", "/work", "/usr/bin/python3", "-I", "-B", "/worker.py", "--inner"]
+                "--remount-ro", "/", "--chdir", "/work", "/usr/bin/python3", "-I", "-B", "/worker.py", "--inner"]
     return command
 
 
@@ -270,7 +393,7 @@ def supervise(job, expected, size):
     if os.getuid() == 0:
         raise Refusal("worker_unavailable")
     for name, expected_hash in TOOLS.items():
-        if not Path(name).is_file() or digest(Path(name)) != expected_hash:
+        if not qualified_binary(Path(name),expected_hash):
             raise Refusal("worker_unavailable")
     command = sandbox(Path(__file__).resolve(), job / "input.bin") + ["--sha256", expected, "--size", str(size)]
     with (job / "output.bin").open("xb") as output:
@@ -289,7 +412,7 @@ def supervise(job, expected, size):
                 time.sleep(0.05)
             if child.returncode != 0:
                 message = child.stderr.read(128).decode("ascii", "replace").strip()
-                raise Refusal(message if message in ("worker_unavailable", "corrupt_image", "unsupported_format", "unsupported_compression", "output_limit", "entry_limit", "unsafe_path", "unsafe_link", "source_changed") else "extraction_failed")
+                raise Refusal(message if message in ("worker_unavailable", "corrupt_image", "unsupported_format", "unsupported_compression", "output_limit", "entry_limit", "unsafe_path", "unsafe_link", "source_changed", "resource_exhausted", "trx_worker_unavailable", "unsupported_nested_format", "unsupported_container_version") else "extraction_failed")
         finally:
             if child.poll() is None:
                 os.killpg(child.pid, signal.SIGKILL)
@@ -311,8 +434,8 @@ def main():
     else:
         try:
             supervise(args.job.resolve(strict=True), args.sha256, args.size)
-        except (Refusal, OSError, subprocess.SubprocessError) as error:
-            code = str(error) if isinstance(error, Refusal) else "worker_unavailable"
+        except (Refusal, OSError, MemoryError, subprocess.SubprocessError) as error:
+            code = str(error) if isinstance(error, Refusal) else "resource_exhausted" if resource_error(error) else "worker_unavailable"
             (args.job / "error.txt").write_text(code, encoding="ascii")
             raise SystemExit(1) from None
 
@@ -320,6 +443,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (Refusal, OSError, ValueError, subprocess.SubprocessError) as error:
-        print(str(error) if isinstance(error, Refusal) else "extraction_failed", file=sys.stderr)
+    except (Refusal, OSError, ValueError, MemoryError, subprocess.SubprocessError) as error:
+        print(str(error) if isinstance(error, Refusal) else "resource_exhausted" if resource_error(error) else "extraction_failed", file=sys.stderr)
         raise SystemExit(1) from None

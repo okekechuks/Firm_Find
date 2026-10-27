@@ -1,4 +1,6 @@
 import { verifyExtraction } from "./verify-extraction.mjs";
+import { verifyExtractionReview } from "./verify-extraction-review.mjs";
+import { verifyAuthChallenge } from "./verify-auth-challenge.mjs";
 import { verifyGUI, verifyGUIRestart, configureGUIEvidence } from "./verify-gui.mjs";
 import { verifyAdapters } from "./verify-adapters.mjs";
 import { verifySimulator } from "./verify-simulator.mjs";
@@ -391,7 +393,11 @@ try {
     record('ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data');
     verifyActivationGuards(root,profile,env,record);
   }
-  if(process.argv.includes('--official-acquisition')) {
+  if(process.argv.includes('--mg11-challenge')) {
+    await clean();start('release');await verify('production');
+    await verifyAuthChallenge(client,{label:'production',pid:processes().apps[0].id,evidence});
+    await closeWindow();
+  } else if(process.argv.includes('--official-acquisition')) {
     await clean();start('release');await verify('official-before');
     const hash=await verifyOfficialAcquisition(client,{root,profile,evidence,record,screenshot});
     if(process.argv.includes('--firmware-extraction'))await verifyExtraction(client,{root,profile,evidence,record,screenshot,pid:processes().apps[0].id,hash});
@@ -401,6 +407,7 @@ try {
     const provenance=await invoke('get_official_provenance',{sha256:hash});assert.equal(provenance[0].sha256,hash);
     record('official image, exact source provenance and bounded report remain accessible after native restart');
     if(process.argv.includes('--firmware-extraction'))await verifyExtraction(client,{root,profile,evidence,record,screenshot,pid:processes().apps[0].id,hash,reopened:true});
+      if(process.argv.includes('--extraction-review'))await verifyExtractionReview(client,{root,profile,evidence,record,screenshot,pid:processes().apps[0].id});
     await closeWindow();
   } else if (process.argv.includes('--stage3-upgrade')) {
     const fixture=operation=>JSON.parse(execFileSync('py',[path.join(root,'scripts/stage3-native-fixture.py'),operation,profile.id],{env,windowsHide:true,encoding:'utf8'}));

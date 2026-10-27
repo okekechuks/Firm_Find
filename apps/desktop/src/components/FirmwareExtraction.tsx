@@ -38,18 +38,19 @@ export function FirmwareExtraction({ sha256, jobs }: { sha256: string; jobs: Job
     <h3>Extract Contents</h3>
     <p>Unpack supported filesystems for inspection. Original firmware stays preserved.</p>
     {error ? <p role="alert">{error}</p> : null}
-    {job?.status === "failed" || job?.status === "cancelled" ? <p role="status">{job.message}</p> : null}
+    {job?.status === "failed" || job?.status === "cancelled" ? <p role={job.status === "failed" ? "alert" : "status"}>{job.message}</p> : null}
     {active ? <div role="status"><p>{job.stage.replaceAll("_", " ")}</p><progress aria-label="Extraction progress"/><button disabled={busy} className="secondary-button" onClick={() => void operate(async () => { const next = await cancelLibraryJob(job.id); if (alive.current) setSubmitted(next); })}>Cancel extraction</button></div>
       : <button className="primary-button" disabled={busy} onClick={() => void operate(async () => { const next = await startFirmwareExtraction(sha256); if (alive.current) setSubmitted(next); })}>{report ? "Extract again" : "Extract Contents"}</button>}
     {report ? <>
       <p>{report.entries.filter(e => e.kind === "file").length} files · {formatBytes(report.totalBytes)} · {report.status === "partially_extracted" ? "Filesystem extracted; some image contents omitted" : "Filesystem extracted and verified"}</p>
-      <details><summary>Extraction details and customization eligibility</summary><p>{report.extractor} · SquashFS at {report.region.offset.toLocaleString()}</p><ul>{report.limitations.map(line => <li key={line}>{line}</li>)}</ul><p>Rebuilding requires a separately qualified device and build adapter.</p></details>
+      <details><summary>Extraction details and customization eligibility</summary><p>{report.extractor} · SquashFS at {report.region.offset.toLocaleString()}</p>{report.containerInfo ? <p>TRX v1 container checked by OpenWrt otrx. Only its direct SquashFS root partition is unpacked.</p> : null}<ul>{report.limitations.map(line => <li key={line}>{line}</li>)}</ul><p>Rebuilding requires a separately qualified device and build adapter.</p></details>
       <details open><summary>Browse Extracted Files</summary>
         <p>Folder: /{folder}</p>
         {folder ? <button className="secondary-button" onClick={() => { setFolder(folder.includes("/") ? folder.slice(0, folder.lastIndexOf("/")) : ""); setPreview(null); request.current++; }}>Up one folder</button> : null}
         <div className="extraction-files"><table><thead><tr><th>Export</th><th>Name</th><th>Type</th><th>Size</th></tr></thead><tbody>
-          {visible.map(entry => <tr key={entry.path}><td>{entry.kind === "file" ? <input type="checkbox" aria-label={`Select ${entry.path} for export`} checked={selection.has(entry.path)} onChange={e => { const checked = e.target.checked; setSelection(previous => { const next = new Set(previous); if (checked) next.add(entry.path); else next.delete(entry.path); return next; }); setExportApproved(false); }}/> : null}</td><td>
+          {visible.map(entry => <tr key={entry.path}><td>{entry.kind === "file" ? <input type="checkbox" disabled={Boolean(entry.exportError)} aria-label={`Select ${entry.path} for export`} checked={selection.has(entry.path)} onChange={e => { const checked = e.target.checked; setSelection(previous => { const next = new Set(previous); if (checked) next.add(entry.path); else next.delete(entry.path); return next; }); setExportApproved(false); }}/> : null}</td><td>
             {entry.kind === "directory" ? <button className="text-button" onClick={() => { setFolder(entry.path); setPreview(null); request.current++; }}>{entry.path.split("/").at(-1)}/</button> : entry.kind === "file" ? <button className="text-button" disabled={busy || entry.size > 65536} onClick={() => inspect(entry.path)}>{entry.path.split("/").at(-1)}</button> : entry.path.split("/").at(-1)}
+            {entry.exportError ? <p className="muted small">{entry.exportError}</p> : null}
           </td><td>{entry.kind.replaceAll("_", " ")}</td><td>{entry.kind === "file" ? formatBytes(entry.size) : "—"}</td></tr>)}
         </tbody></table></div>
       </details>

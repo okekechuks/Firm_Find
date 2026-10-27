@@ -17,6 +17,8 @@ export async function verifyAuthChallenge(client,{label,pid,evidence}) {
   const inventory=await evaluate("window.__TAURI_INTERNALS__.invoke('get_discovery')");
   const target=inventory.devices.find(d=>d.connected&&d.vendorId==='1286'&&d.productId==='4E31'&&d.networks.filter(n=>n.linkUp&&!n.virtualInterface&&n.gateways.includes('192.168.100.1')).length===1);
   assert(target,'Selected owner USB candidate unavailable; no request sent.');
+  await evaluate("document.querySelector('a[href=\"#devices\"]').click()");
+  await until(()=>evaluate("document.querySelector('.device-card')!==null"),'Connected Devices did not render',20000);
   const network=target.networks.find(n=>n.linkUp&&!n.virtualInterface&&n.gateways.includes('192.168.100.1'));
   const input={deviceId:target.id,endpoint:'http://192.168.100.1/',interfaceId:network.id,approvalToken:null,advancedEndpoint:false};
   async function step(approval,read,projection){

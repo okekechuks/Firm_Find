@@ -25,6 +25,7 @@
     "tauri": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop.ps1",
     "test:gui": "node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui",
     "test:extraction-worker": "python -B scripts/test-firmware-extraction.py",
-    "test:extraction-native": "node scripts/verify-foundation.mjs --official-acquisition --firmware-extraction"
+    "test:extraction-native": "node scripts/verify-foundation.mjs --official-acquisition --firmware-extraction",
+    "test:extraction-review-native": "node scripts/verify-foundation.mjs --official-acquisition --firmware-extraction --extraction-review"
   }
 }

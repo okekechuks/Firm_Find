@@ -4,3 +4,6 @@ apps/desktop/src-tauri/fixtures/asr-root-redacted.html -text -diff
 apps/desktop/src-tauri/fixtures/asr-version-redacted.xml -text
 # Public signed release metadata must retain exact upstream bytes on Windows.
 apps/desktop/src-tauri/assets/official/* -text
+# Preserve the exact upstream parser hash and executable shell syntax on Windows.
+workers/extraction/vendor/otrx.c text eol=lf
+scripts/build-trx-parser.sh text eol=lf

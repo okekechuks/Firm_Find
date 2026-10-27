@@ -8,7 +8,7 @@ import {gzipSync} from 'node:zlib';
 import {assertOwned} from './native-test-profile.mjs';
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const until = async(check,message) => {const deadline=Date.now()+190000;while(Date.now()<deadline){if(await check())return;await new Promise(r=>setTimeout(r,150));}throw new Error(message);};
-async function retainManifest(profile,evidence,report) {
+export async function retainManifest(profile,evidence,report) {
   const vault=path.join(profile.root,'data/vault/sha256');await assertOwned(profile,vault);
   for(const prefix of await readdir(vault,{withFileTypes:true})) {
     if(!prefix.isDirectory()||!/^[a-f0-9]{2}$/.test(prefix.name))continue;

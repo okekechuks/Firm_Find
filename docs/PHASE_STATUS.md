@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## Independent Beta 2 review — P0 main restored, corrections under verification
+
+27 October 2026: invalid leading `+` removed in `653da84`; Beta 2 and main histories merged in `d5d05413d30c01f189968526be2ac80979387bd5` and main fast-forwarded without rewriting history. [Main CI 40524198759](https://github.com/okekechuks/Firm_Find/actions/runs/40524198759) passed both jobs and both Windows builds. Tags and all Beta 2 release assets are unchanged; release evidence links now use permanent `fb490ec…` URLs.
+
+Separate `fix/beta2-extraction-hardening` source qualifies maintained bubblewrap, a combined staging budget, export-name preflight and a narrow TRX v1 route. Final native/CI verification is underway; [correction details and current gates](BETA_2_REVIEW_CORRECTIONS.md). Physical MG11 challenge awaits current owner supervision; no installed firmware acquired. Phase 7.5 and the full project remain incomplete.
+
 ## Beta 2 filesystem extraction — native qualification passed
 
 **[v0.2.0-beta.2 published](https://github.com/okekechuks/Firm_Find/releases/tag/v0.2.0-beta.2)** from qualified source `e4524e80ac38ff0702e0917fc9a8f314d2f1ad82`, with CI-built installers/EXE, checksums and the actual extraction manifest. Uploaded asset sizes and SHA-256 values were checked against the downloaded CI artifacts before publication. Main and Beta 1 are preserved.
