@@ -1,0 +1,29 @@
+py : test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) ... ok
+At line:2 char:1
++ py -B scripts/test-extraction-engine-v2.py *> .tools/extraction-v2-co ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_cpio_crc_t...ejected) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed
+(__main__.Formats.test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed) ... ok
+test_manifest_is_deterministic_and_resource_limits_are_shared
+(__main__.Formats.test_manifest_is_deterministic_and_resource_limits_are_shared) ... ok
+test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance
+(__main__.Formats.test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance) ... ok
+test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes
+(__main__.Formats.test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes) ... ok
+test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem
+(__main__.Formats.test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem) ... ok
+test_unknown_and_near_miss_have_explicit_unexplained_ranges
+(__main__.Formats.test_unknown_and_near_miss_have_explicit_unexplained_ranges) ... ok
+test_vendor_header_carving_finds_nested_cpio_and_records_prefix
+(__main__.Formats.test_vendor_header_carving_finds_nested_cpio_and_records_prefix) ... ok
+test_zip_slip_is_rejected_before_any_unsafe_output
+(__main__.Formats.test_zip_slip_is_rejected_before_any_unsafe_output) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.325s
+
+OK

@@ -37,6 +37,11 @@ def synthetic_trx(offsets=(28,60,0),version=1):
 
 
 class Parsing(unittest.TestCase):
+    def test_sandbox_executes_the_hash_pinned_interpreter(self):
+        command = worker.sandbox(Path(worker.__file__).resolve(), Path("synthetic-input"))
+        self.assertEqual(command[-5:], ["/usr/bin/python3.14", "-I", "-B", "/worker.py", "--inner"])
+        self.assertIn("/usr/bin/python3.14", worker.TOOLS)
+
     def test_trx_requires_bounded_header_crc_version_and_ordered_partitions(self):
         with tempfile.TemporaryDirectory() as tmp:
             image=Path(tmp)/"synthetic.trx"
@@ -191,7 +196,7 @@ class Linux(unittest.TestCase):
             image=Path(tmp)/"synthetic-input"
             image.write_bytes(b"synthetic input")
             command=worker.sandbox(Path(worker.__file__).resolve(),image)
-            command=command[:command.index("/usr/bin/python3")]+["/usr/bin/python3","-I","-B","-c",
+            command=command[:command.index(worker.PYTHON)]+[worker.PYTHON,"-I","-B","-c",
                 "import os,pathlib; assert os.statvfs('/').f_flag & os.ST_RDONLY; assert not os.statvfs('/work').f_flag & os.ST_RDONLY; pathlib.Path('/work/allowed').write_text('synthetic'); assert not pathlib.Path('/mnt/c').exists(); assert not pathlib.Path('/home').exists()"]
             result=subprocess.run(command,capture_output=True,timeout=20)
             self.assertEqual(result.returncode,0,result.stderr.decode())

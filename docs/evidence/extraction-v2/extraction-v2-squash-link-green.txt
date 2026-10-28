@@ -1,0 +1,13 @@
+py : test_squashfs_unsafe_links_are_omitted_without_losing_ordinary_files
+(__main__.Formats.test_squashfs_unsafe_links_are_omitted_without_losing_ordinary_files) ... ok
+At line:3 char:1
++ py -B scripts/test-extraction-engine-v2.py Formats.test_squashfs_unsa ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_squashfs_u...y_files) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+OK

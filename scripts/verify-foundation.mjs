@@ -2,7 +2,7 @@ import { verifyExtraction } from "./verify-extraction.mjs";
 import { verifyUniversalWorkflow } from "./verify-universal-workflow.mjs";
 import { verifyExtractionReview } from "./verify-extraction-review.mjs";
 import { verifyAuthChallenge } from "./verify-auth-challenge.mjs";
-import { verifyManufacturerPackage } from "./verify-manufacturer-package.mjs";
+import { verifyManufacturerPackage, verifyRarPackage } from "./verify-manufacturer-package.mjs";
 import { verifyGUI, verifyGUIRestart, configureGUIEvidence } from "./verify-gui.mjs";
 import { verifyAdapters } from "./verify-adapters.mjs";
 import { verifySimulator } from "./verify-simulator.mjs";
@@ -403,8 +403,10 @@ try {
   if(process.argv.includes('--manufacturer-package')) {
     await clean();start('release');await verify('manufacturer-before');
     await verifyManufacturerPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot});
+    await verifyRarPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot});
     await closeWindow();start('release');await verify('manufacturer-reopened');
     await verifyManufacturerPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot,reopened:true});
+    await verifyRarPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot,reopened:true});
     await closeWindow();
   } else if(process.argv.includes('--universal-workflow')) {
     await clean(); start('release'); await connect(); await connected();

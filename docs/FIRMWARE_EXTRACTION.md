@@ -1,5 +1,11 @@
 # Firmware filesystem extraction
 
+Feature branch `feature/extraction-engine-v2` adds the bounded layer pipeline and
+Library layer/coverage view described in [Extraction engine V2](EXTRACTION_ENGINE_V2.md).
+Its support matrix, limitations and verification supersede the narrow supported
+boundary below **for that feature build only**. V1 immutable reports and published
+Beta binaries retain their original contracts. No physical acquisition is added.
+
 Current source includes unreleased review corrections: maintained bubblewrap qualification, combined temporary-space accounting, export-name preflight and a narrow TRX v1 adapter. Published Beta 2 binaries retain their original source and runtime pins; they have not been retagged or replaced. See [correction evidence and review status](BETA_2_REVIEW_CORRECTIONS.md).
 
 Library → select firmware → Analyze Firmware → Extract Contents unpacks a supported filesystem into a validated, persistent file index. Browse folders, click a small text file to inspect it, then explicitly select files for TAR export. Selection starts empty. Export requires reviewing the selected files for passwords, keys and personal information.

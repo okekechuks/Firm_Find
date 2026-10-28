@@ -1,0 +1,15 @@
+py : test_archive_trailers_are_unexplained_and_regular_files_are_retained
+(__main__.Formats.test_archive_trailers_are_unexplained_and_regular_files_are_retained) ... ok
+At line:2 char:1
++ py -B scripts/test-extraction-engine-v2.py Formats.test_archive_trail ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_archive_tr...etained) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+(__main__.Formats.test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.180s
+
+OK

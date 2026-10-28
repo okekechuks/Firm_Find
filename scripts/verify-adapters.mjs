@@ -43,38 +43,34 @@ export async function verifyAdapters(client,{label,evidence,record}){
   record(label+": passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection",{devices:results.length,mg11Connected:Boolean(mg11)});
   await client.evaluate('document.querySelector(\'nav a[href="#devices"]\').click()');
   await until(()=>client.evaluate('Boolean(document.querySelector(".device-toolbar"))'),"Devices page missing");
-  await client.evaluate('(()=>{const label=[...document.querySelectorAll("label")].find(e=>e.textContent.includes("Show advanced Windows"));const input=label?.querySelector("input");if(input&&!input.checked)input.click();})()');
-  await until(()=>client.evaluate('Boolean(document.querySelector(".device-card button[aria-label^=\\"Check compatibility\\"]"))'),"Visible real Windows device cards missing");
-  await client.evaluate('document.querySelector(".device-card button[aria-label^=\\"Check compatibility\\"]").click()');
-  await until(()=>client.evaluate('Boolean(document.querySelector(".adapter-summary button:not([disabled])"))'),"Adapter status did not load through React and Rust");
-  assert.equal(await client.evaluate('Boolean(document.querySelector(".adapter-summary [role=alert]"))'),false);
-  assert(await client.evaluate('document.querySelector(".adapter-summary").textContent.includes("unavailable")'));
-  await client.evaluate('document.querySelector(".device-card button[aria-label^=\\"More info\\"]").click()');
-  await until(()=>client.evaluate('Boolean(document.querySelector(".device-info-dialog[open]"))'),"More info popup missing");
-  assert(await client.evaluate('[...document.querySelectorAll(".device-info-dialog button")].find(b=>b.textContent.includes("Extract Firmware")).disabled'));
-  await client.evaluate('document.querySelector("[aria-label=\\"Close device information\\"]").click()');
-  await client.evaluate('document.querySelector(".adapter-summary").scrollIntoView({block:"center"})');
-  await client.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
-  const screenshot=await client.send("Page.captureScreenshot",{format:"png"});
-  await writeFile(path.join(evidence,label+"-phase5-adapter-status.png"),Buffer.from(screenshot.data,"base64"));
-  record(label+": actual native React adapter status, protected/unsupported display and disabled extraction");
+  // The former card-level adapter panel was removed from the product UI.
+  // Open a protected Windows observation only; never approve or run a probe.
+  const protectedResult=results.find(result=>result.protectedDevice&&snapshot.devices.some(d=>d.id===result.deviceId&&d.connected));
+  if(protectedResult){
+    await client.evaluate('(()=>{const details=document.querySelector(".other-interfaces");if(details&&!details.open)details.open=true;const label=[...document.querySelectorAll("label")].find(e=>e.textContent.includes("Show advanced Windows"));const input=label?.querySelector("input");if(input&&!input.checked)input.click();})()');
+    const selector=`.device-card[data-device-id="${protectedResult.deviceId}"] button[aria-label^="More info"]`;
+    await until(()=>client.evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)}))`),"Protected Windows device card missing");
+    await client.evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
+    await until(()=>client.evaluate('Boolean(document.querySelector(".device-info-dialog[open] .device-network-summary"))'),"More info network summary missing");
+    await until(()=>client.evaluate('document.querySelector(".device-firmware-workflow")?.getAttribute("aria-busy")==="false"'),"Local device workflow did not load");
+    assert(await client.evaluate('Boolean([...document.querySelectorAll(".device-info-dialog button")].find(b=>b.textContent.trim()==="Obtain Firmware"&&b.disabled))'));
+    assert.equal(await client.evaluate('Boolean(document.querySelector(".device-info-dialog .acquisition-results"))'),false);
+    const screenshot=await client.send("Page.captureScreenshot",{format:"png"});
+    await writeFile(path.join(evidence,label+"-phase5-device-info.png"),Buffer.from(screenshot.data,"base64"));
+    await client.evaluate('document.querySelector("[aria-label=\\"Close device information\\"]").click()');
+    record(label+": protected device information and disabled acquisition shown; no compatibility check or device request",{deviceId:protectedResult.deviceId});
+  }else{
+    record(label+": protected device information UI not tested; no connected protected Windows record available");
+  }
   const address="http://192.168.254.253:54321/";
   const before=await invoke("get_manual_routers");assert(!before.some(r=>r.address===address),"Fixture address already exists; refuse overwrite");
-  await client.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent==="Add Router").click()');
-  await until(()=>client.evaluate('Boolean(document.querySelector(".router-form form"))'),"Add Router form missing");
-  await client.evaluate(`(()=>{const inputs=document.querySelectorAll('.router-form input');const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;set.call(inputs[0],${JSON.stringify(address)});inputs[0].dispatchEvent(new Event('input',{bubbles:true}));set.call(inputs[1],'Phase 5 isolated endpoint');inputs[1].dispatchEvent(new Event('input',{bubbles:true}));})()`);
-  await client.evaluate('document.querySelector(".router-form form").requestSubmit()');
-  await until(()=>client.evaluate('Boolean([...document.querySelectorAll(".saved-router")].find(e=>e.textContent.includes("Phase 5 isolated endpoint")))'),"Saved endpoint UI missing");
-  const routers=await invoke("get_manual_routers");
+  // Saved-connections controls are no longer mounted. Exercise their local IPC
+  // against the isolated profile and do not call probe_management_endpoint.
+  const routers=await invoke("add_manual_router",{input:{address,label:"Phase 5 isolated endpoint",interfaceId:null}});
   const saved=routers.find(r=>r.address===address);assert(saved);
   try{
     const result=await query(saved.id,"saved_endpoint");assert.equal(result.connectionState,"identity_verification_required");assert.equal(result.selectedAdapter,null);
     assert.equal((await invoke("get_manual_routers")).find(r=>r.id===saved.id).lastResult,null);
-    await until(()=>client.evaluate('Boolean([...document.querySelectorAll(".saved-router")].find(e=>e.textContent.includes("Phase 5 isolated endpoint")))'),"Saved endpoint UI missing");
-    await client.evaluate('(()=>{const row=[...document.querySelectorAll(".saved-router")].find(e=>e.textContent.includes("Phase 5 isolated endpoint"));[...row.querySelectorAll("button")].find(b=>b.textContent==="Adapter status").click();})()');
-    await until(()=>client.evaluate('Boolean(document.querySelector(".saved-connections-dialog .adapter-summary button:not([disabled])"))'),"Saved endpoint adapter IPC missing");
-    assert(await client.evaluate('document.querySelector(".saved-connections-dialog .adapter-summary").textContent.includes("No compatible adapter")'));
-    await client.evaluate('document.querySelector("[aria-label=\\"Close saved connections\\"]").click()');
   }finally{await invoke("remove_manual_router",{id:saved.id});}
-  record(label+": saved endpoint adapter query and GUI remain passive; no HTTP observation or device record invented");
+  record(label+": saved endpoint adapter IPC remains passive; saved-connections GUI no longer mounted and was not tested");
 }

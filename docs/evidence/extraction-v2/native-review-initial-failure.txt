@@ -1,0 +1,55 @@
+
+> obtainer-workspace@0.2.0-beta.2 test:extraction-review-native
+> node scripts/verify-foundation.mjs --official-acquisition --firmware-extraction --extraction-review
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-28T19-26-47.471Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: official-before: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"c73e9c85c8677106121edf81693e19e1","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c73e9c85c8677106121edf81693e19e1\\data"}
+PASS: official-before: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":1808,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c73e9c85c8677106121edf81693e19e1\\data","theme":"system"}
+PASS: official-before: exactly six primary navigation destinations {}
+PASS: official-before: discovery, three refreshes, unique IDs, unknown feature support {"records":54,"watching":true,"warnings":[]}
+PASS: official-before: same-value settings write/read preserved original preferences {}
+PASS: actual public official-image download, independent byte/hash check, classified Library admission, provenance, rendered bounded analysis {"filename":"openwrt-25.12.6-ath79-generic-tplink_archer-c7-v5-squashfs-sysupgrade.bin","bytes":7405862,"sha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","format":"U-Boot legacy","regions":2,"retainedFile":"C:\\Users\\chuka\\OneDrive\\Documents\\Firm_Find\\.tools\\beta2-hardening\\.tools\\sprint\\acquired\\openwrt-25.12.6-ath79-generic-tplink_archer-c7-v5-squashfs-sysupgrade.bin"}
+PASS: native GUI cancellation: no extraction published; retry available {"jobId":"34b4678d29c36d29c2458f1082ca263c"}
+PASS: native extraction: actual SquashFS files, independent hashes, rendered tree and text preview {"files":869,"directories":132,"bytes":13411262,"inputSha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","bundleSha256":"559d94d579f289c0700184bd4b5241451e0b196c4771ad8997fb3663a4b4769d","manifestSha256":"67d8d8f2272ca80dc93aa6d4ad51b3b992349d893a89f9c37ef89677688ada1e"}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: official-reopened: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"c73e9c85c8677106121edf81693e19e1","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c73e9c85c8677106121edf81693e19e1\\data"}
+PASS: official-reopened: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":20800,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c73e9c85c8677106121edf81693e19e1\\data","theme":"system"}
+PASS: official-reopened: exactly six primary navigation destinations {}
+PASS: official-reopened: discovery, three refreshes, unique IDs, unknown feature support {"records":54,"watching":true,"warnings":[]}
+PASS: official-reopened: same-value settings write/read preserved original preferences {}
+PASS: official image, exact source provenance and bounded report remain accessible after native restart {}
+PASS: native restart: extraction browsing, real text preview and selected-file TAR export {"files":869,"directories":132,"bytes":13411262,"inputSha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","bundleSha256":"559d94d579f289c0700184bd4b5241451e0b196c4771ad8997fb3663a4b4769d","manifestSha256":"67d8d8f2272ca80dc93aa6d4ad51b3b992349d893a89f9c37ef89677688ada1e"}
+PASS: additional gzip-to-SquashFS route: real OpenWrt payload in explicitly local wrapper; every extracted file matches original route {"wrapperSha256":"7b9a3f5e89352ac509b0b0ef459965d5b809ac5d83db3441bba6c057e5c1bf25","wrapperBytes":7383043,"files":869,"totalBytes":13411262,"manifestSha256":"9c671a579ea0001543df98b2b31a7c184a07076b6797f513a95ca3d34d60a695"}
+PASS: native genuine TRX v1: preserved 851 direct SquashFS files plus nested layers, hashes independently verified {"sha256":"0f29bd64f7a8f931cf1121dd54b514f1ecb58486ffa1713a282c97928c703d5d","files":1158,"directories":129,"totalBytes":12489630,"manifestSha256":"82d413bca3d0f0df316481e6ef41d3185f8561ea5210c4af565bb6ecd198e67c","bundleSha256":"372064b6873d16263cbbde292f6f37529f59216691c432cc52b8fcb5fae6a737"}
+PASS: native UBI inspection: geometry/CRC evidence retained; incomplete mapping not inferred as filesystem {"sha256":"1827a286bc03df7a83ccd93e84cb1375cc1e10c1857ded3eb9c0ad413f761d36","manifestSha256":"e2b89c64fbd86377d7ef4bebf764298f5226a79e27c9a6148b66420689e319e3","files":0,"physicalDump":false}
+PASS: native failure: EXTRACTION_RESOURCES; no successful output; prior extraction retained {"filename":"synthetic-resource-limit.gz","sha256":"55383098912db2ca5b0b7e95f7c7a8b5745ec0e0fa1ccf9b3237d0fc6aab7ee2","errorCode":"EXTRACTION_RESOURCES"}
+PASS: normal application file bytes unchanged after isolated native suite {}
+Failed test run retained: C:\Users\chuka\AppData\Local\OBTAINER-NativeTests\c73e9c85c8677106121edf81693e19e1
+npm.cmd : node:internal/modules/run_main:123
+At line:2 char:1
++ npm.cmd run test:extraction-review-native *> .tools/extraction-v2-fin ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:internal/modules/run_main:123:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(report.entries.some(e=>e.kind==='symlink_metadata'))
+
+    at verifyExtractionReview
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-extraction-review.mjs:63:9)
+    at async
+file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:431:55 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '=='
+}
+
+Node.js v22.17.0

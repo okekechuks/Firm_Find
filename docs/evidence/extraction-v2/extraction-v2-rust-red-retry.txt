@@ -1,0 +1,37 @@
+powershell.exe :    Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+At line:5 char:1
++ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/rust. ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ob...ktop\src-tauri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    Finished `test` profile [unoptimized] target(s) in 1m 35s
+     Running unittests src\lib.rs (target\debug\deps\obtainer_lib-3cbc5006e7811c3f.exe)
+
+running 3 tests
+test library::extraction::tests::v2_layers_and_content_hash_are_validated_without_wall_clock_metadata ... FAILED
+test library::extraction::tests::v2_unknown_is_a_metadata_inspection_and_never_an_extracted_success ... FAILED
+test library::extraction::tests::v2_rejects_false_completeness_bounds_forged_provenance_modes_and_topology ... ok
+
+failures:
+
+---- library::extraction::tests::v2_layers_and_content_hash_are_validated_without_wall_clock_metadata stdout ----
+
+thread 'library::extraction::tests::v2_layers_and_content_hash_are_validated_without_wall_clock_metadata' (2184) panicked at apps\desktop\src-tauri\src\library\extraction.rs:864:62:
+called `Result::unwrap()` on an `Err` value: LibraryError { code: "INVALID_EXTRACTION", message: "Extraction output failed independent validation. Original firmware retained." }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- library::extraction::tests::v2_unknown_is_a_metadata_inspection_and_never_an_extracted_success stdout ----
+
+thread 'library::extraction::tests::v2_unknown_is_a_metadata_inspection_and_never_an_extracted_success' (14076) panicked at apps\desktop\src-tauri\src\library\extraction.rs:898:9:
+assertion failed: synthetic_bundle(&value, b"", false).is_ok()
+
+
+failures:
+    library::extraction::tests::v2_layers_and_content_hash_are_validated_without_wall_clock_metadata
+    library::extraction::tests::v2_unknown_is_a_metadata_inspection_and_never_an_extracted_success
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 387 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `--lib`

@@ -47,3 +47,25 @@ it("identifies individual unexportable names and keeps selection disabled",async
   expect(screen.getByText("Cannot export this Unicode filename as USTAR.")).toBeVisible();
   expect(screen.getByRole("button",{name:"Export Extracted Files"})).toBeDisabled();
 });
+it("shows layer coverage and unknown ranges without calling a delta a filesystem",async()=>{
+  api.getFirmwareExtraction.mockResolvedValue({...report,version:2,status:"partially_extracted",completeness:"partial",
+    layers:[{id:"layer-0000",parentId:null,format:"cpio_crc",handler:"cpio",handlerVersion:1,offset:0,length:1024,space:"source",completeness:"partial",reasons:["delta, base required"],sourcePath:"<root>"}],
+    unexplainedRegions:[{layerId:"layer-0000",offset:900,length:124,reason:"unknown trailer"}],
+    entropyMap:[{offset:0,length:1024,bitsPerByte:7.9,classification:"high_entropy_compressed_or_encrypted"}],
+    omittedMembers:[],provenance:{engineVersion:"2.0.0",tools:[]}});
+  render(<FirmwareExtraction sha256={hash} jobs={[]}/>);
+  expect(await screen.findByText(/Partial extraction/)).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Layer tree"));
+  expect(screen.getByText("cpio_crc")).toBeVisible();
+  expect(screen.getByText("delta, base required")).toBeVisible();
+  fireEvent.click(screen.getByText("Unexplained regions (1)"));
+  expect(screen.getByText(/unknown trailer/)).toBeVisible();
+  expect(screen.queryByText("Filesystem extracted and verified")).not.toBeInTheDocument();
+});
+it("unknown metadata-only inspection never shows export controls or extracted success",async()=>{
+  api.getFirmwareExtraction.mockResolvedValue({...report,version:2,entries:[],totalBytes:0,status:"encrypted-or-unknown",completeness:"encrypted-or-unknown",layers:[],unexplainedRegions:[],entropyMap:[],omittedMembers:[],provenance:{engineVersion:"2.0.0",tools:[]}});
+  render(<FirmwareExtraction sha256={hash} jobs={[]}/>);
+  expect(await screen.findByText(/Encrypted or unknown/)).toBeInTheDocument();
+  expect(screen.queryByRole("button",{name:"Export Extracted Files"})).not.toBeInTheDocument();
+  expect(screen.queryByText("Browse Extracted Files")).not.toBeInTheDocument();
+});

@@ -1,0 +1,16 @@
+
+> obtainer-workspace@0.2.0-beta.2 test
+> npm run test --workspace @obtainer/desktop --run src/test/FirmwareExtraction.test.tsx
+
+
+> @obtainer/desktop@0.2.0-beta.2 test
+> vitest run --configLoader runner src/test/FirmwareExtraction.test.tsx
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/apps/desktop
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  17:42:46
+   Duration  13.80s (transform 208ms, setup 419ms, import 208ms, tests 450ms, environment 12.09s)

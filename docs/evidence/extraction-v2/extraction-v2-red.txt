@@ -1,0 +1,397 @@
+py : test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) ...
+At line:2 char:1
++ py -B scripts/test-extraction-engine-v2.py *> .tools/extraction-v2-re ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_cpio_crc_t..._rejected) ... :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=264) ... ERROR
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=258) ... ERROR
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=260) ... ERROR
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=260) ... ERROR
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=244) ... ERROR
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=244) ... ERROR
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=244) ... ERROR
+  test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=260) ... ERROR
+test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed
+(__main__.Formats.test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed) ... ERROR
+test_manifest_is_deterministic_and_resource_limits_are_shared
+(__main__.Formats.test_manifest_is_deterministic_and_resource_limits_are_shared) ... ERROR
+test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance
+(__main__.Formats.test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance) ... ERROR
+test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes
+(__main__.Formats.test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes) ... ERROR
+test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem
+(__main__.Formats.test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem) ... ERROR
+test_unknown_and_near_miss_have_explicit_unexplained_ranges
+(__main__.Formats.test_unknown_and_near_miss_have_explicit_unexplained_ranges) ... ERROR
+test_vendor_header_carving_finds_nested_cpio_and_records_prefix
+(__main__.Formats.test_vendor_header_carving_finds_nested_cpio_and_records_prefix) ... ERROR
+test_zip_slip_is_rejected_before_any_unsafe_output
+(__main__.Formats.test_zip_slip_is_rejected_before_any_unsafe_output) ... ERROR
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=264)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=258)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=260)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=260)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=244)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=244)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=244)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) (size=260)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+77, in test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+    self.run_image(raw)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed
+(__main__.Formats.test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+98, in test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed
+    self.run_image(cpio([ordinary("sw-description", text)]))
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_manifest_is_deterministic_and_resource_limits_are_shared
+(__main__.Formats.test_manifest_is_deterministic_and_resource_limits_are_shared)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+116, in test_manifest_is_deterministic_and_resource_limits_are_shared
+    first, _ = self.run_image(raw)
+               ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance
+(__main__.Formats.test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+57, in test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance
+    report, _ = self.run_image(cpio([ordinary()], crc))
+                ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes
+(__main__.Formats.test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+82, in test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes
+    report, _ = self.run_image(wrap(raw))
+                ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem
+(__main__.Formats.test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+89, in test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem
+    report, _ = self.run_image(raw)
+                ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_unknown_and_near_miss_have_explicit_unexplained_ranges
+(__main__.Formats.test_unknown_and_near_miss_have_explicit_unexplained_ranges)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+102, in test_unknown_and_near_miss_have_explicit_unexplained_ranges
+    report, _ = self.run_image(raw)
+                ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_vendor_header_carving_finds_nested_cpio_and_records_prefix
+(__main__.Formats.test_vendor_header_carving_finds_nested_cpio_and_records_prefix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+109, in test_vendor_header_carving_finds_nested_cpio_and_records_prefix
+    report, _ = self.run_image(prefix + cpio([ordinary()]))
+                ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+======================================================================
+ERROR: test_zip_slip_is_rejected_before_any_unsafe_output
+(__main__.Formats.test_zip_slip_is_rejected_before_any_unsafe_output)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+131, in test_zip_slip_is_rejected_before_any_unsafe_output
+    self.run_image(stream.getvalue())
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+53, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+51, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 5,
+in extract
+    raise NotImplementedError("Layered extraction is not implemented yet")
+NotImplementedError: Layered extraction is not implemented yet
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.055s
+
+FAILED (errors=16)

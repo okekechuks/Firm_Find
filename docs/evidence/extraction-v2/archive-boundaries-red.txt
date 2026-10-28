@@ -1,0 +1,73 @@
+py : test_archive_trailers_are_unexplained_and_regular_files_are_retained
+(__main__.Formats.test_archive_trailers_are_unexplained_and_regular_files_are_retained) ...
+At line:2 char:1
++ py -B scripts/test-extraction-engine-v2.py Formats.test_archive_trail ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_archive_tr..._retained) ... :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  test_archive_trailers_are_unexplained_and_regular_files_are_retained
+(__main__.Formats.test_archive_trailers_are_unexplained_and_regular_files_are_retained) (format=b'synt') ... FAIL
+  test_archive_trailers_are_unexplained_and_regular_files_are_retained
+(__main__.Formats.test_archive_trailers_are_unexplained_and_regular_files_are_retained) (format=b'PK\x03\x04') ... FAIL
+test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+(__main__.Formats.test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected) ...
+  test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+(__main__.Formats.test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected) (length=143) ... FAIL
+  test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+(__main__.Formats.test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected) (length=167) ... FAIL
+
+======================================================================
+FAIL: test_archive_trailers_are_unexplained_and_regular_files_are_retained
+(__main__.Formats.test_archive_trailers_are_unexplained_and_regular_files_are_retained) (format=b'synt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+93, in test_archive_trailers_are_unexplained_and_regular_files_are_retained
+    self.assertEqual(report["completeness"], "partial")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'complete' != 'partial'
+- complete
++ partial
+
+
+======================================================================
+FAIL: test_archive_trailers_are_unexplained_and_regular_files_are_retained
+(__main__.Formats.test_archive_trailers_are_unexplained_and_regular_files_are_retained) (format=b'PK\x03\x04')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+93, in test_archive_trailers_are_unexplained_and_regular_files_are_retained
+    self.assertEqual(report["completeness"], "partial")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'complete' != 'partial'
+- complete
++ partial
+
+
+======================================================================
+FAIL: test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+(__main__.Formats.test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected) (length=143)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+104, in test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+    with self.subTest(length=len(raw)), self.assertRaises(core.Refusal):
+                                        ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: Refusal not raised
+
+======================================================================
+FAIL: test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+(__main__.Formats.test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected) (length=167)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+104, in test_zip_truncated_comment_and_ambiguous_end_markers_are_rejected
+    with self.subTest(length=len(raw)), self.assertRaises(core.Refusal):
+                                        ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: Refusal not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.284s
+
+FAILED (failures=4)

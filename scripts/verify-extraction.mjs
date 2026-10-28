@@ -110,7 +110,9 @@ export async function verifyExtraction(client,{root,profile,evidence,record,scre
     let gzipJob;
     await until(async()=>{gzipJob=(await invoke('list_library_jobs')).find(j=>j.kind==='firmware_extraction'&&j.relatedArtifact===wrappedHash);return gzipJob&&['completed','failed','cancelled'].includes(gzipJob.status);},'Gzip extraction unfinished');
     assert.equal(gzipJob.status,'completed',JSON.stringify(gzipJob));
-    const gzipReport=await invoke('get_firmware_extraction',{sha256:wrappedHash});assert.equal(gzipReport.container,'gzip');assert.equal(gzipReport.expandedBytes,7405862);
+    const gzipReport=await invoke('get_firmware_extraction',{sha256:wrappedHash});assert.equal(gzipReport.container,'gzip');assert.equal(gzipReport.version,2);
+    assert.equal(gzipReport.layers.find(layer=>layer.parentId===gzipReport.layers[0].id).length,7405862);
+    assert(gzipReport.expandedBytes>=7405862); // V2 counts every decoded stream, including nested layers.
     const gzipManifestSha256=await retainManifest(profile,evidence,gzipReport);
     assert.deepEqual(gzipReport.entries.map(({path,sha256,size,kind})=>({path,sha256,size,kind})),report.entries.map(({path,sha256,size,kind})=>({path,sha256,size,kind})));
     assert.equal(digest(await readFile(source)),hash);

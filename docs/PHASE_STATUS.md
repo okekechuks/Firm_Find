@@ -1,5 +1,15 @@
 # OBTAINER phase status
 
+## Firmware-file extraction V2 — review pending
+
+The separate `feature/extraction-engine-v2` branch extends sandboxed extraction
+of existing Library files with bounded layers, CPIO/SWUpdate, selected compression
+and archive/filesystem readers, explicit partial results, and Library coverage
+views. [Support matrix, failures, actual checks and remaining unsupported formats](EXTRACTION_ENGINE_V2.md).
+Real local D-Link and OpenWrt files were processed; no firmware was acquired from
+physical devices. Independent review is pending. Main and published releases are
+not changed; Phase 7.5 and the project remain incomplete.
+
 ## October 28 physical acquisition sprint — hardware outcome blocked
 
 Work continues from `942195a` on `sprint/physical-acquisition-2026-10-28`; main and published releases are preserved. **Installed firmware physically acquired and extracted: 0/5; verified-compatible manufacturer image acquired and extracted: 0/5; metadata-only/blocked: 5/5.** H01-A Vitel (`MF69_AM802_ZX_DD_N_250725_EU`) and H01-B universal (`MF69_AM802L_ZX_DD_N_241106_EU`) are distinct units within one group; neither has firmware bytes. Owner inspected Vitel Configuration Management: imports/destructive controls, no visible export; none invoked. Current USB/Wi-Fi subnet overlap prevents an unambiguous approved read without a transport change or separate network. The challenge remains pending; no credentials or physical requests were used.

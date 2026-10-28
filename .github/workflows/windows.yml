@@ -25,6 +25,8 @@ jobs:
         run: npm run test:dns-build
       - name: Extraction boundary regressions (synthetic input only)
         run: npm run test:extraction-worker
+      - name: Layer-engine regressions (synthetic input only)
+        run: npm run test:extraction-v2
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -60,6 +62,8 @@ jobs:
 
       - name: Extraction parser and supervisor regressions (synthetic input only)
         run: python -B scripts/test-firmware-extraction.py
+      - name: Layer parser regressions (synthetic input only)
+        run: python -B scripts/test-extraction-engine-v2.py
   extraction-worker-qualified:
     # Keep modern tools in the disposable container; use the established
     # namespace-capable host rather than altering a host AppArmor policy.
@@ -70,8 +74,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install maintained tools in disposable qualification container
-        run: apt-get update && apt-get install --no-install-recommends -y python3 bubblewrap squashfs-tools util-linux passwd
+        run: apt-get update && apt-get install --no-install-recommends -y python3 bubblewrap squashfs-tools util-linux util-linux-extra e2fsprogs libarchive-tools lz4 zstd passwd
       - name: Run every extraction regression as an ordinary user
         run: |
+          set -o pipefail
           useradd --create-home extraction-ci
-          runuser -u extraction-ci -- python3 -B scripts/test-firmware-extraction.py
+          runuser -u extraction-ci -- python3 -B scripts/test-firmware-extraction.py 2>&1 | tee /tmp/extraction-legacy.log
+          if grep -Eq '^OK \(skipped=' /tmp/extraction-legacy.log; then exit 1; fi
+          runuser -u extraction-ci -- python3 -B scripts/test-extraction-engine-v2.py 2>&1 | tee /tmp/extraction-v2.log
+          if grep -Eq '^OK \(skipped=' /tmp/extraction-v2.log; then exit 1; fi

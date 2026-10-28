@@ -1,0 +1,34 @@
+python : test_sandbox_executes_the_hash_pinned_interpreter
+(__main__.Parsing.test_sandbox_executes_the_hash_pinned_interpreter) ... FAIL
+At line:3 char:1
++ python -B scripts/test-firmware-extraction.py Parsing.test_sandbox_ex ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_sandbox_ex...reter) ... FAIL:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+======================================================================
+FAIL: test_sandbox_executes_the_hash_pinned_interpreter
+(__main__.Parsing.test_sandbox_executes_the_hash_pinned_interpreter)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-firmware-extraction.py", line
+42, in test_sandbox_executes_the_hash_pinned_interpreter
+    self.assertEqual(command[-5:], ["/usr/bin/python3.14", "-I", "-B", "/worker.py", "--inner"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['/usr/bin/python3', '-I', '-B', '/worker.py', '--inner'] != ['/usr/bin/python3.14',
+'-I', '-B', '/worker.py', '--inner']
+
+First differing element 0:
+'/usr/bin/python3'
+'/usr/bin/python3.14'
+
+- ['/usr/bin/python3', '-I', '-B', '/worker.py', '--inner']
++ ['/usr/bin/python3.14', '-I', '-B', '/worker.py', '--inner']
+?                   +++
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

@@ -1,0 +1,71 @@
+py : test_cramfs_readonly_synthetic_image (__main__.FilesystemIsolation.test_cramfs_readonly_synthetic_image) ...
+skipped 'Production filesystem isolation requires Linux'
+At line:2 char:1
++ py -B scripts/test-extraction-engine-v2.py *> .tools/extraction-v2-ra ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_cramfs_rea...requires Linux':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_ext2_ext3_ext4_readers_use_real_readonly_synthetic_images
+(__main__.FilesystemIsolation.test_ext2_ext3_ext4_readers_use_real_readonly_synthetic_images) ... skipped 'Production
+filesystem isolation requires Linux'
+test_lz4_and_zstd_stream_inside_the_same_namespace
+(__main__.FilesystemIsolation.test_lz4_and_zstd_stream_inside_the_same_namespace) ... skipped 'Production filesystem
+isolation requires Linux'
+test_android_boot_v0_v3_v4_components_are_bounded_and_recursed
+(__main__.Formats.test_android_boot_v0_v3_v4_components_are_bounded_and_recursed) ... ok
+test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget
+(__main__.Formats.test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget) ... ok
+test_carving_keeps_two_independent_archives_and_the_gap
+(__main__.Formats.test_carving_keeps_two_independent_archives_and_the_gap) ... ok
+test_compression_bomb_fails_without_admitting_expanded_bytes
+(__main__.Formats.test_compression_bomb_fails_without_admitting_expanded_bytes) ... ok
+test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) ... ok
+test_cpio_device_nodes_are_rejected_as_output_and_retained_only_as_inert_metadata
+(__main__.Formats.test_cpio_device_nodes_are_rejected_as_output_and_retained_only_as_inert_metadata) ... ok
+test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink
+(__main__.Formats.test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink) ... ok
+test_false_carved_compressed_stream_rolls_back_before_next_candidate
+(__main__.Formats.test_false_carved_compressed_stream_rolls_back_before_next_candidate) ... ok
+test_false_embedded_fdt_does_not_hide_later_valid_carved_archive
+(__main__.Formats.test_false_embedded_fdt_does_not_hide_later_valid_carved_archive) ... ok
+test_fdt_fit_inline_image_sha256_and_invalid_hash (__main__.Formats.test_fdt_fit_inline_image_sha256_and_invalid_hash)
+... ok
+test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed
+(__main__.Formats.test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed) ... ok
+test_known_unqualified_filesystems_are_never_reported_as_extracted
+(__main__.Formats.test_known_unqualified_filesystems_are_never_reported_as_extracted) ... ok
+test_manifest_is_deterministic_and_resource_limits_are_shared
+(__main__.Formats.test_manifest_is_deterministic_and_resource_limits_are_shared) ... ok
+test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance
+(__main__.Formats.test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance) ... ok
+test_rar5_has_a_separate_handler_and_missing_decoder_is_explicit
+(__main__.Formats.test_rar5_has_a_separate_handler_and_missing_decoder_is_explicit) ... ok
+test_rar_header_crc_bounds_and_solid_skip_are_checked_before_decoder
+(__main__.Formats.test_rar_header_crc_bounds_and_solid_skip_are_checked_before_decoder) ... ok
+test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes
+(__main__.Formats.test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes) ... ok
+test_rejected_nested_archive_keeps_safe_outer_bytes_without_escaped_output
+(__main__.Formats.test_rejected_nested_archive_keeps_safe_outer_bytes_without_escaped_output) ... ok
+test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem
+(__main__.Formats.test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem) ... ok
+test_ubi_static_volume_crc_geometry_and_duplicate_logical_blocks
+(__main__.Formats.test_ubi_static_volume_crc_geometry_and_duplicate_logical_blocks) ... ok
+test_uimage_checks_both_crcs_and_recurses_without_executing_payload
+(__main__.Formats.test_uimage_checks_both_crcs_and_recurses_without_executing_payload) ... ok
+test_uimage_trailing_archive_is_a_separate_layer (__main__.Formats.test_uimage_trailing_archive_is_a_separate_layer)
+... ok
+test_unknown_and_near_miss_have_explicit_unexplained_ranges
+(__main__.Formats.test_unknown_and_near_miss_have_explicit_unexplained_ranges) ... ok
+test_valid_compressed_stream_with_container_padding_keeps_tail_unexplained
+(__main__.Formats.test_valid_compressed_stream_with_container_padding_keeps_tail_unexplained) ... ok
+test_vendor_header_carving_finds_nested_cpio_and_records_prefix
+(__main__.Formats.test_vendor_header_carving_finds_nested_cpio_and_records_prefix) ... ok
+test_zip_slip_is_rejected_before_any_unsafe_output
+(__main__.Formats.test_zip_slip_is_rejected_before_any_unsafe_output) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 0.918s
+
+OK (skipped=3)

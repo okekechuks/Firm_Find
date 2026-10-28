@@ -1,0 +1,59 @@
+wsl.exe : test_ext2_ext3_ext4_readers_use_real_readonly_synthetic_images
+(__main__.FilesystemIsolation.test_ext2_ext3_ext4_readers_use_real_readonly_synthetic_images) ... FAIL
+At line:2 char:1
++ wsl.exe -d Ubuntu --cd /mnt/c/Users/chuka/OneDrive/Documents/Firm_Fin ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_ext2_ext3_...mages) ... FAIL:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget
+(__main__.Formats.test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget) ... ok
+test_compression_bomb_fails_without_admitting_expanded_bytes
+(__main__.Formats.test_compression_bomb_fails_without_admitting_expanded_bytes) ... ok
+test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) ... ok
+test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink
+(__main__.Formats.test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink) ... ok
+test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed
+(__main__.Formats.test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed) ... ok
+test_known_unqualified_filesystems_are_never_reported_as_extracted
+(__main__.Formats.test_known_unqualified_filesystems_are_never_reported_as_extracted) ... ok
+test_manifest_is_deterministic_and_resource_limits_are_shared
+(__main__.Formats.test_manifest_is_deterministic_and_resource_limits_are_shared) ... ok
+test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance
+(__main__.Formats.test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance) ... ok
+test_rar5_has_a_separate_handler_and_missing_decoder_is_explicit
+(__main__.Formats.test_rar5_has_a_separate_handler_and_missing_decoder_is_explicit) ... ok
+test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes
+(__main__.Formats.test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes) ... ok
+test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem
+(__main__.Formats.test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem) ... ok
+test_ubi_static_volume_crc_geometry_and_duplicate_logical_blocks
+(__main__.Formats.test_ubi_static_volume_crc_geometry_and_duplicate_logical_blocks) ... ok
+test_uimage_checks_both_crcs_and_recurses_without_executing_payload
+(__main__.Formats.test_uimage_checks_both_crcs_and_recurses_without_executing_payload) ... ok
+test_unknown_and_near_miss_have_explicit_unexplained_ranges
+(__main__.Formats.test_unknown_and_near_miss_have_explicit_unexplained_ranges) ... ok
+test_vendor_header_carving_finds_nested_cpio_and_records_prefix
+(__main__.Formats.test_vendor_header_carving_finds_nested_cpio_and_records_prefix) ... ok
+test_zip_slip_is_rejected_before_any_unsafe_output
+(__main__.Formats.test_zip_slip_is_rejected_before_any_unsafe_output) ... ok
+
+======================================================================
+FAIL: test_ext2_ext3_ext4_readers_use_real_readonly_synthetic_images
+(__main__.FilesystemIsolation.test_ext2_ext3_ext4_readers_use_real_readonly_synthetic_images)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/test-extraction-engine-v2.py",
+line 225, in test_ext2_ext3_ext4_readers_use_real_readonly_synthetic_images
+    self.assertEqual(report["layers"][0]["handler"], "ext")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'unknown' != 'ext'
+- unknown
++ ext
+
+
+----------------------------------------------------------------------
+Ran 17 tests in 1.239s
+
+FAILED (failures=1)

@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 import shutil
 import struct
+import subprocess
+import sys
 import tempfile
 import threading
 
@@ -23,6 +25,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input",type=Path,required=True)
     parser.add_argument("--evidence",type=Path,required=True)
+    parser.add_argument("--failure-trace",action="store_true",help="After refusal, repeat the same isolated parser with a local traceback; no sandbox bypass")
     args=parser.parse_args()
     evidence=args.evidence.resolve()
     if not evidence.is_relative_to((ROOT/".tools").resolve()):
@@ -61,6 +64,13 @@ def main():
         except worker.Refusal as error:
             record["error"]=str(error)
             record["outputBytes"]=(job/"output.bin").stat().st_size if (job/"output.bin").exists() else 0
+            if args.failure_trace:
+                command=worker.sandbox(ROOT/"scripts/firmware-extract-worker.py",job/"input.bin")
+                command=command[:command.index(worker.PYTHON)]+[worker.PYTHON,"-I","-B","-c",
+                    "import importlib.util,sys; s=importlib.util.spec_from_file_location('core','/worker.py'); m=importlib.util.module_from_spec(s); sys.modules['core']=m; s.loader.exec_module(m); m.inner("+repr(original)+","+str(record["inputBytes"])+")"]
+                with (evidence/"refusal-trace.log").open("wb") as trace:
+                    result=subprocess.run(command,stdout=subprocess.DEVNULL,stderr=trace,timeout=120,check=False)
+                record["traceExit"]=result.returncode
         finally:
             stop.set()
             thread.join(timeout=5)

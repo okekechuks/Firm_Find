@@ -16,7 +16,7 @@ export async function verifyExtractionReview(client,{root,profile,evidence,pid,r
   const fixtures=JSON.parse(await readFile(path.join(root,'.tools/trx/verified-fixtures.json'),'utf8'));
   const cases=[
     {filename:'openwrt-25.12.6-bcm47xx-mips74k-asus_rt-n16-squashfs.trx',folder:'trx',sha256:'0f29bd64f7a8f931cf1121dd54b514f1ecb58486ffa1713a282c97928c703d5d',container:'trx'},
-    {filename:'openwrt-25.12.6-bcm53xx-generic-asus_rt-ac68u-squashfs.trx',folder:'trx',sha256:'1827a286bc03df7a83ccd93e84cb1375cc1e10c1857ded3eb9c0ad413f761d36',error:'UNSUPPORTED_NESTED_FORMAT'},
+    {filename:'openwrt-25.12.6-bcm53xx-generic-asus_rt-ac68u-squashfs.trx',folder:'trx',sha256:'1827a286bc03df7a83ccd93e84cb1375cc1e10c1857ded3eb9c0ad413f761d36',container:'trx',inspectionOnly:true},
     {filename:'synthetic-resource-limit.gz',folder:'review-fixtures',error:'EXTRACTION_RESOURCES'},
     {filename:'synthetic-export-names.sqfs',folder:'review-fixtures',container:'raw'},
   ];
@@ -46,14 +46,23 @@ export async function verifyExtractionReview(client,{root,profile,evidence,pid,r
       const bytes=await readFile(bundle);assert.equal(digest(bytes),report.bundleSha256);
       for(const entry of report.entries.filter(e=>e.kind==='file'))assert.equal(digest(bytes.subarray(entry.offset,entry.offset+entry.size)),entry.sha256);
       const manifestSha256=await retainManifest(profile,evidence,report);
-      if(item.container==='trx') {
-        assert.equal(report.fileCount,851);assert.equal(report.directoryCount,124);assert.equal(report.totalBytes,12421418);
+      if(item.inspectionOnly){
+        assert.equal(report.version,2);assert.equal(report.fileCount,0);assert.equal(report.completeness,'partial');
+        assert(report.layers.some(layer=>layer.format==='ubi'&&layer.reasons.some(reason=>reason.includes('not reconstructed'))));
+        assert.equal(report.status,'inspection_only');
+        record('native UBI inspection: geometry/CRC evidence retained; incomplete mapping not inferred as filesystem',{sha256:hash,manifestSha256,files:0,physicalDump:false});
+      } else if(item.container==='trx') {
+        const rootEntries=report.entries.filter(entry=>!entry.path.includes('.contents/')&&!entry.path.startsWith('partition-'));
+        assert.equal(rootEntries.filter(entry=>entry.kind==='file').length,851);
+        assert.equal(rootEntries.filter(entry=>entry.kind==='file').reduce((total,entry)=>total+entry.size,0),12421418);
         assert.equal(report.containerInfo.parser,'OpenWrt otrx');assert.equal(report.region.offset,2634752);assert.equal(report.status,'partially_extracted');
         const text=await invoke('read_extracted_text',{sha256:hash,path:'etc/openwrt_release'});assert(text.includes('25.12.6'));
         retainedTrx={hash,bundleSha256:report.bundleSha256};
-        record('native genuine TRX v1: pinned parser, direct SquashFS, all file hashes independently verified',{sha256:hash,files:report.fileCount,directories:report.directoryCount,totalBytes:report.totalBytes,manifestSha256,bundleSha256:report.bundleSha256});
+        record('native genuine TRX v1: preserved 851 direct SquashFS files plus nested layers, hashes independently verified',{sha256:hash,files:report.fileCount,directories:report.directoryCount,totalBytes:report.totalBytes,manifestSha256,bundleSha256:report.bundleSha256});
       } else {
-        assert(report.entries.some(e=>e.kind==='symlink_metadata'));assert(report.entries.some(e=>e.kind==='special_omitted'));
+        const link=report.entries.find(e=>e.path==='inert-link');
+        assert.equal(link?.kind,'special_omitted');assert.equal(link.linkTarget,null);
+        assert(report.entries.some(e=>e.path==='inert-pipe'&&e.kind==='special_omitted'));
         for(const name of ['a'.repeat(101),'café','resume\u0301']) {
           const entry=report.entries.find(e=>e.path===name);assert(entry.exportError);
           await until(()=>evaluate(`document.querySelector(${JSON.stringify('[aria-label="Select '+name+' for export"]')})?.disabled===true`),'Unexportable checkbox not disabled');

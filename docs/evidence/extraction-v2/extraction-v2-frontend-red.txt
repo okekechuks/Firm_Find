@@ -1,0 +1,498 @@
+
+> obtainer-workspace@0.2.0-beta.2 test
+> npm run test --workspace @obtainer/desktop --run src/test/FirmwareExtraction.test.tsx
+
+
+> @obtainer/desktop@0.2.0-beta.2 test
+> vitest run --configLoader runner src/test/FirmwareExtraction.test.tsx
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/apps/desktop
+
+ ❯ src/test/FirmwareExtraction.test.tsx (7 tests | 2 failed) 2484ms
+   × shows layer coverage and unknown ranges without calling a delta a filesystem 1021ms
+   × unknown metadata-only inspection never shows export controls or extracted success 1012ms
+npm.cmd :
+At line:2 char:1
++ npm.cmd test -- --run src/test/FirmwareExtraction.test.tsx *> .tools/ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/FirmwareExtraction.test.tsx > shows layer coverage and unknown ranges without calling a delta a
+filesystem
+TestingLibraryElementError: Unable to find an element with the text: /Partial extraction/. This could be because the
+text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your
+matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-label[39m=[32m"Extract firmware contents"[39m
+      [33mclass[39m=[32m"extraction-section"[39m
+    [36m>[39m
+      [36m<h3>[39m
+        [0mExtract Contents[0m
+      [36m</h3>[39m
+      [36m<p>[39m
+        [0mUnpack supported filesystems for inspection. Original firmware stays preserved.[0m
+      [36m</p>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"primary-button"[39m
+      [36m>[39m
+        [0mExtract again[0m
+      [36m</button>[39m
+      [36m<p>[39m
+        [0m1[0m
+        [0m files · [0m
+        [0m10 B[0m
+        [0m · [0m
+        [0mFilesystem extracted; some image contents omitted[0m
+      [36m</p>[39m
+      [36m<details>[39m
+        [36m<summary>[39m
+          [0mExtraction details and customization eligibility[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mSynthetic[0m
+          [0m · SquashFS at [0m
+          [0m0[0m
+        [36m</p>[39m
+        [36m<ul>[39m
+          [36m<li>[39m
+            [0mSynthetic fixture[0m
+          [36m</li>[39m
+        [36m</ul>[39m
+        [36m<p>[39m
+          [0mRebuilding requires a separately qualified device and build adapter.[0m
+        [36m</p>[39m
+      [36m</details>[39m
+      [36m<details[39m
+        [33mopen[39m=[32m""[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [0mBrowse Extracted Files[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mFolder: /[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"extraction-files"[39m
+        [36m>[39m
+          [36m<table>[39m
+            [36m<thead>[39m
+              [36m<tr>[39m
+                [36m<th>[39m
+                  [0mExport[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mName[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mType[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mSize[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<td />[39m
+                [36m<td>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"text-button"[39m
+                  [36m>[39m
+                    [0metc[0m
+                    [0m/[0m
+                  [36m</button>[39m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0mdirectory[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0m—[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+      [36m</details>[39m
+      [36m<p>[39m
+        [0m0[0m
+        [0m files selected. Export includes only your selected ordinary files, with no executable permissions or
+links.[0m
+      [36m</p>[39m
+      [36m<label>[39m
+        [36m<input[39m
+          [33mtype[39m=[32m"checkbox"[39m
+        [36m/>[39m
+        [0mI reviewed selected files for passwords, keys and personal information.[0m
+      [36m</label>[39m
+      [36m<div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"secondary-button"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [0mExport Extracted Files[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-label[39m=[32m"Extract firmware contents"[39m
+      [33mclass[39m=[32m"extraction-section"[39m
+    [36m>[39m
+      [36m<h3>[39m
+        [0mExtract Contents[0m
+      [36m</h3>[39m
+      [36m<p>[39m
+        [0mUnpack supported filesystems for inspection. Original firmware stays preserved.[0m
+      [36m</p>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"primary-button"[39m
+      [36m>[39m
+        [0mExtract again[0m
+      [36m</button>[39m
+      [36m<p>[39m
+        [0m1[0m
+        [0m files · [0m
+        [0m10 B[0m
+        [0m · [0m
+        [0mFilesystem extracted; some image contents omitted[0m
+      [36m</p>[39m
+      [36m<details>[39m
+        [36m<summary>[39m
+          [0mExtraction details and customization eligibility[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mSynthetic[0m
+          [0m · SquashFS at [0m
+          [0m0[0m
+        [36m</p>[39m
+        [36m<ul>[39m
+          [36m<li>[39m
+            [0mSynthetic fixture[0m
+          [36m</li>[39m
+        [36m</ul>[39m
+        [36m<p>[39m
+          [0mRebuilding requires a separately qualified device and build adapter.[0m
+        [36m</p>[39m
+      [36m</details>[39m
+      [36m<details[39m
+        [33mopen[39m=[32m""[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [0mBrowse Extracted Files[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mFolder: /[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"extraction-files"[39m
+        [36m>[39m
+          [36m<table>[39m
+            [36m<thead>[39m
+              [36m<tr>[39m
+                [36m<th>[39m
+                  [0mExport[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mName[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mType[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mSize[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<td />[39m
+                [36m<td>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"text-button"[39m
+                  [36m>[39m
+                    [0metc[0m
+                    [0m/[0m
+                  [36m</button>[39m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0mdirectory[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0m—[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+      [36m</details>[39m
+      [36m<p>[39m
+        [0m0[0m
+        [0m files selected. Export includes only your selected ordinary files, with no executable permissions or
+links.[0m
+      [36m</p>[39m
+      [36m<label>[39m
+        [36m<input[39m
+          [33mtype[39m=[32m"checkbox"[39m
+        [36m/>[39m
+        [0mI reviewed selected files for passwords, keys and personal information.[0m
+      [36m</label>[39m
+      [36m<div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"secondary-button"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [0mExport Extracted Files[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper ../../../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/FirmwareExtraction.test.tsx:57:23
+     55|     omittedMembers:[],provenance:{engineVersion:"2.0.0",tools:[]}});
+     56|   render(<FirmwareExtraction sha256={hash} jobs={[]}/>);
+     57|   expect(await screen.findByText(/Partial extraction/)).toBeInTheDocum…
+       |                       ^
+     58|   fireEvent.click(screen.getByText("Layer tree"));
+     59|   expect(screen.getByText("cpio_crc")).toBeVisible();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/test/FirmwareExtraction.test.tsx > unknown metadata-only inspection never shows export controls or
+extracted success
+TestingLibraryElementError: Unable to find an element with the text: /Encrypted or unknown/. This could be because the
+text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your
+matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-label[39m=[32m"Extract firmware contents"[39m
+      [33mclass[39m=[32m"extraction-section"[39m
+    [36m>[39m
+
+      [36m<h3>[39m
+        [0mExtract Contents[0m
+      [36m</h3>[39m
+      [36m<p>[39m
+        [0mUnpack supported filesystems for inspection. Original firmware stays preserved.[0m
+      [36m</p>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"primary-button"[39m
+      [36m>[39m
+        [0mExtract again[0m
+      [36m</button>[39m
+      [36m<p>[39m
+        [0m0[0m
+        [0m files · [0m
+        [0m0 B[0m
+        [0m · [0m
+        [0mFilesystem extracted and verified[0m
+      [36m</p>[39m
+      [36m<details>[39m
+        [36m<summary>[39m
+          [0mExtraction details and customization eligibility[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mSynthetic[0m
+          [0m · SquashFS at [0m
+          [0m0[0m
+        [36m</p>[39m
+        [36m<ul>[39m
+          [36m<li>[39m
+            [0mSynthetic fixture[0m
+          [36m</li>[39m
+        [36m</ul>[39m
+        [36m<p>[39m
+          [0mRebuilding requires a separately qualified device and build adapter.[0m
+        [36m</p>[39m
+      [36m</details>[39m
+      [36m<details[39m
+        [33mopen[39m=[32m""[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [0mBrowse Extracted Files[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mFolder: /[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"extraction-files"[39m
+        [36m>[39m
+          [36m<table>[39m
+            [36m<thead>[39m
+              [36m<tr>[39m
+                [36m<th>[39m
+                  [0mExport[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mName[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mType[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mSize[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody />[39m
+          [36m</table>[39m
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  17:41:10
+   Duration  38.30s (transform 325ms, setup 9.03s, import 260ms, tests 2.48s, environment 25.78s)
+
+        [36m</div>[39m
+      [36m</details>[39m
+      [36m<p>[39m
+        [0m0[0m
+        [0m files selected. Export includes only your selected ordinary files, with no executable permissions or
+links.[0m
+      [36m</p>[39m
+      [36m<label>[39m
+        [36m<input[39m
+          [33mtype[39m=[32m"checkbox"[39m
+        [36m/>[39m
+        [0mI reviewed selected files for passwords, keys and personal information.[0m
+      [36m</label>[39m
+      [36m<div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"secondary-button"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [0mExport Extracted Files[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-label[39m=[32m"Extract firmware contents"[39m
+      [33mclass[39m=[32m"extraction-section"[39m
+    [36m>[39m
+      [36m<h3>[39m
+        [0mExtract Contents[0m
+      [36m</h3>[39m
+      [36m<p>[39m
+        [0mUnpack supported filesystems for inspection. Original firmware stays preserved.[0m
+      [36m</p>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"primary-button"[39m
+      [36m>[39m
+        [0mExtract again[0m
+      [36m</button>[39m
+      [36m<p>[39m
+        [0m0[0m
+        [0m files · [0m
+        [0m0 B[0m
+        [0m · [0m
+        [0mFilesystem extracted and verified[0m
+      [36m</p>[39m
+      [36m<details>[39m
+        [36m<summary>[39m
+          [0mExtraction details and customization eligibility[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mSynthetic[0m
+          [0m · SquashFS at [0m
+          [0m0[0m
+        [36m</p>[39m
+        [36m<ul>[39m
+          [36m<li>[39m
+            [0mSynthetic fixture[0m
+          [36m</li>[39m
+        [36m</ul>[39m
+        [36m<p>[39m
+          [0mRebuilding requires a separately qualified device and build adapter.[0m
+        [36m</p>[39m
+      [36m</details>[39m
+      [36m<details[39m
+        [33mopen[39m=[32m""[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [0mBrowse Extracted Files[0m
+        [36m</summary>[39m
+        [36m<p>[39m
+          [0mFolder: /[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"extraction-files"[39m
+        [36m>[39m
+          [36m<table>[39m
+            [36m<thead>[39m
+              [36m<tr>[39m
+                [36m<th>[39m
+                  [0mExport[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mName[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mType[0m
+                [36m</th>[39m
+                [36m<th>[39m
+                  [0mSize[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody />[39m
+          [36m</table>[39m
+        [36m</div>[39m
+      [36m</details>[39m
+      [36m<p>[39m
+        [0m0[0m
+        [0m files selected. Export includes only your selected ordinary files, with no executable permissions or
+links.[0m
+      [36m</p>[39m
+      [36m<label>[39m
+        [36m<input[39m
+          [33mtype[39m=[32m"checkbox"[39m
+        [36m/>[39m
+        [0mI reviewed selected files for passwords, keys and personal information.[0m
+      [36m</label>[39m
+      [36m<div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"secondary-button"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [0mExport Extracted Files[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper ../../../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/FirmwareExtraction.test.tsx:68:23
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop
+npm error workspace @obtainer/desktop@0.2.0-beta.2
+npm error location C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vitest run --configLoader runner
+src/test/FirmwareExtraction.test.tsx

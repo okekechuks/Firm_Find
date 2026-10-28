@@ -2,6 +2,8 @@
 use super::*;
 use serde::{Deserialize, Serialize};
 use std::io::Read;
+
+const ANALYSIS_COMPLETE_MESSAGE: &str = "Bounded analysis saved. Extraction is a separate sandboxed action; image contents are not executed.";
 const MAX_INPUT: u64 = 512 * 1024 * 1024;
 const MAX_SCAN: u64 = 32 * 1024 * 1024;
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,7 +32,10 @@ pub struct AnalysisReport {
 }
 fn inspect(mut file: File, hash: &str, size: u64, cancel: &AtomicBool) -> Result<AnalysisReport> {
     if size > MAX_INPUT {
-        return Err(LibraryError::new("ANALYSIS_LIMIT","Bounded analysis supports inputs up to 512 MiB. Recursive extraction remains disabled."));
+        return Err(LibraryError::new(
+            "ANALYSIS_LIMIT",
+            "Bounded analysis supports inputs up to 512 MiB.",
+        ));
     }
     let count = size.min(MAX_SCAN);
     let mut bytes = Vec::with_capacity(count as usize);
@@ -110,14 +115,14 @@ fn inspect(mut file: File, hash: &str, size: u64, cancel: &AtomicBool) -> Result
     let mut limitations = vec![
         "Magic matches are observations, not validated partitions or device support.".into(),
         "Only the first 32 MiB and at most 64 format signatures are scanned; entropy samples at most 256 KiB.".into(),
-        "No recursive extraction, package inspection, firmware modification or installation authorization.".into(),
+        "This analysis does not recursively extract or inspect packages. Extraction is a separate sandboxed action; analysis does not authorize firmware modification or installation.".into(),
     ];
     match format.as_str() {
         "CPIO newc archive" | "CPIO CRC archive" => {
             limitations.push("CPIO magic is an observation only; archive structure and checksums are not validated. No archive members are parsed or unpacked.".into());
-            limitations.push("CPIO magic alone cannot determine whether the payload is a full firmware image or an incremental update. No extraction support or device compatibility is established.".into());
+            limitations.push("CPIO magic alone cannot determine whether the payload is a full firmware image or an incremental update. This analysis does not establish extraction support or device compatibility.".into());
         }
-        "BSDIFF40 patch" => limitations.push("BSDIFF40 magic indicates a patch format, not a complete firmware image; patch structure and required base image are not validated. No patch application, extraction support or device compatibility is established.".into()),
+        "BSDIFF40 patch" => limitations.push("BSDIFF40 magic indicates a patch format, not a complete firmware image; patch structure and required base image are not validated. This analysis does not apply patches or establish extraction support or device compatibility.".into()),
         _ => {}
     }
     Ok(AnalysisReport {
@@ -269,7 +274,7 @@ impl Inner {
             "UPDATE jobs SET status='completed' WHERE id=?1 AND status='running'",
             [id],
         )?;
-        tx.execute("UPDATE job_details SET finished_at=?2,updated_at=?2,progress_bytes=total_bytes,stage='completed',message='Bounded format analysis saved. Recursive extraction and image execution disabled.' WHERE job_id=?1",rusqlite::params![id,now()])?;
+        tx.execute("UPDATE job_details SET finished_at=?2,updated_at=?2,progress_bytes=total_bytes,stage='completed',message=?3 WHERE job_id=?1",rusqlite::params![id,now(),ANALYSIS_COMPLETE_MESSAGE])?;
         db::event(
             &tx,
             "firmware_analyzed",
@@ -302,6 +307,19 @@ mod tests {
             &AtomicBool::new(false),
         )
         .unwrap()
+    }
+    #[test]
+    fn analysis_describes_separate_extraction_without_claiming_execution() {
+        let report = inspect_bytes(&synthetic_header(b"070702", 110));
+        assert!(!report.recursive_extraction);
+        assert!(!report.executable_contents_run);
+        assert!(report
+            .limitations
+            .iter()
+            .any(|text| text.contains("Extraction is a separate sandboxed action")));
+        assert!(ANALYSIS_COMPLETE_MESSAGE.contains("separate sandboxed action"));
+        assert!(ANALYSIS_COMPLETE_MESSAGE.contains("not executed"));
+        assert!(!ANALYSIS_COMPLETE_MESSAGE.contains("extraction disabled"));
     }
     #[test]
     fn bounded_cpio_headers_are_observations_without_payload_or_compatibility_claims() {

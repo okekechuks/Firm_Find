@@ -1,0 +1,41 @@
+
+> obtainer-workspace@0.2.0-beta.2 test:openwrt
+> node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui --phase5 --phase6 --phase7
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-28T19-50-54.596Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data {}
+PASS: ordinary production executable rejects test activation before opening data {}
+PASS: ordinary production rejects OpenWrt lab activation; isolated binary rejects duplicate lab flags before data access {}
+PASS: native-test executable rejects missing/unsafe run IDs and arbitrary data paths {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: active test ownership prevents cleanup {}
+PASS: dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"4074f2749b4f088c4719f67d22b932d8","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\4074f2749b4f088c4719f67d22b932d8\\data"}
+PASS: dev-reopen: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/","pid":19956,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\4074f2749b4f088c4719f67d22b932d8\\data","theme":"system"}
+PASS: dev-reopen: exactly six primary navigation destinations {}
+PASS: dev-reopen: discovery, three refreshes, unique IDs, unknown feature support {"records":54,"watching":true,"warnings":[]}
+PASS: dev-reopen: real adapter registry IPC, strict request validation and absent write/execution endpoints {}
+PASS: dev-reopen: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection {"devices":12,"mg11Connected":false}
+PASS: normal application file bytes unchanged after isolated native suite {}
+Failed test run retained: C:\Users\chuka\AppData\Local\OBTAINER-NativeTests\4074f2749b4f088c4719f67d22b932d8
+npm.cmd : node:internal/modules/run_main:123
+At line:2 char:1
++ npm.cmd run test:openwrt *> .tools/extraction-v2-final-2-native-openw ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:internal/modules/run_main:123:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    triggerUncaughtException(
+    ^
+
+Error: Visible real Windows device cards missing
+    at until
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-adapters.mjs:5:157)
+    at async verifyAdapters
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-adapters.mjs:47:3)
+    at async verify
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:226:40)
+    at async
+file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:497:19
+
+Node.js v22.17.0

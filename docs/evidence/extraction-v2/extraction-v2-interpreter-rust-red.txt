@@ -1,0 +1,31 @@
+powershell.exe :    Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+At line:5 char:1
++ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/rust. ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ob...ktop\src-tauri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    Finished `test` profile [unoptimized] target(s) in 1m 56s
+     Running unittests src\lib.rs (target\debug\deps\obtainer_lib-3cbc5006e7811c3f.exe)
+
+running 1 test
+test library::extraction::tests::extraction_worker_command_uses_the_pinned_absolute_python_path ... FAILED
+
+failures:
+
+---- library::extraction::tests::extraction_worker_command_uses_the_pinned_absolute_python_path stdout ----
+
+thread 'library::extraction::tests::extraction_worker_command_uses_the_pinned_absolute_python_path' (3176) panicked at apps\desktop\src-tauri\src\library\extraction.rs:897:13:
+assertion `left == right` failed
+  left: "python3"
+ right: "/usr/bin/python3.14"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    library::extraction::tests::extraction_worker_command_uses_the_pinned_absolute_python_path
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 390 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

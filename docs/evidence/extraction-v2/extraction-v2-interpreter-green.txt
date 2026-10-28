@@ -1,0 +1,13 @@
+python : test_sandbox_executes_the_hash_pinned_interpreter
+(__main__.Parsing.test_sandbox_executes_the_hash_pinned_interpreter) ... ok
+At line:3 char:1
++ python -B scripts/test-firmware-extraction.py Parsing.test_sandbox_ex ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_sandbox_ex...rpreter) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

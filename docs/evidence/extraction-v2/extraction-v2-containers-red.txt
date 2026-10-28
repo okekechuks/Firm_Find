@@ -1,0 +1,108 @@
+py : test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget
+(__main__.Formats.test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget) ... FAIL
+At line:2 char:1
++ py -B scripts/test-extraction-engine-v2.py *> .tools/extraction-v2-co ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_android_sp...udget) ... FAIL:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_compression_bomb_fails_without_admitting_expanded_bytes
+(__main__.Formats.test_compression_bomb_fails_without_admitting_expanded_bytes) ... FAIL
+test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected
+(__main__.Formats.test_cpio_crc_truncation_traversal_hardlink_special_and_setuid_are_rejected) ... ok
+test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink
+(__main__.Formats.test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink) ... ERROR
+test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed
+(__main__.Formats.test_include_directives_and_ambiguous_swupdate_descriptions_fail_closed) ... ok
+test_manifest_is_deterministic_and_resource_limits_are_shared
+(__main__.Formats.test_manifest_is_deterministic_and_resource_limits_are_shared) ... ok
+test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance
+(__main__.Formats.test_newc_and_crc_retain_actual_bytes_modes_hashes_and_provenance) ... ok
+test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes
+(__main__.Formats.test_recursive_gzip_xz_bzip2_and_lzma_are_detected_from_bytes) ... ok
+test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem
+(__main__.Formats.test_swupdate_delta_declares_base_required_and_does_not_invent_a_filesystem) ... ok
+test_uimage_checks_both_crcs_and_recurses_without_executing_payload
+(__main__.Formats.test_uimage_checks_both_crcs_and_recurses_without_executing_payload) ... FAIL
+test_unknown_and_near_miss_have_explicit_unexplained_ranges
+(__main__.Formats.test_unknown_and_near_miss_have_explicit_unexplained_ranges) ... ok
+test_vendor_header_carving_finds_nested_cpio_and_records_prefix
+(__main__.Formats.test_vendor_header_carving_finds_nested_cpio_and_records_prefix) ... ok
+test_zip_slip_is_rejected_before_any_unsafe_output
+(__main__.Formats.test_zip_slip_is_rejected_before_any_unsafe_output) ... ok
+
+======================================================================
+ERROR: test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink
+(__main__.Formats.test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+161, in test_cpio_root_directory_is_metadata_and_directory_link_count_is_not_a_hardlink
+    report, _ = self.run_image(cpio([(".", b"", stat.S_IFDIR | 0o755, 2), ("etc", b"", stat.S_IFDIR | 0o755, 2),
+ordinary()]))
+
+~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+54, in run_image
+    return self.run_image(raw, Path(tmp))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+52, in run_image
+    return engine.extract(core, path, workspace / "work")
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 900,
+in extract
+    root = engine.walk(view)
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 837,
+in walk
+    handler.extract(self, view, layer, prefix, depth)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\extraction-engine-v2.py", line 279,
+in extract
+    engine.core.safe_name(name)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\firmware-extract-worker.py", line
+76, in safe_name
+    raise Refusal("unsafe_path")
+extraction_core.Refusal: unsafe_path
+
+======================================================================
+FAIL: test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget
+(__main__.Formats.test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+153, in test_android_sparse_checks_chunk_sizes_crc_and_expansion_budget
+    self.assertTrue(any(layer["format"] == "android_sparse" for layer in report["layers"]))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_compression_bomb_fails_without_admitting_expanded_bytes
+(__main__.Formats.test_compression_bomb_fails_without_admitting_expanded_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+166, in test_compression_bomb_fails_without_admitting_expanded_bytes
+    with self.assertRaisesRegex(core.Refusal, "decompression_bomb"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Refusal not raised
+
+======================================================================
+FAIL: test_uimage_checks_both_crcs_and_recurses_without_executing_payload
+(__main__.Formats.test_uimage_checks_both_crcs_and_recurses_without_executing_payload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+139, in test_uimage_checks_both_crcs_and_recurses_without_executing_payload
+    self.assertEqual(report["layers"][0]["format"], "uimage")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'unknown' != 'uimage'
+- unknown
++ uimage
+
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.532s
+
+FAILED (failures=3, errors=1)

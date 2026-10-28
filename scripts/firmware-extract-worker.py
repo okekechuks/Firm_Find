@@ -29,9 +29,19 @@ TMPFS_BYTES = 256 * 1024**2
 SPACE_RESERVE = 32 * 1024**2
 OTRX_BINARY_SHA = "66b870899eca6a12079668c23cdd95db069978afc9af5bcbc3681cd9c1e968e5"
 OTRX_SOURCE_SHA = "e2ef4e7a08f84543945fec83c43bdebfdb1c252da1c440ebb90454913ec2dc3e"
+PYTHON = "/usr/bin/python3.14"
 TOOLS = {
+    PYTHON: "fa9796cd3a30878e11a2f40372f773d3fcd913fff35e5bee8dd9a036e22e93ab",
     "/usr/bin/unsquashfs": "003a7e9d70fbdcd05dfe132101c4b7bbb19a217976777f5393573eff21ddc202",
     "/usr/bin/bwrap": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6",
+}
+OPTIONAL_TOOLS = {
+    "/usr/bin/zstd": "fe50fd600cad89b775dc5b4b10bc8ff95e2d33ddb4f7632966464b1fbdab8598",
+    "/usr/bin/lz4": "4be960d6f6b0d7ef69e01a9e1a056591c17b8687e9851db128018b2ac5f01da0",
+    "/usr/sbin/debugfs": "864e1d7b445e7b5bfc831da78330dbcafc590fa82b89ea9de60b7527f989954f",
+    "/usr/sbin/e2fsck": "2e51f521c676729920eaba694933d9d4048645f1a5789556fd0027e62d11ecc8",
+    "/usr/sbin/fsck.cramfs": "82ccbc99540cc47c751cfb1fe4a0d77ebc97ffbc1324a2b5effb19f84970869e",
+    "/usr/lib/x86_64-linux-gnu/libarchive.so.13.8.5": "959dcce452c258ad7016f74b33b6df688cdad8a6caa1a625b1bfbebe85b332b0",
 }
 
 
@@ -44,10 +54,10 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def qualified_binary(path, expected_hash):
+def qualified_binary(path, expected_hash, executable=True):
     try:
         meta=path.lstat()
-        if not stat.S_ISREG(meta.st_mode) or meta.st_uid!=0 or meta.st_mode & (stat.S_ISUID | stat.S_ISGID | 0o022) or not meta.st_mode & 0o111:
+        if not stat.S_ISREG(meta.st_mode) or meta.st_uid!=0 or meta.st_mode & (stat.S_ISUID | stat.S_ISGID | 0o022) or (executable and not meta.st_mode & 0o111):
             return False
         try:
             if os.getxattr(path,"security.capability"):
@@ -145,10 +155,12 @@ def collect_tree(root):
                 raise Refusal("colliding_paths")
             names.add(folded)
             meta = item.stat(follow_symlinks=False)
-            entry = {"path": name, "kind": "directory", "size": 0, "sha256": None, "linkTarget": None}
+            entry = {"path": name, "kind": "directory", "size": 0, "sha256": None, "linkTarget": None, "mode": stat.S_IMODE(meta.st_mode)}
             if stat.S_ISDIR(meta.st_mode):
                 pending.append((Path(item.path), name + "/"))
             elif stat.S_ISREG(meta.st_mode):
+                if meta.st_mode & (stat.S_ISUID | stat.S_ISGID):
+                    raise Refusal("unsafe_mode")
                 total += meta.st_size
                 if meta.st_size > 32 * 1024**2 or total > MAX_BYTES:
                     raise Refusal("output_limit")
@@ -284,18 +296,37 @@ def inner(expected, size):
         raise Refusal("worker_unavailable")
     if any(name != "lo" for _, name in __import__("socket").if_nameindex()):
         raise Refusal("worker_unavailable")
-    with image.open("rb") as source:
-        prefix = source.read(4)
-    backend = next(plugin for plugin in BACKENDS if plugin.accepts(prefix))
-    filesystem_image = backend.prepare(image)
-    region,container_info = backend.inspect(filesystem_image)
-    root = Path("/work/tree")
+    # The format module is trusted application code, mounted read-only. Import
+    # occurs after namespace/resource checks; the outer supervisor never parses.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("obtainer_layers", "/engine.py")
+    engine = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(engine)
+    report, files = engine.extract(sys.modules[__name__], image, Path("/work/layers"))
+    if digest(image) != expected:
+        raise Refusal("source_changed")
+    raw = json.dumps(report, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    if len(raw) > MAX_MANIFEST:
+        raise Refusal("manifest_limit")
+    output = sys.stdout.buffer
+    output.write(b"OBTX1\n" + struct.pack("<I", len(raw)) + raw)
+    for entry in report["entries"]:
+        if entry["kind"] == "file":
+            with files[entry["path"]].open("rb") as source:
+                while chunk := source.read(65536):
+                    output.write(chunk)
+    output.flush()
+
+
+def extract_squashfs(filesystem_image, region, root, workspace, retained_bytes=0, existing_entries=0):
+    """Existing qualified decoder, with explicit shared-workspace accounting."""
+    workspace.mkdir(parents=True, exist_ok=True)
     # List inside the same sandbox. Reject ambiguous text listing rather than
     # guessing names; links and special files are excluded before extraction.
-    with Path("/work/listing").open("wb") as listing:
+    with (workspace / "listing").open("wb") as listing:
         run_tool(["/usr/bin/unsquashfs", "-lln", "-max-depth", "33", "-o", str(region["offset"]),
                   str(filesystem_image)], output=listing, listing=True)
-    with Path("/work/listing").open("rb") as listing:
+    with (workspace / "listing").open("rb") as listing:
         raw_listing = listing.read(MAX_MANIFEST + 1)
     if len(raw_listing) > MAX_MANIFEST:
         raise Refusal("entry_limit")
@@ -327,9 +358,8 @@ def inner(expected, size):
         elif match[1] != "d":
             excluded.append({"path": name, "kind": "symlink_metadata" if target is not None else "special_omitted",
                              "size": 0, "sha256": None, "linkTarget": target})
-    Path("/work/exclude").write_text("".join(e["path"] + "\n" for e in excluded))
-    staged_bytes = 0 if filesystem_image == image else filesystem_image.stat().st_size
-    reserve_space(staged_bytes, listed_bytes, len(observed))
+    (workspace / "exclude").write_text("".join(e["path"] + "\n" for e in excluded))
+    reserve_space(retained_bytes, listed_bytes, len(observed) + existing_entries)
     remaining = os.statvfs("/work")
     if listed_bytes + len(observed) * 4096 + SPACE_RESERVE > remaining.f_bavail * remaining.f_frsize:
         raise Refusal("resource_exhausted")
@@ -337,44 +367,21 @@ def inner(expected, size):
     # publishing any partial tree after a special-file/permission failure.
     command = ["/usr/bin/unsquashfs", "-processors", "1", "-data-queue", "16", "-frag-queue", "16",
                "-strict-errors", "-no-xattrs", "-no-progress", "-max-depth", "33", "-d", str(root),
-               "-no-wildcards", "-exclude-file", "/work/exclude", "-o", str(region["offset"]), str(filesystem_image)]
+               "-no-wildcards", "-exclude-file", str(workspace / "exclude"), "-o", str(region["offset"]), str(filesystem_image)]
     run_tool(command)
     entries, total = collect_tree(root)
     if {e["path"] for e in entries} != {name for name, kind in observed.items() if kind in ("-", "d")}:
         raise Refusal("incomplete_tree")
     entries = sorted(entries + excluded, key=lambda e: e["path"])
-    if digest(image) != expected:
-        raise Refusal("source_changed")
-    report = {"version": 1, "inputSha256": expected, "inputBytes": size, "region": region,
-              "container": backend.name, "expandedBytes": filesystem_image.stat().st_size,
-              "unextractedRegions": ([{"offset": 0, "length": region["offset"]}] if region["offset"] else []) + ([{"offset": region["offset"] + region["length"], "length": filesystem_image.stat().st_size - region["offset"] - region["length"]}] if region["offset"] + region["length"] < filesystem_image.stat().st_size else []),
-              "extractor": "unsquashfs 4.7.5", "toolSha256": TOOLS["/usr/bin/unsquashfs"],
-              "entries": entries, "totalBytes": total, "fileCount": sum(e["kind"] == "file" for e in entries),
-              "directoryCount": sum(e["kind"] == "directory" for e in entries), "filesystemRoots": ["/"], "workerExit": 0,
-              "status": "partially_extracted" if region["offset"] or region["length"] != filesystem_image.stat().st_size or excluded else "extracted_verified",
-              "limitations": ["Only one SquashFS filesystem is unpacked; other image regions remain unextracted.",
-                              "Links retained as metadata only; xattrs and ownership not restored.",
-                              "No nested extraction, executable launch, hardware compatibility or rebuild authorization."],
-              "isolation": {"network": False, "hostDrives": False, "capabilities": "0000000000000000",
-                            "tmpfsBytes": TMPFS_BYTES, "spaceReserveBytes": SPACE_RESERVE, "rootReadOnly": True,
-                            "maxBytes": MAX_BYTES, "maxEntries": MAX_ENTRIES, "maxDepth": 32}}
-    if container_info is not None:
-        report["containerInfo"]=container_info
-        report["limitations"][0]="Only the direct SquashFS root partition of TRX v1 is unpacked; kernel, loader, padding and other regions remain unextracted."
-    raw = json.dumps(report, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
-    if len(raw) > MAX_MANIFEST:
-        raise Refusal("manifest_limit")
-    output = sys.stdout.buffer
-    output.write(b"OBTX1\n" + struct.pack("<I", len(raw)) + raw)
-    for entry in entries:
-        if entry["kind"] == "file":
-            with (root / entry["path"]).open("rb") as file:
-                while chunk := file.read(65536):
-                    output.write(chunk)
-    output.flush()
+    return entries, total
 
 
 def sandbox(script, image):
+    # Host ownership must be checked before user-namespace UID remapping. The
+    # inner process receives only this computed allowlist, rechecks bytes/mode,
+    # and verifies version. No caller/firmware-supplied tool path is accepted.
+    qualified = {name: value for name, value in {**TOOLS, **OPTIONAL_TOOLS}.items()
+                 if qualified_binary(Path(name), value, executable=".so." not in name)}
     command = ["/usr/bin/bwrap", "--unshare-all", "--unshare-user", "--die-with-parent", "--new-session", "--cap-drop", "ALL",
                "--disable-userns", "--clearenv", "--setenv", "PATH", "/usr/bin:/bin", "--setenv", "LC_ALL", "C"]
     for path in ("/usr", "/bin", "/lib", "/lib64"):
@@ -383,9 +390,12 @@ def sandbox(script, image):
     optional=Path("/opt/obtainer-tools/otrx")
     if qualified_binary(optional,OTRX_BINARY_SHA):
         command += ["--ro-bind",str(optional),"/otrx"]
+        qualified["/otrx"] = OTRX_BINARY_SHA
+    command += ["--setenv", "OBTAINER_QUALIFIED_TOOLS", json.dumps(qualified, sort_keys=True)]
     command += ["--proc", "/proc", "--dev", "/dev", "--size", "268435456", "--tmpfs", "/work",
                 "--ro-bind", str(script), "/worker.py", "--ro-bind", str(image), "/input.bin",
-                "--remount-ro", "/", "--chdir", "/work", "/usr/bin/python3", "-I", "-B", "/worker.py", "--inner"]
+                "--ro-bind", str(script.with_name("extraction-engine-v2.py")), "/engine.py",
+                "--remount-ro", "/", "--chdir", "/work", PYTHON, "-I", "-B", "/worker.py", "--inner"]
     return command
 
 
@@ -412,7 +422,7 @@ def supervise(job, expected, size):
                 time.sleep(0.05)
             if child.returncode != 0:
                 message = child.stderr.read(128).decode("ascii", "replace").strip()
-                raise Refusal(message if message in ("worker_unavailable", "corrupt_image", "unsupported_format", "unsupported_compression", "output_limit", "entry_limit", "unsafe_path", "unsafe_link", "source_changed", "resource_exhausted", "trx_worker_unavailable", "unsupported_nested_format", "unsupported_container_version") else "extraction_failed")
+                raise Refusal(message if message in ("worker_unavailable", "corrupt_image", "unsupported_format", "unsupported_compression", "output_limit", "entry_limit", "unsafe_path", "unsafe_link", "source_changed", "resource_exhausted", "trx_worker_unavailable", "unsupported_nested_format", "unsupported_container_version", "unsafe_mode", "unsafe_special_file", "corrupt_description", "description_limit", "manifest_limit", "decompression_bomb", "colliding_paths", "ambiguous_image") else "extraction_failed")
         finally:
             if child.poll() is None:
                 os.killpg(child.pid, signal.SIGKILL)

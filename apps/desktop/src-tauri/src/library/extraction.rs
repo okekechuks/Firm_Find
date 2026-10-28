@@ -11,6 +11,10 @@ const MAX_INPUT: u64 = 512 * 1024 * 1024;
 const MAX_OUTPUT: u64 = 128 * 1024 * 1024;
 const MAX_MANIFEST: u64 = 8 * 1024 * 1024;
 const WORKER: &str = include_str!("../../../../../scripts/firmware-extract-worker.py");
+const ENGINE: &str = include_str!("../../../../../scripts/extraction-engine-v2.py");
+const PYTHON: &str = "/usr/bin/python3.14";
+mod layers;
+use layers::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -24,6 +28,8 @@ pub struct Entry {
     pub offset: u64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub export_error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<u32>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -80,6 +86,24 @@ pub struct ExtractionReport {
     pub bundle_sha256: String,
     #[serde(default)]
     pub created_at: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completeness: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub layers: Option<Vec<Layer>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unexplained_regions: Option<Vec<Unexplained>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entropy_map: Option<Vec<Entropy>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scan: Option<Scan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<Provenance>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budgets: Option<Budgets>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub swupdate: Option<Vec<Swupdate>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub omitted_members: Option<Vec<OmittedMember>>,
 }
 fn invalid() -> LibraryError {
     LibraryError::new(
@@ -144,86 +168,103 @@ fn validate_bundle(
     let mut raw = vec![0; length as usize];
     file.read_exact(&mut raw)?;
     let mut report: ExtractionReport = serde_json::from_slice(&raw).map_err(|_| invalid())?;
-    if report.version != 1
-        || report.input_sha256 != hash
-        || report.input_bytes != size
-        || report.worker_exit != 0
-        || report.region.format != "squashfs"
-        || report.region.length <= 96
-        || report
-            .region
-            .offset
-            .checked_add(report.region.length)
-            .is_none_or(|end| end > report.expanded_bytes)
-        || !(1..=6).contains(&report.region.compression)
-        || !matches!(report.container.as_str(), "raw" | "gzip" | "trx")
-        || (report.container != "gzip" && report.expanded_bytes != size)
-        || (report.container == "gzip" && report.expanded_bytes > MAX_OUTPUT)
-        || report.extractor != "unsquashfs 4.7.5"
-        || report.tool_sha256 != "003a7e9d70fbdcd05dfe132101c4b7bbb19a217976777f5393573eff21ddc202"
-        || !matches!(
-            report.status.as_str(),
-            "extracted_verified" | "partially_extracted"
-        )
-        || report.entries.len() > 20000
-        || report.total_bytes > MAX_OUTPUT
-    {
-        return Err(invalid());
-    }
-    if report.container == "trx" {
-        let info = report.container_info.as_ref().ok_or_else(invalid)?;
-        if info.format != "trx"
-            || info.version != 1
-            || info.flags != 0
-            || info.length <= 28
-            || info.length > size
-            || info.partition_offsets.is_empty()
-            || info.partition_offsets.len() > 3
-            || info
-                .partition_offsets
-                .iter()
-                .any(|offset| *offset < 28 || *offset >= info.length)
-            || info.partition_offsets.windows(2).any(|w| w[0] >= w[1])
-            || info.partition_offsets.last() != Some(&report.region.offset)
-            || report.region.offset + report.region.length > info.length
-            || info.crc32.len() != 8
-            || !info.crc32.bytes().all(|b| b.is_ascii_hexdigit())
-            || info.parser != "OpenWrt otrx"
-            || info.source_commit != "e3853149fb18dfa55f10c10c9aaf99c329747365"
-            || info.source_sha256
-                != "e2ef4e7a08f84543945fec83c43bdebfdb1c252da1c440ebb90454913ec2dc3e"
-            || info.parser_sha256
-                != "66b870899eca6a12079668c23cdd95db069978afc9af5bcbc3681cd9c1e968e5"
+    if report.version == 2 {
+        layers::validate(&report, hash, size)?;
+    } else {
+        if report.version != 1
+            || report.input_sha256 != hash
+            || report.input_bytes != size
+            || report.worker_exit != 0
+            || report.region.format != "squashfs"
+            || report.region.length <= 96
+            || report
+                .region
+                .offset
+                .checked_add(report.region.length)
+                .is_none_or(|end| end > report.expanded_bytes)
+            || !(1..=6).contains(&report.region.compression)
+            || !matches!(report.container.as_str(), "raw" | "gzip" | "trx")
+            || (report.container != "gzip" && report.expanded_bytes != size)
+            || (report.container == "gzip" && report.expanded_bytes > MAX_OUTPUT)
+            || report.extractor != "unsquashfs 4.7.5"
+            || report.tool_sha256
+                != "003a7e9d70fbdcd05dfe132101c4b7bbb19a217976777f5393573eff21ddc202"
+            || !matches!(
+                report.status.as_str(),
+                "extracted_verified" | "partially_extracted"
+            )
+            || report.entries.len() > 20000
+            || report.total_bytes > MAX_OUTPUT
         {
             return Err(invalid());
         }
-    } else if report.container_info.is_some() {
-        return Err(invalid());
-    }
-    let end = report.region.offset + report.region.length;
-    let mut omitted = vec![];
-    if report.region.offset > 0 {
-        omitted.push(ByteRegion {
-            offset: 0,
-            length: report.region.offset,
-        });
-    }
-    if end < report.expanded_bytes {
-        omitted.push(ByteRegion {
-            offset: end,
-            length: report.expanded_bytes - end,
-        });
-    }
-    let partial = !omitted.is_empty()
-        || report
-            .entries
-            .iter()
-            .any(|e| matches!(e.kind.as_str(), "symlink_metadata" | "special_omitted"));
-    if report.unextracted_regions != omitted
-        || (report.status == "partially_extracted") != partial
-        || report.isolation != expected_isolation()
-    {
-        return Err(invalid());
+        if report.completeness.is_some()
+            || report.layers.is_some()
+            || report.provenance.is_some()
+            || report.budgets.is_some()
+            || report.scan.is_some()
+            || report.entropy_map.is_some()
+            || report.unexplained_regions.is_some()
+            || report.omitted_members.is_some()
+            || report.swupdate.is_some()
+        {
+            return Err(invalid());
+        }
+        if report.container == "trx" {
+            let info = report.container_info.as_ref().ok_or_else(invalid)?;
+            if info.format != "trx"
+                || info.version != 1
+                || info.flags != 0
+                || info.length <= 28
+                || info.length > size
+                || info.partition_offsets.is_empty()
+                || info.partition_offsets.len() > 3
+                || info
+                    .partition_offsets
+                    .iter()
+                    .any(|offset| *offset < 28 || *offset >= info.length)
+                || info.partition_offsets.windows(2).any(|w| w[0] >= w[1])
+                || info.partition_offsets.last() != Some(&report.region.offset)
+                || report.region.offset + report.region.length > info.length
+                || info.crc32.len() != 8
+                || !info.crc32.bytes().all(|b| b.is_ascii_hexdigit())
+                || info.parser != "OpenWrt otrx"
+                || info.source_commit != "e3853149fb18dfa55f10c10c9aaf99c329747365"
+                || info.source_sha256
+                    != "e2ef4e7a08f84543945fec83c43bdebfdb1c252da1c440ebb90454913ec2dc3e"
+                || info.parser_sha256
+                    != "66b870899eca6a12079668c23cdd95db069978afc9af5bcbc3681cd9c1e968e5"
+            {
+                return Err(invalid());
+            }
+        } else if report.container_info.is_some() {
+            return Err(invalid());
+        }
+        let end = report.region.offset + report.region.length;
+        let mut omitted = vec![];
+        if report.region.offset > 0 {
+            omitted.push(ByteRegion {
+                offset: 0,
+                length: report.region.offset,
+            });
+        }
+        if end < report.expanded_bytes {
+            omitted.push(ByteRegion {
+                offset: end,
+                length: report.expanded_bytes - end,
+            });
+        }
+        let partial = !omitted.is_empty()
+            || report
+                .entries
+                .iter()
+                .any(|e| matches!(e.kind.as_str(), "symlink_metadata" | "special_omitted"));
+        if report.unextracted_regions != omitted
+            || (report.status == "partially_extracted") != partial
+            || report.isolation != expected_isolation()
+        {
+            return Err(invalid());
+        }
     }
     let mut names = HashSet::new();
     let mut directories = HashSet::new();
@@ -237,6 +278,11 @@ fn validate_bundle(
             None
         };
         if !safe_name(&entry.path) || !names.insert(entry.path.to_lowercase()) {
+            return Err(invalid());
+        }
+        if (report.version == 2 && entry.mode.is_none())
+            || entry.mode.is_some_and(|mode| mode > 0o777)
+        {
             return Err(invalid());
         }
         match entry.kind.as_str() {
@@ -292,7 +338,7 @@ fn validate_bundle(
             }
         }
     }
-    if count == 0
+    if (report.version == 1 && count == 0)
         || count != report.file_count
         || directories.len() as u64 != report.directory_count
         || report.filesystem_roots != ["/"]
@@ -301,7 +347,7 @@ fn validate_bundle(
     {
         return Err(invalid());
     }
-    report.created_at = now();
+    report.created_at = if report.version == 2 { 0 } else { now() };
     Ok(report)
 }
 fn expected_isolation() -> serde_json::Value {
@@ -387,7 +433,9 @@ impl LibraryService {
         )?;
         let mut report: ExtractionReport =
             serde_json::from_reader(proof.reader()?).map_err(|_| invalid())?;
-        if report.input_sha256 != hash || report.version != 1 || !valid_hash(&report.bundle_sha256)
+        if report.input_sha256 != hash
+            || !matches!(report.version, 1 | 2)
+            || !valid_hash(&report.bundle_sha256)
         {
             return Err(invalid());
         }
@@ -605,6 +653,10 @@ impl Inner {
             worker.write_all(WORKER.as_bytes())?;
             worker.sync_all()?;
             drop(worker);
+            let mut engine = new_file(&work.join("extraction-engine-v2.py"))?;
+            engine.write_all(ENGINE.as_bytes())?;
+            engine.sync_all()?;
+            drop(engine);
             fs::write(work.join("heartbeat"), b"alive")?;
             self.progress(id, 0, input.size(), "extracting")?;
             run_worker(&work, hash, input.size(), cancel)?;
@@ -688,8 +740,26 @@ impl Inner {
                 "UPDATE jobs SET status='completed' WHERE id=?1 AND status='running'",
                 [id],
             )?;
-            tx.execute("UPDATE job_details SET finished_at=?2,updated_at=?2,progress_bytes=total_bytes,stage='completed',message='Filesystem extracted and verified. Other image regions and omitted links are listed in the manifest.' WHERE job_id=?1",params![id,now()])?;
-            db::event(&tx,"firmware_extracted","Validated offline filesystem contents retained; no firmware execution or installation authorization.",Some(id),Some(hash),"info")?;
+            let message = if report.file_count == 0 {
+                "Inspection completed; no ordinary files extracted. See unsupported layers and unexplained regions."
+            } else if report.completeness.as_deref() == Some("complete") {
+                "Container contents extracted and independently hashed. No device acquisition or installation authority."
+            } else {
+                "Partial extraction retained. See layer limitations, omitted members and unexplained regions."
+            };
+            tx.execute("UPDATE job_details SET finished_at=?2,updated_at=?2,progress_bytes=total_bytes,stage='completed',message=?3 WHERE job_id=?1",params![id,now(),message])?;
+            db::event(
+                &tx,
+                if report.file_count == 0 {
+                    "firmware_inspected"
+                } else {
+                    "firmware_extracted"
+                },
+                message,
+                Some(id),
+                Some(hash),
+                "info",
+            )?;
             tx.commit()?;
             Ok(())
         })();
@@ -707,6 +777,7 @@ fn cleanup_work(work: &Path, guards: Vec<File>) -> std::io::Result<()> {
     for name in [
         "input.bin",
         "worker.py",
+        "extraction-engine-v2.py",
         "heartbeat",
         "cancel",
         "error.txt",
@@ -721,9 +792,9 @@ fn cleanup_work(work: &Path, guards: Vec<File>) -> std::io::Result<()> {
     drop(guards);
     fs::remove_dir(work)
 }
-fn run_worker(work: &Path, hash: &str, size: u64, cancel: &AtomicBool) -> Result<()> {
+fn worker_command(work: &Path) -> Result<Command> {
     #[cfg(windows)]
-    let mut command = {
+    let command = {
         use std::os::windows::process::CommandExt;
         let path = work.to_str().ok_or_else(invalid)?.replace('\\', "/");
         if path.len() < 3 || path.as_bytes()[1] != b':' {
@@ -735,7 +806,7 @@ fn run_worker(work: &Path, hash: &str, size: u64, cancel: &AtomicBool) -> Result
             "-d",
             "Ubuntu",
             "--exec",
-            "python3",
+            PYTHON,
             "-I",
             "-B",
             &format!("{guest}/worker.py"),
@@ -745,15 +816,18 @@ fn run_worker(work: &Path, hash: &str, size: u64, cancel: &AtomicBool) -> Result
         cmd
     };
     #[cfg(not(windows))]
-    let mut command = {
-        let mut cmd = Command::new("python3");
+    let command = {
+        let mut cmd = Command::new(PYTHON);
         cmd.args(["-I", "-B"])
             .arg(work.join("worker.py"))
             .arg("--job")
             .arg(work);
         cmd
     };
-    let child = command.args(["--sha256",hash,"--size",&size.to_string()]).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn().map_err(|_|LibraryError::new("WORKER_UNAVAILABLE","Install the qualified WSL Ubuntu extraction tools. No unsandboxed fallback is permitted."))?;
+    Ok(command)
+}
+fn run_worker(work: &Path, hash: &str, size: u64, cancel: &AtomicBool) -> Result<()> {
+    let child = worker_command(work)?.args(["--sha256",hash,"--size",&size.to_string()]).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn().map_err(|_|LibraryError::new("WORKER_UNAVAILABLE","Install the qualified WSL Ubuntu extraction tools. No unsandboxed fallback is permitted."))?;
     let mut process = WorkerProcess {
         child,
         cancel: work.join("cancel"),
@@ -773,13 +847,14 @@ fn run_worker(work: &Path, hash: &str, size: u64, cancel: &AtomicBool) -> Result
                 "resource_exhausted" => ("EXTRACTION_RESOURCES", "Extraction exceeded its combined temporary-space, memory or process resource budget. No new extraction was published; original firmware and existing results remain preserved."),
                 "trx_worker_unavailable" => ("WORKER_UNAVAILABLE", "TRX extraction needs the separately qualified OpenWrt otrx parser. Install the pinned parser from the worker setup guide; no unsandboxed fallback is used."),
                 "unsupported_container_version" => ("UNSUPPORTED_CONTAINER_VERSION", "This container version or its flags are not qualified for extraction."),
-                "unsupported_nested_format" => ("UNSUPPORTED_NESTED_FORMAT", "The container is recognized, but its nested filesystem or wrapper is unsupported. UBI/UBIFS and gzip-wrapped TRX are not qualified; no new extraction was published."),
+                "unsupported_nested_format" => ("UNSUPPORTED_NESTED_FORMAT", "This nested filesystem or container variant is not qualified. No new extraction was published."),
                 "unsupported_format" => ("UNSUPPORTED_FORMAT", "No supported filesystem found within the bounded scan. Unknown or encrypted content remains unextracted."),
                 "unsupported_compression" => ("UNSUPPORTED_COMPRESSION", "This filesystem compression is unsupported."),
                 "corrupt_image" => ("CORRUPT_IMAGE", "Filesystem headers are invalid, truncated or ambiguous."),
-                "output_limit" | "entry_limit" => ("EXTRACTION_LIMIT", "Extraction exceeded its file-count or output-size limit."),
+                "output_limit" | "entry_limit" | "description_limit" | "manifest_limit" | "decompression_bomb" => ("EXTRACTION_LIMIT", "Extraction exceeded a shared byte, expansion-ratio, layer, metadata or file-count limit. No new result was published."),
                 "source_changed" => ("SOURCE_CHANGED", "Input verification failed; no extracted output admitted."),
-                "unsafe_path" | "unsafe_link" => ("UNSAFE_EXTRACTION", "Unsafe file names or links were rejected."),
+                "unsafe_path" | "unsafe_link" | "unsafe_mode" | "unsafe_special_file" | "colliding_paths" => ("UNSAFE_EXTRACTION", "Unsafe names, links, special files, privileged modes or colliding paths were rejected."),
+                "corrupt_description" | "ambiguous_image" => ("CORRUPT_IMAGE", "The package description or container mapping is invalid or ambiguous; nothing was inferred or applied."),
                 "timeout" | "owner_disconnected" => ("EXTRACTION_TIMEOUT", "Extraction timed out or its supervising application disconnected."),
                 _ => ("EXTRACTION_FAILED", "Isolated extraction failed. Original firmware retained."),
             };
@@ -809,6 +884,22 @@ fn run_worker(work: &Path, hash: &str, size: u64, cancel: &AtomicBool) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn extraction_worker_command_uses_the_pinned_absolute_python_path() {
+        #[cfg(windows)]
+        let work = Path::new(r"C:\isolated-profile\job");
+        #[cfg(not(windows))]
+        let work = Path::new("/isolated-profile/job");
+        let command = worker_command(work).unwrap();
+        #[cfg(windows)]
+        {
+            let args: Vec<_> = command.get_args().collect();
+            let exec = args.iter().position(|arg| *arg == "--exec").unwrap();
+            assert_eq!(args[exec + 1], "/usr/bin/python3.14");
+        }
+        #[cfg(not(windows))]
+        assert_eq!(command.get_program(), "/usr/bin/python3.14");
+    }
     fn synthetic_report() -> serde_json::Value {
         serde_json::json!({"unextractedRegions":[],"version":1,"inputSha256":"a".repeat(64),"inputBytes":1024,"container":"raw","expandedBytes":1024,
             "region":{"format":"squashfs","offset":0,"length":1024,"compression":4},
@@ -835,6 +926,82 @@ mod tests {
         let report = synthetic_bundle(&synthetic_report(), b"test", false).unwrap();
         assert_eq!(report.total_bytes, 4);
         assert!(report.entries[1].offset > 10);
+    }
+    fn synthetic_v2() -> serde_json::Value {
+        let engine_hash = format!(
+            "{:x}",
+            Sha256::digest(
+                include_str!("../../../../../scripts/extraction-engine-v2.py").as_bytes()
+            )
+        );
+        let mut value = synthetic_report();
+        value["version"] = 2.into();
+        value["container"] = "cpio_newc".into();
+        value["region"]["format"] = "cpio_newc".into();
+        value["region"]["compression"] = 0.into();
+        value["extractor"] = "OBTAINER layered engine 2".into();
+        value["toolSha256"] = engine_hash.clone().into();
+        value["entries"][0]["mode"] = 493.into();
+        value["entries"][1]["mode"] = 420.into();
+        value["completeness"] = "complete".into();
+        value["layers"] = serde_json::json!([{"id":"layer-0000","parentId":null,"space":"source","offset":0,"length":1024,"sourcePath":"<root>","inputSha256":"a".repeat(64),"handler":"cpio","handlerVersion":1,"format":"cpio_newc","confidence":"validated","decodedBytes":0,"completeness":"complete","reasons":[]}]);
+        value["unexplainedRegions"] = serde_json::json!([]);
+        value["entropyMap"] = serde_json::json!([]);
+        value["scan"] = serde_json::json!({"bytes":1024,"allOffsetsScanned":true,"candidateLimit":4096,"candidatesRetained":1,"candidatesCapped":false,"entropySampled":true});
+        value["swupdate"] = serde_json::json!([]);
+        value["omittedMembers"] = serde_json::json!([]);
+        value["provenance"] = serde_json::json!({"engineVersion":"2.0.0","engineSha256":engine_hash,"pythonVersion":"3.14.4","tools":[]});
+        value["budgets"] = serde_json::json!({"maxLayerDepth":6,"maxLayers":256,"expandedBytes":0,"maxExpandedBytes":MAX_OUTPUT,"maxFileBytes":33554432,"ratioLimit":1024});
+        value
+    }
+    #[test]
+    fn v2_layers_and_content_hash_are_validated_without_wall_clock_metadata() {
+        let value = synthetic_v2();
+        let first = synthetic_bundle(&value, b"test", false).unwrap();
+        let second = synthetic_bundle(&value, b"test", false).unwrap();
+        assert_eq!(first.created_at, 0);
+        assert_eq!(
+            serde_json::to_vec(&first).unwrap(),
+            serde_json::to_vec(&second).unwrap()
+        );
+    }
+    #[test]
+    fn v2_rejects_false_completeness_bounds_forged_provenance_modes_and_topology() {
+        for change in 0..7 {
+            let mut value = synthetic_v2();
+            match change {
+                0 => {
+                    value["unexplainedRegions"] = serde_json::json!([{"layerId":"layer-0000","offset":0,"length":1,"reason":"unknown"}])
+                }
+                1 => value["layers"][0]["length"] = 1025.into(),
+                2 => value["layers"][0]["parentId"] = "layer-0000".into(),
+                3 => value["provenance"]["engineSha256"] = "b".repeat(64).into(),
+                4 => value["entries"][1]["mode"] = 0o4755.into(),
+                5 => value["budgets"]["maxExpandedBytes"] = (MAX_OUTPUT + 1).into(),
+                _ => value["scan"]["allOffsetsScanned"] = false.into(),
+            }
+            assert!(
+                synthetic_bundle(&value, b"test", false).is_err(),
+                "mutation {change}"
+            );
+        }
+    }
+    #[test]
+    fn v2_unknown_is_a_metadata_inspection_and_never_an_extracted_success() {
+        let mut value = synthetic_v2();
+        value["entries"] = serde_json::json!([]);
+        value["totalBytes"] = 0.into();
+        value["fileCount"] = 0.into();
+        value["directoryCount"] = 0.into();
+        value["status"] = "encrypted-or-unknown".into();
+        value["completeness"] = "encrypted-or-unknown".into();
+        value["layers"][0]["completeness"] = "encrypted-or-unknown".into();
+        value["layers"][0]["reasons"] = serde_json::json!(["unrecognized"]);
+        value["unexplainedRegions"] = serde_json::json!([{"layerId":"layer-0000","offset":0,"length":1024,"reason":"unrecognized"}]);
+        value["unextractedRegions"] = serde_json::json!([{"offset":0,"length":1024}]);
+        assert!(synthetic_bundle(&value, b"", false).is_ok());
+        value["status"] = "extracted_verified".into();
+        assert!(synthetic_bundle(&value, b"", false).is_err());
     }
     #[test]
     fn omitted_regions_and_isolation_cannot_be_misrepresented() {

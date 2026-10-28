@@ -1,0 +1,24 @@
+py : test_nested_cpio_links_cannot_escape_their_own_archive_root
+(__main__.Formats.test_nested_cpio_links_cannot_escape_their_own_archive_root) ... FAIL
+At line:3 char:1
++ py -B scripts/test-extraction-engine-v2.py Formats.test_nested_cpio_l ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_nested_cpi..._root) ... FAIL:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+======================================================================
+FAIL: test_nested_cpio_links_cannot_escape_their_own_archive_root
+(__main__.Formats.test_nested_cpio_links_cannot_escape_their_own_archive_root)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\scripts\test-extraction-engine-v2.py", line
+133, in test_nested_cpio_links_cannot_escape_their_own_archive_root
+    self.assertFalse(any(e["path"] == "inner.contents/sub/link" for e in escaped_report["entries"]))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.075s
+
+FAILED (failures=1)

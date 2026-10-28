@@ -1,0 +1,40 @@
+powershell.exe :    Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+At line:5 char:1
++ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/rust. ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ob...ktop\src-tauri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    Finished `test` profile [unoptimized] target(s) in 1m 13s
+     Running unittests src\lib.rs (target\debug\deps\obtainer_lib-3cbc5006e7811c3f.exe)
+
+running 20 tests
+test library::extraction::tests::export_preflight_identifies_bad_files_and_refuses_links ... ok
+test library::extraction::tests::export_header_never_grants_executable_permissions_or_links ... ok
+test library::extraction::tests::traversal_and_windows_special_names_are_rejected ... ok
+test library::extraction::tests::cancellation_refuses_even_an_otherwise_valid_result ... ok
+test library::extraction::tests::ordinary_bytes_are_independently_hashed_and_indexed ... ok
+test library::extraction::tests::cleanup_removes_only_owned_known_files_and_retains_unexpected_entries ... ok
+test library::extraction::tests::source_substitution_and_bad_region_are_refused ... ok
+test library::extraction::tests::publication_requires_current_uncancelled_extraction_and_rolls_back ... ok
+test library::extraction::tests::ustar_can_split_at_an_earlier_separator ... ok
+test library::extraction::tests::locked_output_cleanup_failure_does_not_delete_or_rename_the_directory ... ok
+test library::extraction::tests::ustar_rejects_unicode_bidi_and_overlong_individual_names ... ok
+test library::extraction::tests::corrupt_missing_and_trailing_output_are_refused ... ok
+test library::extraction::tests::omitted_regions_and_isolation_cannot_be_misrepresented ... ok
+test library::extraction::tests::duplicate_paths_traversal_and_missing_parents_are_refused ... ok
+test library::extraction::tests::worker_output_without_real_files_is_not_success ... ok
+test library::extraction::tests::worker_cannot_smuggle_a_device_or_excessive_file_size ... ok
+test library::extraction::tests::trx_manifest_requires_pinned_parser_and_contained_root_partition ... ok
+test library::extraction::tests::v2_unknown_is_a_metadata_inspection_and_never_an_extracted_success ... ok
+test library::extraction::tests::v2_layers_and_content_hash_are_validated_without_wall_clock_metadata ... ok
+test library::extraction::tests::v2_rejects_false_completeness_bounds_forged_provenance_modes_and_topology ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 370 filtered out; finished in 0.09s
+
+     Running unittests src\main.rs (target\debug\deps\obtainer-6fb1552cb86dda40.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

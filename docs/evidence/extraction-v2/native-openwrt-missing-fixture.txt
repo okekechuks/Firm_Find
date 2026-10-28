@@ -1,0 +1,60 @@
+
+> obtainer-workspace@0.2.0-beta.2 test:openwrt
+> node scripts/verify-foundation.mjs --phase4 --phase4-1 --gui --phase5 --phase6 --phase7
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-28T20-02-44.935Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data {}
+PASS: ordinary production executable rejects test activation before opening data {}
+PASS: ordinary production rejects OpenWrt lab activation; isolated binary rejects duplicate lab flags before data access {}
+PASS: native-test executable rejects missing/unsafe run IDs and arbitrary data paths {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: active test ownership prevents cleanup {}
+PASS: dev-reopen: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"bb9af7937b9683d970f4a6b42f9fb3ac","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\bb9af7937b9683d970f4a6b42f9fb3ac\\data"}
+PASS: dev-reopen: native window, React and real SQLite IPC {"url":"http://127.0.0.1:1420/","pid":8808,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\bb9af7937b9683d970f4a6b42f9fb3ac\\data","theme":"system"}
+PASS: dev-reopen: exactly six primary navigation destinations {}
+PASS: dev-reopen: discovery, three refreshes, unique IDs, unknown feature support {"records":54,"watching":true,"warnings":[]}
+PASS: dev-reopen: real adapter registry IPC, strict request validation and absent write/execution endpoints {}
+PASS: dev-reopen: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection {"devices":12,"mg11Connected":false}
+PASS: dev-reopen: protected device information and disabled acquisition shown; no compatibility check or device request {"deviceId":"00f121d0a45abfab0aff8e304a16c20d9edc4f587f2e5030a924c1e3c66786c6"}
+PASS: dev-reopen: saved endpoint adapter IPC remains passive; saved-connections GUI no longer mounted and was not tested {}
+PASS: dev-reopen: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged {}
+PASS: dev-reopen: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads {}
+PASS: dev-reopen: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes {}
+PASS: dev-reopen: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result {}
+PASS: dev-reopen: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch {}
+PASS: dev-reopen: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback {}
+PASS: dev-reopen: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds {}
+PASS: dev-reopen: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects {}
+PASS: dev-reopen: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads {}
+PASS: dev-reopen: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+Failed test run retained: C:\Users\chuka\AppData\Local\OBTAINER-NativeTests\bb9af7937b9683d970f4a6b42f9fb3ac
+npm.cmd : node:internal/modules/run_main:123
+At line:3 char:1
++ npm.cmd run test:openwrt *> .tools/extraction-v2-final-3-native-openw ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:internal/modules/run_main:123:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    triggerUncaughtException(
+    ^
+
+Error: ENOENT: no such file or directory, open
+'C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\phase7-vm\console-identity.log'
+    at async open (node:internal/fs/promises:639:25)
+    at async readFile (node:internal/fs/promises:1243:14)
+    at async verifyOpenWrt
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-openwrt.mjs:27:20)
+    at async verify
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:228:40)
+    at async
+file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:497:19 {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path:
+'C:\\Users\\chuka\\OneDrive\\Documents\\Firm_Find\\.tools\\beta2-hardening\\.tools\\phase7-vm\\console-identity.log'
+}
+
+Node.js v22.17.0
