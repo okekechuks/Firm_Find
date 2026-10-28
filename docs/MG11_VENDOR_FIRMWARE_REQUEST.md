@@ -4,7 +4,7 @@ Prepared: **October 28, 2026**. These are two separate drafts for owner review. 
 
 ## Recipient and evidence limits
 
-Movingcomm publishes `marketing@movingcomm.com` on its [official ComFi MG11 product page](https://www.movingcomm.com/products/mg11-4g-wifi-6-mifi.html) and [official contact page](https://www.movingcomm.com/contact.html), checked October 28, 2026. This is a public contact lead. The product page does not establish that Movingcomm manufactured either particular unit below or that its firmware is interchangeable with either unit. Ask the recipient to confirm the responsible manufacturer or authorized support channel before supplying a package. No independently confirmed Vitel support address is included.
+Vitel publishes `support.love@vitelwireless.com` on its [official support page](https://www.vitelwireless.com/vitel-wireless-support), checked October 28, 2026. This is the primary support lead for the Vitel-branded unit. Movingcomm publishes `marketing@movingcomm.com` on its [official ComFi MG11 product page](https://www.movingcomm.com/products/mg11-4g-wifi-6-mifi.html) and [official contact page](https://www.movingcomm.com/contact.html). Movingcomm is an OEM lead; its product page does not establish that it manufactured either particular unit or that its firmware is interchangeable. Ask the recipient to confirm the responsible manufacturer or authorized support channel before supplying a package.
 
 The following values come from owner reports and screenshots. They remain **user-reported and unverified**; they are not authenticated device identity or a compatibility decision.
 
@@ -17,7 +17,7 @@ The `AM802` and `AM802L` software identifiers must be kept distinct. A response 
 
 ## Draft 1 — H01-A Vitel MG11
 
-**To:** `marketing@movingcomm.com`
+**To:** `support.love@vitelwireless.com` (Vitel support). If referred to the OEM, send separately to its confirmed support channel; Movingcomm's public marketing contact is a lead, not a confirmed manufacturer for this unit.
 
 **Subject:** Exact original firmware and documented read-only export request — MG11 / MF69_AM802
 
