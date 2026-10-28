@@ -89,6 +89,47 @@ function Get-CandidateConnectionStatus($Records) {
     return 'absent'
 }
 
+function Get-UsbClassTuples($Values) {
+    # Windows compatible IDs describe a device, interface or interface collection;
+    # they are not a freshly fetched raw USB descriptor or an access capability.
+    # https://learn.microsoft.com/en-us/windows-hardware/drivers/install/standard-usb-identifiers
+    # DFU 1.1 Tables 4.1/4.4: FE/01/01 runtime, FE/01/02 DFU mode.
+    # Table 4.2 defines upload capability separately in functional bmAttributes.
+    # https://www.usb.org/sites/default/files/DFU_1.1.pdf
+    # U-Boot DFU requires configured support and board-specific backends, not a
+    # universal firmware access path: https://docs.u-boot.org/en/latest/usage/dfu.html
+    # RNDIS tuple is a network hint only:
+    # https://support.microsoft.com/en-gb/topic/a187837e-e438-7a59-a858-56af2ceee84e
+    $seen = @{}
+    foreach ($value in @($Values | Select-Object -First 64)) {
+        if ($value -isnot [string] -or $value.Length -gt 64) { continue }
+        $canonical = $value.ToUpperInvariant()
+        $match = [regex]::Match($canonical, '\AUSB\\CLASS_(?<class>[0-9A-F]{2})(?:&SUBCLASS_(?<sub>[0-9A-F]{2})(?:&PROT_(?<protocol>[0-9A-F]{2}))?)?\z')
+        if (-not $match.Success -or $seen.ContainsKey($canonical)) { continue }
+        $seen[$canonical] = $true
+        $classCode = $match.Groups['class'].Value
+        $subclassCode = $null
+        $protocolCode = $null
+        if ($match.Groups['sub'].Success) { $subclassCode = $match.Groups['sub'].Value }
+        if ($match.Groups['protocol'].Success) { $protocolCode = $match.Groups['protocol'].Value }
+        $classification = 'usb_class_tuple_observed'
+        if ($classCode -eq 'FE' -and $subclassCode -eq '01' -and $protocolCode -eq '01') {
+            $classification = 'dfu_runtime_advertised_only'
+        } elseif ($classCode -eq 'FE' -and $subclassCode -eq '01' -and $protocolCode -eq '02') {
+            $classification = 'dfu_mode_advertised_only'
+        } elseif ($classCode -eq 'FF') {
+            $classification = 'vendor_specific_hint'
+        } elseif ($classCode -eq 'E0' -and $subclassCode -eq '01' -and $protocolCode -eq '03') {
+            $classification = 'rndis_network_hint'
+        }
+        [ordered]@{
+            classCode=$classCode; subclassCode=$subclassCode; protocolCode=$protocolCode
+            source='windows_pnp_compatible_id'; verification='observed'
+            classification=$classification; firmwareAccess='unknown'; uploadSupport='unknown'; acquisitionAvailable=$false
+        }
+    }
+}
+
 function Get-IPv4Range([string]$Address, [int]$PrefixLength) {
     $parsed = $null
     if ($PrefixLength -lt 0 -or $PrefixLength -gt 32 -or
@@ -143,6 +184,24 @@ if ($SelfTest) {
     Assert-Check ((Get-CandidateConnectionStatus @($missing)) -eq 'unknown') 'missing_presence_is_unknown'
     Assert-Check ((Get-CandidateConnectionStatus @($nullPresence, $disconnected)) -eq 'unknown') 'null_presence_is_unknown'
     Assert-Check ((Get-CandidateConnectionStatus @()) -eq 'absent') 'no_matches_is_absent'
+    $runtimeDfu = @(Get-UsbClassTuples @('USB\Class_FE&SubClass_01&Prot_01'))
+    Assert-Check ($runtimeDfu.Count -eq 1) 'dfu_runtime_tuple_observed'
+    Assert-Check ($runtimeDfu[0].classification -eq 'dfu_runtime_advertised_only') 'dfu_runtime_not_dfu_mode'
+    $modeDfu = @(Get-UsbClassTuples @('USB\Class_FE&SubClass_01&Prot_02'))
+    Assert-Check ($modeDfu.Count -eq 1 -and $modeDfu[0].classification -eq 'dfu_mode_advertised_only') 'dfu_mode_tuple_observed'
+    foreach ($entry in @($runtimeDfu + $modeDfu)) {
+        Assert-Check ($entry.firmwareAccess -eq 'unknown' -and $entry.uploadSupport -eq 'unknown' -and -not $entry.acquisitionAvailable) 'dfu_does_not_authorize_access'
+    }
+    foreach ($invalidId in @('USB', 'Net', 'Mobile DFU Interface', 'MiFi 0123456789ABCDEF', 'USB\VID_1286&PID_4E31\SYNTHETIC_SERIAL', 'USB\Class_FE&SubClass_01&Prot_01&SERIAL_123456', 'USB\Class_FE&Prot_01', 'USB\Class_FEE&SubClass_01&Prot_01', 'USB\Class_FE&SubClass_01&Prot_G1', 'USB\MS_COMP_RNDIS', "USB\Class_FE&SubClass_01&Prot_01`n", ' USB\Class_FE&SubClass_01&Prot_01')) {
+        Assert-Check (@(Get-UsbClassTuples @($invalidId)).Count -eq 0) 'noncanonical_compatible_id_rejected'
+    }
+    $partialDfu = @(Get-UsbClassTuples @('USB\Class_FE', 'USB\Class_FE&SubClass_01', 'USB\Class_FE&SubClass_01&Prot_00', 'USB\Class_FE&SubClass_02&Prot_01'))
+    Assert-Check (@($partialDfu | Where-Object { $_.classification -like 'dfu_*' }).Count -eq 0) 'incomplete_or_other_tuple_not_dfu'
+    $vendorTuple = @(Get-UsbClassTuples @('USB\Class_FF&SubClass_00&Prot_00'))
+    Assert-Check ($vendorTuple.Count -eq 1 -and $vendorTuple[0].classification -eq 'vendor_specific_hint' -and $vendorTuple[0].firmwareAccess -eq 'unknown') 'vendor_specific_not_firmware_access'
+    $rndisTuple = @(Get-UsbClassTuples @('USB\Class_E0&SubClass_01&Prot_03'))
+    Assert-Check ($rndisTuple.Count -eq 1 -and -not $rndisTuple[0].acquisitionAvailable -and $rndisTuple[0].firmwareAccess -eq 'unknown') 'network_tuple_not_firmware_access'
+    Assert-Check (@(Get-UsbClassTuples @('usb\class_fe&subclass_01&prot_01', 'USB\Class_FE&SubClass_01&Prot_01')).Count -eq 1) 'canonical_case_deduplication'
     Assert-Check ((Resolve-ReportPath '.tools/synthetic-inventory.json').StartsWith((Join-Path $repoRoot '.tools'))) 'contained_output'
     foreach ($invalid in @('outside.json', '.tools/../outside.json', '.tools-x/report.json', '.tools/a.json:secret', 'C:\outside.json', '.tools/NUL.json', '.tools/a./report.json')) {
         $rejected = $false
@@ -200,11 +259,12 @@ public static class ObtainerInventoryDirectory {
     $dns = @(Get-DnsClientServerAddress)
     $routes = @(Get-NetRoute -AddressFamily IPv4)
     $pattern = '^USB\\VID_' + $VendorId + '&PID_' + $ProductId + '(?:&|\\)'
-    $matches = @($pnp | Where-Object { $_.PNPDeviceID -match $pattern })
-    $matchedIds = Get-PresentRecordMap $matches
+    $usbRecords = @($pnp | Where-Object { $_.PNPDeviceID -match $pattern })
+    $matchedIds = Get-PresentRecordMap $usbRecords
     $allPresentIds = Get-PresentRecordMap $pnp
     $parentCache = @{}
     $script:unknownParents = 0
+    $script:unknownCompatibleIds = 0
     function Get-ParentId([string]$Id) {
         if ([string]::IsNullOrWhiteSpace($Id)) { return $null }
         $key = $Id.ToUpperInvariant()
@@ -227,7 +287,16 @@ public static class ObtainerInventoryDirectory {
             $current = Get-ParentId $current
         }
     }
-    $deviceReports = @($matches | ForEach-Object {
+    $deviceReports = @($usbRecords | ForEach-Object {
+        $classTuples = @()
+        $compatibleIdStatus = 'property_unavailable'
+        try {
+            $compatibleProperty = Get-PnpDeviceProperty -InstanceId $_.PNPDeviceID -KeyName 'DEVPKEY_Device_CompatibleIds' -ErrorAction Stop
+            $classTuples = @(Get-UsbClassTuples $compatibleProperty.Data)
+            $compatibleIdStatus = 'no_canonical_class_tuple'
+            if ($classTuples.Count -gt 0) { $compatibleIdStatus = 'observed' }
+            if (@($compatibleProperty.Data).Count -gt 64) { $compatibleIdStatus = 'truncated_property_observation' }
+        } catch { $script:unknownCompatibleIds++ }
         [ordered]@{
             reference = Get-PrivateReference 'pnp' $_.PNPDeviceID $salt
             parentReference = Get-PrivateReference 'pnp' (Get-ParentId $_.PNPDeviceID) $salt
@@ -235,6 +304,8 @@ public static class ObtainerInventoryDirectory {
             name = 'USB ' + $VendorId.ToUpperInvariant() + ':' + $ProductId.ToUpperInvariant() + ' device record'; class = Get-ObservedClass $_.PNPClass
             present = Get-ObservedPresence $_; windowsStatus = Get-ObservedStatus $_.Status
             problemCode = $_.ConfigManagerErrorCode; identityVerification = 'unverified'
+            usbClassTupleObservationStatus = $compatibleIdStatus; usbClassTuples = $classTuples
+            usbNodeScope = $(if ($_.PNPDeviceID -match '&MI_[0-9A-F]{2}\\') { 'interface_or_interface_collection' } else { 'device_or_composite_parent' })
         }
     })
     $networkReports = @($adapters | Where-Object { $null -ne $_.InterfaceIndex } | ForEach-Object {
@@ -271,10 +342,12 @@ public static class ObtainerInventoryDirectory {
     $report = [ordered]@{
         schemaVersion = 1; collectedAt = [DateTime]::UtcNow.ToString('o')
         provenance = 'windows_observed'; identityVerification = 'unverified'
-        connectionStatus = Get-CandidateConnectionStatus $matches
-        matchingUsbRecordCount = $matches.Count; presentMatchingUsbRecordCount = $matchedIds.Count
+        connectionStatus = Get-CandidateConnectionStatus $usbRecords
+        matchingUsbRecordCount = $usbRecords.Count; presentMatchingUsbRecordCount = $matchedIds.Count
         presentUsbCorrelatedNetworkCount = @($networkReports | Where-Object { $_.pnpPresent -and $_.correlatedUsbReferences.Count -gt 0 }).Count
         activeUsbCorrelatedNetworkCount = @($networkReports | Where-Object { $_.pnpPresent -and $_.linkUp -and $_.correlatedUsbReferences.Count -gt 0 }).Count
+        presentDfuRuntimeAdvertisedRecordCount = @($deviceReports | Where-Object { $_.present -eq $true -and @($_.usbClassTuples | Where-Object { $_.classification -eq 'dfu_runtime_advertised_only' }).Count -gt 0 }).Count
+        presentDfuModeAdvertisedRecordCount = @($deviceReports | Where-Object { $_.present -eq $true -and @($_.usbClassTuples | Where-Object { $_.classification -eq 'dfu_mode_advertised_only' }).Count -gt 0 }).Count
         acquisitionAttempted = $false; routerRequests = 0
         query = @{ usbVendorId=$VendorId.ToUpperInvariant(); usbProductId=$ProductId.ToUpperInvariant() }
         redaction = @{ identifiers='salted_sha256'; lifetime='per_run_only'; saltRetained=$false; names='fixed_labels_only'; ssidCollected=$false; rawPropertiesRetained=$false }
@@ -282,13 +355,14 @@ public static class ObtainerInventoryDirectory {
         networks = @($networkReports | Where-Object { $_.linkUp -or $_.correlatedUsbReferences.Count -gt 0 })
         subnetCollisions = $collisions
         parentObservationFailures = $script:unknownParents
-        limitations = @('Windows identifiers and branding do not verify router identity.', 'Per-run references cannot establish that different captures represent the same physical unit.', 'Configured Windows DNS and routes are observations, not device configuration.', 'No firmware bytes or authentication evidence collected.')
+        compatibleIdObservationFailures = $script:unknownCompatibleIds
+        limitations = @('Windows identifiers and branding do not verify router identity.', 'Per-run references cannot establish that different captures represent the same physical unit.', 'Configured Windows DNS and routes are observations, not device configuration.', 'No firmware bytes or authentication evidence collected.', 'Canonical USB class tuples are cached Windows compatible-ID observations; descriptor scope depends on the PnP node.', 'DFU advertisement does not establish upload capability, authorized ranges, firmware coverage, a working driver or extraction support. No DFU requests or mode changes were sent.', 'No observed DFU tuple does not prove the device has no other service modes. Vendor-specific and RNDIS hints do not establish firmware access.')
     }
     $bytes = [Text.Encoding]::UTF8.GetBytes(($report | ConvertTo-Json -Depth 12) + "`n")
     # CreateNew prevents overwrite, including a destination created during capture.
     $stream = [IO.File]::Open($reportPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
     try { $stream.Write($bytes, 0, $bytes.Length); $stream.Flush($true) } finally { $stream.Dispose() }
-    @{ output=$OutputPath; matchingUsbRecords=$deviceReports.Count; presentMatchingUsbRecords=$report.presentMatchingUsbRecordCount; presentUsbCorrelatedNetworks=$report.presentUsbCorrelatedNetworkCount; activeUsbCorrelatedNetworks=$report.activeUsbCorrelatedNetworkCount; connectionStatus=$report.connectionStatus; collisions=$collisions.Count; provenance='windows_observed'; identityVerification='unverified'; routerRequests=0 } | ConvertTo-Json -Compress
+    @{ output=$OutputPath; matchingUsbRecords=$deviceReports.Count; presentMatchingUsbRecords=$report.presentMatchingUsbRecordCount; presentUsbCorrelatedNetworks=$report.presentUsbCorrelatedNetworkCount; activeUsbCorrelatedNetworks=$report.activeUsbCorrelatedNetworkCount; connectionStatus=$report.connectionStatus; collisions=$collisions.Count; dfuRuntimeAdvertisedRecords=$report.presentDfuRuntimeAdvertisedRecordCount; dfuModeAdvertisedRecords=$report.presentDfuModeAdvertisedRecordCount; provenance='windows_observed'; identityVerification='unverified'; routerRequests=0 } | ConvertTo-Json -Compress
 } catch {
     # Provider exceptions can contain raw instance IDs. Do not echo them.
     Write-Error 'Local inventory stopped. No router request was sent. Check output containment/nonexistence, ordinary output parents, and Windows enumeration availability.'

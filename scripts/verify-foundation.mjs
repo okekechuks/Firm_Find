@@ -307,7 +307,11 @@ async function closeWindow() {
   client?.close(); client = undefined;
   const state = processes(); assert.equal(state.apps.length, 1);
   assert.equal(powershell(`$app=Get-Process -Id ${state.apps[0].id}; $app.CloseMainWindow()`).toLowerCase(), 'true');
-  await clean();
+  try { await clean(); }
+  catch(error) {
+    await writeFile(path.join(evidence,'shutdown-timeout.json'),JSON.stringify({processes:processes(),targets:(await targets()).map(({type,url})=>({type,url}))},null,2));
+    throw error;
+  }
 }
 async function verifyUnavailableLibrary() {
   // Only the marked test profile's generated-byte Library is moved, after shutdown.
@@ -403,9 +407,9 @@ try {
     await verifyManufacturerPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot,reopened:true});
     await closeWindow();
   } else if(process.argv.includes('--universal-workflow')) {
-    await clean(); start('release'); await connect();
+    await clean(); start('release'); await connect(); await connected();
     await verifyUniversalWorkflow(client,{root,profile,evidence,record,screenshot});
-    await closeWindow(); start('release'); await connect();
+    await closeWindow(); start('release'); await connect(); await connected();
     await verifyUniversalWorkflow(client,{root,profile,evidence,record,screenshot,reopened:true});
     await closeWindow();
   } else if(process.argv.includes('--mg11-challenge')) {
