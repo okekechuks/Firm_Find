@@ -1,5 +1,11 @@
 # OBTAINER phase status
 
+## October 28 physical acquisition sprint — hardware outcome blocked
+
+Work continues from `942195a` on `sprint/physical-acquisition-2026-10-28`; main and published releases are preserved. **Installed firmware physically acquired and extracted: 0/5; verified-compatible manufacturer image acquired and extracted: 0/5; metadata-only/blocked: 5/5.** H01-A Vitel (`MF69_AM802_ZX_DD_N_250725_EU`) and H01-B universal (`MF69_AM802L_ZX_DD_N_241106_EU`) are distinct units within one group; neither has firmware bytes. Owner inspected Vitel Configuration Management: imports/destructive controls, no visible export; none invoked. Current USB/Wi-Fi subnet overlap prevents an unambiguous approved read without a transport change or separate network. The challenge remains pending; no credentials or physical requests were used.
+
+Local Windows inventory now records redacted present/active USB topology without router traffic. Analyzer accurately observes CPIO/BSDIFF root signatures without granting extraction or compatibility. Two genuine D-Link packages are preserved for research: SEA CPIO delta needs exact base partitions; ZA HTTP RAR/PAC lacks authenticated transport, exact hardware qualification and a reviewed decoder. Neither counts as target support. VIDA was reported unavailable/dead without a specified revision; H02/H03 remain separate. [Actual findings, hashes, failures and verification](PHYSICAL_FIRMWARE_ACQUISITION_SPRINT_2026-10-28.md), [separate unsent MG11 requests](MG11_VENDOR_FIRMWARE_REQUEST.md). **Phase 7.5 and the full project remain incomplete. No merge or new release.**
+
 ## Universal device-to-firmware workflow — software integration verified; physical gates open
 
 27 October 2026: `feature/universal-firmware-workflow` connects selected-device evidence to unique qualified official sources, explicit approval, immutable associated Library admission, automatic bounded analysis and direct supported extraction/browsing. Persistent jobs/reports reconstruct progress after restart. Expired, conflicting, protected or changed-device authority fails closed; unsupported physical devices receive exact missing requirements. Customization/rebuild/install/recovery remain backend-disabled pending their independent qualifications. [Implementation and actual verification status](UNIVERSAL_FIRMWARE_WORKFLOW_VERIFICATION.md).

@@ -1,5 +1,20 @@
 # Phase 7.5 hardware matrix
 
+## Physical sprint — October 28, 2026
+
+Strict installed firmware acquired **and** extracted: **0/5 original groups, 0/6 individual units**. Verified-compatible manufacturer image acquired and extracted: **0/5, 0/6**. Metadata-only/blocked: **5/5 groups**. Public D-Link package downloads are not physical dumps or independently verified matches. [Current sprint evidence](PHYSICAL_FIRMWARE_ACQUISITION_SPRINT_2026-10-28.md).
+
+| Unit | Identity evidence | Source and actual result |
+| --- | --- | --- |
+| H01-A, Vitel MG11 | Owner reports Dashboard hardware `MF69_AM802`, software `MF69_AM802_ZX_DD_N_250725_EU`, July 25, 2025. Current Windows USB/RNDIS candidate VID1286/PID4E31; unit association owner-reported, not independently verified. | Owner visually inspected Configuration Management: restore, configuration upload and locked IMEI/TTL controls; no visible export. No controls invoked. USB/Wi-Fi overlap remains; no new router request/challenge/login. No firmware source/bytes. |
+| H01-B, universal MG11 | Earlier owner/screenshots: hardware `MF69`, software `MF69_AM802L_ZX_DD_N_241106_EU`, November 7, 2024. | Historical H01 root/version/menu evidence below belongs to this prior unit only. No new run or firmware bytes; cannot qualify H01-A. |
+| H02, older VIDA | Exact revision/firmware still unknown. | Owner reported an offered VIDA dead, revision unspecified. No current physical test or source; do not assign the dead unit to a revision. |
+| H03, newer VIDA | Separate unknown revision/firmware. | No inherited H02 qualification or exact source. |
+| H04, Airtel DWR-930-M | No exact physical revision, installed release or region supplied. | Genuine official-linked SEA CPIO/delta and ZA HTTP RAR/PAC packages downloaded. Exact compatibility unknown; no full image reconstruction, payload extraction or install. |
+| H05, MF968 | OEM/revision/firmware unknown. | No qualified source or physical test. |
+
+Both MG11 units count within H01. Owner reports remain unverified; shared UAPXC UI/USB identifiers never imply interchangeable images. Separate [unsent vendor requests](MG11_VENDOR_FIRMWARE_REQUEST.md) preserve both identities. The physical challenge gate is pending; no physical firmware dumping, configuration write, reset or flash occurred in this sprint.
+
 ## Universal workflow integration — 27 October 2026
 
 No new physical requests in this task. A synthetic identity plus a genuine public image tests software integration only; it does not qualify any row below.

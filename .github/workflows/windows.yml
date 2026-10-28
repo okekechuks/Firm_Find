@@ -30,6 +30,8 @@ jobs:
       - run: npm run build
       - name: Production executable guard regression (Windows PowerShell)
         run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-production-executable-guard.ps1
+      - name: Local inventory privacy and output guards (synthetic only)
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/inventory-physical-device.ps1 -SelfTest
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
