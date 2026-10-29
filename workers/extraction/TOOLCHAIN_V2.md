@@ -8,7 +8,7 @@ pin update. No extraction outside the namespace is used as a fallback.
 
 | Executable/library | Runtime / installed package | SHA-256 |
 |---|---|---|
-| `/usr/bin/python3.14` | Python **3.14.4**, `python3.14 3.14.4-1`; `python3` metapackage is separately `3.14.3-0ubuntu2` | `fa9796cd3a30878e11a2f40372f773d3fcd913fff35e5bee8dd9a036e22e93ab` |
+| `/usr/bin/python3.14` | Python **3.14.4**, security package `3.14.4-1ubuntu0.2`; `python3` metapackage version is independent | `52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41` |
 | `/usr/bin/bwrap` | `0.11.1-1ubuntu0.3` | `523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6` |
 | `/usr/bin/unsquashfs` | `1:4.7.5-1` | `003a7e9d70fbdcd05dfe132101c4b7bbb19a217976777f5393573eff21ddc202` |
 | `/usr/bin/zstd` | `1.5.7+dfsg-3` | `fe50fd600cad89b775dc5b4b10bc8ff95e2d33ddb4f7632966464b1fbdab8598` |

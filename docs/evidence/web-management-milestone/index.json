@@ -140,6 +140,90 @@
       "sourceSha256": "e3c08d7a2f4a84be8e49fb7dff8ad7ac00b2d622bf96de321e8cece6e41bd099",
       "retainedSha256": "9a15cfdfff2d9ccde8a9b20adbfe6d85147d2ecfec0aead1c3baf80e01f75e88",
       "retainedBytes": 5840
+    },
+    {
+      "source": ".tools/web-management-evidence/ci-qualified-initial.log",
+      "retained": "ci-qualified-initial.txt",
+      "sourceSha256": "df33a5055975592f21a6e9457b03e5c400af88157dfab60fc754a6171d8154c9",
+      "retainedSha256": "6365479681ce4e8e19e415a32e6810fc4fd8ba96b6facc43d2d1b411bc2daf02",
+      "retainedBytes": 40430
+    },
+    {
+      "source": ".tools/web-management-evidence/python-runtime-qualified.log",
+      "retained": "python-runtime-qualified.txt",
+      "sourceSha256": "3ced82dad990e4aa9b99c5351b2f3966f28c817132bf985c69892f18ab73e41b",
+      "retainedSha256": "c948aa534a3893ebfb352448374c8af4c168dbe7a9e4c585549b3d95f5128d10",
+      "retainedBytes": 645
+    },
+    {
+      "source": ".tools/web-management-evidence/python-update-pin-red.log",
+      "retained": "python-update-pin-red.txt",
+      "sourceSha256": "fc07e16f8bdd798e53350579708578432968761e6d880491f976b80029aa9e8e",
+      "retainedSha256": "3c95aaca5839ca60e4bfe6bcec7657ece11ea06036b598ece384b79ddcf157d0",
+      "retainedBytes": 4718
+    },
+    {
+      "source": ".tools/web-management-evidence/python-update-legacy-green.log",
+      "retained": "python-update-legacy-green.txt",
+      "sourceSha256": "80e9132a7011116f85fe28c5cfae154460fe70f0067c7b545fa1d298445f55ae",
+      "retainedSha256": "af7c336ae493a50c063582fa7f8e87f08c70e65dcc5e84f4dd20de61823a16c2",
+      "retainedBytes": 3351
+    },
+    {
+      "source": ".tools/web-management-evidence/python-update-v2-green.log",
+      "retained": "python-update-v2-green.txt",
+      "sourceSha256": "702772b9cdcf6d8242f4f0da2fc5c39b0be775237c018c5ce8144a2371110f54",
+      "retainedSha256": "a32520bd762b413c304f202a9f0eb5dd9b25e8fcb678ba7a8e75894ae50e5208",
+      "retainedBytes": 5840
+    },
+    {
+      "source": ".tools/web-management-evidence/python-update-dns-green.log",
+      "retained": "python-update-dns-green.txt",
+      "sourceSha256": "b930a743fec54d69094bf68a30f57fb309078396a9e6a09772b37a01f737650e",
+      "retainedSha256": "f48052c9d1cd7eabd9fa796403f04ebcc77f3cec99970a0878976b9253853907",
+      "retainedBytes": 2505
+    },
+    {
+      "source": ".tools/web-management-evidence/rust-standard-security.log",
+      "retained": "rust-standard-security.txt",
+      "sourceSha256": "8b321f0723479e0236789f8390b8124dbb5e53d6baffa28975c2f51d1c1686ca",
+      "retainedSha256": "bda69402cc7237384a8a6525f6c16a625f33252d0cf736bda32be7460f6ddda8",
+      "retainedBytes": 45050
+    },
+    {
+      "source": ".tools/web-management-evidence/rust-isolated-security.log",
+      "retained": "rust-isolated-security.txt",
+      "sourceSha256": "9e8cbe4634c68a3162c4bd8e62a97ed48c9034ec89493bb77ee8873007005fce",
+      "retainedSha256": "92de1fc93df6978645d6f7b4279d3b3c751a6c742f97c3f0a25957a78f54034c",
+      "retainedBytes": 45555
+    },
+    {
+      "source": ".tools/web-management-evidence/clippy-standard-security.log",
+      "retained": "clippy-standard-security.txt",
+      "sourceSha256": "ab4f0c8eecd15d9c3edec366f94d3895f55f3744c31edbe4665093089f71562b",
+      "retainedSha256": "f7a3ad7960dd7de9a2618289316608d9cddca33d82aa22cbb991be19f9e1098e",
+      "retainedBytes": 538
+    },
+    {
+      "source": ".tools/web-management-evidence/clippy-isolated-security.log",
+      "retained": "clippy-isolated-security.txt",
+      "sourceSha256": "614fe9c7379cee8e807e7d2dbcb26d81e16115ec663d13cc5a21d27916e5162d",
+      "retainedSha256": "ed5a96baa596a9fb39201038683a78676abf1fe6ae6d21d14d0d9f7d900da905",
+      "retainedBytes": 538
+    },
+    {
+      "source": ".tools/web-management-evidence/format-security.log",
+      "retained": "format-security.txt",
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retainedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retainedBytes": 0
+    },
+    {
+      "source": ".tools/web-management-evidence/manufacturer-native-initial-ui-race.log",
+      "retained": "manufacturer-native-initial-ui-race.txt",
+      "sourceSha256": "62cb9dcacea23f5edaa9d42a0c7b5967481e3d490e2196bedc6bee36089690e2",
+      "retainedSha256": "82b4137b7eb952f7f917316ccb6326aec7b05538f1cff641c230829e282e2ede",
+      "retainedBytes": 2692
     }
   ]
 }

@@ -59,6 +59,10 @@ Dependencies added/pinned: `digest_auth = 0.3.1`, `zeroize = 1.9.1`,
 computed dependency tree are retained. `diqwest` was rejected because hidden
 authentication retries/caching do not fit explicit operation checkpoints.
 No SQLite schema, storage location, decoder sandbox or published asset changed.
+CI exposed the previously unqualified Python security update. Its signed-package,
+executable and sandbox qualification is recorded in
+[recursive verification](RECURSIVE_FIRMWARE_EXTRACTION_VERIFICATION.md#maintained-interpreter-qualification);
+only the exact interpreter pin and CI diagnostics changed at that boundary.
 
 ## Executed software checks
 

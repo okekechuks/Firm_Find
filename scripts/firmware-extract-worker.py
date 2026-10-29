@@ -31,7 +31,7 @@ OTRX_BINARY_SHA = "66b870899eca6a12079668c23cdd95db069978afc9af5bcbc3681cd9c1e96
 OTRX_SOURCE_SHA = "e2ef4e7a08f84543945fec83c43bdebfdb1c252da1c440ebb90454913ec2dc3e"
 PYTHON = "/usr/bin/python3.14"
 TOOLS = {
-    PYTHON: "fa9796cd3a30878e11a2f40372f773d3fcd913fff35e5bee8dd9a036e22e93ab",
+    PYTHON: "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41",
     "/usr/bin/unsquashfs": "003a7e9d70fbdcd05dfe132101c4b7bbb19a217976777f5393573eff21ddc202",
     "/usr/bin/bwrap": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6",
 }

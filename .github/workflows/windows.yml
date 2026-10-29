@@ -78,6 +78,8 @@ jobs:
       - name: Run every extraction regression as an ordinary user
         run: |
           set -o pipefail
+          dpkg-query -W python3.14-minimal python3.14 libpython3.14-minimal libpython3.14-stdlib bubblewrap squashfs-tools
+          sha256sum /usr/bin/python3.14 /usr/bin/bwrap /usr/bin/unsquashfs
           useradd --create-home extraction-ci
           runuser -u extraction-ci -- python3 -B scripts/test-firmware-extraction.py 2>&1 | tee /tmp/extraction-legacy.log
           if grep -Eq '^OK \(skipped=' /tmp/extraction-legacy.log; then exit 1; fi

@@ -180,7 +180,7 @@ pub(super) fn validate(report: &ExtractionReport, hash: &str, size: u64) -> Resu
     let pins = [
         (
             "/usr/bin/python3.14",
-            "fa9796cd3a30878e11a2f40372f773d3fcd913fff35e5bee8dd9a036e22e93ab",
+            "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41",
         ),
         (
             "/usr/bin/unsquashfs",

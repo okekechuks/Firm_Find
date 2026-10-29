@@ -24,18 +24,27 @@ NATIVE = [
     "web-management-native.log", "manufacturer-native.log",
     "universal-native.log", "adapters-simulator-native.log",
 ]
+SECURITY = [
+    "ci-qualified-initial.log", "python-runtime-qualified.log",
+    "python-update-pin-red.log", "python-update-legacy-green.log",
+    "python-update-v2-green.log", "python-update-dns-green.log",
+    "rust-standard-security.log", "rust-isolated-security.log",
+    "clippy-standard-security.log", "clippy-isolated-security.log", "format-security.log",
+    "manufacturer-native-initial-ui-race.log",
+]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--native", action="store_true")
+    parser.add_argument("--security", action="store_true")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parent.parent
     source = repo / ".tools/web-management-evidence"
     destination = repo / "docs/evidence/web-management-milestone"
     destination.mkdir(parents=True, exist_ok=True)
     records = []
-    for name in BASE + (NATIVE if args.native else []):
+    for name in BASE + (SECURITY if args.security else []) + (NATIVE if args.native else []):
         item = source / name
         if item.is_symlink() or not item.resolve().is_relative_to(source.resolve()):
             raise RuntimeError("Evidence must be an ordinary owned local log")

@@ -1,0 +1,36 @@
+wsl.exe : test_dns_rejects_shell_injection_urls_names_scopes_duplicates_and_non_global_ips
+(__main__.DNSInputs.test_dns_rejects_shell_injection_urls_names_scopes_duplicates_and_non_global_ips) ... ok
+At line:2 char:638
++ ... og -Tail 6; wsl.exe -d Ubuntu --cd /mnt/c/Users/chuka/OneDrive/Docume ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_dns_reject...bal_ips) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_file_validation_is_bounded_and_input_is_not_modified
+(__main__.DNSInputs.test_file_validation_is_bounded_and_input_is_not_modified) ... ok
+test_only_fixed_upstream_configuration_is_emitted
+(__main__.DNSInputs.test_only_fixed_upstream_configuration_is_emitted) ... ok
+test_windows_paths_reject_network_relative_traversal_and_alternate_streams
+(__main__.DNSInputs.test_windows_paths_reject_network_relative_traversal_and_alternate_streams) ... ok
+test_archive_path_traversal_is_refused (__main__.LinuxWorker.test_archive_path_traversal_is_refused) ... ok
+test_builder_ownership_is_mapped_inside_namespace_without_host_privilege
+(__main__.LinuxWorker.test_builder_ownership_is_mapped_inside_namespace_without_host_privilege) ... ok
+test_cancelled_process_is_reaped_and_next_owned_operation_works
+(__main__.LinuxWorker.test_cancelled_process_is_reaped_and_next_owned_operation_works) ... ok
+test_compressor_limits_preserve_build_options_and_require_unique_invocation
+(__main__.LinuxWorker.test_compressor_limits_preserve_build_options_and_require_unique_invocation) ... ok
+test_only_exact_pinned_sdk_absolute_links_are_omitted
+(__main__.LinuxWorker.test_only_exact_pinned_sdk_absolute_links_are_omitted) ... ok
+test_overlay_contract_rejects_added_commands_and_noncanonical_data
+(__main__.LinuxWorker.test_overlay_contract_rejects_added_commands_and_noncanonical_data) ... ok
+test_readback_sandbox_has_no_host_drives_readonly_input_and_distinct_network
+(__main__.LinuxWorker.test_readback_sandbox_has_no_host_drives_readonly_input_and_distinct_network) ... ok
+test_real_offline_single_file_readback_with_synthetic_squashfs
+(__main__.LinuxWorker.test_real_offline_single_file_readback_with_synthetic_squashfs) ... ok
+test_timed_out_process_is_reaped_and_next_owned_operation_works
+(__main__.LinuxWorker.test_timed_out_process_is_reaped_and_next_owned_operation_works) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.321s
+
+OK

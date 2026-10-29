@@ -69,6 +69,8 @@ export async function verifyWebManagement(client,{root,profile,evidence,pid,reco
   assert(await evaluate("document.querySelector('dialog').innerText.includes('Web-management acquisition: BLOCKED')"));
   assert(!await evaluate(`document.querySelector('dialog').innerText.includes(${JSON.stringify(sentinel)})`));
   await writeFile(path.join(evidence,'web-evidence-result.json'),JSON.stringify({synthetic:true,routerRequests:0,physicalDeviceSuccess:false,report},null,2));
+  const viewport=await evaluate("new Promise(resolve=>{const node=document.querySelector('[aria-label=\"Web management evidence\"]');node.scrollIntoView({block:'start',behavior:'instant'});requestAnimationFrame(()=>requestAnimationFrame(()=>{const rect=node.getBoundingClientRect();resolve({top:rect.top,width:rect.width,height:rect.height,viewport:innerHeight});}));})");
+  assert(viewport.width>0&&viewport.height>0&&viewport.top>=0&&viewport.top<viewport.viewport,JSON.stringify(viewport));
   await screenshot('web-evidence-sanitized');
   // Native input fixtures contain synthetic sentinel values intentionally; they
   // are separate from application-owned data. The app must not copy them there.

@@ -12,8 +12,9 @@ with detect/plan/extract/report, bounded views, all-offset carving, recursive
 member/stream/filesystem walking, entropy samples and explicit unknown coverage.
 `scripts/firmware-extract-worker.py` supplies the no-network qualified Linux
 namespace and tool verification; `library/extraction.rs` independently validates
-and publishes immutable output. These decoder/worker files are unchanged by this
-milestone. [Detailed format and sandbox matrix](EXTRACTION_ENGINE_V2.md).
+and publishes immutable output. Decoder implementations and isolation budgets
+are retained; the interpreter security pin was separately updated and qualified
+as documented below. [Detailed format/sandbox matrix](EXTRACTION_ENGINE_V2.md).
 
 New `library/extraction/structure.rs::derive` projects those immutable reports into
 typed regions. `LibraryService::firmware_structure` and `get_firmware_structure`
@@ -85,3 +86,33 @@ these file tests.
 Windows worker checks: 24 legacy tests (six Linux-only skips), 34 V2 tests (three
 Linux-only skips), exit 0. WSL Ubuntu ran all 24 and all 34 with no skips, exit 0.
 Full/native verification results will be appended after execution.
+
+## Maintained interpreter qualification
+
+Initial [CI 40937767308](https://github.com/okekechuks/Firm_Find/actions/runs/40937767308)
+correctly failed closed: clean Ubuntu installed Python security package
+`3.14.4-1ubuntu0.2`, while the prior local V2 environment/pin used `3.14.4-1`.
+[Ubuntu USN-8744-1](https://ubuntu.com/security/notices/USN-8744-1) identifies the
+patched package. No downgrade or direct-host extraction fallback was introduced.
+
+APT refreshed its signed indices. Downloaded `python3.14-minimal` archive:
+2,579,044 bytes, SHA-256
+`0a7ea8a52834f9b3de0f11758924f80f7a6ebcbb4b02a55ba4f457503569f55f`.
+`scripts/qualify-python-runtime.py` verifies that checksum against APT metadata,
+reads the interpreter member without extracting/executing it and compares it
+with the installed root-owned executable. Both now match
+`52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41`.
+The requested runtime package update also upgraded its already-installed matching
+development/venv components; no blanket system upgrade was performed.
+
+Before changing pins, local Linux regressions reproduced the same two
+`worker_unavailable` failures. After matching worker and independent Rust pins,
+all 24 legacy, 34 V2 and 13 DNS tests passed with no skips on the patched runtime.
+Namespace, read-only root, cancellation/reaping, limits, paths and real synthetic
+filesystem/compression checks remain enabled. CI also prints installed tool
+versions/hashes and still rejects skipped qualified tests. New jobs refuse the
+old interpreter; existing immutable reports are retained without rewriting.
+
+Toolchain changes can change provenance-bound manifest hashes. Determinism is
+checked within the same input/qualified toolchain; earlier manifests remain
+historical evidence rather than being silently replaced.

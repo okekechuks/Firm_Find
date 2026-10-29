@@ -1,0 +1,34 @@
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-29T19-14-11.089Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: manufacturer-before: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"6b07a7215e4dfd93121338d97f507289","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6b07a7215e4dfd93121338d97f507289\\data"}
+PASS: manufacturer-before: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":13108,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\6b07a7215e4dfd93121338d97f507289\\data","theme":"system"}
+PASS: manufacturer-before: exactly six primary navigation destinations {}
+PASS: manufacturer-before: discovery, three refreshes, unique IDs, unknown feature support {"records":58,"watching":true,"warnings":[]}
+PASS: manufacturer-before: same-value settings write/read preserved original preferences {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+Failed test run retained: C:\Users\chuka\AppData\Local\OBTAINER-NativeTests\6b07a7215e4dfd93121338d97f507289
+node : node:internal/modules/run_main:123
+At line:2 char:1
++ node scripts/verify-foundation.mjs --manufacturer-package *> .tools/w ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:internal/modules/run_main:123:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    triggerUncaughtException(
+    ^
+
+Error: {"exceptionId":1,"text":"Uncaught","lineNumber":0,"columnNumber":127,"scriptId":"70","stackTrace":{"callFrames":
+[{"functionName":"","scriptId":"70","url":"","lineNumber":0,"columnNumber":127}]},"exception":{"type":"object","subtype
+":"error","className":"TypeError","description":"TypeError: Cannot read properties of undefined (reading 'click')\n
+at <anonymous>:1:128","objectId":"-8547189661519610554.2.2"}}
+    at Object.evaluate
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:130:42)
+    at async verifyFirmwareStructure
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-firmware-structure.mjs:45:3)
+    at async verifyManufacturerPackage (file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scri
+pts/verify-manufacturer-package.mjs:83:3)
+    at async
+file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:412:5
+
+Node.js v22.17.0

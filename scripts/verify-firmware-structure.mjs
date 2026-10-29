@@ -42,6 +42,11 @@ export async function verifyFirmwareStructure(client,{report,evidence,reopened=f
     });
   }
   assert.deepEqual(await invoke(),structure,'Same immutable input produced a different graph');
+  const readyDeadline=Date.now()+30000;
+  while(!await client.evaluate("Array.from(document.querySelectorAll('.extraction-section summary')).some(node=>node.textContent.trim()==='Artifact Structure')")) {
+    if(Date.now()>=readyDeadline)throw new Error('React did not publish the extraction report/structure action');
+    await new Promise(resolve=>setTimeout(resolve,150));
+  }
   await client.evaluate("Array.from(document.querySelectorAll('.extraction-section summary')).find(node=>node.textContent.trim()==='Artifact Structure').click()");
   const deadline=Date.now()+30000;
   while(!await client.evaluate("document.querySelector('[aria-label=\"Firmware artifact structure\"] [aria-label=\"Firmware regions\"]')!==null")) {
