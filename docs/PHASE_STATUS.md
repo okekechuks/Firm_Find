@@ -1,5 +1,19 @@
 # OBTAINER phase status
 
+## Web-management and recursive structure milestone — verification in progress
+
+29 October 2026: separate `feature/web-management-recursive-milestone`, starting
+from extraction V2 source `36fc81b`. Selected-device HAR/local static analysis,
+nonexecutable source assessments, local Windows adapter/route checks and Library
+structural graphs are implemented. Digest and selected-source transport have
+controlled software tests. No production authenticated identity route or live
+resource collector is qualified. H01 remains BLOCKED with no firmware bytes;
+H02/H03 remain separate, and H04 exact revision compatibility remains unknown.
+[Source audit, implementation and actual checks](WEB_MANAGEMENT_ACQUISITION_VERIFICATION.md),
+[recursive file/graph evidence](RECURSIVE_FIRMWARE_EXTRACTION_VERIFICATION.md).
+Normal data, main and published tags are preserved; no new release, physical
+acquisition, write, flashing or project-completion claim.
+
 ## Firmware-file extraction V2 — review pending
 
 The separate `feature/extraction-engine-v2` branch extends sandboxed extraction

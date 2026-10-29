@@ -10,6 +10,12 @@
   ],
   "permissions": [
     "allow-get-device-workflow",
+    "allow-get-web-ui-evidence",
+    "allow-assess-web-management-binding",
+    "allow-import-web-ui-capture",
+    "allow-analyze-web-ui-bundle",
+    "allow-collect-management-ui-resources",
+    "allow-get-firmware-structure",
     "allow-start-device-firmware-acquisition",
     "allow-list-official-sources",
     "allow-start-official-download",

@@ -1,5 +1,6 @@
 import { verifyExtraction } from "./verify-extraction.mjs";
 import { verifyUniversalWorkflow } from "./verify-universal-workflow.mjs";
+import { verifyWebManagement } from "./verify-web-management.mjs";
 import { verifyExtractionReview } from "./verify-extraction-review.mjs";
 import { verifyAuthChallenge } from "./verify-auth-challenge.mjs";
 import { verifyManufacturerPackage, verifyRarPackage } from "./verify-manufacturer-package.mjs";
@@ -76,7 +77,7 @@ function start(kind) {
   const appFlags=[];
   if(process.argv.includes('--phase6'))appFlags.push('--simulator');
   if(process.argv.includes('--phase7'))appFlags.push('--openwrt-lab');
-  if(process.argv.includes('--universal-workflow'))appFlags.push('--workflow-lab');
+  if(process.argv.includes('--universal-workflow')||process.argv.includes('--web-management'))appFlags.push('--workflow-lab');
   if(appFlags.length)command+=(kind==='dev'?' -- ':' ')+appFlags.join(' ');
   commands.push({ command, kind });
   const process_ = spawn('powershell.exe', ['-NoProfile', '-Command', command], {
@@ -393,14 +394,20 @@ try {
   probeNormal(root,evidence,'before');baselineCaptured=true;record('normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite');
   // Stage 3 qualification launches only the dedicated native-test executable.
   // It must never invoke the production binary against the owner's data directory.
-  if(!process.argv.includes('--stage3-upgrade')&&!process.argv.includes('--official-acquisition')&&!process.argv.includes('--universal-workflow')&&!process.argv.includes('--manufacturer-package')) {
+  if(!process.argv.includes('--stage3-upgrade')&&!process.argv.includes('--official-acquisition')&&!process.argv.includes('--universal-workflow')&&!process.argv.includes('--manufacturer-package')&&!process.argv.includes('--web-management')) {
     const startupProbe=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/verify-startup.ps1'),'-Binary',path.join(root,'target/release/obtainer.exe')],{env,windowsHide:true,encoding:'utf8',timeout:30000});
     await writeFile(path.join(evidence,'production-startup-error.json'),startupProbe);
     assert.equal(JSON.parse(startupProbe).exitCode,1);
     record('ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data');
     verifyActivationGuards(root,profile,env,record);
   }
-  if(process.argv.includes('--manufacturer-package')) {
+  if(process.argv.includes('--web-management')) {
+    await clean();start('release');await connect();await connected();
+    await verifyWebManagement(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot});
+    await closeWindow();start('release');await connect();await connected();
+    await verifyWebManagement(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot,reopened:true});
+    await closeWindow();
+  } else if(process.argv.includes('--manufacturer-package')) {
     await clean();start('release');await verify('manufacturer-before');
     await verifyManufacturerPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot});
     await verifyRarPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot});

@@ -1357,6 +1357,8 @@ input[role="switch"]:disabled { cursor:not-allowed;opacity:.4; }
 @media(max-width:700px){.library-primary-filters{grid-template-columns:repeat(2,minmax(0,1fr));}}
 
 .extraction-section { border-top: 1px solid var(--border, #26384e); margin-top: 1.5rem; padding-top: 1rem; }
+.firmware-structure { overflow-wrap: anywhere; }
+.firmware-structure [role="tree"] { max-height: 32rem; overflow: auto; }
 .extraction-files { max-height: 320px; overflow: auto; }
 .extraction-files table { width: 100%; text-align: left; border-collapse: collapse; }
 .extraction-files td, .extraction-files th { padding: .4rem; }

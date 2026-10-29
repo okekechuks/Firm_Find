@@ -3,6 +3,7 @@ import { cancelLibraryJob, errorMessage, exportExtractedFiles, getFirmwareExtrac
 import { formatBytes } from "../lib/format";
 import type { ExtractionReport } from "../types/extraction";
 import type { JobRecord } from "../types/library";
+import { FirmwareStructure } from "./FirmwareStructure";
 
 type LayeredReport = Extract<ExtractionReport, {version:2}>;
 function LayerTree({layers,parent=null,depth=0}:{layers:LayeredReport["layers"];parent?:string|null;depth?:number}) {
@@ -56,6 +57,7 @@ export function FirmwareExtraction({ sha256, jobs }: { sha256: string; jobs: Job
       : <button className="primary-button" disabled={busy} onClick={() => void operate(async () => { const next = await startFirmwareExtraction(sha256); if (alive.current) setSubmitted(next); })}>{report ? "Extract again" : "Extract Contents"}</button>}
     {report ? <>
       <p>{files} files · {formatBytes(report.totalBytes)} · {verdict}</p>
+      <FirmwareStructure sha256={sha256} revision={report.bundleSha256}/>
       {report.version===2?<>
         <details><summary>Layer tree</summary><LayerTree layers={report.layers}/></details>
         <details><summary>Unexplained regions ({report.unexplainedRegions.length})</summary>

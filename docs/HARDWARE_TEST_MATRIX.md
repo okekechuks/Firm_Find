@@ -1,5 +1,23 @@
 # Phase 7.5 hardware matrix
 
+## Web-management/recursive milestone — October 29, 2026
+
+No new physical HTTP, credential, authentication, flash-read or write operation
+has been executed. H01-A and H01-B remain distinct and BLOCKED: no qualified
+read-only identity route or genuine firmware source/bytes. The owner has not yet
+provided a sanitized HAR for this milestone. H02/H03 retain separate unknown
+revision qualifications; the dead VIDA report does not identify either revision.
+H04's exact physical revision/region remains unqualified; public packages cannot
+be associated as compatible by filename or model label. H05 remains unqualified.
+
+Existing genuine D-Link CPIO and RAR packages can now have bounded contents
+extracted through the V2 feature engine, with partial/delta/omitted-member limits.
+This updates file-handling capability only, not any physical-device success row.
+Installed firmware acquired and extracted: **0/5 groups, 0/6 individual units**.
+Verified-compatible physical-target manufacturer images: **0/5, 0/6**.
+[Web-management evidence](WEB_MANAGEMENT_ACQUISITION_VERIFICATION.md) and
+[structural extraction evidence](RECURSIVE_FIRMWARE_EXTRACTION_VERIFICATION.md).
+
 ## Physical sprint — October 28, 2026
 
 Strict installed firmware acquired **and** extracted: **0/5 original groups, 0/6 individual units**. Verified-compatible manufacturer image acquired and extracted: **0/5, 0/6**. Metadata-only/blocked: **5/5 groups**. Public D-Link package downloads are not physical dumps or independently verified matches. [Current sprint evidence](PHYSICAL_FIRMWARE_ACQUISITION_SPRINT_2026-10-28.md).

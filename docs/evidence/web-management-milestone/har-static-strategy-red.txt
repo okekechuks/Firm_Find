@@ -1,0 +1,665 @@
+powershell :    Compiling proc-macro2 v1.0.107
+At line:2 char:242
++ ... D_JOBS='2'; powershell -NoProfile -ExecutionPolicy Bypass -File scrip ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling proc-macro2 v1.0.107:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+   Compiling unicode-ident v1.0.27
+   Compiling quote v1.0.47
+   Compiling windows-link v0.2.1
+   Compiling cfg-if v1.0.5
+   Compiling serde_core v1.0.229
+   Compiling smallvec v1.16.3
+   Compiling syn v3.0.9
+   Compiling syn v2.0.119
+   Compiling synstructure v0.14.0
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling serde_derive v1.0.229
+   Compiling zerofrom v0.1.8
+   Compiling zerovec-derive v0.11.6
+   Compiling displaydoc v0.2.7
+   Compiling siphasher v1.0.4
+   Compiling memchr v2.8.3
+   Compiling litemap v0.8.3
+   Compiling writeable v0.6.4
+   Compiling phf_shared v0.13.1
+   Compiling fastrand v2.5.0
+   Compiling itoa v1.0.18
+   Compiling utf8_iter v1.0.4
+   Compiling phf_generator v0.13.1
+   Compiling stable_deref_trait v1.2.1
+   Compiling icu_properties_data v2.3.0
+   Compiling icu_normalizer_data v2.3.0
+   Compiling zmij v1.0.23
+   Compiling thiserror v2.0.21
+   Compiling yoke v0.8.3
+   Compiling thiserror-impl v2.0.21
+   Compiling version_check v0.9.5
+   Compiling zerovec v0.11.8
+   Compiling serde v1.0.229
+   Compiling phf_macros v0.13.1
+   Compiling num-conv v0.2.2
+   Compiling time-core v0.1.9
+   Compiling powerfmt v0.2.1
+   Compiling deranged v0.5.9
+   Compiling parking_lot_core v0.9.12
+   Compiling tinystr v0.8.4
+   Compiling phf_codegen v0.13.1
+   Compiling strsim v0.11.1
+   Compiling scopeguard v1.2.0
+   Compiling ident_case v1.0.1
+   Compiling winnow v1.0.4
+   Compiling typeid v1.0.3
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling darling_core v0.24.1
+   Compiling lock_api v0.4.14
+   Compiling icu_locale_core v2.3.0
+   Compiling potential_utf v0.1.6
+   Compiling zerotrie v0.2.5
+   Compiling windows-sys v0.61.2
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling toml_writer v1.1.3+spec-1.1.0
+   Compiling erased-serde v0.4.10
+   Compiling cc v1.8.0
+   Compiling darling_macro v0.24.1
+   Compiling icu_provider v2.3.1
+   Compiling icu_collections v2.3.0
+   Compiling parking_lot v0.12.5
+   Compiling aho-corasick v1.1.5
+   Compiling new_debug_unreachable v1.0.6
+   Compiling fnv v1.0.7
+   Compiling once_cell v1.21.4
+   Compiling regex-syntax v0.8.11
+   Compiling getrandom v0.4.3
+   Compiling web-time v1.1.0
+   Compiling regex-automata v0.4.18
+   Compiling darling v0.24.1
+   Compiling phf v0.13.1
+   Compiling string_cache_codegen v0.6.1
+   Compiling hashbrown v0.17.1
+   Compiling bytes v1.12.1
+   Compiling equivalent v1.0.3
+   Compiling serde_json v1.0.154
+   Compiling precomputed-hash v0.1.1
+   Compiling alloc-no-stdlib v3.0.0
+   Compiling alloc-stdlib v0.3.0
+   Compiling indexmap v2.14.2
+   Compiling web_atoms v0.2.6
+   Compiling serde_with_macros v3.24.0
+   Compiling regex v1.13.1
+   Compiling icu_properties v2.3.0
+   Compiling icu_normalizer v2.3.0
+   Compiling quick-xml v0.42.0
+   Compiling semver v1.0.28
+   Compiling dunce v1.0.5
+   Compiling base64 v0.23.1
+   Compiling libc v0.2.190
+   Compiling anyhow v1.0.104
+   Compiling idna_adapter v1.2.2
+   Compiling brotli-decompressor v6.0.1
+   Compiling string_cache v0.9.0
+   Compiling http v1.5.0
+   Compiling serde_spanned v1.1.2
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling log v0.4.34
+   Compiling dtoa v1.0.11
+   Compiling percent-encoding v2.3.2
+   Compiling autocfg v1.5.1
+   Compiling form_urlencoded v1.2.2
+   Compiling dtoa-short v0.3.5
+   Compiling toml v1.1.8+spec-1.1.0
+   Compiling indexmap v1.9.3
+   Compiling brotli v9.0.0
+   Compiling idna v1.1.0
+   Compiling uuid v1.28.0
+   Compiling tendril v0.5.1
+   Compiling selectors v0.38.0
+   Compiling derive_more-impl v2.1.1
+   Compiling windows-implement v0.60.2
+   Compiling windows-interface v0.59.3
+   Compiling cssparser-macros v0.7.1
+   Compiling windows-result v0.4.1
+   Compiling windows-strings v0.5.1
+   Compiling glob v0.3.4
+   Compiling camino v1.2.6
+   Compiling bitflags v2.13.2
+   Compiling ctor v1.0.13
+   Compiling windows-core v0.62.2
+   Compiling cssparser v0.37.0
+   Compiling derive_more v2.1.1
+   Compiling markup5ever v0.39.0
+   Compiling url v2.5.8
+   Compiling vswhom-sys v0.1.3
+   Compiling winapi-util v0.1.11
+   Compiling servo_arc v0.4.3
+   Compiling serde_derive_internals v0.29.1
+   Compiling hashbrown v0.12.3
+   Compiling schemars v0.8.22
+   Compiling rustc-hash v2.1.3
+   Compiling bit-vec v0.8.0
+   Compiling bit-set v0.8.0
+   Compiling schemars_derive v0.8.22
+   Compiling same-file v1.0.6
+   Compiling html5ever v0.39.0
+   Compiling cfb v0.14.0
+   Compiling jsonptr v0.7.1
+   Compiling time v0.3.55
+   Compiling cargo-platform v0.1.9
+   Compiling option-ext v0.2.0
+   Compiling simd-adler32 v0.3.10
+   Compiling foldhash v0.2.0
+   Compiling dyn-clone v1.0.20
+   Compiling plist v1.10.1
+   Compiling dom_query v0.28.0
+   Compiling cargo_metadata v0.19.2
+   Compiling serde-untagged v0.1.9
+   Compiling infer v0.22.0
+   Compiling json-patch v4.2.0
+   Compiling walkdir v2.5.0
+   Compiling urlpattern v0.6.0
+   Compiling serde_with v3.24.0
+   Compiling time-macros v0.2.32
+   Compiling generic-array v0.14.7
+   Compiling windows-threading v0.2.1
+   Compiling adler2 v2.0.1
+   Compiling crc32fast v1.5.2
+   Compiling windows-future v0.3.2
+   Compiling tauri-utils v2.10.1
+   Compiling vswhom v0.1.0
+   Compiling windows-numerics v0.3.1
+   Compiling windows-collections v0.3.2
+   Compiling rustc_version v0.4.1
+   Compiling tracing-core v0.1.36
+   Compiling winreg v0.56.0
+   Compiling typenum v1.20.1
+   Compiling crossbeam-utils v0.8.23
+   Compiling embed-resource v3.0.12
+   Compiling windows v0.62.2
+   Compiling miniz_oxide v0.9.1
+   Compiling dirs-sys v0.5.0
+   Compiling webview2-com-sys v0.39.1
+   Compiling raw-window-handle v0.6.2
+   Compiling heck v0.5.0
+   Compiling dirs v7.0.0
+   Compiling flate2 v1.1.10
+   Compiling tauri-winres v0.3.6
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling cargo_toml v1.0.1
+   Compiling dpi v0.1.2
+   Compiling cookie v0.18.2
+   Compiling zerocopy v0.8.63
+   Compiling tauri-build v2.7.2
+   Compiling crossbeam-channel v0.5.17
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling ahash v0.8.12
+   Compiling webview2-com-macros v0.8.1
+   Compiling windows-version v0.1.7
+   Compiling bitflags v1.3.2
+   Compiling pin-project-lite v0.2.17
+   Compiling png v0.17.16
+   Compiling webview2-com v0.39.1
+   Compiling digest v0.10.7
+   Compiling tracing-attributes v0.1.31
+   Compiling pkg-config v0.3.34
+   Compiling vcpkg v0.2.15
+   Compiling byteorder v1.5.0
+   Compiling cpufeatures v0.2.17
+   Compiling tauri-runtime v2.12.1
+   Compiling wry v0.57.0
+   Compiling ico v0.5.0
+   Compiling sha2 v0.10.9
+   Compiling libsqlite3-sys v0.30.1
+   Compiling tracing v0.1.44
+   Compiling tauri v2.12.3
+   Compiling png v0.18.1
+   Compiling unicode-segmentation v1.13.3
+   Compiling tauri-runtime-wry v2.12.1
+   Compiling muda v0.20.0
+   Compiling lazy_static v1.5.1
+   Compiling getrandom v0.3.4
+   Compiling sharded-slab v0.1.7
+   Compiling tao v0.37.1
+   Compiling tauri-codegen v2.7.2
+   Compiling hashbrown v0.14.5
+   Compiling softbuffer v0.4.8
+   Compiling keyboard-types v0.8.3
+   Compiling tracing-log v0.2.0
+   Compiling tracing-serde v0.2.0
+   Compiling nu-ansi-term v0.50.3
+   Compiling serialize-to-javascript-impl v0.1.2
+   Compiling thread_local v1.1.10
+   Compiling tracing-subscriber v0.3.23
+   Compiling serialize-to-javascript v0.1.2
+   Compiling hashlink v0.9.1
+   Compiling tauri-macros v2.7.2
+   Compiling tokio v1.53.3
+   Compiling window-vibrancy v0.8.1
+   Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+   Compiling serde_repr v0.1.21
+   Compiling symlink v0.1.0
+   Compiling fallible-iterator v0.3.0
+   Compiling mime v0.3.17
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling rusqlite v0.32.1
+   Compiling tempfile v3.27.0
+   Compiling tracing-appender v0.2.5
+warning: function `evidence_id` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\mod.rs:100:4
+    |
+100 | fn evidence_id(origin: &str, path: &str, method: &str, classification: &Classification) -> String {
+    |    ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `MAX_ENTRIES` is never used
+ --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:5:7
+  |
+5 | const MAX_ENTRIES: usize = 512;
+  |       ^^^^^^^^^^^
+
+warning: function `parse` is never used
+ --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:7:15
+  |
+7 | pub(super) fn parse(device_id: &str, bytes: &[u8]) -> Result<WebEvidenceReport, WebEvidenceError> {
+  |               ^^^^^
+
+warning: function `request_headers_mime` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:50:4
+   |
+50 | fn request_headers_mime(request: &Value) -> Option<String> {
+   |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `header_metadata` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:57:4
+   |
+57 | fn header_metadata(item: &Value, selected: &mut BTreeMap<String, String>, auth: &mut Vec<String>) {
+   |    ^^^^^^^^^^^^^^^
+
+warning: function `body_names` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:82:4
+   |
+82 | fn body_names(body: &Value) -> Vec<String> {
+   |    ^^^^^^^^^^
+
+warning: function `digest` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:11:15
+   |
+11 | pub(super) fn digest(value: &str) -> String {
+   |               ^^^^^^
+
+warning: function `http_url` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:27:15
+   |
+27 | pub(super) fn http_url(raw: &str) -> Option<Url> {
+   |               ^^^^^^^^
+
+warning: function `display_origin` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:33:15
+   |
+33 | pub(super) fn display_origin(url: &Url) -> String {
+   |               ^^^^^^^^^^^^^^
+
+warning: constant `WORDS` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:48:7
+   |
+48 | const WORDS: &[&str] = &[
+   |       ^^^^^
+
+warning: function `known` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:61:4
+   |
+61 | fn known(value: &str) -> bool { WORDS.contains(&value.to_ascii_lowercase().as_str()) }
+   |    ^^^^^
+
+warning: function `name` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:63:15
+   |
+63 | pub(super) fn name(value: &str) -> String {
+   |               ^^^^
+
+warning: function `path` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:68:15
+   |
+68 | pub(super) fn path(url: &Url) -> String {
+   |               ^^^^
+
+warning: function `query_names` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:87:15
+   |
+87 | pub(super) fn query_names(url: &Url) -> Vec<String> {
+   |               ^^^^^^^^^^^
+
+warning: function `mime` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:91:15
+   |
+91 | pub(super) fn mime(raw: &str) -> String {
+   |               ^^^^
+
+warning: function `method` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:103:15
+    |
+103 | pub(super) fn method(raw: &str) -> String {
+    |               ^^^^^^
+
+warning: function `words` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:107:4
+    |
+107 | fn words(raw: &str) -> Vec<String> {
+    |    ^^^^^
+
+warning: function `classify` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:111:15
+    |
+111 | pub(super) fn classify(method: &str, url: &Url) -> Classification {
+    |               ^^^^^^^^
+
+warning: function `resource_kind` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:143:15
+    |
+143 | pub(super) fn resource_kind(url: &Url) -> Option<&'static str> {
+    |               ^^^^^^^^^^^^^
+
+warning: function `parse` is never used
+ --> apps\desktop\src-tauri\src\acquisition\web_management\static_analysis.rs:5:15
+  |
+5 | pub(super) fn parse(device_id: &str, raw_origin: &str, resource_name: &str, bytes: &[u8]) ->
+Result<WebEvidenceReport, WebEvidenceErr...
+  |               ^^^^^
+
+warning: function `route_literal` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\static_analysis.rs:43:4
+   |
+43 | fn route_literal(value: &str) -> bool {
+   |    ^^^^^^^^^^^^^
+
+warning: function `string_literals` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\static_analysis.rs:49:4
+   |
+49 | fn string_literals(text: &str) -> Vec<String> {
+   |    ^^^^^^^^^^^^^^^
+
+warning: fields `username` and `password` are never read
+  --> apps\desktop\src-tauri\src\acquisition\management_auth.rs:46:5
+   |
+45 | pub struct Credentials {
+   |            ----------- fields in this struct
+46 |     username: String,
+   |     ^^^^^^^^
+47 |     password: String,
+   |     ^^^^^^^^
+
+warning: fields `device_id`, `interface_id`, `network`, and `route` are never read
+  --> apps\desktop\src-tauri\src\acquisition\management_transport.rs:30:5
+   |
+29 | pub struct SourceBinding {
+   |            ------------- fields in this struct
+30 |     device_id: String,
+   |     ^^^^^^^^^
+31 |     interface_id: String,
+   |     ^^^^^^^^^^^^
+...
+34 |     network: NetworkAdapter,
+   |     ^^^^^^^
+35 |     route: RouteFacts,
+   |     ^^^^^
+
+warning: `obtainer` (lib test) generated 24 warnings
+    Finished `test` profile [unoptimized] target(s) in 6m 36s
+     Running unittests src\lib.rs (.tools/management-target\debug\deps\obtainer_lib-3cbc5006e7811c3f.exe)
+
+running 101 tests
+test acquisition::approval::tests::a1_gateway_scope_replay_interface_revision_endpoint_expiry ... ok
+test acquisition::approval::tests::menu_approval_replay_cross_scope_binding_expiry_and_no ... ok
+test acquisition::approval::challenge_scope_tests::challenge_confirmation_matches_design_and_ipc_acl_is_closed ... ok
+test acquisition::approval::challenge_scope_tests::challenge_scope_replay_cross_scope_binding_expiry_and_no ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_missing_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_mismatched_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_revoked_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_collector_requires_stamp_and_exact_request_selection ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_expired_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::stage4_new_auth_scope_requires_material_binding_and_keeps_legacy_scopes ... ok
+test acquisition::approval::tests::menu_confirmation_caps_cleans_and_names_only_fixed_request ... ok
+test acquisition::approval::challenge_scope_tests::stage4_change_during_controlled_challenge_discards_success_and_recovers ... ok
+test acquisition::approval::challenge_scope_tests::review_r2_claimed_publication_survives_failed_scan_without_readmission ... ok
+test acquisition::challenge_tests::c1_synthetic_rejected_headers_have_exact_safe_shape ... ok
+test acquisition::challenge_tests::challenge_registry_is_four_closed_specs_and_no_session_operations ... ok
+test acquisition::challenge_tests::c1_synthetic_digest_token_extensions_and_exact_shape ... ok
+test acquisition::challenge_tests::challenge_synthetic_status_cookie_other_schemes_and_nonce_privacy ... ok
+test acquisition::challenge_tests::challenge_synthetic_valid_case_space_and_optional_algorithm ... ok
+test acquisition::management_auth::tests::digest_rfc2617_vector_preserves_qop_opaque_and_nonce_count ... FAILED
+test acquisition::management_auth::tests::digest_sha256_and_actual_query_are_supported ... FAILED
+test acquisition::challenge_tests::stage4_conflicting_acquisition_identity_cannot_bootstrap_challenge ... ok
+test acquisition::management_auth::tests::malformed_challenges_fail_closed ... ok
+test acquisition::challenge_tests::challenge_nonce_never_reaches_trace_report_diagnostics_or_errors ... ok
+test acquisition::challenge_tests::challenge_synthetic_rejects_ambiguous_malformed_and_oversized_headers ... ok
+test acquisition::management_auth::tests::observed_family_cannot_create_verified_read_route ... ok
+test acquisition::request_registry::tests::request_specs_are_bounded_and_read_only ... ok
+test acquisition::management_transport::tests::binding_fails_closed_without_proven_windows_route ... ok
+test acquisition::management_transport::tests::source_substitution_and_overlapping_subnet_are_rejected ... FAILED
+test acquisition::static_menu_tests::menu_closed_table_registers_only_third_static_get ... ok
+test acquisition::management_transport::tests::selected_source_binding_uses_exact_adapter_and_rechecks_changes ... FAILED
+test acquisition::challenge_tests::challenge_diagnostics_keep_only_validated_metadata_and_flags ... ok
+test acquisition::challenge_tests::challenge_collector_requires_fresh_same_root_and_preserves_authority ... ok
+test acquisition::static_menu_tests::menu_malformed_xml_names_are_not_observations ... ok
+test acquisition::static_menu_tests::menu_synthetic_shapes_and_exact_discriminator ... ok
+test acquisition::static_menu_tests::menu_commands_are_closed_and_parser_has_no_request_authority ... ok
+test acquisition::static_menu_tests::menu_validator_rejects_cgi_and_all_unregistered_paths ... ok
+test acquisition::tests::a1_legacy_boolean_cannot_authorize_network ... ok
+test acquisition::tests::a2_title_only_is_not_a_protocol_family ... ok
+test acquisition::tests::a3_static_version_is_observed_not_authoritative ... ok
+test acquisition::static_menu_tests::menu_synthetic_rejects_ambiguous_entities_namespaces_and_tokens ... ok
+test acquisition::tests::a6_signals_after_metadata_cap_are_ignored ... ok
+test acquisition::tests::a4_collision_names_other_interface ... ok
+test acquisition::tests::a3_malformed_static_version_cannot_supply_identity ... ok
+test acquisition::static_menu_tests::menu_dispatch_observation_redaction_and_no_stage_authority ... ok
+test acquisition::static_menu_tests::menu_dispatch_stops_on_failures_cancellation_and_stale_input ... ok
+test acquisition::tests::a5_observation_and_unimplemented_are_distinct ... ok
+test acquisition::tests::b1_compiled_strategy_registry_runs_only_unimplemented_probes ... ok
+test acquisition::tests::b1_reported_or_observed_values_never_satisfy_verified_requirements ... ok
+test acquisition::tests::b1_metadata_approval_cannot_be_used_for_a_strategy_probe ... ok
+test acquisition::tests::acquisition_model_selection_does_not_depend_on_user_label ... ok
+test acquisition::tests::b3_compiled_request_registry_accepts_only_the_four_closed_reads ... ok
+test acquisition::tests::b1_plan_rejects_stale_mixed_endpoint_changed_generation_and_conflicting_evidence ... ok
+test acquisition::tests::cancelled_or_superseded_route_lease_cannot_publish_or_release_its_successor ... ok
+test acquisition::tests::b6_report_has_eleven_ordered_stages_and_identity_does_not_advance_them ... ok
+test acquisition::tests::b3_validator_rejects_every_unregistered_request_shape ... ok
+test acquisition::tests::captured_static_version_with_xml_declaration_and_rgw_wrapper_is_observed ... ok
+test acquisition::tests::discovery_commands_are_registered_in_the_production_acl ... ok
+test acquisition::tests::collision_diagnostics_do_not_export_interface_names ... ok
+test acquisition::tests::diagnostics_exclude_endpoint_ids_and_all_raw_peer_and_owner_text ... ok
+test acquisition::tests::exact_identity_does_not_skip_independent_source_and_export_qualification ... ok
+test acquisition::tests::hardware_revisions_are_not_interchangeable ... ok
+test acquisition::tests::mg11_no_longer_hits_a_hardcoded_global_failure ... ok
+test acquisition::tests::r2_visible_text_comments_and_script_strings_are_not_resource_attributes ... ok
+test acquisition::tests::r5_busy_admission_precedes_claim ... ok
+test acquisition::tests::missing_interface_and_mismatched_subject_cannot_probe ... ok
+test acquisition::tests::r3_network_gate_cannot_rely_on_token_presence ... ok
+test acquisition::tests::public_endpoint_disconnect_protected_device_and_cancel_are_rejected ... ok
+test acquisition::tests::r5_confirmation_values_are_single_line_and_capped ... ok
+test acquisition::tests::r3_bogus_token_without_claimed_proof_is_local_only ... ok
+test acquisition::tests::review_f2_proof_constructor_is_not_a_bare_scope_factory ... ok
+test acquisition::tests::r5_busy_does_not_consume_receipt ... ok
+test acquisition::tests::r1_captured_fixture_and_positive_family_candidates ... ok
+test acquisition::tests::review_f5_private_field_doctest_pins_error ... ok
+test acquisition::tests::review_f1_default_cannot_qualify_from_identity_alone ... ok
+test acquisition::static_menu_tests::menu_wrong_media_type_limitation_exports_only_sanitized_type ... ok
+test acquisition::tests::review_f3_candidates_report_missing_implementation ... ok
+test acquisition::web_management::store::tests::synthetic_device_labels_never_change_source_assessment ... FAILED
+test acquisition::web_management::store::tests::synthetic_cross_reference_requires_same_origin_and_never_grants_trust ... FAILED
+test acquisition::web_management::store::tests::synthetic_memory_device_limit_is_bounded_and_local_actions_do_not_authenticate ... FAILED
+test acquisition::tests::r8_stray_less_than_keeps_following_resources_candidate_only ... ok
+test acquisition::tests::selecting_an_endpoint_cannot_hide_conflicting_trusted_device_evidence ... ok
+test acquisition::tests::static_version_xml_rejects_entities_duplicates_and_unbalanced_wrappers ... ok
+test acquisition::tests::root_family_signals_never_verify_model_or_export ... ok
+test acquisition::web_management::store::tests::synthetic_static_first_import_and_repeated_captures_stay_stable ... FAILED
+test acquisition::web_management::strategy::tests::synthetic_capture_does_not_grant_source_authority ... FAILED
+test acquisition::web_management::tests::synthetic_bundle_extracts_only_string_candidates_without_execution ... FAILED
+test acquisition::tests::stale_conflicting_and_reported_evidence_never_verify_identity ... ok
+test acquisition::web_management::strategy::tests::synthetic_static_source_is_not_observed_or_executable ... FAILED
+test acquisition::web_management::tests::synthetic_bundle_missing_origin_and_nontext_input_fail_closed ... FAILED
+test acquisition::web_management::tests::synthetic_bundle_never_turns_firmware_strings_into_read_authority ... FAILED
+test acquisition::web_management::tests::synthetic_bundle_resource_references_are_same_origin_and_static_only ... FAILED
+test acquisition::web_management::tests::synthetic_har_classifies_action_query_without_retaining_values ... FAILED
+test acquisition::web_management::tests::synthetic_har_get_reset_is_dangerous_and_not_read_qualified ... FAILED
+test acquisition::web_management::tests::synthetic_har_configuration_export_is_never_firmware ... FAILED
+test acquisition::tests::review_f4_web_response_requires_family_for_management_observation ... ok
+test acquisition::web_management::tests::synthetic_har_upload_is_not_download_and_methods_are_conservative ... FAILED
+test acquisition::web_management::tests::synthetic_unknown_path_schema_and_dns_labels_do_not_retain_values ... FAILED
+test acquisition::web_management::tests::synthetic_har_rejects_invalid_truncated_and_oversize_json ... FAILED
+test acquisition::web_management::tests::synthetic_har_secrets_body_values_headers_queries_and_identifiers_are_absent ... FAILED
+test acquisition::web_management::store::tests::synthetic_rejected_merge_keeps_previous_report_unchanged ... FAILED
+test acquisition::tests::acquisition_runtime_has_no_hardware_model_name_special_cases ... ok
+
+failures:
+
+---- acquisition::management_auth::tests::digest_rfc2617_vector_preserves_qop_opaque_and_nonce_count stdout ----
+
+thread 'acquisition::management_auth::tests::digest_rfc2617_vector_preserves_qop_opaque_and_nonce_count' (2084) panicked at apps\desktop\src-tauri\src\acquisition\management_auth_tests.rs:14:78:
+called `Result::unwrap()` on an `Err` value: UnsupportedScheme
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- acquisition::management_auth::tests::digest_sha256_and_actual_query_are_supported stdout ----
+
+thread 'acquisition::management_auth::tests::digest_sha256_and_actual_query_are_supported' (21188) panicked at apps\desktop\src-tauri\src\acquisition\management_auth_tests.rs:28:7:
+called `Result::unwrap()` on an `Err` value: UnsupportedScheme
+
+---- acquisition::management_transport::tests::source_substitution_and_overlapping_subnet_are_rejected stdout ----
+
+thread 'acquisition::management_transport::tests::source_substitution_and_overlapping_subnet_are_rejected' (10568) panicked at apps\desktop\src-tauri\src\acquisition\management_transport_tests.rs:73:5:
+assertion failed: matches!(SourceBinding::capture_with(&snapshot, &id, &interface,
+    "http://192.168.100.1", good_route),
+    Err(BindingFailure::OverlappingSubnet))
+
+---- acquisition::management_transport::tests::selected_source_binding_uses_exact_adapter_and_rechecks_changes stdout ----
+
+thread 'acquisition::management_transport::tests::selected_source_binding_uses_exact_adapter_and_rechecks_changes' (3456) panicked at apps\desktop\src-tauri\src\acquisition\management_transport_tests.rs:50:130:
+called `Result::unwrap()` on an `Err` value: RouteUnproven
+
+---- acquisition::web_management::store::tests::synthetic_device_labels_never_change_source_assessment stdout ----
+
+thread 'acquisition::web_management::store::tests::synthetic_device_labels_never_change_source_assessment' (11276) panicked at apps\desktop\src-tauri\src\acquisition\web_management\store.rs:130:99:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::store::tests::synthetic_cross_reference_requires_same_origin_and_never_grants_trust stdout ----
+
+thread 'acquisition::web_management::store::tests::synthetic_cross_reference_requires_same_origin_and_never_grants_trust' (14684) panicked at apps\desktop\src-tauri\src\acquisition\web_management\store.rs:105:72:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::store::tests::synthetic_memory_device_limit_is_bounded_and_local_actions_do_not_authenticate stdout ----
+
+thread 'acquisition::web_management::store::tests::synthetic_memory_device_limit_is_bounded_and_local_actions_do_not_authenticate' (19984) panicked at apps\desktop\src-tauri\src\acquisition\web_management\store.rs:138:106:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::store::tests::synthetic_static_first_import_and_repeated_captures_stay_stable stdout ----
+
+thread 'acquisition::web_management::store::tests::synthetic_static_first_import_and_repeated_captures_stay_stable' (2544) panicked at apps\desktop\src-tauri\src\acquisition\web_management\store.rs:119:99:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence analyzer not implemented." }
+
+---- acquisition::web_management::strategy::tests::synthetic_capture_does_not_grant_source_authority stdout ----
+
+thread 'acquisition::web_management::strategy::tests::synthetic_capture_does_not_grant_source_authority' (18180) panicked at apps\desktop\src-tauri\src\acquisition\web_management\strategy.rs:93:55:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::tests::synthetic_bundle_extracts_only_string_candidates_without_execution stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_bundle_extracts_only_string_candidates_without_execution' (15560) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:70:74:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence analyzer not implemented." }
+
+---- acquisition::web_management::strategy::tests::synthetic_static_source_is_not_observed_or_executable stdout ----
+
+thread 'acquisition::web_management::strategy::tests::synthetic_static_source_is_not_observed_or_executable' (20004) panicked at apps\desktop\src-tauri\src\acquisition\web_management\strategy.rs:105:115:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence analyzer not implemented." }
+
+---- acquisition::web_management::tests::synthetic_bundle_missing_origin_and_nontext_input_fail_closed stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_bundle_missing_origin_and_nontext_input_fail_closed' (9928) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:88:5:
+assertion `left == right` failed
+  left: "NOT_IMPLEMENTED"
+ right: "INVALID_ORIGIN"
+
+---- acquisition::web_management::tests::synthetic_bundle_never_turns_firmware_strings_into_read_authority stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_bundle_never_turns_firmware_strings_into_read_authority' (2892) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:94:107:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence analyzer not implemented." }
+
+---- acquisition::web_management::tests::synthetic_bundle_resource_references_are_same_origin_and_static_only stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_bundle_resource_references_are_same_origin_and_static_only' (3244) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:80:80:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence analyzer not implemented." }
+
+---- acquisition::web_management::tests::synthetic_har_classifies_action_query_without_retaining_values stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_har_classifies_action_query_without_retaining_values' (11668) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:53:129:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::tests::synthetic_har_get_reset_is_dangerous_and_not_read_qualified stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_har_get_reset_is_dangerous_and_not_read_qualified' (2728) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:14:120:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::tests::synthetic_har_configuration_export_is_never_firmware stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_har_configuration_export_is_never_firmware' (9920) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:38:103:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::tests::synthetic_har_upload_is_not_download_and_methods_are_conservative stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_har_upload_is_not_download_and_methods_are_conservative' (7256) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:45:210:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::tests::synthetic_unknown_path_schema_and_dns_labels_do_not_retain_values stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_unknown_path_schema_and_dns_labels_do_not_retain_values' (7336) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:104:51:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::tests::synthetic_har_rejects_invalid_truncated_and_oversize_json stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_har_rejects_invalid_truncated_and_oversize_json' (20524) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:62:5:
+assertion `left == right` failed
+  left: "NOT_IMPLEMENTED"
+ right: "INVALID_HAR"
+
+---- acquisition::web_management::tests::synthetic_har_secrets_body_values_headers_queries_and_identifiers_are_absent stdout ----
+
+thread 'acquisition::web_management::tests::synthetic_har_secrets_body_values_headers_queries_and_identifiers_are_absent' (380) panicked at apps\desktop\src-tauri\src\acquisition\web_management\tests.rs:28:66:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+---- acquisition::web_management::store::tests::synthetic_rejected_merge_keeps_previous_report_unchanged stdout ----
+
+thread 'acquisition::web_management::store::tests::synthetic_rejected_merge_keeps_previous_report_unchanged' (4344) panicked at apps\desktop\src-tauri\src\acquisition\web_management\store.rs:150:52:
+called `Result::unwrap()` on an `Err` value: WebEvidenceError { code: "NOT_IMPLEMENTED", message: "Evidence parser not implemented." }
+
+
+failures:
+    acquisition::management_auth::tests::digest_rfc2617_vector_preserves_qop_opaque_and_nonce_count
+    acquisition::management_auth::tests::digest_sha256_and_actual_query_are_supported
+    acquisition::management_transport::tests::selected_source_binding_uses_exact_adapter_and_rechecks_changes
+    acquisition::management_transport::tests::source_substitution_and_overlapping_subnet_are_rejected
+    acquisition::web_management::store::tests::synthetic_cross_reference_requires_same_origin_and_never_grants_trust
+    acquisition::web_management::store::tests::synthetic_device_labels_never_change_source_assessment
+    acquisition::web_management::store::tests::synthetic_memory_device_limit_is_bounded_and_local_actions_do_not_authenticate
+    acquisition::web_management::store::tests::synthetic_rejected_merge_keeps_previous_report_unchanged
+    acquisition::web_management::store::tests::synthetic_static_first_import_and_repeated_captures_stay_stable
+    acquisition::web_management::strategy::tests::synthetic_capture_does_not_grant_source_authority
+    acquisition::web_management::strategy::tests::synthetic_static_source_is_not_observed_or_executable
+    acquisition::web_management::tests::synthetic_bundle_extracts_only_string_candidates_without_execution
+    acquisition::web_management::tests::synthetic_bundle_missing_origin_and_nontext_input_fail_closed
+    acquisition::web_management::tests::synthetic_bundle_never_turns_firmware_strings_into_read_authority
+    acquisition::web_management::tests::synthetic_bundle_resource_references_are_same_origin_and_static_only
+    acquisition::web_management::tests::synthetic_har_classifies_action_query_without_retaining_values
+    acquisition::web_management::tests::synthetic_har_configuration_export_is_never_firmware
+    acquisition::web_management::tests::synthetic_har_get_reset_is_dangerous_and_not_read_qualified
+    acquisition::web_management::tests::synthetic_har_rejects_invalid_truncated_and_oversize_json
+    acquisition::web_management::tests::synthetic_har_secrets_body_values_headers_queries_and_identifiers_are_absent
+    acquisition::web_management::tests::synthetic_har_upload_is_not_download_and_methods_are_conservative
+    acquisition::web_management::tests::synthetic_unknown_path_schema_and_dns_labels_do_not_retain_values
+
+test result: FAILED. 79 passed; 22 failed; 0 ignored; 0 measured; 321 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `--lib`

@@ -4,8 +4,9 @@ import { useLibraryFeed } from "../lib/useLibraryFeed";
 import { useWorkspace } from "../lib/workspace-context";
 import type { DeviceWorkflow } from "../types/workflow";
 import { FirmwareExtraction } from "./FirmwareExtraction";
+import { WebManagementWorkflow } from "./WebManagementWorkflow";
 const human=(s:string)=>s.replaceAll("_"," ");
-export function DeviceFirmwareWorkflow({deviceId,revision,connected}:{deviceId:string;revision:number;connected:boolean}) {
+export function DeviceFirmwareWorkflow({deviceId,revision,connected,managementOrigin="",managementInterfaceId=""}:{deviceId:string;revision:number;connected:boolean;managementOrigin?:string;managementInterfaceId?:string}) {
   const [workflow,setWorkflow]=useState<DeviceWorkflow|null>(null);
   const [error,setError]=useState("");const [busy,setBusy]=useState(false);const [approvedBinding,setApprovedBinding]=useState<string|null>(null);
   const [selected,setSelected]=useState("");const [refresh,setRefresh]=useState(0);
@@ -48,7 +49,7 @@ export function DeviceFirmwareWorkflow({deviceId,revision,connected}:{deviceId:s
   const confirmed=approvedBinding!==null&&approvedBinding===approvalKey;
   const active=workflow?.jobs.filter(j=>["running","pending"].includes(j.status))??[];
   return <section className="device-firmware-workflow" aria-label="Device firmware workflow" aria-busy={reloading}>
-    <h3>Firmware workflow</h3><p className="workflow-path">Device → Identity → Obtain → Analyze → Extract → Customize → Rebuild</p>
+    <h3>Firmware workflow</h3><p className="workflow-path">Device Identity → Web UI Evidence → Authentication → Firmware Sources → Acquisition → Artifact Structure → Extraction → Customization → Rebuild</p>
     {error?<p role="alert">{error}</p>:null}
     {!workflow&&!error?<p role="status">Loading device workflow…</p>:null}
     {!workflow?<button className="primary-button" disabled>Obtain Firmware</button>:null}
@@ -56,6 +57,7 @@ export function DeviceFirmwareWorkflow({deviceId,revision,connected}:{deviceId:s
       <p>Identity: {workflow.identity.confidence}. {workflow.identity.verifiedManufacturer??"Manufacturer unknown"} · {workflow.identity.verifiedModel??"Model unknown"} · Revision {workflow.identity.verifiedHardwareRevision??"unknown"}</p>
       {workflow.identity.reportedModel?<p>User-reported model: {workflow.identity.reportedModel} (unverified).</p>:null}
       <details><summary>Identity evidence</summary><p>Profile: {workflow.selectedProfile??"No exact profile"}. Adapter: {workflow.adapter??"No qualified device acquisition adapter"}.</p><ul>{workflow.identity.evidence.map(e=><li key={e.id}>{human(e.attribute)}: {e.value} — {human(e.verification)}; {human(e.source)}</li>)}</ul></details>
+      <WebManagementWorkflow key={deviceId} deviceId={deviceId} revision={revision} connected={connected} managementOrigin={managementOrigin} managementInterfaceId={managementInterfaceId}/>
       {!source?<p className="inline-notice">{acquisition?.reason} Next: qualify exact manufacturer, model, hardware revision and an authorized firmware source/export method.</p>:<div className="workflow-source"><h4>Official firmware image</h4><p>{source.vendor} {source.model} {source.revision} · OpenWrt {source.version}</p><p>{source.filename}</p><p>This is an official target image, not a copy of firmware installed on your device. Installation remains unqualified.</p><label><input type="checkbox" checked={confirmed} disabled={!live||busy||active.length>0} onChange={e=>setApprovedBinding(e.target.checked?approvalKey:null)}/>Approve this exact target and public HTTPS source.</label></div>}
       <button className="primary-button" disabled={!live||!source||!acquisition?.executable||!confirmed||busy||active.length>0} onClick={()=>void run(()=>startDeviceFirmwareAcquisition(workflow.binding,source!.id,confirmed).then(result=>{if(mounted.current)setApprovedBinding(null);return result;}))}>Obtain Firmware</button>
       {active.map(j=><div key={j.id} role="status"><p>{human(j.stage)}</p><progress aria-label={`${human(j.kind)} progress`} max={Math.max(j.totalBytes,1)} value={j.progressBytes}/><button className="secondary-button" disabled={busy} onClick={()=>void run(()=>cancelLibraryJob(j.id))}>Cancel {human(j.kind)}</button></div>)}

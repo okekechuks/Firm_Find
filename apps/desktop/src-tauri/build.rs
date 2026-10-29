@@ -2,6 +2,12 @@ fn main() {
     let attributes =
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
             "get_device_workflow",
+            "get_web_ui_evidence",
+            "assess_web_management_binding",
+            "import_web_ui_capture",
+            "analyze_web_ui_bundle",
+            "collect_management_ui_resources",
+            "get_firmware_structure",
             "start_device_firmware_acquisition",
             "list_official_sources",
             "start_official_download",

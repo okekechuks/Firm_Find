@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-assess-web-management-binding"
+description = "Enables the assess_web_management_binding command without any pre-configured scope."
+commands.allow = ["assess_web_management_binding"]
+
+[[permission]]
+identifier = "deny-assess-web-management-binding"
+description = "Denies the assess_web_management_binding command without any pre-configured scope."
+commands.deny = ["assess_web_management_binding"]

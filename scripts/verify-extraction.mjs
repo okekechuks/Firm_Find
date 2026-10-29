@@ -6,6 +6,7 @@ import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {assertOwned} from './native-test-profile.mjs';
+import {verifyFirmwareStructure} from './verify-firmware-structure.mjs';
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const until = async(check,message) => {const deadline=Date.now()+190000;while(Date.now()<deadline){if(await check())return;await new Promise(r=>setTimeout(r,150));}throw new Error(message);};
 export async function retainManifest(profile,evidence,report) {
@@ -59,6 +60,7 @@ export async function verifyExtraction(client,{root,profile,evidence,record,scre
   report=await invoke('get_firmware_extraction',{sha256:hash});
   assert(report);assert.equal(report.inputSha256,hash);assert.equal(report.workerExit,0);
   const manifestSha256=await retainManifest(profile,evidence,report);
+  await verifyFirmwareStructure(client,{report,evidence,reopened});
   const source=path.join(profile.root,'data/vault/sha256',hash.slice(0,2),hash+'.bin');await assertOwned(profile,source);
   assert.equal(digest(await readFile(source)),hash);
   const bundle=path.join(profile.root,'data/vault/sha256',report.bundleSha256.slice(0,2),report.bundleSha256+'.bin');await assertOwned(profile,bundle);

@@ -14,6 +14,7 @@ const WORKER: &str = include_str!("../../../../../scripts/firmware-extract-worke
 const ENGINE: &str = include_str!("../../../../../scripts/extraction-engine-v2.py");
 const PYTHON: &str = "/usr/bin/python3.14";
 mod layers;
+pub mod structure;
 use layers::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,0 +1,892 @@
+
+> obtainer-workspace@0.2.0-beta.2 test
+> npm run test --workspace @obtainer/desktop --run src/test/WebManagementWorkflow.test.tsx
+
+
+> @obtainer/desktop@0.2.0-beta.2 test
+> vitest run --configLoader runner src/test/WebManagementWorkflow.test.tsx
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/apps/desktop
+
+ ❯ src/test/WebManagementWorkflow.test.tsx (10 tests | 2 failed) 3161ms
+   × shows backend source assessments and exact missing requirements without granting acquisition 1115ms
+   × shows local route evidence without authorizing authentication 1057ms
+npm.cmd :
+At line:2 char:1
++ npm.cmd test -- --run src/test/WebManagementWorkflow.test.tsx *> .too ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/WebManagementWorkflow.test.tsx > shows backend source assessments and exact missing requirements
+without granting acquisition
+TestingLibraryElementError: Unable to find role="region" and name "Web-management source assessment"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <details
+      class="web-management-workflow"
+      open=""
+    >
+      <summary>
+        Web UI Evidence
+      </summary>
+      <section
+        aria-busy="false"
+        aria-label="Web management evidence"
+      >
+        <p>
+          Import a HAR or selected local management-page files. Analysis never replays captured requests or
+executes downloaded scripts.
+        </p>
+        <p
+          role="status"
+        >
+          Local evidence updated. No device requests were sent.
+        </p>
+        <div
+          class="web-evidence-actions"
+        >
+          <button
+            class="secondary-button"
+          >
+            Import Web UI Capture (HAR)
+          </button>
+          <button
+            class="secondary-button"
+          >
+            Analyze Management UI
+          </button>
+        </div>
+        <p
+          class="muted small"
+        >
+          Local evidence is held in memory for this app session. Raw captures, credentials, cookies and response
+bodies are not retained. HAR absence cannot prove an endpoint does not exist. A GET request can still change a
+device.
+        </p>
+        <h4>
+          Authentication
+        </h4>
+        <p>
+          Authentication scheme candidates:
+          Not observed
+          .
+        </p>
+        <p>
+          No independently qualified read-only identity/status route is registered for this device family.
+        </p>
+        <p
+          class="muted small"
+        >
+          Captured routes cannot authorize authentication or further requests.
+        </p>
+        <h4>
+          Firmware Sources
+        </h4>
+        <p>
+          Observed downloads and update metadata remain source candidates until exact model/revision, origin,
+read-only route and authenticity are independently qualified. Configuration exports are not firmware; upload endpoints
+do not provide installed firmware.
+        </p>
+        <h4>
+          Web-management acquisition: BLOCKED
+        </h4>
+        <p>
+          No verified firmware-read/export/FOTA source has been observed. Next: qualify an observed, documented
+read-only identity route and an exact firmware source.
+        </p>
+        <details>
+          <summary>
+            Observed management endpoints
+             (
+            2
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /config/export
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                config backup
+                 ·
+                har observed
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+            <li>
+              <code>
+                GET
+
+                /firmware/download
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                firmware download
+                 ·
+                HAR observed + static candidate
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Static route candidates
+             (
+            1
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /firmware/download
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                firmware download
+                 ·
+                HAR observed + static candidate
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Firmware-related requests
+             (
+            1
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /firmware/download
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                firmware download
+                 ·
+                HAR observed + static candidate
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Configuration-related requests
+             (
+            1
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /config/export
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                config backup
+                 ·
+                har observed
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Potentially dangerous requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Unknown requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Referenced management resources (
+            0
+            )
+          </summary>
+          <p>
+            No referenced resources collected.
+          </p>
+        </details>
+        <button
+          class="secondary-button"
+        >
+          Refresh web evidence
+        </button>
+      </section>
+    </details>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <details
+      class="web-management-workflow"
+      open=""
+    >
+      <summary>
+        Web UI Evidence
+      </summary>
+      <section
+        aria-busy="false"
+        aria-label="Web management evidence"
+      >
+        <p>
+          Import a HAR or selected local management-page files. Analysis never replays captured requests or
+executes downloaded scripts.
+        </p>
+        <p
+          role="status"
+        >
+          Local evidence updated. No device requests were sent.
+        </p>
+        <div
+          class="web-evidence-actions"
+        >
+          <button
+            class="secondary-button"
+          >
+            Import Web UI Capture (HAR)
+          </button>
+          <button
+            class="secondary-button"
+          >
+            Analyze Management UI
+          </button>
+        </div>
+        <p
+          class="muted small"
+        >
+          Local evidence is held in memory for this app session. Raw captures, credentials, cookies and response
+bodies are not retained. HAR absence cannot prove an endpoint does not exist. A GET request can still change a
+device.
+        </p>
+        <h4>
+          Authentication
+        </h4>
+        <p>
+          Authentication scheme candidates:
+          Not observed
+          .
+        </p>
+        <p>
+          No independently qualified read-only identity/status route is registered for this device family.
+        </p>
+        <p
+          class="muted small"
+        >
+          Captured routes cannot authorize authentication or further requests.
+        </p>
+        <h4>
+          Firmware Sources
+        </h4>
+        <p>
+          Observed downloads and update metadata remain source candidates until exact model/revision, origin,
+read-only route and authenticity are independently qualified. Configuration exports are not firmware; upload endpoints
+do not provide installed firmware.
+        </p>
+        <h4>
+          Web-management acquisition: BLOCKED
+        </h4>
+        <p>
+          No verified firmware-read/export/FOTA source has been observed. Next: qualify an observed, documented
+read-only identity route and an exact firmware source.
+        </p>
+        <details>
+          <summary>
+            Observed management endpoints
+             (
+            2
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /config/export
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                config backup
+                 ·
+                har observed
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+            <li>
+              <code>
+                GET
+
+                /firmware/download
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                firmware download
+                 ·
+                HAR observed + static candidate
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Static route candidates
+             (
+            1
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /firmware/download
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                firmware download
+                 ·
+                HAR observed + static candidate
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Firmware-related requests
+             (
+            1
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /firmware/download
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                firmware download
+                 ·
+                HAR observed + static candidate
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Configuration-related requests
+             (
+            1
+            )
+          </summary>
+          <ul>
+            <li>
+              <code>
+                GET
+
+                /config/export
+              </code>
+              <p
+                class="muted small"
+              >
+                Origin:
+                http://192.0.2.1
+              </p>
+              <p>
+                config backup
+                 ·
+                har observed
+                 · unverified
+                 · HTTP 200
+              </p>
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Potentially dangerous requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Unknown requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Referenced management resources (
+            0
+            )
+          </summary>
+          <p>
+            No referenced resources collected.
+          </p>
+        </details>
+        <button
+          class="secondary-button"
+        >
+          Refresh web evidence
+        </button>
+      </section>
+    </details>
+  </div>
+</body>
+ ❯ waitForWrapper ../../../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/WebManagementWorkflow.test.tsx:147:35
+    145|   await user.click(screen.getByText("Web UI Evidence"));
+    146|   await user.click(await screen.findByRole("button", { name: "Import W…
+    147|   const assessment = await screen.findByRole("region", { name: "Web-ma…
+       |                                   ^
+    148|   expect(within(assessment).getByText("config export: not firmware")).…
+    149|   expect(within(assessment).getByText("observed firmware download: req…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/test/WebManagementWorkflow.test.tsx > shows local route evidence without authorizing authentication
+TestingLibraryElementError: Unable to find role="button" and name "Check selected route"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <details
+      class="web-management-workflow"
+      open=""
+    >
+      <summary>
+        Web UI Evidence
+      </summary>
+      <section
+        aria-busy="false"
+        aria-label="Web management evidence"
+      >
+        <p>
+          Import a HAR or selected local management-page files. Analysis never replays captured requests or
+executes downloaded scripts.
+        </p>
+        <div
+          class="web-evidence-actions"
+        >
+          <button
+            class="secondary-button"
+          >
+            Import Web UI Capture (HAR)
+          </button>
+          <button
+            class="secondary-button"
+          >
+            Analyze Management UI
+          </button>
+        </div>
+        <p
+          class="muted small"
+        >
+          Local evidence is held in memory for this app session. Raw captures, credentials, cookies and response
+bodies are not retained. HAR absence cannot prove an endpoint does not exist. A GET request can still change a
+device.
+        </p>
+        <h4>
+          Authentication
+        </h4>
+        <p>
+          Authentication scheme candidates:
+          Not observed
+          .
+        </p>
+        <p>
+          No independently qualified read-only identity/status route is registered for this device family.
+        </p>
+        <p
+          class="muted small"
+        >
+          Captured routes cannot authorize authentication or further requests.
+        </p>
+        <h4>
+          Firmware Sources
+        </h4>
+        <p>
+          Observed downloads and update metadata remain source candidates until exact model/revision, origin,
+read-only route and authenticity are independently qualified. Configuration exports are not firmware; upload endpoints
+do not provide installed firmware.
+        </p>
+        <h4>
+          Web-management acquisition: BLOCKED
+        </h4>
+        <p>
+          No verified firmware-read/export/FOTA source has been observed. Next: qualify an observed, documented
+read-only identity route and an exact firmware source.
+        </p>
+        <details>
+          <summary>
+            Observed management endpoints
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Static route candidates
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Firmware-related requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Configuration-related requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Potentially dangerous requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Unknown requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Referenced management resources (
+            0
+            )
+          </summary>
+          <p>
+            No referenced resources collected.
+          </p>
+        </details>
+        <button
+          class="secondary-button"
+        >
+          Refresh web evidence
+        </button>
+      </section>
+    </details>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <details
+      class="web-management-workflow"
+      open=""
+    >
+      <summary>
+        Web UI Evidence
+      </summary>
+      <section
+        aria-busy="false"
+        aria-label="Web management evidence"
+      >
+        <p>
+          Import a HAR or selected local management-page files. Analysis never replays captured requests or
+executes downloaded scripts.
+        </p>
+        <div
+          class="web-evidence-actions"
+        >
+          <button
+            class="secondary-button"
+          >
+            Import Web UI Capture (HAR)
+          </button>
+          <button
+            class="secondary-button"
+          >
+            Analyze Management UI
+          </button>
+        </div>
+        <p
+          class="muted small"
+        >
+          Local evidence is held in memory for this app session. Raw captures, credentials, cookies and response
+bodies are not retained. HAR absence cannot prove an endpoint does not exist. A GET request can still change a
+device.
+        </p>
+        <h4>
+          Authentication
+        </h4>
+        <p>
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  19:38:40
+          Authentication scheme candidates:
+          Not observed
+          .
+        </p>
+        <p>
+          No independently qualified read-only identity/status route is registered for this device family.
+        </p>
+        <p
+          class="muted small"
+        >
+          Captured routes cannot authorize authentication or further requests.
+        </p>
+        <h4>
+          Firmware Sources
+        </h4>
+        <p>
+          Observed downloads and update metadata remain source candidates until exact model/revision, origin,
+read-only route and authenticity are independently qualified. Configuration exports are not firmware; upload endpoints
+do not provide installed firmware.
+        </p>
+        <h4>
+          Web-management acquisition: BLOCKED
+        </h4>
+        <p>
+          No verified firmware-read/export/FOTA source has been observed. Next: qualify an observed, documented
+read-only identity route and an exact firmware source.
+        </p>
+        <details>
+          <summary>
+            Observed management endpoints
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Static route candidates
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Firmware-related requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+   Duration  5.06s (transform 291ms, setup 310ms, import 424ms, tests 3.16s, environment 964ms)
+
+          <summary>
+            Configuration-related requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Potentially dangerous requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Unknown requests
+             (
+            0
+            )
+          </summary>
+          <p>
+            No evidence collected in this category.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Referenced management resources (
+            0
+            )
+          </summary>
+          <p>
+            No referenced resources collected.
+          </p>
+        </details>
+        <button
+          class="secondary-button"
+        >
+          Refresh web evidence
+        </button>
+      </section>
+    </details>
+  </div>
+</body>
+ ❯ waitForWrapper ../../../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/WebManagementWorkflow.test.tsx:159:33
+    157|   render(<WebManagementWorkflow {...{deviceId:device.id,revision:4,con…
+    158|   await user.click(screen.getByText("Web UI Evidence"));
+    159|   await user.click(await screen.findByRole("button", {name:"Check sele…
+       |                                 ^
+    160|   await waitFor(()=>expect(api.route).toHaveBeenCalledWith(device.id,"…
+    161|   expect(await screen.findByText("Local route observed; no device requ…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop
+npm error workspace @obtainer/desktop@0.2.0-beta.2
+npm error location C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vitest run --configLoader runner
+src/test/WebManagementWorkflow.test.tsx

@@ -181,6 +181,6 @@ function DeviceDetails({device, revision, onClose}: {device: Device; revision: n
     {message ? <p role={state === "error" ? "alert" : "status"}>{message}</p> : null}
     {!device.connected ? <p role="status">Device disconnected. Reconnect it to verify compatibility.</p> : null}
     <div className="dialog-actions">{state === "checking" ? <button className="secondary-button" onClick={() => void cancelFirmwareRouteDiscovery(device.id).catch(e => setMessage(errorMessage(e)))}>Cancel check</button> : null}<button className="secondary-button" disabled={!device.connected || state === "checking"} onClick={() => void verify()}>Check Compatibility</button></div>
-    <DeviceFirmwareWorkflow deviceId={device.id} revision={revision} connected={device.connected}/>
+    <DeviceFirmwareWorkflow deviceId={device.id} revision={revision} connected={device.connected} managementOrigin={endpoint} managementInterfaceId={interfaceId}/>
   </dialog>;
 }

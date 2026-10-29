@@ -1,0 +1,16 @@
+
+> obtainer-workspace@0.2.0-beta.2 test
+> npm run test --workspace @obtainer/desktop
+
+
+> @obtainer/desktop@0.2.0-beta.2 test
+> vitest run --configLoader runner
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/apps/desktop
+
+
+ Test Files  25 passed (25)
+      Tests  196 passed (196)
+   Start at  19:39:53
+   Duration  31.84s (transform 1.32s, setup 6.94s, import 4.43s, tests 25.83s, environment 20.66s)

@@ -1,0 +1,1493 @@
+
+> obtainer-workspace@0.2.0-beta.2 test
+> npm run test --workspace @obtainer/desktop --run src/test/WebManagementWorkflow.test.tsx
+
+
+> @obtainer/desktop@0.2.0-beta.2 test
+> vitest run --configLoader runner src/test/WebManagementWorkflow.test.tsx
+
+
+ RUN  v4.1.11 C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/apps/desktop
+
+ ❯ src/test/WebManagementWorkflow.test.tsx (3 tests | 3 failed) 3113ms
+   × offers local evidence import inside selected-device workflow without replay or credentials 1073ms
+   × uses native local file selection only after an explicit action, and reports cancelled selection 1017ms
+   × keeps local parse errors separate from firmware extraction and allows retry 1019ms
+npm.cmd :
+At line:2 char:86
++ ... | Out-Null; npm.cmd test -- --run src/test/WebManagementWorkflow.test ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/WebManagementWorkflow.test.tsx > offers local evidence import inside selected-device workflow without
+replay or credentials
+TestingLibraryElementError: Unable to find an element with the text: Web UI Evidence. This could be because the text
+is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher
+more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-busy="false"
+      aria-label="Device firmware workflow"
+      class="device-firmware-workflow"
+    >
+      <h3>
+        Firmware workflow
+      </h3>
+      <p
+        class="workflow-path"
+      >
+        Device → Identity → Obtain → Analyze → Extract → Customize → Rebuild
+      </p>
+      <p>
+        Identity:
+        unverified
+        .
+        Manufacturer unknown
+         ·
+        Model unknown
+         · Revision
+        unknown
+      </p>
+      <p>
+        User-reported model:
+        Reported MiFi
+         (unverified).
+      </p>
+      <details>
+        <summary>
+          Identity evidence
+        </summary>
+        <p>
+          Profile:
+          No exact profile
+          . Adapter:
+          No qualified device acquisition adapter
+          .
+        </p>
+        <ul />
+      </details>
+      <p
+        class="inline-notice"
+      >
+        No qualified firmware source for this exact device and revision.
+         Next: qualify exact manufacturer, model, hardware revision and an authorized firmware source/export
+method.
+      </p>
+      <button
+        class="primary-button"
+        disabled=""
+      >
+        Obtain Firmware
+      </button>
+      <details>
+        <summary>
+          Acquisition strategies and remaining stages
+        </summary>
+        <p>
+          official_image
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          documented_export
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          authorized_storage_read
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          manufacturer_package
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          external_laboratory
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <dl>
+          <div>
+            <dt>
+              discovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              identification
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              acquisition
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              analysis
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              extraction
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              customization
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              rebuild
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              installation
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              recovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+        </dl>
+      </details>
+      <details>
+        <summary>
+          Customization and rebuild readiness
+        </summary>
+        <ul>
+          <li>
+            router dns
+            :
+            unknown
+             —
+            No qualified firmware source for this exact device and revision.
+          </li>
+        </ul>
+        <p>
+          Live configuration and firmware-image changes use separate authorization. Required builder inputs, size
+limits, partition preservation and signatures are not qualified by extraction.
+        </p>
+      </details>
+      <button
+        class="secondary-button"
+      >
+        Refresh workflow
+      </button>
+    </section>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-busy="false"
+      aria-label="Device firmware workflow"
+      class="device-firmware-workflow"
+    >
+      <h3>
+        Firmware workflow
+      </h3>
+      <p
+        class="workflow-path"
+      >
+        Device → Identity → Obtain → Analyze → Extract → Customize → Rebuild
+      </p>
+      <p>
+        Identity:
+        unverified
+        .
+        Manufacturer unknown
+         ·
+        Model unknown
+         · Revision
+        unknown
+      </p>
+      <p>
+        User-reported model:
+        Reported MiFi
+         (unverified).
+      </p>
+      <details>
+        <summary>
+          Identity evidence
+        </summary>
+        <p>
+          Profile:
+          No exact profile
+          . Adapter:
+          No qualified device acquisition adapter
+          .
+        </p>
+        <ul />
+      </details>
+      <p
+        class="inline-notice"
+      >
+        No qualified firmware source for this exact device and revision.
+         Next: qualify exact manufacturer, model, hardware revision and an authorized firmware source/export
+method.
+      </p>
+      <button
+        class="primary-button"
+        disabled=""
+      >
+        Obtain Firmware
+      </button>
+      <details>
+        <summary>
+          Acquisition strategies and remaining stages
+        </summary>
+        <p>
+          official_image
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          documented_export
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          authorized_storage_read
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          manufacturer_package
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          external_laboratory
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <dl>
+          <div>
+            <dt>
+              discovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              identification
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              acquisition
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              analysis
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              extraction
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              customization
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              rebuild
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              installation
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              recovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+        </dl>
+      </details>
+      <details>
+        <summary>
+          Customization and rebuild readiness
+        </summary>
+        <ul>
+          <li>
+            router dns
+            :
+            unknown
+             —
+            No qualified firmware source for this exact device and revision.
+          </li>
+        </ul>
+        <p>
+          Live configuration and firmware-image changes use separate authorization. Required builder inputs, size
+limits, partition preservation and signatures are not qualified by extraction.
+        </p>
+      </details>
+      <button
+        class="secondary-button"
+      >
+        Refresh workflow
+      </button>
+    </section>
+  </div>
+</body>
+ ❯ waitForWrapper ../../../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/WebManagementWorkflow.test.tsx:29:33
+     27|   const user = userEvent.setup();
+     28|   render(<DeviceFirmwareWorkflow deviceId={device.id} revision={4} con…
+     29|   await user.click(await screen.findByText("Web UI Evidence"));
+       |                                 ^
+     30|   expect(screen.getByRole("button", { name: "Import Web UI Capture (HA…
+     31|   expect(screen.getByRole("button", { name: "Analyze Management UI" })…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/test/WebManagementWorkflow.test.tsx > uses native local file selection only after an explicit action, and
+reports cancelled selection
+TestingLibraryElementError: Unable to find an element with the text: Web UI Evidence. This could be because the text
+is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher
+more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-busy="false"
+      aria-label="Device firmware workflow"
+      class="device-firmware-workflow"
+    >
+      <h3>
+        Firmware workflow
+      </h3>
+      <p
+        class="workflow-path"
+      >
+        Device → Identity → Obtain → Analyze → Extract → Customize → Rebuild
+      </p>
+      <p>
+        Identity:
+        unverified
+        .
+        Manufacturer unknown
+         ·
+        Model unknown
+         · Revision
+        unknown
+      </p>
+      <p>
+        User-reported model:
+        Reported MiFi
+         (unverified).
+      </p>
+      <details>
+        <summary>
+          Identity evidence
+        </summary>
+        <p>
+          Profile:
+          No exact profile
+          . Adapter:
+          No qualified device acquisition adapter
+          .
+        </p>
+        <ul />
+      </details>
+      <p
+        class="inline-notice"
+      >
+        No qualified firmware source for this exact device and revision.
+         Next: qualify exact manufacturer, model, hardware revision and an authorized firmware source/export
+method.
+      </p>
+      <button
+        class="primary-button"
+        disabled=""
+      >
+        Obtain Firmware
+      </button>
+      <details>
+        <summary>
+          Acquisition strategies and remaining stages
+        </summary>
+        <p>
+          official_image
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          documented_export
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          authorized_storage_read
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          manufacturer_package
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          external_laboratory
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <dl>
+          <div>
+            <dt>
+              discovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              identification
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              acquisition
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              analysis
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              extraction
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              customization
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              rebuild
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              installation
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              recovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+        </dl>
+      </details>
+      <details>
+        <summary>
+          Customization and rebuild readiness
+        </summary>
+        <ul>
+          <li>
+            router dns
+            :
+            unknown
+             —
+            No qualified firmware source for this exact device and revision.
+          </li>
+        </ul>
+        <p>
+          Live configuration and firmware-image changes use separate authorization. Required builder inputs, size
+limits, partition preservation and signatures are not qualified by extraction.
+        </p>
+      </details>
+      <button
+        class="secondary-button"
+      >
+        Refresh workflow
+      </button>
+    </section>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-busy="false"
+      aria-label="Device firmware workflow"
+      class="device-firmware-workflow"
+    >
+      <h3>
+        Firmware workflow
+      </h3>
+      <p
+        class="workflow-path"
+      >
+        Device → Identity → Obtain → Analyze → Extract → Customize → Rebuild
+      </p>
+      <p>
+        Identity:
+        unverified
+        .
+        Manufacturer unknown
+         ·
+        Model unknown
+         · Revision
+        unknown
+      </p>
+      <p>
+        User-reported model:
+        Reported MiFi
+         (unverified).
+      </p>
+      <details>
+        <summary>
+          Identity evidence
+        </summary>
+        <p>
+          Profile:
+          No exact profile
+          . Adapter:
+          No qualified device acquisition adapter
+          .
+        </p>
+        <ul />
+      </details>
+      <p
+        class="inline-notice"
+      >
+        No qualified firmware source for this exact device and revision.
+         Next: qualify exact manufacturer, model, hardware revision and an authorized firmware source/export
+method.
+      </p>
+      <button
+        class="primary-button"
+        disabled=""
+      >
+        Obtain Firmware
+      </button>
+      <details>
+        <summary>
+          Acquisition strategies and remaining stages
+        </summary>
+        <p>
+          official_image
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          documented_export
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          authorized_storage_read
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          manufacturer_package
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          external_laboratory
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <dl>
+          <div>
+            <dt>
+              discovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              identification
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              acquisition
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              analysis
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              extraction
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              customization
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              rebuild
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              installation
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              recovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+        </dl>
+      </details>
+      <details>
+        <summary>
+          Customization and rebuild readiness
+        </summary>
+        <ul>
+          <li>
+            router dns
+            :
+            unknown
+             —
+            No qualified firmware source for this exact device and revision.
+          </li>
+        </ul>
+        <p>
+          Live configuration and firmware-image changes use separate authorization. Required builder inputs, size
+limits, partition preservation and signatures are not qualified by extraction.
+        </p>
+      </details>
+      <button
+        class="secondary-button"
+      >
+        Refresh workflow
+      </button>
+    </section>
+  </div>
+</body>
+ ❯ waitForWrapper ../../../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/WebManagementWorkflow.test.tsx:43:33
+     41|   const user = userEvent.setup();
+     42|   render(<DeviceFirmwareWorkflow deviceId={device.id} revision={4} con…
+     43|   await user.click(await screen.findByText("Web UI Evidence"));
+       |                                 ^
+     44|   await user.click(screen.getByRole("button", { name: "Import Web UI C…
+     45|   await waitFor(() => expect(api.import).toHaveBeenCalledWith(device.i…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/test/WebManagementWorkflow.test.tsx > keeps local parse errors separate from firmware extraction and allows
+retry
+TestingLibraryElementError: Unable to find an element with the text: Web UI Evidence. This could be because the text
+is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher
+more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-busy="false"
+      aria-label="Device firmware workflow"
+      class="device-firmware-workflow"
+    >
+      <h3>
+        Firmware workflow
+      </h3>
+      <p
+        class="workflow-path"
+      >
+        Device → Identity → Obtain → Analyze → Extract → Customize → Rebuild
+      </p>
+      <p>
+        Identity:
+        unverified
+        .
+        Manufacturer unknown
+         ·
+        Model unknown
+         · Revision
+        unknown
+      </p>
+      <p>
+        User-reported model:
+        Reported MiFi
+         (unverified).
+      </p>
+      <details>
+        <summary>
+          Identity evidence
+        </summary>
+        <p>
+          Profile:
+          No exact profile
+          . Adapter:
+          No qualified device acquisition adapter
+          .
+        </p>
+        <ul />
+      </details>
+      <p
+        class="inline-notice"
+      >
+        No qualified firmware source for this exact device and revision.
+         Next: qualify exact manufacturer, model, hardware revision and an authorized firmware source/export
+method.
+      </p>
+      <button
+        class="primary-button"
+        disabled=""
+      >
+        Obtain Firmware
+      </button>
+      <details>
+        <summary>
+          Acquisition strategies and remaining stages
+        </summary>
+        <p>
+          official_image
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          documented_export
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          authorized_storage_read
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          manufacturer_package
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          external_laboratory
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <dl>
+          <div>
+            <dt>
+              discovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              identification
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              acquisition
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              analysis
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              extraction
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              customization
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              rebuild
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              installation
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              recovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+        </dl>
+      </details>
+      <details>
+        <summary>
+          Customization and rebuild readiness
+        </summary>
+        <ul>
+          <li>
+            router dns
+            :
+            unknown
+             —
+            No qualified firmware source for this exact device and revision.
+          </li>
+        </ul>
+        <p>
+          Live configuration and firmware-image changes use separate authorization. Required builder inputs, size
+limits, partition preservation and signatures are not qualified by extraction.
+        </p>
+      </details>
+      <button
+        class="secondary-button"
+      >
+        Refresh workflow
+      </button>
+    </section>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-busy="false"
+      aria-label="Device firmware workflow"
+      class="device-firmware-workflow"
+    >
+      <h3>
+        Firmware workflow
+      </h3>
+      <p
+        class="workflow-path"
+      >
+        Device → Identity → Obtain → Analyze → Extract → Customize → Rebuild
+      </p>
+      <p>
+        Identity:
+        unverified
+        .
+        Manufacturer unknown
+         ·
+        Model unknown
+         · Revision
+        unknown
+      </p>
+      <p>
+        User-reported model:
+        Reported MiFi
+         (unverified).
+      </p>
+      <details>
+        <summary>
+          Identity evidence
+        </summary>
+        <p>
+          Profile:
+          No exact profile
+          . Adapter:
+          No qualified device acquisition adapter
+          .
+        </p>
+        <ul />
+      </details>
+      <p
+        class="inline-notice"
+      >
+        No qualified firmware source for this exact device and revision.
+         Next: qualify exact manufacturer, model, hardware revision and an authorized firmware source/export
+method.
+      </p>
+      <button
+        class="primary-button"
+        disabled=""
+      >
+        Obtain Firmware
+      </button>
+      <details>
+        <summary>
+          Acquisition strategies and remaining stages
+        </summary>
+        <p>
+          official_image
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          documented_export
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          authorized_storage_read
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          manufacturer_package
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <p>
+          external_laboratory
+          :
+          not implemented
+          .
+          No qualified route.
+        </p>
+        <dl>
+          <div>
+            <dt>
+              discovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              identification
+              :
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  09:35:20
+   Duration  28.19s (transform 516ms, setup 6.23s, import 1.47s, tests 3.11s, environment 16.68s)
+
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              acquisition
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              analysis
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              extraction
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              customization
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              rebuild
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              installation
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+          <div>
+            <dt>
+              recovery
+              :
+              unknown
+            </dt>
+            <dd>
+              No qualified firmware source for this exact device and revision.
+
+              Qualify an approved identity reader and firmware source.
+            </dd>
+          </div>
+        </dl>
+      </details>
+      <details>
+        <summary>
+          Customization and rebuild readiness
+        </summary>
+        <ul>
+          <li>
+            router dns
+            :
+            unknown
+             —
+            No qualified firmware source for this exact device and revision.
+          </li>
+        </ul>
+        <p>
+          Live configuration and firmware-image changes use separate authorization. Required builder inputs, size
+limits, partition preservation and signatures are not qualified by extraction.
+        </p>
+      </details>
+      <button
+        class="secondary-button"
+      >
+        Refresh workflow
+      </button>
+    </section>
+  </div>
+</body>
+ ❯ waitForWrapper ../../../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/WebManagementWorkflow.test.tsx:54:33
+     52|   const user = userEvent.setup();
+     53|   render(<DeviceFirmwareWorkflow deviceId={device.id} revision={4} con…
+     54|   await user.click(await screen.findByText("Web UI Evidence"));
+       |                                 ^
+     55|   await user.click(screen.getByRole("button", { name: "Import Web UI C…
+     56|   const evidence = screen.getByRole("region", { name: "Web management …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop
+npm error workspace @obtainer/desktop@0.2.0-beta.2
+npm error location C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vitest run --configLoader runner
+src/test/WebManagementWorkflow.test.tsx

@@ -7,6 +7,7 @@ import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {assertOwned} from './native-test-profile.mjs';
 import {retainManifest} from './verify-extraction.mjs';
+import {verifyFirmwareStructure} from './verify-firmware-structure.mjs';
 
 const filename='1.02SEA--OTA--1.03SEA-diff.zip';
 const hash='a592a30abac46942dc8c8b9fdc4254882f4be1b3fa1261e140d6ca5bddfa5743';
@@ -79,6 +80,7 @@ export async function verifyManufacturerPackage(client,{root,profile,evidence,pi
   assert(extraction.layers.some(layer=>layer.reasons.some(reason=>reason.includes('base required'))));
   assert(extraction.swupdate.length>0);assert(extraction.swupdate.every(item=>item.signatureVerified===false));
   const manifestSha256=await retainManifest(profile,evidence,extraction);
+  await verifyFirmwareStructure(client,{report:extraction,evidence,reopened});
   await until(()=>evaluate("document.querySelector('.extraction-section')?.innerText.includes('Partial extraction')"),'Partial package result did not render');
   await evaluate("Array.from(document.querySelectorAll('.extraction-section summary')).find(e=>e.textContent.trim()==='Layer tree').click()");
   await until(()=>evaluate("document.querySelector('.extraction-section')?.innerText.includes('base required')"),'Delta/base requirement missing from layer UI');
@@ -122,6 +124,7 @@ export async function verifyRarPackage(client,{root,profile,evidence,pid,record,
   const bytes=await readFile(bundle);assert.equal(digest(bytes),report.bundleSha256);
   for(const entry of report.entries.filter(entry=>entry.kind==='file'))assert.equal(digest(bytes.subarray(entry.offset,entry.offset+entry.size)),entry.sha256);
   const manifestSha256=await retainManifest(profile,evidence,report);
+  await verifyFirmwareStructure(client,{report,evidence,reopened});
   if(reopened){const before=JSON.parse(await readFile(path.join(evidence,'rar-package.json'),'utf8'));assert.equal(before.manifestSha256,manifestSha256);assert.equal(before.report.bundleSha256,report.bundleSha256);}
   await until(()=>evaluate("document.querySelector('.extraction-section')?.innerText.includes('Partial extraction')"),'RAR partial result missing');
   await evaluate("Array.from(document.querySelectorAll('.extraction-section summary')).find(e=>e.textContent.trim()==='Layer tree').click()");

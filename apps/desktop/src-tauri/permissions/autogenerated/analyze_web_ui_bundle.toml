@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-analyze-web-ui-bundle"
+description = "Enables the analyze_web_ui_bundle command without any pre-configured scope."
+commands.allow = ["analyze_web_ui_bundle"]
+
+[[permission]]
+identifier = "deny-analyze-web-ui-bundle"
+description = "Denies the analyze_web_ui_bundle command without any pre-configured scope."
+commands.deny = ["analyze_web_ui_bundle"]

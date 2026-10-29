@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "logs": [
+    {
+      "source": ".tools/web-management-evidence/har-static-strategy-red.log",
+      "retained": "har-static-strategy-red.txt",
+      "sourceSha256": "15a7d3db799089f96ea994ca05812159c26b0d2b4dc6707c888dfcf2ee7f2ca0",
+      "retainedSha256": "ac71ce57ffbf1436288883371af0b65c66db90ea89281469cb05c279177ecec4",
+      "retainedBytes": 36440
+    },
+    {
+      "source": ".tools/web-management-evidence/integration-red.log",
+      "retained": "integration-red.txt",
+      "sourceSha256": "88eef942f67ef09f7f04888e679e600cef6de13f838cecbd8915da49699c855c",
+      "retainedSha256": "a1c0bfc816457c97d7086f41cb7d185d8bf0c95a58bd749bad06d0bae0a5671a",
+      "retainedBytes": 13876
+    },
+    {
+      "source": ".tools/web-management-evidence/integration-green.log",
+      "retained": "integration-green.txt",
+      "sourceSha256": "68350a35cc1ca3f7fce1ee1d01aec0cb5da4b9929505947778adb475ba22b601",
+      "retainedSha256": "e17f509b394f396503ae7dcdc32f3eae2586fb470d3c649ae8dbd876e00189b3",
+      "retainedBytes": 12684
+    },
+    {
+      "source": ".tools/web-management-evidence/structure-rust-red.log",
+      "retained": "structure-rust-red.txt",
+      "sourceSha256": "4d442b6e78b7f7b6525d52f163c87d4b7af660cb3a048927be993c10ba69d1a7",
+      "retainedSha256": "55f1051cdece45aa8394e0d5bb5fd523e8b743c0ff2c55f2bf539c114541f08e",
+      "retainedBytes": 10159
+    },
+    {
+      "source": ".tools/web-management-evidence/structure-rust-green.log",
+      "retained": "structure-rust-green.txt",
+      "sourceSha256": "cb5a1650866698e08fc5a393137b65bc98b60d38f41682e1512bc2893d11323c",
+      "retainedSha256": "3f58a43ad39b602376c3a15fcc04840d5700895f5ff585b516ce2e7419c01e76",
+      "retainedBytes": 1401
+    },
+    {
+      "source": ".tools/web-management-evidence/frontend-red.log",
+      "retained": "frontend-red.txt",
+      "sourceSha256": "b2daca56ceabf61484352232ca81a0cbed4e5e69bd9a89bb789ce0e5d4a8fffa",
+      "retainedSha256": "1981df9cc5df26462d1fad7c9c36e3a8300b88599a4553f4ddaadbdc9289459c",
+      "retainedBytes": 38732
+    },
+    {
+      "source": ".tools/web-management-evidence/route-ui-red.log",
+      "retained": "route-ui-red.txt",
+      "sourceSha256": "c2048f6168b141f726d1d9d8a6e1360547adc16483c7ad1ff24877793bb994d1",
+      "retainedSha256": "6b2988907e085135f35ba9ae5c4fa96204318bec5c4c5386067f37776fc2c280",
+      "retainedBytes": 23776
+    },
+    {
+      "source": ".tools/web-management-evidence/clippy-standard.log",
+      "retained": "clippy-standard.txt",
+      "sourceSha256": "332b7deef99cba21bde33bdc0cdb70b031c3690d292d8db919123dc021241b30",
+      "retainedSha256": "70cb6feab62bcdc2cd2f24341d7cbff32220699386a82c73aed0765edfce6a80",
+      "retainedBytes": 8184
+    },
+    {
+      "source": ".tools/web-management-evidence/loopback-source-attempt-1.log",
+      "retained": "loopback-source-attempt-1.txt",
+      "sourceSha256": "576d817b30550b1f7a7886830b59f06f263bbe89837eea6d4a51625b518eb6a1",
+      "retainedSha256": "aa7f8b2f4b01b660bb1a224ced44367142753747630dd432ea3807ab15362aea",
+      "retainedBytes": 2039
+    },
+    {
+      "source": ".tools/web-management-evidence/loopback-source-green.log",
+      "retained": "loopback-source-green.txt",
+      "sourceSha256": "573e79023380dfed23618544d423fc7cc68055b5626111905f51f25a1bdee23d",
+      "retainedSha256": "13ab1da6e33a3d4c3c1f2685ec77ba61207d1b8b7945370f558e86df09fe9cea",
+      "retainedBytes": 861
+    },
+    {
+      "source": ".tools/web-management-evidence/rust-standard-final-3.log",
+      "retained": "rust-standard-final-3.txt",
+      "sourceSha256": "ebd728acc420a8469a5be0b656ab54b8ef06b4c41013386b693849f669175d81",
+      "retainedSha256": "139cf8649a9a0095af0634e5654daea6dbc723718b05051905a97a5a7ccbd9bd",
+      "retainedBytes": 45050
+    },
+    {
+      "source": ".tools/web-management-evidence/rust-isolated-final-3.log",
+      "retained": "rust-isolated-final-3.txt",
+      "sourceSha256": "2ba7a55883eeee53fe4f1bc8f4fd7d2fdd485dbb18ab8d67528843b0d83ac537",
+      "retainedSha256": "bbca2d27f60d51838941cc3d779ad3d4de31b9dc0d2003237313e3f78f8198be",
+      "retainedBytes": 45554
+    },
+    {
+      "source": ".tools/web-management-evidence/clippy-standard-final-3.log",
+      "retained": "clippy-standard-final-3.txt",
+      "sourceSha256": "cb9d6af646ccd97e8edbf7f21725d576aadb67fa4b69c72baf1f2843719f3823",
+      "retainedSha256": "65a07d44ddd582cc441b5b11e865cf2bc94bef4d9d15e0c9a04e775677e3b70b",
+      "retainedBytes": 538
+    },
+    {
+      "source": ".tools/web-management-evidence/clippy-isolated-final-3.log",
+      "retained": "clippy-isolated-final-3.txt",
+      "sourceSha256": "24f0a51d6e8a1b77cca827e661499563c212b69bdf8156b22b83b736c134c5f7",
+      "retainedSha256": "0e3fdb0915394cc7b5975ac10b1422f1706e00ec3190a64de5e717897e6b0a62",
+      "retainedBytes": 538
+    },
+    {
+      "source": ".tools/web-management-evidence/format-final-3.log",
+      "retained": "format-final-3.txt",
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retainedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retainedBytes": 0
+    },
+    {
+      "source": ".tools/web-management-evidence/frontend-full-final.log",
+      "retained": "frontend-full-final.txt",
+      "sourceSha256": "8fccf7836e1004301b31a7c6c0f7a21eab3c593897b71c64ee7800bbabf90165",
+      "retainedSha256": "7d7e0b2f19913d62e0ebd6bf267263ba79e506d45613d708d6033d2c512ae0b9",
+      "retainedBytes": 437
+    },
+    {
+      "source": ".tools/web-management-evidence/frontend-build.log",
+      "retained": "frontend-build.txt",
+      "sourceSha256": "01884a238052423bd1d97b08672fc5b1b19807694f9aea601499c06e5115bf36",
+      "retainedSha256": "ede81faae575ecad7a09853b4d76257d9132daf152fcf5d1c36ce96485fd4311",
+      "retainedBytes": 508
+    },
+    {
+      "source": ".tools/web-management-evidence/lint-scripts-final.log",
+      "retained": "lint-scripts-final.txt",
+      "sourceSha256": "918d3c1c2c9c067c614a413eed587e5b2581fe0eaff18ef6f1783731df34d834",
+      "retainedSha256": "598b3f8d2b9b848bd45ffb307f1addf10f3ba28f484f17b647b435a80f7a756e",
+      "retainedBytes": 68
+    },
+    {
+      "source": ".tools/web-management-evidence/extraction-legacy-linux.log",
+      "retained": "extraction-legacy-linux.txt",
+      "sourceSha256": "66fe4d39522037288e17f8437b135989d243385822e5f75f2e4fdf95b5fa64cb",
+      "retainedSha256": "42021a213ca9e0169b935eff7fde4ddcc07cf60bd40ea9db1ce7452674f10b10",
+      "retainedBytes": 3352
+    },
+    {
+      "source": ".tools/web-management-evidence/extraction-v2-linux.log",
+      "retained": "extraction-v2-linux.txt",
+      "sourceSha256": "e3c08d7a2f4a84be8e49fb7dff8ad7ac00b2d622bf96de321e8cece6e41bd099",
+      "retainedSha256": "9a15cfdfff2d9ccde8a9b20adbfe6d85147d2ecfec0aead1c3baf80e01f75e88",
+      "retainedBytes": 5840
+    }
+  ]
+}

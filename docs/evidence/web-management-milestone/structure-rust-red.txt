@@ -1,0 +1,218 @@
+powershell :    Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+At line:2 char:327
++ ... | Out-Null; powershell -NoProfile -ExecutionPolicy Bypass -File scrip ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ob...ktop\src-tauri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+warning: function `evidence_id` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\mod.rs:100:4
+    |
+100 | fn evidence_id(origin: &str, path: &str, method: &str, classification: &Classification) -> String {
+    |    ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `MAX_ENTRIES` is never used
+ --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:5:7
+  |
+5 | const MAX_ENTRIES: usize = 512;
+  |       ^^^^^^^^^^^
+
+warning: function `parse` is never used
+ --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:7:15
+  |
+7 | pub(super) fn parse(device_id: &str, bytes: &[u8]) -> Result<WebEvidenceReport, WebEvidenceError> {
+  |               ^^^^^
+
+warning: function `request_headers_mime` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:52:4
+   |
+52 | fn request_headers_mime(request: &Value) -> Option<String> {
+   |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `header_metadata` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:59:4
+   |
+59 | fn header_metadata(item: &Value, selected: &mut BTreeMap<String, String>, auth: &mut Vec<String>) {
+   |    ^^^^^^^^^^^^^^^
+
+warning: function `body_names` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\har.rs:84:4
+   |
+84 | fn body_names(body: &Value) -> Vec<String> {
+   |    ^^^^^^^^^^
+
+warning: function `digest` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:11:15
+   |
+11 | pub(super) fn digest(value: &str) -> String {
+   |               ^^^^^^
+
+warning: function `http_url` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:27:15
+   |
+27 | pub(super) fn http_url(raw: &str) -> Option<Url> {
+   |               ^^^^^^^^
+
+warning: function `display_origin` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:33:15
+   |
+33 | pub(super) fn display_origin(url: &Url) -> String {
+   |               ^^^^^^^^^^^^^^
+
+warning: constant `WORDS` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:48:7
+   |
+48 | const WORDS: &[&str] = &[
+   |       ^^^^^
+
+warning: function `known` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:61:4
+   |
+61 | fn known(value: &str) -> bool { WORDS.contains(&value.to_ascii_lowercase().as_str()) }
+   |    ^^^^^
+
+warning: function `name` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:63:15
+   |
+63 | pub(super) fn name(value: &str) -> String {
+   |               ^^^^
+
+warning: function `path` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:68:15
+   |
+68 | pub(super) fn path(url: &Url) -> String {
+   |               ^^^^
+
+warning: function `query_names` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:87:15
+   |
+87 | pub(super) fn query_names(url: &Url) -> Vec<String> {
+   |               ^^^^^^^^^^^
+
+warning: function `mime` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:91:15
+   |
+91 | pub(super) fn mime(raw: &str) -> String {
+   |               ^^^^
+
+warning: function `method` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:103:15
+    |
+103 | pub(super) fn method(raw: &str) -> String {
+    |               ^^^^^^
+
+warning: function `words` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:107:4
+    |
+107 | fn words(raw: &str) -> Vec<String> {
+    |    ^^^^^
+
+warning: function `classify` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:111:15
+    |
+111 | pub(super) fn classify(method: &str, url: &Url) -> Classification {
+    |               ^^^^^^^^
+
+warning: function `resource_kind` is never used
+   --> apps\desktop\src-tauri\src\acquisition\web_management\sanitize.rs:143:15
+    |
+143 | pub(super) fn resource_kind(url: &Url) -> Option<&'static str> {
+    |               ^^^^^^^^^^^^^
+
+warning: function `parse` is never used
+ --> apps\desktop\src-tauri\src\acquisition\web_management\static_analysis.rs:5:15
+  |
+5 | pub(super) fn parse(device_id: &str, raw_origin: &str, resource_name: &str, bytes: &[u8]) ->
+Result<WebEvidenceReport, WebEvidenceErr...
+  |               ^^^^^
+
+warning: function `route_literal` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\static_analysis.rs:43:4
+   |
+43 | fn route_literal(value: &str) -> bool {
+   |    ^^^^^^^^^^^^^
+
+warning: function `string_literals` is never used
+  --> apps\desktop\src-tauri\src\acquisition\web_management\static_analysis.rs:49:4
+   |
+49 | fn string_literals(text: &str) -> Vec<String> {
+   |    ^^^^^^^^^^^^^^^
+
+warning: fields `username` and `password` are never read
+  --> apps\desktop\src-tauri\src\acquisition\management_auth.rs:46:5
+   |
+45 | pub struct Credentials {
+   |            ----------- fields in this struct
+46 |     username: String,
+   |     ^^^^^^^^
+47 |     password: String,
+   |     ^^^^^^^^
+
+warning: fields `device_id`, `interface_id`, `network`, and `route` are never read
+  --> apps\desktop\src-tauri\src\acquisition\management_transport.rs:30:5
+   |
+29 | pub struct SourceBinding {
+   |            ------------- fields in this struct
+30 |     device_id: String,
+   |     ^^^^^^^^^
+31 |     interface_id: String,
+   |     ^^^^^^^^^^^^
+...
+34 |     network: NetworkAdapter,
+   |     ^^^^^^^
+35 |     route: RouteFacts,
+   |     ^^^^^
+
+warning: `obtainer` (lib test) generated 24 warnings
+    Finished `test` profile [unoptimized] target(s) in 41.84s
+     Running unittests src\lib.rs (.tools/management-target\debug\deps\obtainer_lib-3cbc5006e7811c3f.exe)
+
+running 5 tests
+test library::extraction::structure::tests::firmware_structure_legacy_projection_is_deterministic_and_never_rewrites_report ... FAILED
+test library::extraction::structure::tests::firmware_structure_rejects_duplicate_cyclic_overflow_and_out_of_bounds_topology ... FAILED
+test library::extraction::structure::tests::firmware_structure_keeps_multiple_rootfs_candidates_and_rebuild_states_independent ... FAILED
+test library::extraction::structure::tests::firmware_structure_unknown_entropy_and_unsupported_never_become_extracted ... FAILED
+test library::extraction::structure::tests::firmware_structure_offsets_do_not_invent_physical_positions_after_decode_or_members ... FAILED
+
+failures:
+
+---- library::extraction::structure::tests::firmware_structure_legacy_projection_is_deterministic_and_never_rewrites_report stdout ----
+
+thread 'library::extraction::structure::tests::firmware_structure_legacy_projection_is_deterministic_and_never_rewrites_report' (16992) panicked at apps\desktop\src-tauri\src\library\extraction\structure.rs:26:600:
+called `Result::unwrap()` on an `Err` value: Error("missing field `unextractedRegions`", line: 0, column: 0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- library::extraction::structure::tests::firmware_structure_rejects_duplicate_cyclic_overflow_and_out_of_bounds_topology stdout ----
+
+thread 'library::extraction::structure::tests::firmware_structure_rejects_duplicate_cyclic_overflow_and_out_of_bounds_topology' (4092) panicked at apps\desktop\src-tauri\src\library\extraction\structure.rs:26:600:
+called `Result::unwrap()` on an `Err` value: Error("missing field `unextractedRegions`", line: 0, column: 0)
+
+---- library::extraction::structure::tests::firmware_structure_keeps_multiple_rootfs_candidates_and_rebuild_states_independent stdout ----
+
+thread 'library::extraction::structure::tests::firmware_structure_keeps_multiple_rootfs_candidates_and_rebuild_states_independent' (17752) panicked at apps\desktop\src-tauri\src\library\extraction\structure.rs:26:600:
+called `Result::unwrap()` on an `Err` value: Error("missing field `unextractedRegions`", line: 0, column: 0)
+
+---- library::extraction::structure::tests::firmware_structure_unknown_entropy_and_unsupported_never_become_extracted stdout ----
+
+thread 'library::extraction::structure::tests::firmware_structure_unknown_entropy_and_unsupported_never_become_extracted' (20184) panicked at apps\desktop\src-tauri\src\library\extraction\structure.rs:26:600:
+called `Result::unwrap()` on an `Err` value: Error("missing field `unextractedRegions`", line: 0, column: 0)
+
+---- library::extraction::structure::tests::firmware_structure_offsets_do_not_invent_physical_positions_after_decode_or_members stdout ----
+
+thread 'library::extraction::structure::tests::firmware_structure_offsets_do_not_invent_physical_positions_after_decode_or_members' (20664) panicked at apps\desktop\src-tauri\src\library\extraction\structure.rs:26:600:
+called `Result::unwrap()` on an `Err` value: Error("missing field `unextractedRegions`", line: 0, column: 0)
+
+
+failures:
+    library::extraction::structure::tests::firmware_structure_keeps_multiple_rootfs_candidates_and_rebuild_states_independent
+    library::extraction::structure::tests::firmware_structure_legacy_projection_is_deterministic_and_never_rewrites_report
+    library::extraction::structure::tests::firmware_structure_offsets_do_not_invent_physical_positions_after_decode_or_members
+    library::extraction::structure::tests::firmware_structure_rejects_duplicate_cyclic_overflow_and_out_of_bounds_topology
+    library::extraction::structure::tests::firmware_structure_unknown_entropy_and_unsupported_never_become_extracted
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 417 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

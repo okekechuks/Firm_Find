@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {retainManifest} from './verify-extraction.mjs';
+import {verifyFirmwareStructure} from './verify-firmware-structure.mjs';
 import {assertOwned} from './native-test-profile.mjs';
 const id='1'.repeat(64);
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -45,6 +46,7 @@ export async function verifyUniversalWorkflow(client,{profile,evidence,record,sc
   }
   let report;await until(async()=>{report=await invoke('get_firmware_extraction',{sha256:source.sha256});return Boolean(report);},'Persisted extraction missing');
   const manifestSha256=await retainManifest(profile,evidence,report);
+  await verifyFirmwareStructure(client,{report,evidence,reopened});
   assert.equal(report.fileCount,869);assert.equal(report.totalBytes,13411262);assert.equal(report.isolation.rootReadOnly,true);
   const vault=path.join(profile.root,'data/vault/sha256');const sourceFile=path.join(vault,source.sha256.slice(0,2),source.sha256+'.bin');await assertOwned(profile,sourceFile);
   const original=await readFile(sourceFile);assert.equal(hash(original),source.sha256);assert.equal(original.length,source.sizeBytes);

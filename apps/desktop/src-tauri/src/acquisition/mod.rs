@@ -11,6 +11,10 @@ use std::{
 };
 mod approval;
 mod challenge;
+pub mod management_auth;
+pub mod management_binding_ipc;
+pub mod management_transport;
+pub mod web_management;
 pub(crate) use approval::AuthChallengeApproval;
 pub(crate) use challenge::{parse_headers as parse_challenge_headers, ChallengeObservation};
 #[cfg(test)]

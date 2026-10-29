@@ -1,0 +1,132 @@
+powershell :    Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+At line:2 char:200
++ ... D_JOBS='2'; powershell -NoProfile -ExecutionPolicy Bypass -File scrip ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ob...ktop\src-tauri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    Finished `test` profile [unoptimized] target(s) in 30.92s
+     Running unittests src\lib.rs (.tools\management-target\debug\deps\obtainer_lib-d2af30c3a9abf647.exe)
+
+running 118 tests
+test acquisition::approval::tests::a1_gateway_scope_replay_interface_revision_endpoint_expiry ... ok
+test acquisition::approval::tests::menu_approval_replay_cross_scope_binding_expiry_and_no ... ok
+test acquisition::approval::challenge_scope_tests::challenge_scope_replay_cross_scope_binding_expiry_and_no ... ok
+test acquisition::approval::challenge_scope_tests::challenge_confirmation_matches_design_and_ipc_acl_is_closed ... ok
+test acquisition::approval::tests::menu_confirmation_caps_cleans_and_names_only_fixed_request ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_revoked_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_expired_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_collector_requires_stamp_and_exact_request_selection ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_missing_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::review_r1_mismatched_stamp_rejected ... ok
+test acquisition::approval::challenge_scope_tests::stage4_new_auth_scope_requires_material_binding_and_keeps_legacy_scopes ... ok
+test acquisition::challenge_tests::c1_synthetic_digest_token_extensions_and_exact_shape ... ok
+test acquisition::challenge_tests::c1_synthetic_rejected_headers_have_exact_safe_shape ... ok
+test acquisition::approval::challenge_scope_tests::stage4_change_during_controlled_challenge_discards_success_and_recovers ... ok
+test acquisition::challenge_tests::challenge_synthetic_status_cookie_other_schemes_and_nonce_privacy ... ok
+test acquisition::challenge_tests::challenge_synthetic_valid_case_space_and_optional_algorithm ... ok
+test acquisition::management_auth::flow_tests::expiry_device_change_cancel_and_timeout_are_fail_closed ... ok
+test acquisition::challenge_tests::challenge_registry_is_four_closed_specs_and_no_session_operations ... ok
+test acquisition::management_auth::flow_tests::controlled_first_read_uses_fresh_challenge_and_validates_identity ... ok
+test acquisition::challenge_tests::stage4_conflicting_acquisition_identity_cannot_bootstrap_challenge ... ok
+test acquisition::approval::challenge_scope_tests::review_r2_claimed_publication_survives_failed_scan_without_readmission ... ok
+test acquisition::management_auth::flow_tests::wrong_credentials_never_retry_and_identity_mismatch_never_succeeds ... ok
+test acquisition::challenge_tests::challenge_synthetic_rejects_ambiguous_malformed_and_oversized_headers ... ok
+test acquisition::management_auth::tests::digest_rfc2617_vector_preserves_qop_opaque_and_nonce_count ... ok
+test acquisition::management_auth::tests::digest_rfc7616_sha256_exact_vector ... ok
+test acquisition::management_auth::tests::digest_session_algorithm_without_qop_is_rejected_instead_of_omitting_cnonce ... ok
+test acquisition::management_auth::tests::digest_sha256_and_actual_query_are_supported ... ok
+test acquisition::management_auth::tests::observed_family_cannot_create_verified_read_route ... ok
+test acquisition::management_auth::tests::malformed_challenges_fail_closed ... ok
+test acquisition::management_auth::flow_tests::only_one_fresh_stale_nonce_retry_is_allowed ... ok
+test acquisition::management_auth::tests::digest_sha512_256_utf8_userhash_matches_independent_fips_vector ... ok
+test acquisition::management_binding_ipc::tests::failed_local_route_hides_source_and_remains_blocked ... ok
+test acquisition::management_binding_ipc::tests::local_route_observation_never_grants_authentication ... ok
+test acquisition::management_auth::tests::digest_stale_nonce_reset_cannot_change_realm_algorithm_or_reuse_nonce ... ok
+test acquisition::management_transport::tests::binding_fails_closed_without_proven_windows_route ... ok
+test acquisition::request_registry::tests::request_specs_are_bounded_and_read_only ... ok
+test acquisition::management_transport::tests::source_substitution_and_overlapping_subnet_are_rejected ... ok
+test acquisition::management_auth::tests::digest_legacy_session_algorithms_and_auth_int_are_explicit ... ok
+test acquisition::static_menu_tests::menu_closed_table_registers_only_third_static_get ... ok
+test acquisition::challenge_tests::challenge_diagnostics_keep_only_validated_metadata_and_flags ... ok
+test acquisition::management_transport::tests::selected_source_binding_uses_exact_adapter_and_rechecks_changes ... ok
+test acquisition::challenge_tests::challenge_nonce_never_reaches_trace_report_diagnostics_or_errors ... ok
+test acquisition::challenge_tests::challenge_collector_requires_fresh_same_root_and_preserves_authority ... ok
+test acquisition::static_menu_tests::menu_malformed_xml_names_are_not_observations ... ok
+test acquisition::static_menu_tests::menu_synthetic_shapes_and_exact_discriminator ... ok
+test acquisition::tests::a1_legacy_boolean_cannot_authorize_network ... ok
+test acquisition::static_menu_tests::menu_validator_rejects_cgi_and_all_unregistered_paths ... ok
+test acquisition::tests::a2_title_only_is_not_a_protocol_family ... ok
+test acquisition::static_menu_tests::menu_synthetic_rejects_ambiguous_entities_namespaces_and_tokens ... ok
+test acquisition::tests::a4_collision_names_other_interface ... ok
+test acquisition::static_menu_tests::menu_commands_are_closed_and_parser_has_no_request_authority ... ok
+test acquisition::tests::b1_compiled_strategy_registry_runs_only_unimplemented_probes ... ok
+test acquisition::tests::a6_signals_after_metadata_cap_are_ignored ... ok
+test acquisition::tests::a3_static_version_is_observed_not_authoritative ... ok
+test acquisition::tests::a3_malformed_static_version_cannot_supply_identity ... ok
+test acquisition::tests::a5_observation_and_unimplemented_are_distinct ... ok
+test acquisition::tests::b1_metadata_approval_cannot_be_used_for_a_strategy_probe ... ok
+test acquisition::tests::b3_compiled_request_registry_accepts_only_the_four_closed_reads ... ok
+test acquisition::tests::acquisition_model_selection_does_not_depend_on_user_label ... ok
+test acquisition::tests::cancelled_or_superseded_route_lease_cannot_publish_or_release_its_successor ... ok
+test acquisition::tests::b1_plan_rejects_stale_mixed_endpoint_changed_generation_and_conflicting_evidence ... ok
+test acquisition::static_menu_tests::menu_dispatch_observation_redaction_and_no_stage_authority ... ok
+test acquisition::tests::b1_reported_or_observed_values_never_satisfy_verified_requirements ... ok
+test acquisition::tests::discovery_commands_are_registered_in_the_production_acl ... ok
+test acquisition::static_menu_tests::menu_dispatch_stops_on_failures_cancellation_and_stale_input ... ok
+test acquisition::tests::b3_validator_rejects_every_unregistered_request_shape ... ok
+test acquisition::tests::b6_report_has_eleven_ordered_stages_and_identity_does_not_advance_them ... ok
+test acquisition::tests::captured_static_version_with_xml_declaration_and_rgw_wrapper_is_observed ... ok
+test acquisition::tests::collision_diagnostics_do_not_export_interface_names ... ok
+test acquisition::tests::r2_visible_text_comments_and_script_strings_are_not_resource_attributes ... ok
+test acquisition::tests::hardware_revisions_are_not_interchangeable ... ok
+test acquisition::tests::exact_identity_does_not_skip_independent_source_and_export_qualification ... ok
+test acquisition::tests::mg11_no_longer_hits_a_hardcoded_global_failure ... ok
+test acquisition::tests::diagnostics_exclude_endpoint_ids_and_all_raw_peer_and_owner_text ... ok
+test acquisition::tests::missing_interface_and_mismatched_subject_cannot_probe ... ok
+test acquisition::tests::r5_busy_admission_precedes_claim ... ok
+test acquisition::tests::r3_network_gate_cannot_rely_on_token_presence ... ok
+test acquisition::tests::public_endpoint_disconnect_protected_device_and_cancel_are_rejected ... ok
+test acquisition::tests::r5_confirmation_values_are_single_line_and_capped ... ok
+test acquisition::tests::r3_bogus_token_without_claimed_proof_is_local_only ... ok
+test acquisition::tests::r1_captured_fixture_and_positive_family_candidates ... ok
+test acquisition::tests::review_f2_proof_constructor_is_not_a_bare_scope_factory ... ok
+test acquisition::tests::review_f5_private_field_doctest_pins_error ... ok
+test acquisition::tests::r5_busy_does_not_consume_receipt ... ok
+test acquisition::tests::review_f1_default_cannot_qualify_from_identity_alone ... ok
+test acquisition::web_management::ipc::tests::synthetic_dialog_guard_releases_only_its_scoped_ownership ... ok
+test acquisition::tests::r8_stray_less_than_keeps_following_resources_candidate_only ... ok
+test acquisition::tests::review_f3_candidates_report_missing_implementation ... ok
+test acquisition::tests::static_version_xml_rejects_entities_duplicates_and_unbalanced_wrappers ... ok
+test acquisition::tests::selecting_an_endpoint_cannot_hide_conflicting_trusted_device_evidence ... ok
+test acquisition::tests::root_family_signals_never_verify_model_or_export ... ok
+test acquisition::tests::stale_conflicting_and_reported_evidence_never_verify_identity ... ok
+test acquisition::static_menu_tests::menu_wrong_media_type_limitation_exports_only_sanitized_type ... ok
+test acquisition::web_management::store::tests::synthetic_device_labels_never_change_source_assessment ... ok
+test acquisition::web_management::store::tests::synthetic_cross_reference_requires_same_origin_and_never_grants_trust ... ok
+test acquisition::web_management::strategy::tests::synthetic_static_source_is_not_observed_or_executable ... ok
+test acquisition::web_management::strategy::tests::synthetic_capture_does_not_grant_source_authority ... ok
+test acquisition::web_management::tests::synthetic_bundle_missing_origin_and_nontext_input_fail_closed ... ok
+test acquisition::web_management::tests::synthetic_bundle_never_turns_firmware_strings_into_read_authority ... ok
+test acquisition::tests::review_f4_web_response_requires_family_for_management_observation ... ok
+test acquisition::web_management::tests::synthetic_bundle_extracts_only_string_candidates_without_execution ... ok
+test acquisition::web_management::store::tests::synthetic_static_first_import_and_repeated_captures_stay_stable ... ok
+test acquisition::web_management::tests::synthetic_har_configuration_export_is_never_firmware ... ok
+test acquisition::web_management::tests::synthetic_bundle_resource_references_are_same_origin_and_static_only ... ok
+test acquisition::web_management::tests::synthetic_har_classifies_action_query_without_retaining_values ... ok
+test acquisition::web_management::tests::synthetic_har_get_reset_is_dangerous_and_not_read_qualified ... ok
+test acquisition::web_management::tests::synthetic_har_separate_query_schema_is_sanitized_and_cannot_hide_reset ... ok
+test acquisition::web_management::store::tests::synthetic_memory_device_limit_is_bounded_and_local_actions_do_not_authenticate ... ok
+test acquisition::web_management::tests::synthetic_har_upload_is_not_download_and_methods_are_conservative ... ok
+test acquisition::web_management::tests::synthetic_har_secrets_body_values_headers_queries_and_identifiers_are_absent ... ok
+test acquisition::web_management::tests::synthetic_source_assessment_is_published_without_promoting_metadata_to_a_package ... ok
+test acquisition::web_management::tests::synthetic_unknown_path_schema_and_dns_labels_do_not_retain_values ... ok
+test acquisition::web_management::tests::synthetic_har_classification_matrix_includes_camelcase_cgi_operations ... ok
+test acquisition::web_management::tests::synthetic_har_rejects_invalid_truncated_and_oversize_json ... ok
+test acquisition::web_management::ipc::tests::synthetic_native_reader_uses_regular_local_files_and_absolute_bounds ... ok
+test acquisition::tests::acquisition_runtime_has_no_hardware_model_name_special_cases ... ok
+test acquisition::web_management::tests::synthetic_bundle_candidate_cap_is_reported_without_executing_anything ... ok
+test acquisition::web_management::store::tests::synthetic_rejected_merge_keeps_previous_report_unchanged ... ok
+
+test result: ok. 118 passed; 0 failed; 0 ignored; 0 measured; 321 filtered out; finished in 0.06s

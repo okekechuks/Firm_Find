@@ -1,5 +1,17 @@
 # Firmware pipeline roadmap amendment
 
+**29 October 2026 implementation:** selected-device local HAR/static evidence,
+source assessment, local Windows source/route checks and immutable structural
+region views are integrated on a feature branch. Digest has controlled RFC and
+authorization tests; no production authenticated identity route is registered.
+Live UI-resource collection, device authentication and firmware-source dispatch
+remain blocked until independent route/source qualification and owner-scoped
+approval. Extraction alone never enables modification/repacking/signing/install.
+The [web-management](WEB_MANAGEMENT_ACQUISITION_VERIFICATION.md) and
+[recursive extraction](RECURSIVE_FIRMWARE_EXTRACTION_VERIFICATION.md) reports track
+actual implementation and remaining gates. This does not complete Phase 7.5 or
+start Phase 8.
+
 **Approved placement — 22 October 2026:** the owner has authorized Phase 7.5 between 7 and 8, with subphases A–F for identification, vendor recognition, acquisition strategy discovery, genuine-byte acquisition/Library integration, isolated analysis and physical qualification. This supersedes the earlier proposed placement below. No phase renumbering or Phase 8 implementation. [Architecture](PHASE_7_5_ARCHITECTURE.md) and [current results](PHASE_7_5_VERIFICATION.md). Sprint A does not yet qualify an executable acquisition route.
 
 Proposed: 20 October 2026, from the owner's Phase 7 implementation requirements. **Proposed milestone placement is subject to project-owner approval.** Existing phases 0–19 keep their numbers and historical acceptance evidence. This document does not authorize physical extraction, configuration writes, firmware installation or live USSD during Phase 7.

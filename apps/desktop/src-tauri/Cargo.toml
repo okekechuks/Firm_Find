@@ -33,6 +33,9 @@ tracing-appender = "0.2"
 sha2 = "0.10"
 url = "2.5.8"
 quick-xml = "=0.42.0"
+digest_auth = "=0.3.1"
+zeroize = "=1.9.1"
+reqwest = { version = "=0.13.5", default-features = false, features = ["blocking", "native-tls"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [

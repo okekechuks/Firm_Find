@@ -204,6 +204,7 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
                 discovery::DiscoveryService::start(app.handle().clone(), Arc::clone(&repository))?;
             app.manage(discovery);
             app.manage(connection::ConnectionService::default());
+            app.manage(acquisition::web_management::WebEvidenceStore::default());
             app.manage(AppState {
                 repository,
                 directory,
@@ -214,6 +215,12 @@ fn run_profile(profile: Option<NativeProfile>) -> tauri::Result<()> {
         })
         .invoke_handler(tauri::generate_handler![
             library::workflow::ipc::get_device_workflow,
+            acquisition::web_management::ipc::get_web_ui_evidence,
+            acquisition::management_binding_ipc::assess_web_management_binding,
+            acquisition::web_management::ipc::import_web_ui_capture,
+            acquisition::web_management::ipc::analyze_web_ui_bundle,
+            acquisition::web_management::ipc::collect_management_ui_resources,
+            library::ipc::get_firmware_structure,
             library::workflow::ipc::start_device_firmware_acquisition,
             library::ipc::list_official_sources,
             library::ipc::start_official_download,

@@ -315,6 +315,16 @@ pub async fn get_firmware_extraction(
         .map_err(worker_error)?
 }
 #[tauri::command]
+pub async fn get_firmware_structure(
+    sha256: String,
+    service: tauri::State<'_, LibraryService>,
+) -> Result<Option<extraction::structure::FirmwareStructure>> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || service.firmware_structure(&sha256))
+        .await
+        .map_err(worker_error)?
+}
+#[tauri::command]
 pub async fn read_extracted_text(
     sha256: String,
     path: String,

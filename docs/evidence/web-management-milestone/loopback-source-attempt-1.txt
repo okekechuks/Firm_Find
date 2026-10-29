@@ -1,0 +1,32 @@
+powershell :    Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+At line:2 char:280
++ ...  fmt --all; powershell -NoProfile -ExecutionPolicy Bypass -File scrip ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ob...ktop\src-tauri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    Finished `test` profile [unoptimized] target(s) in 32.57s
+     Running unittests src\lib.rs (.tools\management-target\debug\deps\obtainer_lib-d2af30c3a9abf647.exe)
+
+running 1 test
+test acquisition::management_transport::tests::windows_reqwest_socket_uses_selected_loopback_source ... FAILED
+
+failures:
+
+---- acquisition::management_transport::tests::windows_reqwest_socket_uses_selected_loopback_source stdout ----
+
+thread '<unnamed>' (18528) panicked at apps\desktop\src-tauri\src\acquisition\management_transport_tests.rs:185:42:
+called `Result::unwrap()` on an `Err` value: Os { code: 10035, kind: WouldBlock, message: "A non-blocking socket operation could not be completed immediately." }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'acquisition::management_transport::tests::windows_reqwest_socket_uses_selected_loopback_source' (20116) panicked at apps\desktop\src-tauri\src\acquisition\management_transport_tests.rs:198:29:
+called `Result::unwrap()` on an `Err` value: reqwest::Error { kind: Request, url: "http://127.0.0.1:65048/synthetic/identity?view=summary", source: hyper_util::client::legacy::Error(SendRequest, hyper::Error(Io, Os { code: 10054, kind: ConnectionReset, message: "An existing connection was forcibly closed by the remote host." })) }
+
+
+failures:
+    acquisition::management_transport::tests::windows_reqwest_socket_uses_selected_loopback_source
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 439 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`

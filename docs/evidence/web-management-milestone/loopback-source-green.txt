@@ -1,0 +1,15 @@
+powershell :    Compiling obtainer v0.2.0-beta.2
+(C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\apps\desktop\src-tauri)
+At line:2 char:435
++ ...  fmt --all; powershell -NoProfile -ExecutionPolicy Bypass -File scrip ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ob...ktop\src-tauri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    Finished `test` profile [unoptimized] target(s) in 30.43s
+     Running unittests src\lib.rs (.tools\management-target\debug\deps\obtainer_lib-d2af30c3a9abf647.exe)
+
+running 1 test
+test acquisition::management_transport::tests::windows_reqwest_socket_uses_selected_loopback_source ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 439 filtered out; finished in 0.01s

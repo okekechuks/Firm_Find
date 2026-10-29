@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-collect-management-ui-resources"
+description = "Enables the collect_management_ui_resources command without any pre-configured scope."
+commands.allow = ["collect_management_ui_resources"]
+
+[[permission]]
+identifier = "deny-collect-management-ui-resources"
+description = "Denies the collect_management_ui_resources command without any pre-configured scope."
+commands.deny = ["collect_management_ui_resources"]

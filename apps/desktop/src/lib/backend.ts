@@ -1,4 +1,6 @@
 import { extractionReportSchema } from "../types/extraction";
+import { bindingAssessmentSchema, webEvidenceSchema } from "../types/web-management";
+import { firmwareStructureSchema } from "../types/firmware-structure";
 import { workflowSchema, type WorkflowBinding } from "../types/workflow";
 import { desktopStateSchema,desktopPreferencesSchema,backupSchema,storagePlanSchema,importSchema } from "../types/library";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -19,6 +21,22 @@ import {
 
 export function hasDesktopBackend(): boolean {
   return isTauri();
+}
+async function webEvidenceRequest(command: string, deviceId: string, input: Record<string, unknown> = {}) {
+  requireDesktop();
+  if (!/^[a-f0-9]{64}$/.test(deviceId)) throw new Error("Select a current Windows device.");
+  const result = webEvidenceSchema.nullable().parse(await invoke(command, { deviceId, ...input }));
+  if (result && result.deviceId !== deviceId) throw new Error("Web UI evidence belongs to another device.");
+  return result;
+}
+export async function getWebUiEvidence(deviceId: string) { return webEvidenceRequest("get_web_ui_evidence", deviceId); }
+export async function importWebUiCapture(deviceId: string) { return webEvidenceRequest("import_web_ui_capture", deviceId); }
+export async function analyzeWebUiBundle(deviceId: string, origin: string) { return webEvidenceRequest("analyze_web_ui_bundle", deviceId, { origin }); }
+export async function assessWebManagementBinding(deviceId:string,endpoint:string,interfaceId:string) {
+  requireDesktop();
+  const result=bindingAssessmentSchema.parse(await invoke("assess_web_management_binding",{deviceId,endpoint,interfaceId}));
+  if(result.state==="observed"&&(result.interfaceId!==interfaceId||!result.sourceIp))throw new Error("Route assessment belongs to another interface. Refresh devices.");
+  return result;
 }
 export async function getDeviceWorkflow(deviceId:string) {
   requireDesktop();const result=workflowSchema.parse(await invoke("get_device_workflow",{deviceId}));
@@ -176,5 +194,12 @@ export async function readStaticMenu(input:AcquisitionRequest) {
 
 export async function startFirmwareExtraction(sha256: string) { return jobSchema.parse(await invoke("start_firmware_extraction", {sha256})); }
 export async function getFirmwareExtraction(sha256: string) { return extractionReportSchema.nullable().parse(await invoke("get_firmware_extraction", {sha256})); }
+export async function getFirmwareStructure(sha256: string) {
+  requireDesktop();
+  if (!/^[a-f0-9]{64}$/.test(sha256)) throw new Error("Select a Library artifact.");
+  const report = firmwareStructureSchema.nullable().parse(await invoke("get_firmware_structure", {sha256}));
+  if (report && report.inputSha256 !== sha256) throw new Error("Firmware structure belongs to another artifact.");
+  return report;
+}
 export async function readExtractedText(sha256: string, path: string): Promise<string> { const result = await invoke("read_extracted_text", {sha256,path}); if(typeof result!=="string") throw new Error("Invalid text response"); return result; }
 export async function exportExtractedFiles(sha256: string, paths: string[]): Promise<boolean> { const result = await invoke("export_extracted_files", {sha256,paths}); if(typeof result!=="boolean") throw new Error("Invalid export response"); return result; }

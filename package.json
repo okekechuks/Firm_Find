@@ -7,6 +7,7 @@
     "apps/desktop"
   ],
   "scripts": {
+    "test:web-management-native": "node scripts/verify-foundation.mjs --web-management",
     "test:universal-workflow-native": "node scripts/verify-foundation.mjs --universal-workflow",
     "test:dns-build": "python -B scripts/test-dns-build.py",
     "test:catalogue": "python scripts/refresh-official-catalogue.py --upstream apps/desktop/src-tauri/assets/official --check",

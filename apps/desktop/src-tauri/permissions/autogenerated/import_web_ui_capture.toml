@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-import-web-ui-capture"
+description = "Enables the import_web_ui_capture command without any pre-configured scope."
+commands.allow = ["import_web_ui_capture"]
+
+[[permission]]
+identifier = "deny-import-web-ui-capture"
+description = "Denies the import_web_ui_capture command without any pre-configured scope."
+commands.deny = ["import_web_ui_capture"]
