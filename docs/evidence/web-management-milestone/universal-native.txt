@@ -1,0 +1,17 @@
+
+> obtainer-workspace@0.2.0-beta.2 test:universal-workflow-native
+> node scripts/verify-foundation.mjs --universal-workflow
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-30T08-17-10.897Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: device workflow: synthetic trusted exact target, real official HTTPS download, associated immutable Library original, automatic analysis, native cancel/retry extraction {"sourceSha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","sourceBytes":7405862,"physicalDeviceSuccess":false}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: device workflow restart: acquired provenance, analyzed bytes, extraction index, all file hashes, rendered real text, direct selected Library link {"sourceSha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","manifestSha256":"4fab7ba05c69ef857c12cf7d40fbbdba4b770cddbffc541cea39eb9890f51f0e","bundleSha256":"fff0593b182e14bbb6a2279d298b1b789c7a54b6b0dadfc3a696477134bebbee","files":869,"physicalDeviceSuccess":false}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+PASS: cleanup rejects mismatched marker/run ID and retains test data {}
+PASS: cleanup retains unknown staging without deleting files {}
+PASS: cleanup refuses reparse traversal; unrelated sentinel remains unchanged {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+PASS: owned isolated run cleaned after all processes stopped {"runId":"dccf351222ef4606bc93f4b3b5f0e750"}

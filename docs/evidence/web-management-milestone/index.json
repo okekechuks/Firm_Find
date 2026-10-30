@@ -224,6 +224,69 @@
       "sourceSha256": "62cb9dcacea23f5edaa9d42a0c7b5967481e3d490e2196bedc6bee36089690e2",
       "retainedSha256": "82b4137b7eb952f7f917316ccb6326aec7b05538f1cff641c230829e282e2ede",
       "retainedBytes": 2692
+    },
+    {
+      "source": ".tools/web-management-evidence/web-management-native-initial-lock-audit.log",
+      "retained": "web-management-native-initial-lock-audit.txt",
+      "sourceSha256": "0f601215d58b045c02da1e1376eb113fb01e39c17695064c6960c9ed6e846c9b",
+      "retainedSha256": "32dcf56bcb1202724756fd57305cae37647873b73ecb7c553fcde263da44ae96",
+      "retainedBytes": 1742
+    },
+    {
+      "source": ".tools/web-management-evidence/production-native-build.log",
+      "retained": "production-native-build.txt",
+      "sourceSha256": "33ed76fb5225cc8cd6f0070fa5a7c55486c07515bbe8271ced63252de4d3d5ec",
+      "retainedSha256": "e86f21d2e581790a1f23c791e064e1a49cde5d05183d5b24190624d6c9d6d83a",
+      "retainedBytes": 1366
+    },
+    {
+      "source": ".tools/web-management-evidence/isolated-native-build.log",
+      "retained": "isolated-native-build.txt",
+      "sourceSha256": "afa952d711dd90f1673e8a8971f5c9fb943ea6d2d29d21eef64a42117d257e18",
+      "retainedSha256": "55c765cbe144e8ca5eaa3b3e2160e74cc63d7cc25a36626ee22a586c8bfa0c9a",
+      "retainedBytes": 1415
+    },
+    {
+      "source": ".tools/web-management-evidence/web-management-native.log",
+      "retained": "web-management-native.txt",
+      "sourceSha256": "21b1457f6b96794673544a014b1ecb40f3e7ac981547c0f1fee32972fc26e9ca",
+      "retainedSha256": "f5e0dfb3a1e392da0566c7ccd3d31086acbfcc6a80e46fcbc322b1c8634c205e",
+      "retainedBytes": 1633
+    },
+    {
+      "source": ".tools/web-management-evidence/manufacturer-native.log",
+      "retained": "manufacturer-native.txt",
+      "sourceSha256": "59383cf2eba4c0ec26290977b703aef1242aac81e375cbdf154ad66eae92c710",
+      "retainedSha256": "eb3441cbcb2d6dbe5cdaacaf5e34c1c64fdbb9950a8bdd3aa5245b74d803707f",
+      "retainedBytes": 3671
+    },
+    {
+      "source": ".tools/web-management-evidence/universal-native.log",
+      "retained": "universal-native.txt",
+      "sourceSha256": "b719c3bc1a03541ac108f4b4022ff0436458a2ee2c2e1131e219535d4e761252",
+      "retainedSha256": "adfc0c35f63dd22abf28b0c9ad77009b02947853fd5a2f0ce72c6cf8e621d0cb",
+      "retainedBytes": 1817
+    },
+    {
+      "source": ".tools/web-management-evidence/adapters-simulator-native.log",
+      "retained": "adapters-simulator-native.txt",
+      "sourceSha256": "44ccb9393f0ea7c4001f01a85211980df1e3957f2cfad065389e9b4307985421",
+      "retainedSha256": "733beaf33cf21da389c9eda3e6dd2db78c2b082345494cf74420740ad58b245f",
+      "retainedBytes": 3817
+    },
+    {
+      "source": ".tools/web-management-evidence/extraction-review-native.log",
+      "retained": "extraction-review-native.txt",
+      "sourceSha256": "4130a4d7e3051cae36831a9eb71da311b81f0e779a100d94c93a87600af2f457",
+      "retainedSha256": "6b2146ae0f2c5627e3e542eba7b69ca4b57b6928bdd4e71d4a288abc59d4c78e",
+      "retainedBytes": 5838
+    },
+    {
+      "source": ".tools/web-management-evidence/lint-native-final.log",
+      "retained": "lint-native-final.txt",
+      "sourceSha256": "918d3c1c2c9c067c614a413eed587e5b2581fe0eaff18ef6f1783731df34d834",
+      "retainedSha256": "598b3f8d2b9b848bd45ffb307f1addf10f3ba28f484f17b647b435a80f7a756e",
+      "retainedBytes": 68
     }
   ]
 }

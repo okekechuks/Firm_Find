@@ -23,6 +23,7 @@ NATIVE = [
     "production-native-build.log", "isolated-native-build.log",
     "web-management-native.log", "manufacturer-native.log",
     "universal-native.log", "adapters-simulator-native.log",
+    "extraction-review-native.log", "lint-native-final.log",
 ]
 SECURITY = [
     "ci-qualified-initial.log", "python-runtime-qualified.log",
@@ -31,6 +32,7 @@ SECURITY = [
     "rust-standard-security.log", "rust-isolated-security.log",
     "clippy-standard-security.log", "clippy-isolated-security.log", "format-security.log",
     "manufacturer-native-initial-ui-race.log",
+    "web-management-native-initial-lock-audit.log",
 ]
 
 

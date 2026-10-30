@@ -1,0 +1,35 @@
+
+> obtainer-workspace@0.2.0-beta.2 test:web-management-native
+> node scripts/verify-foundation.mjs --web-management
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-30T08-14-11.362Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+Failed test run retained: C:\Users\chuka\AppData\Local\OBTAINER-NativeTests\0b263d5ad1130a8963a3a0475296c7fd
+npm.cmd : node:internal/modules/run_main:123
+At line:2 char:165
++ ... curity.log; npm.cmd run test:web-management-native *> .tools/web-mana ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:internal/modules/run_main:123:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    triggerUncaughtException(
+    ^
+
+Error: EBUSY: resource busy or locked, open
+'C:\Users\chuka\AppData\Local\OBTAINER-NativeTests\0b263d5ad1130a8963a3a0475296c7fd\data\vault\library.lock'
+    at async open (node:internal/fs/promises:639:25)
+    at async readFile (node:internal/fs/promises:1243:14)
+    at async verifyWebManagement
+(file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-web-management.mjs:89:43)
+    at async
+file:///C:/Users/chuka/OneDrive/Documents/Firm_Find/.tools/beta2-hardening/scripts/verify-foundation.mjs:406:5 {
+  errno: -4082,
+  code: 'EBUSY',
+  syscall: 'open',
+  path:
+'C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\0b263d5ad1130a8963a3a0475296c7fd\\data\\vault\\library.lock'
+}
+
+Node.js v22.17.0

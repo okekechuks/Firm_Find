@@ -1,0 +1,35 @@
+
+> obtainer-workspace@0.2.0-beta.2 test:extraction-review-native
+> node scripts/verify-foundation.mjs --official-acquisition --firmware-extraction --extraction-review
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-30T08-19-40.955Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: official-before: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"c9dbcc331e3a1a143b480fe3201ec37b","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c9dbcc331e3a1a143b480fe3201ec37b\\data"}
+PASS: official-before: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":24400,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c9dbcc331e3a1a143b480fe3201ec37b\\data","theme":"system"}
+PASS: official-before: exactly six primary navigation destinations {}
+PASS: official-before: discovery, three refreshes, unique IDs, unknown feature support {"records":58,"watching":true,"warnings":[]}
+PASS: official-before: same-value settings write/read preserved original preferences {}
+PASS: actual public official-image download, independent byte/hash check, classified Library admission, provenance, rendered bounded analysis {"filename":"openwrt-25.12.6-ath79-generic-tplink_archer-c7-v5-squashfs-sysupgrade.bin","bytes":7405862,"sha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","format":"U-Boot legacy","regions":2,"retainedFile":"C:\\Users\\chuka\\OneDrive\\Documents\\Firm_Find\\.tools\\beta2-hardening\\.tools\\sprint\\acquired\\openwrt-25.12.6-ath79-generic-tplink_archer-c7-v5-squashfs-sysupgrade.bin"}
+PASS: native GUI cancellation: no extraction published; retry available {"jobId":"8a8bbeba9b1a16bc8db537e9fdf79b6b"}
+PASS: native extraction: actual SquashFS files, independent hashes, rendered tree and text preview {"files":869,"directories":132,"bytes":13411262,"inputSha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","bundleSha256":"fff0593b182e14bbb6a2279d298b1b789c7a54b6b0dadfc3a696477134bebbee","manifestSha256":"4fab7ba05c69ef857c12cf7d40fbbdba4b770cddbffc541cea39eb9890f51f0e"}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: official-reopened: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"c9dbcc331e3a1a143b480fe3201ec37b","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c9dbcc331e3a1a143b480fe3201ec37b\\data"}
+PASS: official-reopened: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":21624,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\c9dbcc331e3a1a143b480fe3201ec37b\\data","theme":"system"}
+PASS: official-reopened: exactly six primary navigation destinations {}
+PASS: official-reopened: discovery, three refreshes, unique IDs, unknown feature support {"records":58,"watching":true,"warnings":[]}
+PASS: official-reopened: same-value settings write/read preserved original preferences {}
+PASS: official image, exact source provenance and bounded report remain accessible after native restart {}
+PASS: native restart: extraction browsing, real text preview and selected-file TAR export {"files":869,"directories":132,"bytes":13411262,"inputSha256":"0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d","bundleSha256":"fff0593b182e14bbb6a2279d298b1b789c7a54b6b0dadfc3a696477134bebbee","manifestSha256":"4fab7ba05c69ef857c12cf7d40fbbdba4b770cddbffc541cea39eb9890f51f0e"}
+PASS: additional gzip-to-SquashFS route: real OpenWrt payload in explicitly local wrapper; every extracted file matches original route {"wrapperSha256":"7b9a3f5e89352ac509b0b0ef459965d5b809ac5d83db3441bba6c057e5c1bf25","wrapperBytes":7383043,"files":869,"totalBytes":13411262,"manifestSha256":"7e8d39e8316a2430c15507c9ee24e6be938ee6bbe45d39e6c38b900a8615b912"}
+PASS: native genuine TRX v1: preserved 851 direct SquashFS files plus nested layers, hashes independently verified {"sha256":"0f29bd64f7a8f931cf1121dd54b514f1ecb58486ffa1713a282c97928c703d5d","files":1158,"directories":129,"totalBytes":12489630,"manifestSha256":"d5f81dcdecf64d1440539bfc0d63d72668b3574f36b304239f06a0fabc4f7a4b","bundleSha256":"114b4a1787cffab6d23100c867df05101b9ea5c4ebcc0cfe1c563b1f0a47bd84"}
+PASS: native UBI inspection: geometry/CRC evidence retained; incomplete mapping not inferred as filesystem {"sha256":"1827a286bc03df7a83ccd93e84cb1375cc1e10c1857ded3eb9c0ad413f761d36","manifestSha256":"43378ecb9e55f40381733171b6224646ef60525f5f287df47603ea7cde79123f","files":0,"physicalDump":false}
+PASS: native failure: EXTRACTION_RESOURCES; no successful output; prior extraction retained {"filename":"synthetic-resource-limit.gz","sha256":"55383098912db2ca5b0b7e95f7c7a8b5745ec0e0fa1ccf9b3237d0fc6aab7ee2","errorCode":"EXTRACTION_RESOURCES"}
+PASS: native export preflight: long and Unicode names rejected before Save; links/special entries inert {"synthetic":true,"sha256":"066ebf51632644adb9752ce46d277078ef45c6240960da1296ef1881c90bbe03","manifestSha256":"5c657604c733ef4653f1e07a3f511c8f555d35103f423e6805a10be1105fbe44"}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+PASS: cleanup rejects mismatched marker/run ID and retains test data {}
+PASS: cleanup retains unknown staging without deleting files {}
+PASS: cleanup refuses reparse traversal; unrelated sentinel remains unchanged {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+PASS: owned isolated run cleaned after all processes stopped {"runId":"c9dbcc331e3a1a143b480fe3201ec37b"}

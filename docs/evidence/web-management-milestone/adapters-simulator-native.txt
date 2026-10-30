@@ -1,0 +1,32 @@
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-30T08-18-08.493Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: ordinary release: actual visible startup failure dialog for duplicate workspace; closes cleanly before opening normal data {}
+PASS: ordinary production executable rejects test activation before opening data {}
+PASS: native-test executable rejects missing/unsafe run IDs and arbitrary data paths {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: production: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"3af069fe974e4f2fd09bbb3ebf146359","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\3af069fe974e4f2fd09bbb3ebf146359\\data"}
+PASS: production: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":2492,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\3af069fe974e4f2fd09bbb3ebf146359\\data","theme":"system"}
+PASS: production: exactly six primary navigation destinations {}
+PASS: production: discovery, three refreshes, unique IDs, unknown feature support {"records":58,"watching":true,"warnings":[]}
+PASS: production: real adapter registry IPC, strict request validation and absent write/execution endpoints {}
+PASS: production: passive Windows-to-profile-to-adapter evaluation; host NICs protected, four features unknown, no fabricated connection {"devices":12,"mg11Connected":false}
+PASS: production: protected device information and disabled acquisition shown; no compatibility check or device request {"deviceId":"00f121d0a45abfab0aff8e304a16c20d9edc4f587f2e5030a924c1e3c66786c6"}
+PASS: production: saved endpoint adapter IPC remains passive; saved-connections GUI no longer mounted and was not tested {}
+PASS: production: explicit simulator activation, namespace/provenance and direct IPC isolation; physical registry unchanged {}
+PASS: production: real React/Rust bootstrap, separate read approval and all four state-backed adapter reads {}
+PASS: production: native DNS read/edit/validate/preview/snapshot/apply/readback/independent verify/restore passes {}
+PASS: production: deterministic DNS mismatch, successful restoration and failed rollback with reset-required result {}
+PASS: production: real GUI Wi-Fi/APN state mutation and readback, fictional USSD interactive completion; no physical dispatch {}
+PASS: production: virtual cellular restart reports unavailable data, scheduled recovery and fresh adapter readback {}
+PASS: production: missing SIM APN error preserves authenticated session; subsequent real GUI DNS preview succeeds {}
+PASS: production: live identity change immediately invalidates grants, cached results and stale requests; fresh wrong-identity authentication rejects {}
+PASS: production: real native GUI Cancel input interrupts slow read, releases busy/resources and permits scenario selection, fresh authentication and successful feature reads {}
+PASS: production: timeout/disconnect/reset/stop release all virtual connections; Windows inventory and firmware Library unchanged {}
+PASS: production: same-value settings write/read preserved original preferences {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+PASS: cleanup rejects mismatched marker/run ID and retains test data {}
+PASS: cleanup retains unknown staging without deleting files {}
+PASS: cleanup refuses reparse traversal; unrelated sentinel remains unchanged {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+PASS: owned isolated run cleaned after all processes stopped {"runId":"3af069fe974e4f2fd09bbb3ebf146359"}

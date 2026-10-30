@@ -12,6 +12,14 @@ The [web-management](WEB_MANAGEMENT_ACQUISITION_VERIFICATION.md) and
 actual implementation and remaining gates. This does not complete Phase 7.5 or
 start Phase 8.
 
+**30 October verification:** native local-evidence import and restart, real
+CPIO/RAR structure views, retained SquashFS selected-device software flow and
+adapter/simulator regressions pass; runtime `6096b64` has green CI. No production
+authenticated web connector or qualified MG11 firmware source is enabled. The
+next device gate needs reviewed sanitized capture/family evidence and a narrow
+read-only identity/source descriptor, then a separately approved bound physical
+test. More file-format recognition cannot satisfy that acquisition gate.
+
 **Approved placement — 22 October 2026:** the owner has authorized Phase 7.5 between 7 and 8, with subphases A–F for identification, vendor recognition, acquisition strategy discovery, genuine-byte acquisition/Library integration, isolated analysis and physical qualification. This supersedes the earlier proposed placement below. No phase renumbering or Phase 8 implementation. [Architecture](PHASE_7_5_ARCHITECTURE.md) and [current results](PHASE_7_5_VERIFICATION.md). Sprint A does not yet qualify an executable acquisition route.
 
 Proposed: 20 October 2026, from the owner's Phase 7 implementation requirements. **Proposed milestone placement is subject to project-owner approval.** Existing phases 0–19 keep their numbers and historical acceptance evidence. This document does not authorize physical extraction, configuration writes, firmware installation or live USSD during Phase 7.

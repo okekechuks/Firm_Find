@@ -1,0 +1,25 @@
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-30T08-15-35.011Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: manufacturer-before: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"ffa4d656cee0b2881ba8012ef666ec2b","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\ffa4d656cee0b2881ba8012ef666ec2b\\data"}
+PASS: manufacturer-before: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":21116,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\ffa4d656cee0b2881ba8012ef666ec2b\\data","theme":"system"}
+PASS: manufacturer-before: exactly six primary navigation destinations {}
+PASS: manufacturer-before: discovery, three refreshes, unique IDs, unknown feature support {"records":50,"watching":true,"warnings":[]}
+PASS: manufacturer-before: same-value settings write/read preserved original preferences {}
+PASS: native real vendor package: 11 CPIO members decoded; delta base required, original preserved {"sha256":"a592a30abac46942dc8c8b9fdc4254882f4be1b3fa1261e140d6ca5bddfa5743","bytes":10735104,"files":11,"manifestSha256":"72f2ff185cbae00e6bbdac23c7583a467229ef9fac38902854b5e708a1fc9fcf","physicalDump":false,"compatiblePhysicalTarget":false}
+PASS: native RAR: bounded member selection, all retained hashes checked, oversized PAC explicitly omitted {"files":988,"totalBytes":31744382,"manifestSha256":"4ff9797bd585f03f1a9094e059340f9ba1c27ae14eef6abd625ea704666f0bc1","physicalDump":false}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: manufacturer-reopened: isolated database/vault/logs and WebView profile; explicit test banner {"runId":"ffa4d656cee0b2881ba8012ef666ec2b","dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\ffa4d656cee0b2881ba8012ef666ec2b\\data"}
+PASS: manufacturer-reopened: native window, React and real SQLite IPC {"url":"http://tauri.localhost/","pid":14792,"dataDirectory":"C:\\Users\\chuka\\AppData\\Local\\OBTAINER-NativeTests\\ffa4d656cee0b2881ba8012ef666ec2b\\data","theme":"system"}
+PASS: manufacturer-reopened: exactly six primary navigation destinations {}
+PASS: manufacturer-reopened: discovery, three refreshes, unique IDs, unknown feature support {"records":58,"watching":true,"warnings":[]}
+PASS: manufacturer-reopened: same-value settings write/read preserved original preferences {}
+PASS: native restart: partial CPIO contents and deterministic manifest retained {"sha256":"a592a30abac46942dc8c8b9fdc4254882f4be1b3fa1261e140d6ca5bddfa5743","bytes":10735104,"files":11,"manifestSha256":"72f2ff185cbae00e6bbdac23c7583a467229ef9fac38902854b5e708a1fc9fcf","physicalDump":false,"compatiblePhysicalTarget":false}
+PASS: native restart: partial RAR files and omitted PAC retained {"files":988,"totalBytes":31744382,"manifestSha256":"4ff9797bd585f03f1a9094e059340f9ba1c27ae14eef6abd625ea704666f0bc1","physicalDump":false}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: no captured native console warnings or unhandled exceptions {}
+PASS: cleanup rejects mismatched marker/run ID and retains test data {}
+PASS: cleanup retains unknown staging without deleting files {}
+PASS: cleanup refuses reparse traversal; unrelated sentinel remains unchanged {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+PASS: owned isolated run cleaned after all processes stopped {"runId":"ffa4d656cee0b2881ba8012ef666ec2b"}

@@ -13,7 +13,7 @@ to `apps/desktop/src-tauri/src/` unless explicitly named otherwise.
 
 | Area | Actual source and boundary |
 |---|---|
-| Selected-device workflow | `components/Devices.tsx` opens `DeviceDetails`; `components/DeviceFirmwareWorkflow.tsx` calls `get_device_workflow`, then separately approved official acquisition. Cards stay concise. |
+| Selected-device workflow | `features/Devices.tsx::DeviceDetails` opens the selected device; `components/DeviceFirmwareWorkflow.tsx` calls `get_device_workflow`, then separately approved official acquisition. Cards stay concise. |
 | Strategy contracts | `acquisition/strategy_api.rs`, `acquisition/strategies.rs` and its `strategies/` handlers, `acquisition/mod.rs::FirmwareAcquisitionStrategy`: five registered strategies; metadata recognition is not firmware acquisition. |
 | Challenge observation | `acquisition/challenge.rs`, `ipc.rs::{approve_auth_challenge,read_auth_challenge}`, `approval.rs::AuthChallengeApproval`: one credential-free closed request with live single-use material endpoint stamp. Physical MG11 success remains pending. |
 | HTTP and binding | `connection/windows.rs` uses WinHTTP. `endpoint_binding.rs::Registry::bind` requires fresh discovery for new approvals and preserves only existing live operations. Global route ambiguity blocks; a source-bound authenticated client is absent at the starting commit. |
@@ -90,8 +90,69 @@ Ignored Rust cases require separately provisioned VM/OS or crash-child fixtures;
 they are not claimed executed. The Windows reqwest socket regression used a real
 loopback server and observed source `127.0.0.2`, rather than only a mocked route.
 Its synthetic route is test-only; production loopback targets remain refused.
-This does not qualify a physical adapter. Native builds, GUI and GitHub CI are
-still being executed at this checkpoint; their results are recorded separately.
+This does not qualify a physical adapter. The completed Windows/native/CI checks
+are recorded below; physical authentication and source qualification remain open.
+
+## Windows and native verification — 30 October 2026
+
+Runtime source: `6096b644f8466d62697492f897b8230e3fdc457f`. Its
+[CI 40940887215](https://github.com/okekechuks/Firm_Find/actions/runs/40940887215)
+passed all three jobs: Windows verification/both native builds, DNS helper and
+qualified extraction worker. The earlier failed run is retained, not relabelled.
+The subsequent native-driver changes add visible-viewport and secret-storage
+assertions; they do not alter the compiled application.
+
+| Exact command | Exit and actual result |
+|---|---|
+| `npm.cmd run tauri -- build --no-bundle --ci -- --locked --offline` | 0; production Windows executable |
+| `npm.cmd run build:native-tests` | 0; isolated Windows executable; production hash guard preserved the ordinary executable |
+| `npm.cmd run test:web-management-native` | 0; real native file pickers, selected-device React/Rust HAR/static workflow, dangerous GET classification, rejected malformed input, blocked live collection and unqualified route; restart clears memory-only evidence |
+| `node scripts/verify-foundation.mjs --manufacturer-package` | 0; genuine local CPIO/RAR import, extraction, graph/UI, independent retained-file hashes and manifest persistence across restart |
+| `npm.cmd run test:universal-workflow-native` | 0; synthetic qualified identity, genuine official HTTPS image, associated immutable Library, automatic analysis, actual GUI Cancel/retry, 869 file hashes, graph, text preview, background-event stability and restart/direct Library link |
+| `node scripts/verify-foundation.mjs --release-only --phase5 --phase6` | 0; native six-page navigation, SQLite/settings, passive discovery/refresh, protected adapter denial, simulator bootstrap/reads/rollback/expiry/identity-change/Cancel/recovery; no physical simulator dispatch |
+| `npm.cmd run test:extraction-review-native` | 0; genuine raw/gzip/TRX extraction, partial UBI inspection, restart, selected-file TAR export, resource exhaustion without publication and Unicode/long-name preflight; inert links/special entries |
+| `npm.cmd run lint` | 0 after the final native-driver edits |
+| `py -B scripts/audit-data-bytes.py .tools/web-management-evidence/normal-after.json .tools/web-management-evidence/normal-before.json` | 0; all 12 normal files / 5,611,701 bytes identical |
+
+The synthetic HAR deliberately contains a secret sentinel in headers, bodies and
+query values. The report/UI exclude it. After clean shutdown, five files under
+the isolated app-owned data directory (including SQLite, logs and vault metadata)
+were scanned for its UTF-8 and UTF-16 encodings; neither occurred. The deliberately
+secret-bearing input fixture is outside app data. The same scan passed after
+restart. No firmware job was created by HAR/static import. This is a concrete
+sentinel regression, not a proof of universal information-flow noninterference.
+
+Actual native evidence directories under `.tools/foundation/`:
+
+- `2026-10-30T08-15-06.411Z`: HAR/static/error/route/restart/storage checks.
+- `2026-10-30T08-15-35.011Z`: genuine CPIO/RAR graphs and restart.
+- `2026-10-30T08-17-10.897Z`: selected-device official download/extraction/restart.
+- `2026-10-30T08-18-08.493Z`: retained adapter/simulator/GUI regressions.
+- `2026-10-30T08-19-40.955Z`: broader extraction/resource/export regressions.
+
+Native console warning/exception lists were empty in each completed run. Real
+WebView screenshots of the evidence and structure views were inspected. They
+show local evidence and BLOCKED device acquisition; screenshots stay uncommitted.
+Windows inventory changed normally between scans, with unique device IDs; the
+adapter run observed no connected MG11 and makes no physical MG11 success claim.
+
+Production executable: 19,483,136 bytes, SHA-256
+`29763d9d887b6b2b28a012d042d5d1d37f9f770efd40bff968869d3b95d02565`.
+Native-test executable: 19,461,120 bytes, SHA-256
+`07fab3d12cdbb8ce88024a09a85c2d78a324be3cf1ad582a8365fd0054cfdf73`.
+These are local unsigned executables, not a published release.
+
+The real OpenWrt VM/authentication suite requires the separately provisioned
+`.tools/phase7-vm/console-identity.log` fixture, which is unavailable here; it is
+not claimed executed. The broad development/HMR suite is also not claimed by
+these optimized native runs. Current adapter and simulator native regressions
+are explicitly identified above rather than substituted for physical OpenWrt.
+
+Main remains `d5d05413d30c01f189968526be2ac80979387bd5`; Beta 1 remains
+`7433c96b379dd70d1481f06d645ff7f49570d9fe`; Beta 2 remains
+`e4524e80ac38ff0702e0917fc9a8f314d2f1ad82`. No merge, tag move, release,
+normal-data migration or storage-location change occurred. The previously used
+reviewer scratchpad directory is absent; no new independent acceptance is assumed.
 
 ## Initial failures retained
 
@@ -116,6 +177,13 @@ run exposed inherited Windows nonblocking mode in the test server, which was
 explicitly reset. The final socket check and both full Rust profiles/Clippy/format
 passed. Actual outputs are in `.tools/web-management-evidence/`; evidence contains
 text results, not raw captures, firmware, credentials or generated screenshots.
+
+Native graph verification initially clicked before React published the extraction
+report. The driver now waits for the actual action; the CPIO/RAR and selected-device
+runs passed. A new storage sentinel audit initially tried to read the intentionally
+exclusive live `library.lock` and failed with `EBUSY`; moving that audit after clean
+shutdown preserved the lock and made both storage passes succeed. Both failed logs
+are retained. No application protection was relaxed to make these checks pass.
 
 ## Physical and remaining gates
 

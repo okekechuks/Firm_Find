@@ -1,12 +1,13 @@
 // Synthetic local captures through the real native picker and React/Rust IPC.
 // This neither contacts a router nor represents physical qualification.
 import assert from 'node:assert/strict';
-import {readFile, writeFile} from 'node:fs/promises';
+import {lstat, readFile, readdir, writeFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {assertOwned} from './native-test-profile.mjs';
 
 const id='1'.repeat(64);
+const sentinel='SYNTHETIC-SECRET-DO-NOT-RETAIN';
 const until=async(check,message)=>{const deadline=Date.now()+45000;while(Date.now()<deadline){if(await check())return;await new Promise(resolve=>setTimeout(resolve,150));}throw new Error(message);};
 
 export async function verifyWebManagement(client,{root,profile,evidence,pid,record,screenshot,reopened=false}) {
@@ -34,7 +35,6 @@ export async function verifyWebManagement(client,{root,profile,evidence,pid,reco
   const route=await invoke('assess_web_management_binding',{deviceId:id,endpoint:'http://192.0.2.1/',interfaceId:'synthetic-workflow-interface'});
   assert.equal(route.state,'blocked');assert.equal(route.sourceIp,null);assert.equal(route.canAuthenticate,false);assert.equal(route.cryptographicallyVerified,false);
   await until(()=>evaluate("document.querySelector('[aria-label=\"Selected management route\"]')?.innerText.includes('Select one connected physical interface')"),'Synthetic interface incorrectly received a real Windows route proof');
-  const sentinel='SYNTHETIC-SECRET-DO-NOT-RETAIN';
   const capture=path.join(profile.root,'fixtures','synthetic-management.har');
   const bundle=path.join(profile.root,'fixtures','synthetic-bundle.js');
   const malformed=path.join(profile.root,'fixtures','synthetic-malformed.har');
@@ -77,5 +77,26 @@ export async function verifyWebManagement(client,{root,profile,evidence,pid,reco
   const state=await invoke('get_snapshot');
   assert(state.testProfile);
   assert((await readFile(capture,'utf8')).includes(sentinel));
+  assert.equal((await invoke('list_library_jobs')).length,0,'Evidence import created a firmware operation');
   record('native selected-device workflow: local HAR picker, dangerous GET, static correlation, malformed rejection and fail-closed collection',{synthetic:true,endpoints:report.entries.length,routerRequests:0,physicalDeviceSuccess:false});
+}
+
+// Audit only after clean app shutdown: the live vault deliberately denies reads
+// of library.lock. Reading closed data also covers the checkpointed SQLite bytes.
+export async function verifyWebManagementStorage({profile,record}) {
+  const pending=[path.join(profile.root,'data')];let inspectedFiles=0;
+  while(pending.length) {
+    const directory=pending.pop();await assertOwned(profile,directory);
+    for(const name of await readdir(directory)) {
+      const file=path.join(directory,name);await assertOwned(profile,file);
+      const info=await lstat(file);assert(!info.isSymbolicLink());
+      if(info.isDirectory())pending.push(file);
+      else {
+        assert(info.isFile());const bytes=await readFile(file);inspectedFiles++;
+        assert(!bytes.includes(Buffer.from(sentinel,'utf8'))&&!bytes.includes(Buffer.from(sentinel,'utf16le')),'Capture secret leaked into application-owned storage');
+      }
+    }
+  }
+  assert(inspectedFiles>0);
+  record('native synthetic secret absent from closed SQLite/WAL/log/vault file bytes',{inspectedFiles});
 }

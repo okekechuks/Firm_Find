@@ -85,7 +85,76 @@ these file tests.
 
 Windows worker checks: 24 legacy tests (six Linux-only skips), 34 V2 tests (three
 Linux-only skips), exit 0. WSL Ubuntu ran all 24 and all 34 with no skips, exit 0.
-Full/native verification results will be appended after execution.
+Full/native verification results are recorded below.
+
+## Real-file and native results — 30 October 2026
+
+Runtime `6096b644f8466d62697492f897b8230e3fdc457f` has
+[green CI](https://github.com/okekechuks/Firm_Find/actions/runs/40940887215),
+438 standard / 439 isolated Rust tests plus two doctests per profile, 196 frontend
+tests, clean formatting/both Clippy profiles/lint/TypeScript and both Windows
+builds. Ignored tests and exact commands are listed in
+[web-management verification](WEB_MANAGEMENT_ACQUISITION_VERIFICATION.md).
+
+All five local genuine fixtures were rerun using
+`wsl.exe -d Ubuntu --cd <worktree> --exec python3 -B scripts/qualify-extraction-worker.py --input <fixture> --evidence <owned-output>`
+on the patched qualified interpreter. Each exited 0, independently checked all
+retained file hashes and confirmed the input hash unchanged. These are real
+firmware **files**, not firmware obtained from a connected device.
+
+| Fixture | Source SHA-256 | Actual result |
+|---|---|---|
+| DWR-930M SEA OTA, CPIO CRC despite `.zip` suffix | `a592a30abac46942dc8c8b9fdc4254882f4be1b3fa1261e140d6ca5bddfa5743` | 11 files / 10,733,303 bytes; partial, exact delta base required |
+| DWR-930M ME RAR5 | `4996408e418225b41478bd79ff2e98f3889911b4b75de9ca4abdcd61d81ddcd9` | 988 files / 31,744,382 bytes; oversized PAC/AXF/MAP members omitted, not decoded |
+| OpenWrt 25.12.6 Archer C7 v5 | `0ec9643bb9f43d65c689761d916a9e0c13bad5968656d74e516df010deb0be9d` | 869 files / 13,411,262 bytes; qualified SquashFS path retained |
+| OpenWrt RT-N16 TRX | `0f29bd64f7a8f931cf1121dd54b514f1ecb58486ffa1713a282c97928c703d5d` | 1,158 ordinary files / 12,489,630 bytes including nested layers; direct SquashFS subset remains 851 |
+| OpenWrt RT-AC68U TRX/UBI | `1827a286bc03df7a83ccd93e84cb1375cc1e10c1857ded3eb9c0ad413f761d36` | zero files; incomplete logical-block mapping, partial inspection only |
+
+The actual native CPIO/RAR suite exited 0, then reopened both immutable reports
+and graphs. The selected-device software workflow exited 0 with a real official
+C7 download, native GUI Cancel/retry, extraction/browsing, every ordinary file hash
+and restart. Source, bundle, graph and manifest comparisons survived reopening.
+No extracted program was executed. Rebuild/install remain unknown/nonexecutable.
+
+`npm.cmd run test:extraction-review-native` also exited 0 on the same Windows
+executables and patched WSL tools. It verified genuine raw/C7 and locally wrapped
+gzip equivalence, native Cancel/retry and selected-file TAR export, the genuine
+RT-N16 TRX, zero-file partial UBI inspection, synthetic resource exhaustion with
+no publication/prior results retained, and long/Unicode export rejection before
+the Save dialog. Links and special entries remained inert. Its native evidence
+directory is `.tools/foundation/2026-10-30T08-19-40.955Z`.
+
+| Native immutable report | Manifest SHA-256 | Structural graph SHA-256 before and after restart |
+|---|---|---|
+| CPIO CRC | `72f2ff185cbae00e6bbdac23c7583a467229ef9fac38902854b5e708a1fc9fcf` | `f96b121743327e49177d5da3f4e553506d2bc10c225f9fb5aa701819d8f27f52` |
+| RAR5 | `4ff9797bd585f03f1a9094e059340f9ba1c27ae14eef6abd625ea704666f0bc1` | `cd186cbc3180d45c310cf102ce14701b60033a8103803e8faa89ccbfc07f501c` |
+| C7 selected-device workflow | `4fab7ba05c69ef857c12cf7d40fbbdba4b770cddbffc541cea39eb9890f51f0e` | `1fe90479c2bffacd1e9367d144e05cfa8254a4d615246332aafda0dbd492ec82` |
+
+Graph hashes cover the retained pretty JSON plus terminal newline; manifest
+hashes cover the actual immutable Library bytes. They are separate from the
+standalone worker's pretty-report hash. C7 bundle SHA-256 is
+`fff0593b182e14bbb6a2279d298b1b789c7a54b6b0dadfc3a696477134bebbee`;
+CPIO bundle is `e664c44d3531dcc3b4c7374eee4e87e5635347dd86a5fe01da30245ad77c8f2f`;
+RAR bundle is `7f60d54dfa2da100ce0a12dec8c038f3a48834536df2ea8d5364d00318fac661`.
+
+Additional native immutable manifests: RT-N16 TRX
+`d5f81dcdecf64d1440539bfc0d63d72668b3574f36b304239f06a0fabc4f7a4b`;
+partial UBI inspection
+`43378ecb9e55f40381733171b6224646ef60525f5f287df47603ea7cde79123f`;
+owner-created gzip wrapper
+`7e8d39e8316a2430c15507c9ee24e6be938ee6bbe45d39e6c38b900a8615b912`.
+The wrapper is a local test transformation, not a separately acquired OEM image.
+
+Initial native graph failure was a test-driver publication race. Waiting for the
+actual React action fixed the driver without changing the application. Final
+screenshots were viewed and show relative coordinates, explicit unknown/delta
+regions and separate readiness. No source offsets are invented for expanded
+streams or extracted members. Normal data remains 12 byte-identical files.
+
+Text red/green/build/native logs are retained under
+`docs/evidence/web-management-milestone/`, with computed original and normalized
+hashes in `index.json`. Raw firmware, captures, screenshots and normal-data byte
+maps remain local/uncommitted. Independent acceptance remains pending.
 
 ## Maintained interpreter qualification
 

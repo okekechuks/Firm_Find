@@ -1,6 +1,6 @@
 import { verifyExtraction } from "./verify-extraction.mjs";
 import { verifyUniversalWorkflow } from "./verify-universal-workflow.mjs";
-import { verifyWebManagement } from "./verify-web-management.mjs";
+import { verifyWebManagement, verifyWebManagementStorage } from "./verify-web-management.mjs";
 import { verifyExtractionReview } from "./verify-extraction-review.mjs";
 import { verifyAuthChallenge } from "./verify-auth-challenge.mjs";
 import { verifyManufacturerPackage, verifyRarPackage } from "./verify-manufacturer-package.mjs";
@@ -404,9 +404,11 @@ try {
   if(process.argv.includes('--web-management')) {
     await clean();start('release');await connect();await connected();
     await verifyWebManagement(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot});
-    await closeWindow();start('release');await connect();await connected();
+    await closeWindow();await verifyWebManagementStorage({profile,record});
+    start('release');await connect();await connected();
     await verifyWebManagement(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot,reopened:true});
     await closeWindow();
+    await verifyWebManagementStorage({profile,record});
   } else if(process.argv.includes('--manufacturer-package')) {
     await clean();start('release');await verify('manufacturer-before');
     await verifyManufacturerPackage(client,{root,profile,evidence,pid:processes().apps[0].id,record,screenshot});

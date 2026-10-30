@@ -13,6 +13,11 @@ be associated as compatible by filename or model label. H05 remains unqualified.
 Existing genuine D-Link CPIO and RAR packages can now have bounded contents
 extracted through the V2 feature engine, with partial/delta/omitted-member limits.
 This updates file-handling capability only, not any physical-device success row.
+30 October native recheck: actual CPIO/RAR import, extraction, graph display and
+restart passed in isolated storage. The selected-device test used a clearly
+synthetic identity with a genuine official OpenWrt image; it is not a hardware
+qualification. Passive Windows adapter regressions observed no connected MG11.
+No new physical challenge, login or owner-visible-settings confirmation occurred.
 Installed firmware acquired and extracted: **0/5 groups, 0/6 individual units**.
 Verified-compatible physical-target manufacturer images: **0/5, 0/6**.
 [Web-management evidence](WEB_MANAGEMENT_ACQUISITION_VERIFICATION.md) and

@@ -1,0 +1,19 @@
+
+> obtainer-workspace@0.2.0-beta.2 test:web-management-native
+> node scripts/verify-foundation.mjs --web-management
+
+Evidence: C:\Users\chuka\OneDrive\Documents\Firm_Find\.tools\beta2-hardening\.tools\foundation\2026-10-30T08-15-06.411Z
+PASS: normal DB/WAL/SHM/log/vault byte snapshot captured without SQLite {}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: native selected-device workflow: local HAR picker, dangerous GET, static correlation, malformed rejection and fail-closed collection {"synthetic":true,"endpoints":5,"routerRequests":0,"physicalDeviceSuccess":false}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: native synthetic secret absent from closed SQLite/WAL/log/vault file bytes {"inspectedFiles":5}
+PASS: native restart: management evidence remains session-only; no credentials or endpoint authority retained {"entries":0,"physicalDeviceSuccess":false}
+PASS: shutdown left no app, owned WebView process, Vite process or development listener {}
+PASS: native synthetic secret absent from closed SQLite/WAL/log/vault file bytes {"inspectedFiles":5}
+PASS: no captured native console warnings or unhandled exceptions {}
+PASS: cleanup rejects mismatched marker/run ID and retains test data {}
+PASS: cleanup retains unknown staging without deleting files {}
+PASS: cleanup refuses reparse traversal; unrelated sentinel remains unchanged {}
+PASS: normal application file bytes unchanged after isolated native suite {}
+PASS: owned isolated run cleaned after all processes stopped {"runId":"59eb88ce09c4ab889c50b06ab9fece83"}

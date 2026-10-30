@@ -1,6 +1,6 @@
 # OBTAINER phase status
 
-## Web-management and recursive structure milestone — verification in progress
+## Web-management and recursive structure milestone — software verified; physical workflow blocked
 
 29 October 2026: separate `feature/web-management-recursive-milestone`, starting
 from extraction V2 source `36fc81b`. Selected-device HAR/local static analysis,
@@ -11,8 +11,22 @@ resource collector is qualified. H01 remains BLOCKED with no firmware bytes;
 H02/H03 remain separate, and H04 exact revision compatibility remains unknown.
 [Source audit, implementation and actual checks](WEB_MANAGEMENT_ACQUISITION_VERIFICATION.md),
 [recursive file/graph evidence](RECURSIVE_FIRMWARE_EXTRACTION_VERIFICATION.md).
-Normal data, main and published tags are preserved; no new release, physical
-acquisition, write, flashing or project-completion claim.
+30 October verification: runtime `6096b644f8466d62697492f897b8230e3fdc457f`
+has [green three-job CI](https://github.com/okekechuks/Firm_Find/actions/runs/40940887215),
+438/439 Rust tests plus two doctests per profile, 196 frontend tests, clean
+Clippy/format/lint/TypeScript and both Windows builds. Actual native HAR/static
+import, secret-storage checks/restart, CPIO/RAR extraction/graphs/restart,
+selected-device software download/Cancel/retry/extract/restart and existing
+adapter/simulator/GUI regressions pass. Firmware files and synthetic identities
+do not qualify physical devices. Initial CI interpreter-pin and native-driver
+failures remain recorded with their corrections. Independent acceptance pending.
+Broader native raw/gzip/TRX, partial UBI, export-name/selected-file export and
+resource-limit regressions also pass without successful output after exhaustion.
+
+Normal data remains 12 byte-identical files / 5,611,701 bytes; main and published
+tags are preserved. No new release, physical acquisition, write, flashing or
+project-completion claim. **Full connected-router authentication/acquisition and
+Phase 7.5 remain incomplete.**
 
 ## Firmware-file extraction V2 — review pending
 
